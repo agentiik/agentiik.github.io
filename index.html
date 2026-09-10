@@ -57,14 +57,25 @@ main{
 a{color:var(--accent)}
 a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
 
+.hero{
+  text-align:center;
+  margin-bottom:clamp(76px,12vw,140px);
+}
 .lockup{
   --mark:clamp(44px,12vw,104px);
   display:flex;
   align-items:center;
   justify-content:center;
   gap:calc(var(--mark) * 9 / 14);
-  margin-bottom:clamp(76px,12vw,140px);
+  margin-bottom:26px;
 }
+.hero a{
+  font-size:.9rem;
+  color:var(--muted);
+  text-decoration-thickness:1px;
+  text-underline-offset:3px;
+}
+.hero a:hover{color:var(--accent)}
 .lockup svg{
   flex:none;
   width:calc(var(--mark) * 16 / 14);
@@ -132,11 +143,16 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 }
 
 footer{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  gap:10px 24px;
   margin-top:104px;
   font-size:.8rem;
   color:var(--faint);
 }
 footer a{color:var(--muted);text-decoration-thickness:1px;text-underline-offset:2px}
+footer a:hover{color:var(--accent)}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -151,6 +167,7 @@ img{max-width:100%}
 
 <main>
 
+<div class="hero">
 <div class="lockup">
   <svg viewBox="0 0 16 14" aria-hidden="true" focusable="false">
     <rect width="16" height="4" rx="1"/>
@@ -161,6 +178,8 @@ img{max-width:100%}
     <rect y="12" width="16" height="2" rx="1" opacity=".3"/>
   </svg>
   <h1>agentiik</h1>
+</div>
+<a href="https://github.com/agentiik">github.com/agentiik</a>
 </div>
 
 <div class="shot">
@@ -174,7 +193,10 @@ img{max-width:100%}
   <span class="soon">API reference</span>
 </nav>
 
-<footer><a href="https://github.com/agentiik">github.com/agentiik</a></footer>
+<footer>
+  <span>&copy; 2026 Fran&ccedil;ois Rousselet</span>
+  <a href="legal/index.html">Legal notice</a>
+</footer>
 
 </main>
 </body>
