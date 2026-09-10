@@ -3,14 +3,16 @@
 Everything written about Agentiik lives in this repository. Documents are HTML and
 open in a browser without a build step or a server.
 
-| Document | What it is |
-| --- | --- |
-| [index.html](index.html) | The functional and technical specification: scope, the workflow language, the brick contract, access control, the runtime, security, deployment profiles, MCP, and the repository and licensing layout. |
+| Document | Served at | What it is |
+| --- | --- | --- |
+| [index.html](index.html) | `/` | The home page: what Agentiik is, one screen of the console, and the list of documents. |
+| [docs/index.html](docs/index.html) | `/docs` | The functional and technical specification: scope, the workflow language, the brick contract, access control, the runtime, security, deployment profiles, MCP, and the repository and licensing layout. |
 
 ## Layout
 
 ```
-index.html             the specification, one file, styles inline
+index.html             the home page, one file, styles inline
+docs/                  the specification, as docs/index.html
 assets/                the images the documents reference
 .github/workflows/     the workflow that publishes the site
 README.md
@@ -24,6 +26,10 @@ README.md
 | Workflow and graph | `console-graph-light.png` | `console-graph-dark.png` |
 | Run inspector | `console-inspector-light.png` | `console-inspector-dark.png` |
 | Access and sharing | `console-sharing-light.png` | `console-sharing-dark.png` |
+
+It also holds `logo.svg`, the mark the console wears: the documents draw it inline in
+their header so that it follows the reader's theme, and the file exists so the site has
+an icon.
 
 ## Conventions
 
@@ -41,10 +47,11 @@ README.md
 ## Publishing
 
 `main` is published to <https://agentiik.github.io/>. This repository is the site:
-`.github/workflows/publish.yml` copies the HTML documents and `assets/` into a Pages
-artifact and deploys it, with no build step in between, so what the site serves is
-exactly what a clone opens. `index.html` is the specification, which makes the
-specification the landing page.
+`.github/workflows/publish.yml` copies the tree into a Pages artifact and deploys it,
+with no build step in between, so what the site serves is exactly what a clone opens.
+A document's path in the repository is its path on the site, which is why the
+specification sits in `docs/` and is reached at <https://agentiik.github.io/docs>; a
+document added in a directory of its own needs no change to the workflow.
 
 Pages has to deploy from GitHub Actions rather than from a branch; the workflow asks for
 that itself on its first run.

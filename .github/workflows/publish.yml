@@ -38,11 +38,12 @@ jobs:
         with:
           enablement: true
 
+      # The tree is the site: a document's path in the repository is its path on
+      # the site, so nothing here names documents one by one.
       - name: Assemble the site
         run: |
           mkdir _site
-          cp ./*.html _site/
-          cp -R assets _site/assets
+          rsync -a --exclude '.git/' --exclude '.DS_Store' --exclude '.github/' --exclude '_site/' --exclude 'README.md' ./ _site/
 
       - uses: actions/upload-pages-artifact@v5
         with:
