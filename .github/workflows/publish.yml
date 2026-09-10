@@ -1,0 +1,52 @@
+# Publishes the documentation to https://agentiik.github.io/.
+#
+# The site is this repository. There is no build step: the HTML documents and the
+# images they reference are copied as they are and handed to Pages, which is what
+# lets any document be opened straight from a clone as well.
+#
+# The Pages source has to be GitHub Actions rather than a branch; the configure
+# step sets that on the first run.
+
+name: Publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one that is already running: a
+# half-published site is worse than a slightly stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/configure-pages@v6
+        with:
+          enablement: true
+
+      - name: Assemble the site
+        run: |
+          mkdir _site
+          cp ./*.html _site/
+          cp -R assets _site/assets
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v5
