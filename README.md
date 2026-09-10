@@ -14,6 +14,7 @@ open in a browser without a build step or a server.
 index.html             the home page, one file, styles inline
 docs/                  the specification, as docs/index.html
 assets/                the images the documents reference
+brand/                 square exports of the mark, for avatars and slides
 .github/workflows/     the workflow that publishes the site
 README.md
 ```
