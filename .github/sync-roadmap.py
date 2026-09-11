@@ -55,8 +55,13 @@ def issue_state():
 
 
 def task_title(task_text):
-    """The title expand_group.py gives a task: its first sentence, trimmed."""
-    t = task_text.split(". ")[0].rstrip(".")
+    """The title expand_group.py gives a task: its first sentence, trimmed.
+
+    A sentence ends at a full stop followed by a space and a capital, which is
+    what keeps an ellipsis inside ${{ ... }} from cutting the title in half.
+    """
+    parts = re.split(r"(?<=[a-z0-9)\]])\. (?=[A-Z])", task_text, maxsplit=1)
+    t = parts[0].rstrip(".")
     return t if len(t) <= 110 else t[:107].rsplit(" ", 1)[0] + "..."
 
 
