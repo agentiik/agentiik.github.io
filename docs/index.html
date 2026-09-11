@@ -2523,11 +2523,11 @@ certs/
     <ul class="plain">
       <li>A secret belongs to a namespace. A workflow can only reference secrets from the namespace that owns it, so moving a workflow elsewhere breaks unresolved references at validation rather than silently carrying access along.</li>
       <li>A secret is mounted on tmpfs at <code>/agk/secrets/&lt;name&gt;</code>, never injected as an environment variable by default, because a process environment is readable by its children and ends up in diagnostic dumps.</li>
-      <li>The runner obtains the value at the last moment, through a short-lived token issued by the controller for that one task and that one secret.</li>
+      <li>The runner obtains the value at the last moment, by redeeming at the API the per-task grant the controller issued for that one task and that one secret. The API is the only component that reads the store; the controller names which secret a task may have and never sees its value.</li>
       <li>Secret values are masked in collected logs by literal match against the values known to the task, before anything is written to the store.</li>
       <li>A secret is never reachable from condition expressions, only from <code>params</code> marked sensitive in the brick manifest.</li>
       <li>No role reads a secret value through the API. Rotation is a write, never a read-then-write.</li>
-      <li>Supported providers: built-in encrypted store, HashiCorp Vault, and controller environment variables for development use.</li>
+      <li>Supported providers: built-in encrypted store, HashiCorp Vault, and API environment variables for development use.</li>
     </ul>
   </div>
 </section>
@@ -3449,7 +3449,7 @@ resource "agentiik_workflow" "search" {
       <li>Exactly one writable PostgreSQL. The controller's leader election is a session-level PostgreSQL advisory lock, so a second writable primary does not add availability, it breaks the election.</li>
       <li>A work queue with at-least-once delivery and one separate queue or subject per runner pool.</li>
       <li>An object store reachable from every runner, because artifacts move by presigned URL and never travel through the controller.</li>
-      <li>A secret store the controller can read and the runners cannot.</li>
+      <li>A secret store the API can read, and neither the controller nor the runners can.</li>
       <li>An OCI registry every runner can pull from by digest.</li>
       <li>Nothing else. Workflow repositories need no shared filesystem: their objects sit in the object store and their refs in the database, both of which are already on the list.</li>
       <li>TLS terminated in front of the API, with the console served from the same origin.</li>
@@ -3889,7 +3889,7 @@ post_task = [
         <line x1="20" y1="156" x2="220" y2="156" stroke="currentColor" stroke-width="1"/>
         <text x="120" y="148" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="currentColor">agentiik/schemas</text>
         <text x="120" y="176" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".65">workflow · brick · envelope</text>
-        <text x="120" y="191" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".65">pinned by version</text>
+        <text x="120" y="191" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".65">one contract, one version</text>
 
         <g stroke="currentColor" stroke-width="1.5" fill="none">
           <rect x="330" y="16" width="232" height="48"/>
@@ -3936,7 +3936,7 @@ post_task = [
         <thead><tr><th>Repository</th><th>Contents</th><th>Stack</th></tr></thead>
         <tbody>
           <tr><td>agentiik/agentiik</td><td>The core, as one module: graph evaluator, container driver, controller, HTTP API, runner and the <code>agk</code> command line. They live together because the evaluator and the driver must stay importable libraries, which is what makes <code>agk run --local</code> the same code path as a server run.</td><td>Go</td></tr>
-          <tr><td>agentiik/schemas</td><td>JSON Schema 2020-12 documents for the workflow file, the brick manifest and the envelope, plus the OpenAPI document of the API. Every keyword carries a <code>description</code> and <code>examples</code>, and the build fails without them, because the language reference on the site and the <code>workflow.language</code> tool are both generated from here. Versioned and released on its own, pinned by every other repository.</td><td>JSON, YAML</td></tr>
+          <tr><td>agentiik/schemas</td><td>JSON Schema 2020-12 documents for the workflow file, the brick manifest and the envelope, plus the OpenAPI document of the API. Every keyword carries a <code>description</code> and <code>examples</code>, and the build fails without them, because the language reference on the site and the <code>workflow.language</code> tool are both generated from here. Tagged at the project version like every other repository, and the one every other repository validates against: a change to the shapes lands here first and the rest pick it up in the same release.</td><td>JSON, YAML</td></tr>
           <tr><td>agentiik/bricks</td><td>The standard catalog, one directory per brick, each producing its own image, manifest and example envelopes. Built and published as one matrix.</td><td>mixed</td></tr>
           <tr><td>agentiik/brick-sdk</td><td>Optional thin helpers that read and write the envelope contract, for Go, Python and TypeScript. Convenience only: the contract stands without them.</td><td>mixed</td></tr>
           <tr><td>agentiik/design</td><td>Design tokens as JSON and CSS, the icon set as SVG sources, and the specimen sheet. Extracted for the same reason as the schemas: four clients must agree on the palette, and none of them owns it.</td><td>JSON, CSS, SVG</td></tr>
@@ -3945,7 +3945,7 @@ post_task = [
           <tr><td>agentiik/android</td><td>Android application.</td><td>Kotlin</td></tr>
           <tr><td class="wrapcell">agentiik/agentiik.github.io</td><td>The public site and the documentation, and later the generated language and API references and the brick catalog pages. Named for where it is served rather than for what it holds, because GitHub Pages resolves an organisation site from that name alone.</td><td>static</td></tr>
           <tr><td>agentiik/deploy</td><td>Compose stacks, installer, upgrade and migration notes, later a Helm chart. Holds no product code.</td><td>YAML, shell</td></tr>
-          <tr><td class="wrapcell">agentiik/terraform-provider-agentiik</td><td>The Terraform provider: namespaces, workflow repositories, grants, groups, service accounts, tokens, secret declarations and triggers. A client of the API, holding no authority of its own. Named as the registry requires rather than as the organisation would otherwise name it.</td><td>Go</td></tr>
+          <tr><td class="wrapcell">agentiik/terraform-provider-agentiik</td><td>The Terraform provider: namespaces, workflow repositories, grants, groups, service accounts, tokens, secret declarations and runs. A client of the API, holding no authority of its own. Named as the registry requires rather than as the organisation would otherwise name it.</td><td>Go</td></tr>
           <tr><td>agentiik/.github</td><td>Organisation profile, shared CI workflows, issue and pull request templates, security policy, code of conduct, contribution guide, and the licensing and trademark notes every repository points at rather than restates.</td><td>YAML</td></tr>
         </tbody>
       </table>

@@ -102,7 +102,7 @@ is current.
 | [console](https://github.com/agentiik/console) | The web console. |
 | [ios](https://github.com/agentiik/ios) · [android](https://github.com/agentiik/android) | The mobile applications. |
 | [deploy](https://github.com/agentiik/deploy) | Compose stacks, installer, migration notes. |
-| [terraform-provider-agentiik](https://github.com/agentiik/terraform-provider-agentiik) | Namespaces, workflow repositories, grants and tokens, as HCL. |
+| [terraform-provider-agentiik](https://github.com/agentiik/terraform-provider-agentiik) | Namespaces, workflow repositories, grants, tokens and runs, as HCL. |
 | [.github](https://github.com/agentiik/.github) | Security policy, code of conduct, contribution guide, licensing and trademark notes. |
 
 Those repositories are private until they hold something worth reading.
