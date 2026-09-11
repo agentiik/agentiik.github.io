@@ -17,6 +17,8 @@ legal/                 the legal notice, as legal/index.html
 assets/                the images the documents reference
 brand/                 square exports of the mark, for avatars and slides
 .github/workflows/     the workflow that publishes the site
+LICENSE                Apache-2.0, for the code
+LICENSES/              the full text of both licences the repository uses
 README.md
 ```
 
@@ -58,6 +60,27 @@ document added in a directory of its own needs no change to the workflow.
 Pages has to deploy from GitHub Actions rather than from a branch; the workflow asks for
 that itself on its first run.
 
+## Where this sits
+
+This is the documentation repository of the `agentiik` organisation. The specification
+calls it the home of the public site and the documentation, and every other repository
+keeps only a short README pointing here, so that a reader never has to guess which copy
+is current.
+
+| | |
+| --- | --- |
+| [agentiik](https://github.com/agentiik/agentiik) | The core: graph evaluator, container driver, controller, HTTP API, runner, `agk`. |
+| [schemas](https://github.com/agentiik/schemas) | The workflow, brick and envelope schemas, and the OpenAPI document. |
+| [bricks](https://github.com/agentiik/bricks) | The standard catalog. |
+| [brick-sdk](https://github.com/agentiik/brick-sdk) | Optional helpers for the envelope contract. |
+| [design](https://github.com/agentiik/design) | Tokens, icons and the specimen sheet. |
+| [console](https://github.com/agentiik/console) | The web console. |
+| [ios](https://github.com/agentiik/ios) · [android](https://github.com/agentiik/android) | The mobile applications. |
+| [deploy](https://github.com/agentiik/deploy) | Compose stacks, installer, migration notes. |
+| [.github](https://github.com/agentiik/.github) | Security policy, code of conduct, contribution guide, licensing and trademark notes. |
+
+Those repositories are private until they hold something worth reading.
+
 ## Where the rest will come from
 
 The language reference and the API reference are generated from
@@ -65,3 +88,11 @@ The language reference and the API reference are generated from
 so that this repository, the command line and the `workflow.language` MCP tool can
 never teach three different languages. When those generators exist, their output
 lands here alongside the hand-written documents.
+
+## Licence
+
+Apache-2.0 for code, CC BY 4.0 for the prose, the diagrams and the images — the split
+the specification sets out in
+[LICENSING.md](https://github.com/agentiik/.github/blob/main/LICENSING.md). The Agentiik
+name and mark are covered by neither; see
+[TRADEMARK.md](https://github.com/agentiik/.github/blob/main/TRADEMARK.md).

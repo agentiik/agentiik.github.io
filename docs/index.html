@@ -3374,9 +3374,9 @@ post_task = [
           <tr><td>agentiik/console</td><td>Web console: graph view, run inspector, sharing panel, format-preserving YAML editor.</td><td>TypeScript</td></tr>
           <tr><td>agentiik/ios</td><td>iOS and iPadOS application.</td><td>Swift</td></tr>
           <tr><td>agentiik/android</td><td>Android application.</td><td>Kotlin</td></tr>
-          <tr><td>agentiik/homepage</td><td>Public site and documentation, statically generated, including the generated API reference and the brick catalog pages.</td><td>static</td></tr>
+          <tr><td class="wrapcell">agentiik/agentiik.github.io</td><td>The public site and the documentation, including this specification, and later the generated language and API references and the brick catalog pages. Named for where it is served rather than for what it holds, because GitHub Pages resolves an organisation site from that name alone.</td><td>static</td></tr>
           <tr><td>agentiik/deploy</td><td>Compose stacks, installer, upgrade and migration notes, later a Helm chart. Holds no product code.</td><td>YAML, shell</td></tr>
-          <tr><td>agentiik/.github</td><td>Organisation profile, shared CI workflows, issue and pull request templates, security policy, contribution guide.</td><td>YAML</td></tr>
+          <tr><td>agentiik/.github</td><td>Organisation profile, shared CI workflows, issue and pull request templates, security policy, code of conduct, contribution guide, and the licensing and trademark notes every repository points at rather than restates.</td><td>YAML</td></tr>
         </tbody>
       </table>
     </div>
@@ -3391,7 +3391,7 @@ post_task = [
           <tr><td class="wrapcell">agentiik/agentiik<br>agentiik/console<br>agentiik/ios<br>agentiik/android</td><td>AGPL-3.0-or-later</td><td>These are the service. Section 13 requires that anyone who modifies the program and offers it to users over a network offer those users the corresponding source. That is the only OSI-approved answer to somebody selling a modified Agentiik as a hosted product, and it asks nothing at all of an organisation running an unmodified build for itself.</td></tr>
           <tr><td class="wrapcell"><span style="white-space:nowrap">agentiik/schemas</span><br><span style="white-space:nowrap">agentiik/brick-sdk</span><br><span style="white-space:nowrap">agentiik/bricks</span></td><td>Apache-2.0</td><td>Everything here ends up inside somebody else's brick or client. Copyleft would reach into work that has nothing to do with the engine, which is the opposite of the goal: anyone must be able to write a brick, in any language, under any licence.</td></tr>
           <tr><td class="wrapcell">agentiik/deploy<br>agentiik/.github</td><td>Apache-2.0</td><td>Configuration and templates people copy into their own infrastructure.</td></tr>
-          <tr><td class="wrapcell">agentiik/design<br>agentiik/homepage</td><td>Apache-2.0 for code<br>CC BY 4.0 for assets and prose</td><td>Tokens and icons are code; documentation and the specimen sheet are not, and a software licence is a poor fit for either when the other is what someone wants to reuse.</td></tr>
+          <tr><td class="wrapcell">agentiik/design<br><span style="white-space:nowrap">agentiik/agentiik.github.io</span></td><td>Apache-2.0 for code<br>CC BY 4.0 for assets and prose</td><td>Tokens and icons are code; documentation and the specimen sheet are not, and a software licence is a poor fit for either when the other is what someone wants to reuse.</td></tr>
         </tbody>
       </table>
     </div>
@@ -3436,7 +3436,7 @@ post_task = [
       <li>The core, the console and the two applications release independently. Compatibility is expressed by the API version alone, which is why the URL carries <code>/api/v1</code>.</li>
       <li><code>agentiik/schemas</code> is the only cross-repository dependency for the workflow format. Nothing else redefines those shapes, and a schema change is a release of that repository first.</li>
       <li>Images are published to <code>ghcr.io/agentiik/&lt;name&gt;</code>, signed, and carry the same OCI annotations required of any brick.</li>
-      <li>Documentation lives in <code>agentiik/homepage</code>, not scattered in each repository, so that a reader never has to guess which copy is current. Each repository keeps only a short README pointing there.</li>
+      <li>Documentation lives in <code>agentiik/agentiik.github.io</code>, not scattered in each repository, so that a reader never has to guess which copy is current. Each repository keeps only a short README pointing there.</li>
       <li>All documentation and code, including comments, identifiers and commit messages, are written in English.</li>
     </ul>
   </div>
