@@ -53,6 +53,10 @@ an icon.
   that, so diagrams stay in the document while screenshots stay in `assets/`.
 - **Both themes.** Documents follow the reader's system theme, and every screenshot
   exists in a light and a dark version so the page can show the matching one.
+- **Movement only on the home page, and only a little.** Elements rise into place on
+  load and drift within 34 pixels on scroll. It is off under `prefers-reduced-motion`,
+  and the hidden state is applied only once scripting has announced itself, so a blocked
+  script leaves a readable page rather than an empty one.
 - **English.** Documentation and code are written in English throughout.
 - **No numbered headings.** Chapters and sections are named, never numbered.
 
