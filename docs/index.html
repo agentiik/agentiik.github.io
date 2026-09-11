@@ -1221,7 +1221,7 @@ defaults:
           <tr><td>1 to 99</td><td>Application failure</td><td>Step failed. No retry unless <code>retry.on</code> says so explicitly.</td></tr>
           <tr><td>100 to 119</td><td>Transient failure</td><td>Retried according to the step policy.</td></tr>
           <tr><td>120</td><td>Invalid input</td><td>Permanent failure. Never retried, whatever <code>retry</code> says.</td></tr>
-          <tr><td>121 to 124</td><td>Reserved</td><td>Held for the contract. A brick must not exit with one.</td></tr>
+          <tr><td>121 to 124</td><td>Reserved</td><td>Reserved for the runner. A brick that exits with one is treated as having failed the contract, whatever its manifest says.</td></tr>
           <tr><td>125 and above</td><td>Reserved for the runtime</td><td>Read as an infrastructure failure, charged to the runner and not to the brick.</td></tr>
         </tbody>
       </table>
@@ -1264,12 +1264,12 @@ metadata:
 spec:
   inputs:
     in:
-      schema: { $ref: "#/definitions/request" }
+      schema: { $ref: "#/spec/definitions/request" }
   outputs:
     out:
-      schema: { $ref: "#/definitions/response" }
+      schema: { $ref: "#/spec/definitions/response" }
     error:
-      schema: { $ref: "#/definitions/failure" }
+      schema: { $ref: "#/spec/definitions/failure" }
 
   params:
     url:      { type: string, format: uri, required: true }
@@ -1286,7 +1286,6 @@ spec:
     network: egress          <span class="c"># none | egress | internal</span>
     streaming: false         <span class="c"># true = JSON Lines on stdin and stdout</span>
     user: "65532:65532"
-    read_only_root: true
 
   resources:
     cpu: "0.5"
@@ -1311,7 +1310,6 @@ spec:
         <tbody>
           <tr><td class="wrapcell">metadata.name</td><td>Lowercase letters and digits in hyphen-separated words, <code>^[a-z0-9]+(?:-[a-z0-9]+)*$</code>. This is narrower than a workflow name, deliberately: a person types a brick name and the catalog files a page under it, so <code>http_request</code> and <code>HttpRequest</code> are refused.</td></tr>
           <tr><td class="wrapcell">metadata.version</td><td>Semantic Versioning 2.0.0, pre-releases included as <a href="#versioning">Versioning</a> spells them. The manifest carries the bare number, <code>1.4.0</code>, and not the <code>v</code> the project tags with; <code>1.4</code> or a date is refused.</td></tr>
-          <tr><td class="wrapcell">spec.runtime.read_only_root</td><td>What the brick expects, never a switch. The root filesystem is mounted read-only <a href="#settings-applied-to-every-container">in every case</a>, so a manifest writing <code>false</code> does not obtain a writable root: <code>/agk/out</code> and <code>/tmp</code> remain the only writable paths.</td></tr>
           <tr><td class="wrapcell">spec.params.&lt;name&gt;.sensitive</td><td>Boolean. Marks a parameter that may carry a secret value, and is the only route by which a <a href="#secrets">secret</a> reaches a brick as a parameter rather than as a mounted file.</td></tr>
           <tr><td class="wrapcell">spec.secrets[].name</td><td>Required, and written on the grammar a workflow secret name is written on, because it is the same name: the brick says what it needs, and the workflow decides which secret of its namespace answers to it.</td></tr>
           <tr><td class="wrapcell">spec.secrets[].mount</td><td>Optional, and under <code>/agk/secrets/</code>: <code>^/agk/secrets/[^/]+$</code>. A mount elsewhere, <code>/run/secrets/bearer</code> out of habit, is refused.</td></tr>
@@ -1324,6 +1322,7 @@ spec:
     <ul class="plain">
       <li><b>A port name</b> is <code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>: letters, digits, hyphens and underscores, and no dot, space, slash or comma. The name travels three times over, as a directory under <code>/agk/in/</code>, as a file name under <code>/agk/out/ports/</code> and as one entry of the comma-separated <code>AGK_OUT_PORTS</code>, and a port called <code>in.raw</code> or <code>my port</code> breaks each of the three.</li>
       <li><b>A port entry carries <code>schema</code> and nothing else</b>, and <code>schema</code> itself is optional: a port declared with no schema accepts whatever arrives, which is what a passthrough brick says. A title or a description written beside a port is a refused manifest.</li>
+      <li><b>A pointer inside a manifest</b> is a JSON Pointer resolved against the manifest document itself, so a definition written under <code>spec.definitions</code> is named <code>#/spec/definitions/&lt;name&gt;</code> and never <code>#/definitions/&lt;name&gt;</code>.</li>
       <li><b>A parameter name</b> is <code>^[A-Za-z_][A-Za-z0-9_]*$</code>, narrower than a port name and carrying no hyphen, because the parameter becomes a key of <code>/agk/params.json</code> for the container to read. <code>max-retries</code> is refused.</li>
       <li><b><code>resources.cpu</code> is a quoted decimal string</b> above zero, <code>"0.5"</code> or <code>"1"</code>. The quotation marks above are load bearing rather than house style: YAML reads an unquoted <code>1</code> as a number, and a number is refused. <b><code>resources.memory</code></b> is a whole number above zero with a binary suffix, <code>Ki</code>, <code>Mi</code>, <code>Gi</code> or <code>Ti</code>, so <code>512M</code> is refused. A step writes both the same way.</li>
     </ul>
@@ -1365,6 +1364,7 @@ inputs:
 outputs:
   invoices:
     from: { step: archive, port: out }
+    schema: { $ref: "./schemas/invoice.json" }
     retain: 90d
   errors:
     from: { step: invoice, port: error }
@@ -1420,6 +1420,9 @@ defaults:
   network: none
   runs_on: [arch=amd64]
 
+<span class="c"># --- Deadline for the whole run -------------------------------------</span>
+timeout: 4h
+
 <span class="c"># --- One run at a time ----------------------------------------------</span>
 concurrency:
   group: monthly-invoicing
@@ -1467,6 +1470,8 @@ steps:
   <div class="prose">
     <p>Names in the file are written on one grammar: <code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>, letters, digits, hyphens and underscores, beginning with a letter or a digit. It governs the workflow name and its namespace, each half of a <code>&lt;namespace&gt;/&lt;name&gt;</code> reference, a step, an input, an output, a port, a variable, a secret and a published tool name, so that one name survives a URL, a directory and a tool list unchanged. Parameter names are the exception and are narrower, <code>^[A-Za-z_][A-Za-z0-9_]*$</code>, with no hyphen, in a step's <code>params</code> and in the <a href="#brick-manifest">manifest</a> that declares them alike: the name is exported as <code>AGK_PARAM_&lt;NAME&gt;</code> to a <a href="#running-a-script-instead-of-a-brick">script</a>, so <code>api-key</code> is refused.</p>
 
+    <p><code>timeout</code> at the root bounds the whole run, where a step's <code>timeout</code> bounds one shard and <code>defaults.timeout</code> bounds each step that does not say otherwise. It is the deadline that makes <a href="#run-states"><code>timed_out</code></a> a state a run can actually reach: once it passes, the tasks still running are stopped and the run ends there rather than waiting on a graph that is no longer going anywhere. The deadline belongs to the workflow and not to the installation because only the workflow knows what an acceptable duration is: a monthly reconciliation that legitimately runs for six hours and a webhook handler that should never take six minutes cannot share one number an operator picked for both. The namespace keeps the ceiling all the same, <a href="#quotas-per-namespace"><code>max_run_duration</code></a>, and a root <code>timeout</code> above it is refused when the workflow is validated, exactly as <a href="#artifact-expiry"><code>retain</code></a> is refused above <code>max_retention_days</code>.</p>
+
     <ul class="plain">
       <li><b>What <code>defaults</code> may carry.</b> Execution settings, and only those: <code>timeout</code>, <code>retain</code>, <code>retry</code>, <code>resources</code>, <code>network</code>, <code>egress</code>, <code>runs_on</code>, <code>secrets</code>, <code>cache</code>, <code>continue_on_error</code>, <code>idempotent</code>, <code>files</code>, <code>shell</code>, <code>before_script</code>, <code>after_script</code> and <code>when</code>.</li>
       <li><b>What it may not.</b> <code>image</code>, <code>script</code>, <code>needs</code>, <code>inputs</code>, <code>outputs</code>, <code>params</code>, <code>if</code>, <code>merge</code>, <code>strategy</code>, <code>extends</code> and <code>workflow</code> are refused there. Anything deciding what a step runs, or where it sits in the graph, belongs to the step: the cut is what keeps the graph readable from the <code>steps</code> block alone, without another block held in mind to know what a step actually does.</li>
@@ -1492,7 +1497,7 @@ steps:
           <tr><td>merge</td><td>Merge strategy for edges arriving on the same port.</td></tr>
           <tr><td>strategy</td><td><code>fan_out</code>, <code>max_parallel</code>, <code>matrix</code>, <code>fail_fast</code>.</td></tr>
           <tr><td>retry</td><td><code>max</code>, <code>on</code> (<code>transient</code>, <code>failed</code>, <code>lost</code>, <code>timeout</code>), <code>backoff</code>. A backoff is <code>{ type, base, max }</code>, and <code>exponential</code> is the only type there is: the wait starts at <code>base</code>, lengthens after each failure and never goes past <code>max</code>.</td></tr>
-          <tr><td>timeout</td><td>Maximum duration of one shard, written as a duration. On expiry the container gets SIGTERM, then SIGKILL once its grace period is over. No keyword in this file sets that grace period.</td></tr>
+          <tr><td>timeout</td><td>Maximum duration of one shard, written as a duration. On expiry the container gets SIGTERM, then SIGKILL after a grace period the runner policy sets: no keyword in this file sets it.</td></tr>
           <tr><td>continue_on_error</td><td>A failure of this step does not fail the run. Downstream steps see the <code>failed</code> state through <code>when</code>.</td></tr>
           <tr><td>resources</td><td><code>cpu</code>, <code>memory</code>, <code>pids</code>. Capped by the runner policy and by the namespace quota. <code>cpu</code> and <code>memory</code> are written exactly as the <a href="#brick-manifest">brick manifest</a> writes them, quotation marks included: <code>cpu: 1</code> unquoted is refused.</td></tr>
           <tr><td>network</td><td><code>none</code>, <code>egress</code>, <code>internal</code>. See <a href="#security">Isolation and secrets</a>.</td></tr>
@@ -1523,6 +1528,7 @@ steps:
 schemas/
   order.json
   customer.json
+  invoice.json
 scripts/
   normalize.py
   lib/rounding.py
@@ -1681,7 +1687,7 @@ certs/
           <tr><td class="wrapcell">tools[].title</td><td>Human-readable label. Optional; clients that show a list of tools show this.</td></tr>
           <tr><td class="wrapcell">tools[].description</td><td>What the tool does, when to reach for it, and what it refuses. This is the field a model actually acts on, and the one worth spending sentences on.</td></tr>
           <tr><td class="wrapcell">tools[].input</td><td><code>{ from: { input: &lt;name&gt; } }</code>. Names one declared workflow input, whose JSON Schema becomes the tool's <code>inputSchema</code> as it stands.</td></tr>
-          <tr><td class="wrapcell">tools[].output</td><td><code>{ from: { output: &lt;name&gt; } }</code>. Names one declared workflow output, whose envelope becomes the result. Optional: a tool may have an effect and return only that it succeeded.</td></tr>
+          <tr><td class="wrapcell">tools[].output</td><td><code>{ from: { output: &lt;name&gt; } }</code>. Names one declared workflow output, whose envelope becomes the result and whose <code>schema</code>, when the output declares one, becomes the tool's <code>outputSchema</code>. Optional, and an output carrying no <code>schema</code> publishes none: a tool may have an effect and return only that it succeeded.</td></tr>
           <tr><td class="wrapcell">tools[].mode</td><td><code>sync</code> waits for the run and returns the output; <code>async</code> returns the run identifier at once, to be followed with the platform server's <code>run.get</code>. Defaults to <code>sync</code>.</td></tr>
           <tr><td class="wrapcell">tools[].timeout</td><td>How long a <code>sync</code> call waits, written as a duration. Capped at 120 seconds, because clients time out; a workflow that cannot finish inside it must be <code>async</code>. The cap is on the value and not on the unit, so <code>120s</code>, <code>2m</code> and <code>120000ms</code> are the longest forms it accepts and an hour cannot be written at all.</td></tr>
           <tr><td class="wrapcell">tools[].annotations</td><td>The protocol's own hints (<code>readOnlyHint</code>, <code>idempotentHint</code>, <code>destructiveHint</code>, <code>openWorldHint</code>) passed through unchanged. They are hints to a client, never a permission: what a tool may do is decided by the grants, not by a field in the file.</td></tr>
@@ -1972,6 +1978,7 @@ certs/
           <tr><td>max_runs_per_hour</td><td>Rate limit across every trigger kind, including webhooks.</td></tr>
           <tr><td>max_artifact_bytes</td><td>Total live artifact storage before new writes are refused.</td></tr>
           <tr><td>max_retention_days</td><td>Upper bound on what the namespace may ask to keep.</td></tr>
+          <tr><td>max_run_duration</td><td>Upper bound on the root <code>timeout</code> a workflow may declare, so that no run of this namespace can sit on runner capacity for longer than the operator accepts.</td></tr>
           <tr><td>allowed_runner_pools</td><td>Runner labels this namespace may select through <code>runs_on</code>.</td></tr>
         </tbody>
       </table>
@@ -2438,7 +2445,7 @@ certs/
           <tr><td>succeeded</td><td>Every reached step finished, none failed beyond tolerance.</td></tr>
           <tr><td>failed</td><td>At least one step failed without <code>continue_on_error</code>.</td></tr>
           <tr><td>cancelled</td><td>Cancelled by a principal holding <code>workflow:run</code>, by a concurrency group or by a <code>merge: first</code>.</td></tr>
-          <tr><td>timed_out</td><td>The workflow-level deadline expired.</td></tr>
+          <tr><td>timed_out</td><td>The deadline set by the root <code>timeout</code> of the entry point expired, and the tasks still running were stopped.</td></tr>
         </tbody>
       </table>
     </div>

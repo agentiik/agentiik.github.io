@@ -12,7 +12,7 @@ renderings of the same shape.
 | `agentiik-mark-1024-dark.png` | `#111614`, dark accent |
 
 `agentiik-mark-square.svg` is what they are rendered from: the mark on a 24-unit square,
-which is the clear space the design system asks for — one bar, four units, on every side.
+which is the clear space the design system asks for: one bar, four units, on every side.
 Regenerate at any size by rasterising at that size rather than by scaling a PNG:
 
 ```

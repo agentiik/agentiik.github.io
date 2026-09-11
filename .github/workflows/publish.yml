@@ -43,7 +43,7 @@ jobs:
       # The tree is the site: a document's path in the repository is its path on
       # the site, so nothing here names documents one by one. The script adds
       # one archived copy of docs/ per released tag, and decides which of them
-      # /docs serves — it still builds no document.
+      # /docs serves; it still builds no document.
       - name: Assemble the site
         run: python3 .github/build-site.py
 
