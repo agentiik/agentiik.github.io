@@ -587,7 +587,7 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
 
 <nav class="side" aria-label="Contents">
   <div class="side-docs">
-    <a href="../">Specification</a>
+    <a href="../">Documentation</a>
     <a href="./" aria-current="page">Roadmap</a>
   </div>
   <div class="side-toc">
@@ -639,7 +639,7 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
 <section id="shape">
   <div class="sec-head"><span class="mark">§</span><h2>The shape of the plan</h2></div>
   <div class="prose">
-    <p>The <a href="../">specification</a> says what Agentiik is. This says in what order it becomes that, and nothing else: no dates, no estimates, no capacity. It is the one document here that is expected to be rewritten rather than amended, because an order survives being wrong in a way a schedule does not.</p>
+    <p>The <a href="../">documentation</a> says what Agentiik is. This says in what order it becomes that, and nothing else: no dates, no estimates, no capacity. It is the one document here that is expected to be rewritten rather than amended, because an order survives being wrong in a way a schedule does not.</p>
 
     <p>A milestone here is not a batch of work. It is a sentence that becomes true and does not become false again. <em>A workflow runs to completion on one machine with no server</em> is a milestone. <em>The graph evaluator is written</em> is not one, because nothing outside the code can tell whether it happened.</p>
 
@@ -758,7 +758,7 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> the same workflow, sent to a server, executed by a runner somewhere else, and watched while it happens.</p>
 
-    <p>The split between controller, task bus and runner is where the specification takes its largest bet, and where being wrong costs the most to undo later. So the fact to make true here is narrow and checkable: a runner never speaks git, never holds a lasting credential, and obtains what its task names only by redeeming that task's grant. If that holds under a real run, the rest of the architecture follows; if it does not, better to know before four clients are built on it.</p>
+    <p>The split between controller, task bus and runner is where the documentation takes its largest bet, and where being wrong costs the most to undo later. So the fact to make true here is narrow and checkable: a runner never speaks git, never holds a lasting credential, and obtains what its task names only by redeeming that task's grant. If that holds under a real run, the rest of the architecture follows; if it does not, better to know before four clients are built on it.</p>
 
     <ul class="plain">
       <li>Controller, task bus, runner, and the HTTP API at <code>/api/v1</code>.</li>
@@ -805,12 +805,12 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a workflow is a git repository served by Agentiik, pushed to like any other, and a run resolves a commit.</p>
 
-    <p>This is the claim the specification defends at greatest length: the repository is integrated, not connected. What hosting buys over a connection to a forge is precise — a version cannot drift beneath a run, an invalid workflow cannot be pushed at all, and repository access is the permission model that already exists rather than a second one to reconcile with it. That last clause is exactly why this milestone sits after v0.3 and not before it.</p>
+    <p>This is the claim the documentation defends at greatest length: the repository is integrated, not connected. What hosting buys over a connection to a forge is precise — a version cannot drift beneath a run, an invalid workflow cannot be pushed at all, and repository access is the permission model that already exists rather than a second one to reconcile with it. That last clause is exactly why this milestone sits after v0.3 and not before it.</p>
 
     <ul class="plain">
       <li>Git hosting, the default branch and its protection.</li>
       <li>Refusing an invalid <code>agentiik.yaml</code> at the push, which is the only place the refusal is worth anything.</li>
-      <li><code>files</code>, includes, <code>extends</code> and <code>defaults</code>, resolved in the order the specification fixes.</li>
+      <li><code>files</code>, includes, <code>extends</code> and <code>defaults</code>, resolved in the order the documentation fixes.</li>
       <li>The runner fetching the tree as content-addressed objects with the task's grant, exactly as it fetches an artifact — so the earlier claim survives the arrival of git.</li>
       <li>Memoisation and replay.</li>
     </ul>
@@ -833,7 +833,7 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
 
     <ul class="plain">
       <li>Manual, scheduled and webhook triggers.</li>
-      <li>Signed webhooks, and the handling the specification requires of them.</li>
+      <li>Signed webhooks, and the handling the documentation requires of them.</li>
       <li>What a trigger puts into the context the expressions can see.</li>
       <li>Sub-workflow calls, bounded by the maximum depth — the only way the graph is allowed to repeat itself.</li>
     </ul>
@@ -940,14 +940,14 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
 <section id="m10">
   <div class="sec-head"><span class="mark">§</span><h2>v1.0 — It fits in a pocket, and it holds</h2></div>
   <div class="prose">
-    <p class="makes"><b>Makes possible:</b> the four clients the specification promised, on one model, and a project that knows what to do when a vulnerability arrives.</p>
+    <p class="makes"><b>Makes possible:</b> the four clients the documentation promised, on one model, and a project that knows what to do when a vulnerability arrives.</p>
 
     <p>v1.0 adds no capability. It closes the scope: the mobile applications complete the set of clients, and the security work turns a written threat model into one that has been tested against the running thing. A version number is a claim about what somebody else can rely on, which is why the disclosure process has to work before the number is handed out, not after.</p>
 
     <ul class="plain">
       <li>iOS and Android: the common scope, the platform choices, and what the applications deliberately do not do — authoring and offline editing are not on this list by accident.</li>
       <li>Push notification delivery.</li>
-      <li>A security review against the threat model, the three tiers of containment included, and against what the specification openly says it does not defend.</li>
+      <li>A security review against the threat model, the three tiers of containment included, and against what the documentation openly says it does not defend.</li>
       <li>The supply chain end to end: signed images, SBOMs, advisories per component rather than per project.</li>
       <li>The disclosure process live, and exercised once before it is needed.</li>
     </ul>
@@ -963,7 +963,7 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
 <section id="after">
   <div class="sec-head"><span class="mark">§</span><h2>Past v1</h2></div>
   <div class="prose">
-    <p>The specification keeps a list of what v1 deliberately does not do, and that list is not a backlog: most of it was left out because doing it would cost more than it returns, and that is still true after v1. Four items on it are different, in that the design already leaves the door open and closing that door would be the mistake.</p>
+    <p>The documentation keeps a list of what v1 deliberately does not do, and that list is not a backlog: most of it was left out because doing it would cost more than it returns, and that is still true after v1. Four items on it are different, in that the design already leaves the door open and closing that door would be the mistake.</p>
 
     <div class="tablewrap">
       <table>

@@ -6,16 +6,16 @@ open in a browser without a build step or a server.
 | Document | Served at | What it is |
 | --- | --- | --- |
 | [index.html](index.html) | `/` | The home page: what Agentiik is, one screen of the console, and the list of documents. |
-| [docs/index.html](docs/index.html) | `/docs` | The functional and technical specification: scope, the workflow language, the brick contract, access control, the runtime, security, deployment profiles, MCP, and the repository and licensing layout. |
-| [docs/roadmap/index.html](docs/roadmap/index.html) | `/docs/roadmap` | The order in which the specification becomes code: ten milestones, each defined by what it makes possible and by the fact that closes it. No dates. |
+| [docs/index.html](docs/index.html) | `/docs` | The documentation proper: scope, the workflow language, the brick contract, access control, the runtime, security, deployment profiles, MCP, and the repository and licensing layout. |
+| [docs/roadmap/index.html](docs/roadmap/index.html) | `/docs/roadmap` | The order in which the documentation becomes code: ten milestones, each defined by what it makes possible and by the fact that closes it. No dates. |
 
 ## Layout
 
 ```
 index.html             the home page, one file, styles inline
 docs/                  the documentation
-  index.html           the specification
-  roadmap/index.html   the roadmap
+  index.html           what Agentiik is
+  roadmap/index.html   in what order it gets built
 legal/                 the legal notice, as legal/index.html
 assets/                the images the documents reference
 brand/                 square exports of the mark, for avatars and slides
@@ -62,15 +62,16 @@ an icon.
 `.github/workflows/publish.yml` copies the tree into a Pages artifact and deploys it,
 with no build step in between, so what the site serves is exactly what a clone opens.
 A document's path in the repository is its path on the site, which is why the
-specification sits in `docs/` and is reached at <https://agentiik.github.io/docs>; a
-document added in a directory of its own needs no change to the workflow.
+documentation sits in `docs/` and is reached at <https://agentiik.github.io/docs>, and
+the roadmap at <https://agentiik.github.io/docs/roadmap>; a document added in a
+directory of its own needs no change to the workflow.
 
 Pages has to deploy from GitHub Actions rather than from a branch; the workflow asks for
 that itself on its first run.
 
 ## Where this sits
 
-This is the documentation repository of the `agentiik` organisation. The specification
+This is the documentation repository of the `agentiik` organisation. The documentation
 calls it the home of the public site and the documentation, and every other repository
 keeps only a short README pointing here, so that a reader never has to guess which copy
 is current.
@@ -100,7 +101,7 @@ lands here alongside the hand-written documents.
 ## Licence
 
 Apache-2.0 for code, CC BY 4.0 for the prose, the diagrams and the images — the split
-the specification sets out in
+the documentation sets out in
 [LICENSING.md](https://github.com/agentiik/.github/blob/main/LICENSING.md). The Agentiik
 name and mark are covered by neither; see
 [TRADEMARK.md](https://github.com/agentiik/.github/blob/main/TRADEMARK.md).
