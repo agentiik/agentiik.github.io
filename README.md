@@ -74,8 +74,8 @@ an icon.
 
 `main` is published to <https://agentiik.github.io/>. This repository is the site:
 `.github/workflows/publish.yml` runs `.github/build-site.py`, which copies the tree into a
-Pages artifact and deploys it. No document is built — nothing is generated, transformed or
-compiled — so what the site serves is what a clone opens. What the script adds is the
+Pages artifact and deploys it. No document is built: nothing is generated, transformed or
+compiled, so what the site serves is what a clone opens. What the script adds is the
 released versions beside the current one.
 A document's path in the repository is its path on the site, which is why the
 documentation sits in `docs/` and is reached at <https://agentiik.github.io/docs>, and
@@ -117,7 +117,7 @@ lands here alongside the hand-written documents.
 
 ## Licence
 
-Apache-2.0 for code, CC BY 4.0 for the prose, the diagrams and the images — the split
+Apache-2.0 for code, CC BY 4.0 for the prose, the diagrams and the images. That is the split
 the documentation sets out in
 [LICENSING.md](https://github.com/agentiik/.github/blob/main/LICENSING.md). The Agentiik
 name and mark are covered by neither; see

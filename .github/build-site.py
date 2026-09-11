@@ -11,7 +11,7 @@ Which version /docs serves is decided here rather than in the browser, so that
 the address a reader shares resolves to a page rather than to a redirect:
 
     the highest stable release      (X.Y.Z, X >= 1, no pre-release)
-    else the highest 0.y.z release  (tagged, but promising nothing — see Versioning)
+    else the highest 0.y.z release  (tagged, but promising nothing; see Versioning)
     else the highest rc
     else the highest beta
     else the highest alpha

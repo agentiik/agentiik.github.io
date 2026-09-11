@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1 16 16" width="16" height="16" role="img" aria-label="Agentiik">
+  <!-- The Agentiik mark: one bar in, two in parallel, one out. The documents draw
+       it inline so that it takes the page palette; a file cannot read that palette,
+       so this copy states the light accent and overrides it for a dark reader. -->
+  <style>@media (prefers-color-scheme:dark){rect{fill:#54C1AD}}</style>
+  <rect fill="#0E6A5F" width="16" height="4" rx="1"/>
+  <g opacity=".62">
+    <rect fill="#0E6A5F" y="6" width="7" height="4" rx="1"/>
+    <rect fill="#0E6A5F" x="9" y="6" width="7" height="4" rx="1"/>
+  </g>
+  <rect fill="#0E6A5F" y="12" width="16" height="2" rx="1" opacity=".3"/>
+</svg>

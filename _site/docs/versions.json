@@ -1,0 +1,9 @@
+{
+  "default": "main",
+  "versions": [
+    {
+      "version": "main",
+      "channel": "development"
+    }
+  ]
+}
