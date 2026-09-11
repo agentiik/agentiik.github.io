@@ -550,7 +550,7 @@ img{max-width:100%}
         </li>
       </ul>
     </details>
-    <details class="part">
+    <details class="part" open>
       <summary>The model</summary>
       <ul>
         <li><a href="#data">Data exchange model</a>
@@ -590,7 +590,7 @@ img{max-width:100%}
         </li>
       </ul>
     </details>
-    <details class="part">
+    <details class="part" open>
       <summary>Access</summary>
       <ul>
         <li><a href="#access">Identity and access control</a>
@@ -608,7 +608,7 @@ img{max-width:100%}
         </li>
       </ul>
     </details>
-    <details class="part">
+    <details class="part" open>
       <summary>The runtime</summary>
       <ul>
         <li><a href="#architecture">Runtime architecture</a>
@@ -637,7 +637,7 @@ img{max-width:100%}
         </li>
       </ul>
     </details>
-    <details class="part">
+    <details class="part" open>
       <summary>Security</summary>
       <ul>
         <li><a href="#threats">Security model</a>
@@ -661,7 +661,7 @@ img{max-width:100%}
         </li>
       </ul>
     </details>
-    <details class="part">
+    <details class="part" open>
       <summary>Interfaces</summary>
       <ul>
         <li><a href="#observability">Observability</a>
@@ -682,7 +682,7 @@ img{max-width:100%}
         </li>
       </ul>
     </details>
-    <details class="part">
+    <details class="part" open>
       <summary>Clients</summary>
       <ul>
         <li><a href="#design">Design system</a>
@@ -713,7 +713,7 @@ img{max-width:100%}
         </li>
       </ul>
     </details>
-    <details class="part">
+    <details class="part" open>
       <summary>Operations</summary>
       <ul>
         <li><a href="#storage">Storage</a>
@@ -733,7 +733,7 @@ img{max-width:100%}
         </li>
       </ul>
     </details>
-    <details class="part">
+    <details class="part" open>
       <summary>The project</summary>
       <ul>
         <li><a href="#repos">Repositories</a>
@@ -3754,12 +3754,12 @@ post_task = [
 
   var current = null, openItem = null;
 
+  // Parts stay as the reader left them. The only thing reopened is the part
+  // being read, and only if it was folded away, so that scrolling never hides
+  // a part somebody deliberately opened.
   function reveal(a){
     var part = partOf(a);
-    if(part && !part.open){
-      parts.forEach(function(d){ if(d !== part && !narrow.matches) d.open = false; });
-      part.open = true;
-    }
+    if(part && !part.open) part.open = true;
     var item = chapterItem(a);
     if(item !== openItem){
       if(openItem) openItem.removeAttribute('data-open');
@@ -3809,9 +3809,11 @@ post_task = [
   });
 
   if(narrow.matches) parts.forEach(function(d){ d.open = false; });
+  // Open everywhere on a wide screen, folded on a phone where the sidebar sits
+  // above the document rather than beside it.
   narrow.addEventListener('change', function(){
     current = null;
-    parts.forEach(function(d){ d.open = false; });
+    parts.forEach(function(d){ d.open = !narrow.matches; });
     sync();
   });
 
