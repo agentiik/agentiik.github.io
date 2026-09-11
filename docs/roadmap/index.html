@@ -703,16 +703,16 @@ img{max-width:100%}
     <details class="part" open>
       <summary>Milestones</summary>
       <ul>
-        <li><a href="#m01">v0.1 · The language runs on one machine</a></li>
-        <li><a href="#m02">v0.2 · A server runs it instead</a></li>
-        <li><a href="#m03">v0.3 · More than one person</a></li>
-        <li><a href="#m04">v0.4 · The workflow is a repository</a></li>
-        <li><a href="#m05">v0.5 · Runs start without being asked</a></li>
-        <li><a href="#m06">v0.6 · A console to watch it</a></li>
-        <li><a href="#m07">v0.7 · An agent can use it</a></li>
-        <li><a href="#m08">v0.8 · A catalog worth pulling from</a></li>
-        <li><a href="#m09">v0.9 · Somebody else can install it</a></li>
-        <li><a href="#m10">v1.0 · It fits in a pocket, and it holds</a></li>
+        <li><a href="#m01">v0.1.0 · The language runs on one machine</a></li>
+        <li><a href="#m02">v0.2.0 · A server runs it instead</a></li>
+        <li><a href="#m03">v0.3.0 · More than one person</a></li>
+        <li><a href="#m04">v0.4.0 · The workflow is a repository</a></li>
+        <li><a href="#m05">v0.5.0 · Runs start without being asked</a></li>
+        <li><a href="#m06">v0.6.0 · A console to watch it</a></li>
+        <li><a href="#m07">v0.7.0 · An agent can use it</a></li>
+        <li><a href="#m08">v0.8.0 · A catalog worth pulling from</a></li>
+        <li><a href="#m09">v0.9.0 · Somebody else can install it</a></li>
+        <li><a href="#m10">v1.0.0 · It fits in a pocket, and it holds</a></li>
       </ul>
     </details>
     <details class="part" open>
@@ -746,7 +746,7 @@ img{max-width:100%}
 
     <div class="decision">
       <span class="note-label">Why no dates</span>
-      <p>One maintainer cannot hold a calendar, and a missed date reads worse afterwards than an order does, because the order stays true at any pace while the date is simply wrong. The version numbers are markers of sequence, not promises of delivery: <code>v0.4</code> means <em>after v0.3 and before v0.5</em>, and says nothing about when. They are, however, the real versions: Agentiik carries <a href="../#versioning">one version across every repository</a>, so the milestone called <code>v0.4</code> is the release tagged <code>v0.4.0</code> everywhere, and this plan is a list of releases in the order they can be made rather than a numbering invented for the occasion. If dates ever become useful (because somebody else is waiting on one), they belong in milestones on the repositories, next to the issues that move, not in a document that is read months after it was written.</p>
+      <p>One maintainer cannot hold a calendar, and a missed date reads worse afterwards than an order does, because the order stays true at any pace while the date is simply wrong. The version numbers are markers of sequence, not promises of delivery: <code>v0.4.0</code> means <em>after v0.3.0 and before v0.5.0</em>, and says nothing about when. They are, however, the real versions: Agentiik carries <a href="../#versioning">one version across every repository</a>, so the milestone called <code>v0.4.0</code> is the release tagged <code>v0.4.0</code> everywhere, and this plan is a list of releases in the order they can be made rather than a numbering invented for the occasion. If dates ever become useful (because somebody else is waiting on one), they belong in milestones on the repositories, next to the issues that move, not in a document that is read months after it was written.</p>
     </div>
   </div>
 </section>
@@ -759,14 +759,14 @@ img{max-width:100%}
 
     <ul class="plain">
       <li><b>The contract ships before anything that reads it.</b> <code>agentiik/schemas</code> is released first and released again before each change, because it is the only cross-repository dependency for the workflow format. A format settled after the fact, by whichever code happened to consume it first, is a format the core, the console, the two applications and the <code>workflow.language</code> tool will each have learnt slightly differently, which is the exact failure the repository was extracted to prevent.</li>
-      <li><b>One path end to end before any width.</b> v0.1 runs a whole graph on one machine before a server exists. What an envelope has to carry, what a brick actually receives, which port a rejected item leaves by: all of it is discovered by running a workflow, and discovered far more cheaply with no controller, no task bus and no runner standing around it.</li>
+      <li><b>One path end to end before any width.</b> v0.1.0 runs a whole graph on one machine before a server exists. What an envelope has to carry, what a brick actually receives, which port a rejected item leaves by: all of it is discovered by running a workflow, and discovered far more cheaply with no controller, no task bus and no runner standing around it.</li>
       <li><b>Nothing multi-user before the permission model.</b> Sharing, namespaces and roles land before the console, before triggers and before MCP, because each of those three is a way in. A door added before the lock never quite closes afterwards: there is always one path that worked before permissions existed, and nobody goes back to shut it.</li>
     </ul>
   </div>
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 900 322" role="img" aria-label="v0.1 leads to v0.2, then v0.3, then v0.4; from v0.4 four milestones run in parallel (v0.5 triggers, v0.6 console, v0.7 MCP and v0.8 catalog), and all four converge on v0.9 deployment, which leads to v1.0. A dashed line runs from v0.1 under the diagram to v0.8, marking that the catalog depends on the brick contract alone and on nothing between them.">
+      <svg viewBox="0 0 900 322" role="img" aria-label="v0.1.0 leads to v0.2.0, then v0.3.0, then v0.4.0; from v0.4.0 four milestones run in parallel (v0.5.0 triggers, v0.6.0 console, v0.7.0 MCP and v0.8.0 catalog), and all four converge on v0.9.0 deployment, which leads to v1.0.0. A dashed line runs from v0.1.0 under the diagram to v0.8.0, marking that the catalog depends on the brick contract alone and on nothing between them.">
         <defs>
           <marker id="rm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
@@ -793,16 +793,16 @@ img{max-width:100%}
         <rect x="794" y="128" width="98" height="44" fill="none" stroke="currentColor" stroke-width="2.5"/>
 
         <g font-family="JetBrains Mono, monospace" font-size="11" fill="currentColor" text-anchor="middle">
-          <text x="54" y="147">v0.1</text><text x="54" y="161" font-size="8.5" opacity=".65">local</text>
-          <text x="172" y="147">v0.2</text><text x="172" y="161" font-size="8.5" opacity=".65">server</text>
-          <text x="290" y="147">v0.3</text><text x="290" y="161" font-size="8.5" opacity=".65">people</text>
-          <text x="408" y="147" font-weight="700">v0.4</text><text x="408" y="161" font-size="8.5" opacity=".65">repository</text>
-          <text x="556" y="37">v0.5</text><text x="556" y="51" font-size="8.5" opacity=".65">triggers</text>
-          <text x="556" y="110">v0.6</text><text x="556" y="124" font-size="8.5" opacity=".65">console</text>
-          <text x="556" y="184">v0.7</text><text x="556" y="198" font-size="8.5" opacity=".65">MCP</text>
-          <text x="556" y="257">v0.8</text><text x="556" y="271" font-size="8.5" opacity=".65">catalog</text>
-          <text x="722" y="147">v0.9</text><text x="722" y="161" font-size="8.5" opacity=".65">deploy</text>
-          <text x="843" y="147" font-weight="700">v1.0</text><text x="843" y="161" font-size="8.5" opacity=".65">mobile</text>
+          <text x="54" y="147">v0.1.0</text><text x="54" y="161" font-size="8.5" opacity=".65">local</text>
+          <text x="172" y="147">v0.2.0</text><text x="172" y="161" font-size="8.5" opacity=".65">server</text>
+          <text x="290" y="147">v0.3.0</text><text x="290" y="161" font-size="8.5" opacity=".65">people</text>
+          <text x="408" y="147" font-weight="700">v0.4.0</text><text x="408" y="161" font-size="8.5" opacity=".65">repository</text>
+          <text x="556" y="37">v0.5.0</text><text x="556" y="51" font-size="8.5" opacity=".65">triggers</text>
+          <text x="556" y="110">v0.6.0</text><text x="556" y="124" font-size="8.5" opacity=".65">console</text>
+          <text x="556" y="184">v0.7.0</text><text x="556" y="198" font-size="8.5" opacity=".65">MCP</text>
+          <text x="556" y="257">v0.8.0</text><text x="556" y="271" font-size="8.5" opacity=".65">catalog</text>
+          <text x="722" y="147">v0.9.0</text><text x="722" y="161" font-size="8.5" opacity=".65">deploy</text>
+          <text x="843" y="147" font-weight="700">v1.0.0</text><text x="843" y="161" font-size="8.5" opacity=".65">mobile</text>
         </g>
 
         <g fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#rm)">
@@ -824,12 +824,12 @@ img{max-width:100%}
         <text x="300" y="301" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8.5" fill="currentColor" opacity=".55">the catalog needs only the brick contract</text>
       </svg>
     </div>
-    <figcaption><b>One spine, four branches.</b> Everything up to v0.4 is a chain, because each link is what makes the next one safe to build. After it the four branches are genuinely parallel and their order is a matter of appetite, except that v0.8 never needed to wait at all: the brick contract settles at v0.1, and the catalog could be built against it from that day.</figcaption>
+    <figcaption><b>One spine, four branches.</b> Everything up to v0.4.0 is a chain, because each link is what makes the next one safe to build. After it the four branches are genuinely parallel and their order is a matter of appetite, except that v0.8.0 never needed to wait at all: the brick contract settles at v0.1.0, and the catalog could be built against it from that day.</figcaption>
   </figure>
 </section>
-<!-- ============ v0.1 ============ -->
+<!-- ============ v0.1.0 ============ -->
 <section id="m01">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.1: The language runs on one machine</h2></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> <code>agk run --local</code> takes an <code>agentiik.yaml</code>, runs its graph, and hands back the output envelopes. No server, no account, no database.</p>
 
@@ -955,9 +955,9 @@ img{max-width:100%}
   </div>
 </section>
 
-<!-- ============ v0.2 ============ -->
+<!-- ============ v0.2.0 ============ -->
 <section id="m02">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.2: A server runs it instead</h2></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> the same workflow, sent to a server, executed by a runner somewhere else, and watched while it happens.</p>
 
@@ -1006,7 +1006,7 @@ img{max-width:100%}
           <li>Run the controller as several instances with one active, elected by a session-level PostgreSQL advisory lock, standbys looping on the non-blocking variant and taking over the instant it succeeds. <a class="ref" href="../#controller">controller</a><a class="ref" href="../#how-the-api-and-the-controller-stay-in-step">how-the-api-and-the-controller-stay-in-step</a></li>
           <li>Carry the lock's acquisition counter as a fencing token on every controller write, and refuse a write bearing an older counter, so a partitioned former holder cannot act on state it no longer owns. <a class="ref" href="../#how-the-api-and-the-controller-stay-in-step">how-the-api-and-the-controller-stay-in-step</a></li>
           <li>Wake the controller on a NOTIFY carrying a run identifier and nothing else, and sweep for actionable work on a fixed interval so the notification stays a latency optimisation and the sweep the correctness guarantee. <a class="ref" href="../#how-the-api-and-the-controller-stay-in-step">how-the-api-and-the-controller-stay-in-step</a></li>
-          <li>Evaluate the graph at the run's version on every task state change, through the v0.1 evaluator library rather than a second implementation living inside the controller. <a class="ref" href="../#from-trigger-to-result">from-trigger-to-result</a><a class="ref" href="../#command-line">command-line</a></li>
+          <li>Evaluate the graph at the run's version on every task state change, through the v0.1.0 evaluator library rather than a second implementation living inside the controller. <a class="ref" href="../#from-trigger-to-result">from-trigger-to-result</a><a class="ref" href="../#command-line">command-line</a></li>
           <li>Create one task per shard for every step whose declared input ports are satisfied, and publish it on the queue matching the step's runs_on labels, choosing no machine and starting none. <a class="ref" href="../#from-trigger-to-result">from-trigger-to-result</a><a class="ref" href="../#step-keywords">step-keywords</a></li>
           <li>Apply a task result: write the new step and task state, record the output envelope digests, the artifacts, the log reference and the usage, then evaluate the graph again. <a class="ref" href="../#from-trigger-to-result">from-trigger-to-result</a><a class="ref" href="../#the-task-message">the-task-message</a></li>
           <li>Materialise a step's published ports in the object store: concatenate the shard envelopes port by port, publish an empty envelope for a declared port the container never wrote, and record the digest per port. <a class="ref" href="../#scheduling-semantics">scheduling-semantics</a><a class="ref" href="../#storage">storage</a></li>
@@ -1065,7 +1065,7 @@ img{max-width:100%}
           <li>Build the container host configuration from HostConfig: ReadonlyRootfs, CapDrop ALL with CapAdd refused unless the runner policy allows it, no-new-privileges with the default seccomp profile and an AppArmor profile or SELinux label, Memory, NanoCPUs, PidsLimit, Ulimits, and AutoRemove false. <a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a></li>
           <li>Refuse to start the agent unless the daemon has userns-remap enabled, since that is the one setting the hardened tier does not treat as optional. <a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a><a class="ref" href="../#three-tiers-of-containment">three-tiers-of-containment</a></li>
           <li>Give every task a network of its own: none by default, internal with no outbound route, and egress through a runner proxy enforcing the step's egress.allow list of host:port entries. <a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a><a class="ref" href="../#secrets-honestly">secrets-honestly</a></li>
-          <li>Drive the container through ContainerCreate, ContainerStart, ContainerAttach, ContainerWait, ContainerLogs and ContainerRemove on Docker Engine API v1.56, through the v0.1 container driver library. <a class="ref" href="../#runner">runner</a></li>
+          <li>Drive the container through ContainerCreate, ContainerStart, ContainerAttach, ContainerWait, ContainerLogs and ContainerRemove on Docker Engine API v1.56, through the container driver library built in v0.1.0. <a class="ref" href="../#runner">runner</a></li>
           <li>Follow the daemon event stream at GET /events to catch container exits the runner did not cause, an out-of-memory kill among them. <a class="ref" href="../#runner">runner</a></li>
           <li>Stop a container on its deadline with SIGTERM then SIGKILL after grace, and on a cancellation carried back in the heartbeat response, since nothing is ever pushed to a runner. <a class="ref" href="../#step-keywords">step-keywords</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
           <li>Collect the result: the output envelope per port, the artifacts, the exit code read against the exit-code table, the log with its line count and truncation flag, and the usage in cpu_seconds, max_rss_bytes and image_pull_ms. <a class="ref" href="../#the-task-message">the-task-message</a><a class="ref" href="../#exit-codes">exit-codes</a></li>
@@ -1082,7 +1082,7 @@ img{max-width:100%}
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Serve /api/v1 behind one deny-by-default authorisation hook every route passes through, so that v0.3 fills in principals and permissions without touching a handler. <a class="ref" href="../#access">access</a></li>
+          <li>Serve /api/v1 behind one deny-by-default authorisation hook every route passes through, so that v0.3.0 fills in principals and permissions without touching a handler. <a class="ref" href="../#access">access</a></li>
           <li>Register a workflow and a version on a server with agk push, recording the resolved graph against the version a run will pin. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#storage">storage</a></li>
           <li>Serve POST /api/v1/{ns}/workflows/{name}/runs: a manual run carrying the workflow inputs, written with its trigger_kind and triggering principal, committed, and then notified to the controller. <a class="ref" href="../#api">api</a><a class="ref" href="../#from-trigger-to-result">from-trigger-to-result</a><a class="ref" href="../#triggers">triggers</a></li>
           <li>Serve GET /api/v1/runs with filters on namespace, workflow, state and time, and GET /api/v1/runs/{id} returning run state, per-step state and envelope digests. <a class="ref" href="../#api">api</a></li>
@@ -1112,9 +1112,9 @@ img{max-width:100%}
   </div>
 </section>
 
-<!-- ============ v0.3 ============ -->
+<!-- ============ v0.3.0 ============ -->
 <section id="m03">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.3: More than one person</h2></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.3.0: More than one person</h2></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> two people, two namespaces, and nothing of one visible from the other except what was shared.</p>
 
@@ -1230,13 +1230,13 @@ img{max-width:100%}
   </div>
 </section>
 
-<!-- ============ v0.4 ============ -->
+<!-- ============ v0.4.0 ============ -->
 <section id="m04">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.4: The workflow is a repository</h2></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.4.0: The workflow is a repository</h2></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a workflow is a git repository served by Agentiik, pushed to like any other, and a run resolves a commit.</p>
 
-    <p>This is the claim the documentation defends at greatest length: the repository is integrated, not connected. What hosting buys over a connection to a forge is precise: a version cannot drift beneath a run, an invalid workflow cannot be pushed at all, and repository access is the permission model that already exists rather than a second one to reconcile with it. That last clause is exactly why this milestone sits after v0.3 and not before it.</p>
+    <p>This is the claim the documentation defends at greatest length: the repository is integrated, not connected. What hosting buys over a connection to a forge is precise: a version cannot drift beneath a run, an invalid workflow cannot be pushed at all, and repository access is the permission model that already exists rather than a second one to reconcile with it. That last clause is exactly why this milestone sits after v0.3.0 and not before it.</p>
 
     <div class="work">
       <div class="work-group">
@@ -1249,7 +1249,7 @@ img{max-width:100%}
           <li>Describe the resolved graph a version records, so that the pre-receive hook, the API and the console all read one shape. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#api">api</a></li>
           <li>Describe the repository objects the API returns: the repository, a ref and its protection, a version and its commit. <a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a></li>
           <li>Add conformance fixtures for the resolution order and for every refusal the pre-receive hook makes. <a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
-          <li>Cut the schemas release v0.4 depends on before the engine reads it. <a class="ref" href="../#versioning">versioning</a></li>
+          <li>Cut the schemas release v0.4.0 depends on before the engine reads it. <a class="ref" href="../#versioning">versioning</a></li>
         </ul>
       </div>
       <div class="work-group">
@@ -1351,13 +1351,13 @@ img{max-width:100%}
   </div>
 </section>
 
-<!-- ============ v0.5 ============ -->
+<!-- ============ v0.5.0 ============ -->
 <section id="m05">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.5: Runs start without being asked</h2></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.5.0: Runs start without being asked</h2></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a workflow starts on a schedule, on a webhook, or because another workflow called it.</p>
 
-    <p>Short, and placed here rather than earlier for one reason: a trigger resolves a commit, so it needs v0.4 to have something to resolve. A scheduled run that silently follows a moving branch is the drift the whole repository design exists to prevent.</p>
+    <p>Short, and placed here rather than earlier for one reason: a trigger resolves a commit, so it needs v0.4.0 to have something to resolve. A scheduled run that silently follows a moving branch is the drift the whole repository design exists to prevent.</p>
 
     <div class="work">
       <div class="work-group">
@@ -1468,9 +1468,9 @@ img{max-width:100%}
     <p class="where"><span>Repositories</span> <code>agentiik</code> · <code>schemas</code></p>
   </div>
 </section>
-<!-- ============ v0.6 ============ -->
+<!-- ============ v0.6.0 ============ -->
 <section id="m06">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.6: A console to watch it</h2></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.6.0: A console to watch it</h2></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a run is read from end to end without a command line, and a workflow is edited without leaving the browser.</p>
 
@@ -1610,15 +1610,15 @@ img{max-width:100%}
   </div>
 </section>
 
-<!-- ============ v0.7 ============ -->
+<!-- ============ v0.7.0 ============ -->
 <section id="m07">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.7: An agent can use it</h2></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a model-driven client discovers Agentiik, learns the language, writes a valid workflow and runs it, and a workflow itself appears to such a client as a server of tools.</p>
 
     <p>MCP is native here, not a gateway bolted onto the API, and that is the part worth getting right rather than early. Two distinct servers: the platform's, and any workflow exposed as one. The second is where the discipline shows. A workflow's server exposes tools and nothing else, because a resource would quietly turn <code>workflow:run</code> into a read path into the repository and undo the separation the roles were built around.</p>
 
-    <p><code>workflow.language</code> is generated from <code>agentiik/schemas</code> rather than written here, which is why that repository has carried a description and examples on every keyword since v0.1, and why its build fails without them. A client that learns the language from a page somebody maintained by hand learns a different language from the one the validator enforces.</p>
+    <p><code>workflow.language</code> is generated from <code>agentiik/schemas</code> rather than written here, which is why that repository has carried a description and examples on every keyword since v0.1.0, and why its build fails without them. A client that learns the language from a page somebody maintained by hand learns a different language from the one the validator enforces.</p>
 
     <div class="work">
       <div class="work-group">
@@ -1730,13 +1730,13 @@ img{max-width:100%}
   </div>
 </section>
 
-<!-- ============ v0.8 ============ -->
+<!-- ============ v0.8.0 ============ -->
 <section id="m08">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.8: A catalog worth pulling from</h2></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.8.0: A catalog worth pulling from</h2></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> somebody who did not write the engine writes a brick, in a language the project does not use, and it runs.</p>
 
-    <p>The brick contract has held since v0.1; this is what turns it into a catalog other people can build on. It is also the one milestone that never needed to wait: it depends on v0.1 and on nothing after it, so it can be pulled forward into any gap. That is a property worth stating, because a plan whose every item is blocked by the previous one has no room to absorb a week where the appetite is elsewhere.</p>
+    <p>The brick contract has held since v0.1.0; this is what turns it into a catalog other people can build on. It is also the one milestone that never needed to wait: it depends on v0.1.0 and on nothing after it, so it can be pulled forward into any gap. That is a property worth stating, because a plan whose every item is blocked by the previous one has no room to absorb a week where the appetite is elsewhere.</p>
 
     <p>Two details here pay off long after this milestone. The SBOM published with each image is what lets an operator answer an advisory about a dependency without waiting for one about Agentiik. And the helpers are written so that nothing in them is ever required: a brick that parses the envelope itself is not a second-class brick, which is the whole point of a contract thin enough to implement in an afternoon.</p>
 
@@ -1856,15 +1856,15 @@ img{max-width:100%}
   </div>
 </section>
 
-<!-- ============ v0.9 ============ -->
+<!-- ============ v0.9.0 ============ -->
 <section id="m09">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.9: Somebody else can install it</h2></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.9.0: Somebody else can install it</h2></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> an installation that its author did not perform.</p>
 
     <p>Everything up to here runs where it was written, which hides a great deal: every assumption about the host, every step that only works because somebody knows to do it. This is the milestone where installing stops being knowledge and becomes a document, and where the three deployment profiles either hold or are found to be two profiles and a wish.</p>
 
-    <p>The Terraform provider belongs here for the same reason the installer does: it is what turns a second environment into an apply rather than a second afternoon. It manages what v0.3 and v0.4 defined (namespaces, repositories, grants, groups, service accounts and secret declarations), and there was nothing to declare before those existed.</p>
+    <p>The Terraform provider belongs here for the same reason the installer does: it is what turns a second environment into an apply rather than a second afternoon. It manages what v0.3.0 and v0.4.0 defined (namespaces, repositories, grants, groups, service accounts and secret declarations), and there was nothing to declare before those existed.</p>
 
     <div class="work">
       <div class="work-group">
@@ -1994,13 +1994,13 @@ img{max-width:100%}
   </div>
 </section>
 
-<!-- ============ v1.0 ============ -->
+<!-- ============ v1.0.0 ============ -->
 <section id="m10">
-  <div class="sec-head"><span class="mark">§</span><h2>v1.0: It fits in a pocket, and it holds</h2></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v1.0.0: It fits in a pocket, and it holds</h2></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> the four clients the documentation promised, on one model, and a project that knows what to do when a vulnerability arrives.</p>
 
-    <p>v1.0 adds no capability. It closes the scope: the mobile applications complete the set of clients, and the security work turns a written threat model into one that has been tested against the running thing. A version number is a claim about what somebody else can rely on, which is why the disclosure process has to work before the number is handed out, not after.</p>
+    <p>v1.0.0 adds no capability. It closes the scope: the mobile applications complete the set of clients, and the security work turns a written threat model into one that has been tested against the running thing. A version number is a claim about what somebody else can rely on, which is why the disclosure process has to work before the number is handed out, not after.</p>
 
     <p>What the applications refuse is part of the work rather than a gap in it. Authoring and offline editing are absent on purpose, and a phone raises every hit target and drops the table to a card list rather than shrinking the console: two clients sharing a palette is a system, two clients sharing a layout is a compromise that serves neither.</p>
 
@@ -2136,7 +2136,7 @@ img{max-width:100%}
       <table>
         <thead><tr><th>Deferred</th><th>What v1 already did for it</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">External identity providers: OIDC federation, SCIM provisioning</td><td>The principal model is provider-agnostic, so adding them touches authentication and not authorisation. That is the whole reason v0.3 was built the way it was.</td></tr>
+          <tr><td class="wrapcell">External identity providers: OIDC federation, SCIM provisioning</td><td>The principal model is provider-agnostic, so adding them touches authentication and not authorisation. That is the whole reason v0.3.0 was built the way it was.</td></tr>
           <tr><td class="wrapcell">Kubernetes as a substrate</td><td>The container driver sits behind an executor interface. A Job or Pod executor touches neither the controller nor the language.</td></tr>
           <tr><td class="wrapcell">A Helm chart</td><td>Follows the executor above, and lives in <code>agentiik/deploy</code>, which ships it in the release it is ready for like anything else.</td></tr>
           <tr><td class="wrapcell">An external policy engine (OPA, Cedar)</td><td>Roles and grants are evaluated in the API against the database. Delegating that later is a substitution, not a redesign, as long as the permission vocabulary does not grow in the meantime.</td></tr>
@@ -2155,12 +2155,12 @@ img{max-width:100%}
     <p>A plan is more useful when it says where it expects to be wrong.</p>
 
     <ul class="plain">
-      <li><b>The brick contract does not survive v0.1.</b> The most likely single failure, and the cheapest place for it to happen. If running real workflows shows that the envelope has to carry something it does not, or that a per-port barrier is the wrong shape, everything after it moves. That is the milestone doing its job, not the plan failing.</li>
-      <li><b>v0.8 can move anywhere after v0.1.</b> It depends on the brick contract and on nothing later. It is the slack in the plan, and it is deliberate.</li>
-      <li><b>v0.6 and v0.7 can swap.</b> Whichever is done first makes the other easier to judge: the console shows what a run looks like to a person, MCP shows what it looks like to a client that cannot see. Either order works.</li>
-      <li><b>v0.5 before v0.4 does not work.</b> A trigger has to resolve a commit. Starting runs against a moving branch is exactly the drift the hosted repository exists to prevent, and building it that way first means building it twice.</li>
-      <li><b>v0.3 before every surface does not move.</b> This is the one ordering that is not up for discussion. Console, triggers and MCP are three ways in, and permissions have to exist before any of them, not alongside.</li>
-      <li><b>Somebody else starts using it.</b> The plan assumes one maintainer and no users. A single real user reorders everything after the milestone they arrived on, because their installation cannot be broken in the way an empty one can. At that point <a href="../#repos">deployment and migration notes</a> stop being a v0.9 concern.</li>
+      <li><b>The brick contract does not survive v0.1.0.</b> The most likely single failure, and the cheapest place for it to happen. If running real workflows shows that the envelope has to carry something it does not, or that a per-port barrier is the wrong shape, everything after it moves. That is the milestone doing its job, not the plan failing.</li>
+      <li><b>v0.8.0 can move anywhere after v0.1.0.</b> It depends on the brick contract and on nothing later. It is the slack in the plan, and it is deliberate.</li>
+      <li><b>v0.6.0 and v0.7.0 can swap.</b> Whichever is done first makes the other easier to judge: the console shows what a run looks like to a person, MCP shows what it looks like to a client that cannot see. Either order works.</li>
+      <li><b>v0.5.0 before v0.4.0 does not work.</b> A trigger has to resolve a commit. Starting runs against a moving branch is exactly the drift the hosted repository exists to prevent, and building it that way first means building it twice.</li>
+      <li><b>v0.3.0 before every surface does not move.</b> This is the one ordering that is not up for discussion. Console, triggers and MCP are three ways in, and permissions have to exist before any of them, not alongside.</li>
+      <li><b>Somebody else starts using it.</b> The plan assumes one maintainer and no users. A single real user reorders everything after the milestone they arrived on, because their installation cannot be broken in the way an empty one can. At that point <a href="../#repos">deployment and migration notes</a> stop being a v0.9.0 concern.</li>
     </ul>
 
     <div class="decision">
