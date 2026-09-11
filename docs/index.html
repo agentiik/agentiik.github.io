@@ -2919,7 +2919,7 @@ output "invoice_count" {
     <p>Some runs are genuinely imperative — reindex after this deploy, replay this migration now — and wrapping them in a resource means inventing a state that nobody wanted. Terraform 1.14 added actions for exactly this, and the provider exposes one:</p>
 
     <div class="block">
-      <div class="note-label">Terraform 1.14 and later</div>
+      <div class="note-label">requires Terraform 1.14</div>
 <pre><code>action "agentiik_run" "reindex" {
   config {
     workflow = agentiik_workflow.search.id
@@ -2945,7 +2945,7 @@ resource "agentiik_workflow" "search" {
 
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>The action is the addition, never the replacement. OpenTofu has no <code>action</code> block — the request is open and undecided — so a configuration built on actions runs on one of the two tools and not the other, which is precisely what the <a href="#terraform">provider</a> set out not to require of anyone. <code>agentiik_run</code> therefore covers every case on both, and the action exists for the one case it covers better, on the tool that has it. If OpenTofu adopts actions the two paths converge; if it does not, nothing in this documentation has to be taken back.</p>
+      <p>Two forms because there are two questions, not because one is a fallback for the other. <code>agentiik_run</code> answers <em>has this run happened</em>, and belongs in a configuration where the run is part of what the environment is: a migration that goes with a schema version, a seed that goes with a fresh namespace. The action answers <em>run this now</em>, and belongs where the run is part of what is being done rather than of what exists — reindex after this deploy, replay that migration. Writing the second as a resource means inventing a state nobody wanted, and writing the first as an action means losing the record that it already happened. Reach for the one whose question you are actually asking.</p>
     </div>
 
     <div class="decision">
@@ -2955,7 +2955,7 @@ resource "agentiik_workflow" "search" {
 
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>The provider is built against the plugin protocol and is published to the Terraform registry and to the OpenTofu one, and the reason is the same reason the <a href="#repos">licensing</a> section rejects the Business Source License. Terraform itself moved to the BUSL in 2023 and is no longer open source; OpenTofu is the fork that stayed. A project that declined to ship source-available software cannot then require its users to run some, so the provider is written to the protocol rather than to one implementation of it, carries the same Apache-2.0 as the rest of the deployment tooling, and is tested against both. Which of the two an operator runs is their decision and costs them nothing here.</p>
+      <p>The provider targets Terraform, and is published to the Terraform registry. That deserves a sentence, because <a href="#repos">licensing</a> rejects the Business Source License and Terraform has been under it since 2023. The two are not in conflict, and the distinction is worth being exact about: a licence position governs what this project publishes, not what its users run. Nothing source-available enters this repository — the provider is Apache-2.0, built on a plugin framework that is MPL-2.0 — and an operator who already runs Terraform made that choice long before meeting Agentiik. Refusing to speak to the tool they have would not advance the argument; it would only cost them a provider. OpenTofu implements the same plugin protocol and the provider is not built to exclude it, but it is not tested there and nothing here is promised of it.</p>
     </div>
   </div>
 </section>
