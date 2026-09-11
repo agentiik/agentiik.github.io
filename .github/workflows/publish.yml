@@ -33,17 +33,19 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # tags, so past versions can be archived beside the current one
 
       - uses: actions/configure-pages@v6
         with:
           enablement: true
 
       # The tree is the site: a document's path in the repository is its path on
-      # the site, so nothing here names documents one by one.
+      # the site, so nothing here names documents one by one. The script adds
+      # one archived copy of docs/ per released tag, and decides which of them
+      # /docs serves — it still builds no document.
       - name: Assemble the site
-        run: |
-          mkdir _site
-          rsync -a --exclude '.git/' --exclude '.DS_Store' --exclude '.gitignore' --exclude '.github/' --exclude '_site/' --exclude 'README.md' ./ _site/
+        run: python3 .github/build-site.py
 
       - uses: actions/upload-pages-artifact@v5
         with:

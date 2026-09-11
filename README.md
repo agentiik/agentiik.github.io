@@ -20,6 +20,8 @@ legal/                 the legal notice, as legal/index.html
 assets/                the images the documents reference
 brand/                 square exports of the mark, for avatars and slides
 .github/workflows/     the workflow that publishes the site
+.github/build-site.py  assembles the Pages artifact: the tree, plus one copy of docs/
+                       per released tag, plus the list the version selector reads
 LICENSE                Apache-2.0, for the code
 LICENSES/              the full text of both licences the repository uses
 README.md
@@ -57,14 +59,24 @@ an icon.
   load and drift within 34 pixels on scroll. It is off under `prefers-reduced-motion`,
   and the hidden state is applied only once scripting has announced itself, so a blocked
   script leaves a readable page rather than an empty one.
+- **Every version is kept.** `/docs` serves the default version and `/docs/v/<version>/`
+  serves each release, archived from its tag at publication. The default is the highest
+  stable release, failing that the highest `0.y.z` release, then the highest rc, beta and
+  alpha in turn, and `main` when nothing is tagged. Resolved when the site is built, never
+  by redirecting the reader.
+- **One version across every repository.** Agentiik is tagged at one version everywhere,
+  released together. This repository is tagged with it too, which is what makes
+  "the documentation for 1.4.0" a thing that exists.
 - **English.** Documentation and code are written in English throughout.
 - **No numbered headings.** Chapters and sections are named, never numbered.
 
 ## Publishing
 
 `main` is published to <https://agentiik.github.io/>. This repository is the site:
-`.github/workflows/publish.yml` copies the tree into a Pages artifact and deploys it,
-with no build step in between, so what the site serves is exactly what a clone opens.
+`.github/workflows/publish.yml` runs `.github/build-site.py`, which copies the tree into a
+Pages artifact and deploys it. No document is built — nothing is generated, transformed or
+compiled — so what the site serves is what a clone opens. What the script adds is the
+released versions beside the current one.
 A document's path in the repository is its path on the site, which is why the
 documentation sits in `docs/` and is reached at <https://agentiik.github.io/docs>, and
 the roadmap at <https://agentiik.github.io/docs/roadmap>; a document added in a

@@ -77,6 +77,49 @@ html{scroll-behavior:smooth}
   background:var(--surface);
   border-bottom:1px solid var(--line-strong);
 }
+/* The version this documentation describes. Static text until the script has
+   the list — which it cannot get from a file:// clone, where a single version
+   is the honest thing to show anyway. */
+.version{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+  font-size:.7rem;
+  color:var(--muted);
+}
+.version-tag{
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  font-weight:600;
+  color:var(--faint);
+}
+.version-current{
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.76rem;
+  font-weight:500;
+  color:var(--ink);
+  padding:3px 8px;
+  border:1px solid var(--line);
+  background:var(--paper);
+}
+.version select{
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.76rem;
+  font-weight:500;
+  color:var(--ink);
+  background:var(--paper);
+  border:1px solid var(--line);
+  padding:3px 6px;
+  cursor:pointer;
+}
+.version select:hover{border-color:var(--line-strong)}
+.version select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:700px){
+  .version-tag{display:none}
+}
+
 .brand{
   display:flex;
   align-items:center;
@@ -516,6 +559,10 @@ img{max-width:100%}
     <h1>Agentiik</h1>
   </a>
   <span class="topbar-sub">Documentation</span>
+  <div class="version" data-version="main" data-channel="development">
+    <span class="version-tag">Version</span>
+    <span class="version-current">main</span>
+  </div>
 </header>
 
 <div class="shell">
@@ -1512,7 +1559,7 @@ certs/
     </div>
 
     <ul class="plain">
-      <li>Commands run as the image's user, with the shell named by <code>shell</code>, and the first non-zero exit ends the step with that code, which the <a href="#brick">exit-code table</a> then interprets.</li>
+      <li>Commands run as the image's user, with the shell named by <code>shell</code>, and the first non-zero exit ends the step with that code, which the <a href="#exit-codes">exit-code table</a> then interprets.</li>
       <li>Input arrives where it always does: the envelope on standard input and at <code>/agk/in/&lt;port&gt;/envelope.json</code>, artifacts beside it.</li>
       <li>Output is whatever the script writes to <code>/agk/out/ports/&lt;port&gt;.json</code>. A script that writes nothing and exits 0 publishes, on <code>out</code>, one item carrying its captured standard output and any file it left in <code>/agk/out/files/</code>. That is what makes a two-line script worth writing.</li>
       <li><code>/agk/bin/agk</code> is mounted read-only: a static helper for scripts that want to be precise rather than lucky, with <code>agk items</code>, <code>agk emit</code> and <code>agk attach</code>. It is a convenience, never a requirement; <code>jq</code> and a redirect do the same job.</li>
@@ -2433,7 +2480,7 @@ certs/
     <h3 id="disclosure">Disclosure</h3>
     <ul class="plain">
       <li>A security policy in <code>agentiik/.github</code>, shared by every repository, naming a contact and a coordinated disclosure window.</li>
-      <li>Advisories published against the affected repository, with an identifier assigned where one is warranted, and the fixed versions named per component rather than for the project as a whole, because the components release independently.</li>
+      <li>Advisories published against the affected repository, with an identifier assigned where one is warranted. The advisory names the component, because that is what decides whether an installation was exposed, and names one fixed version, because <a href="#versioning">one version</a> is what every repository carries.</li>
       <li>The SBOM published with each catalog image is what lets an operator answer an advisory about a dependency without waiting for one about Agentiik.</li>
     </ul>
   </div>
@@ -2955,7 +3002,7 @@ resource "agentiik_workflow" "search" {
 
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>The provider targets Terraform, and is published to the Terraform registry. That deserves a sentence, because <a href="#repos">licensing</a> rejects the Business Source License and Terraform has been under it since 2023. The two are not in conflict, and the distinction is worth being exact about: a licence position governs what this project publishes, not what its users run. Nothing source-available enters this repository — the provider is Apache-2.0, built on a plugin framework that is MPL-2.0 — and an operator who already runs Terraform made that choice long before meeting Agentiik. Refusing to speak to the tool they have would not advance the argument; it would only cost them a provider. OpenTofu implements the same plugin protocol and the provider is not built to exclude it, but it is not tested there and nothing here is promised of it.</p>
+      <p>The provider targets Terraform, and is published to the Terraform registry. That deserves a sentence, because <a href="#licensing">licensing</a> rejects the Business Source License and Terraform has been under it since 2023. The two are not in conflict, and the distinction is worth being exact about: a licence position governs what this project publishes, not what its users run. Nothing source-available enters this repository — the provider is Apache-2.0, built on a plugin framework that is MPL-2.0 — and an operator who already runs Terraform made that choice long before meeting Agentiik. Refusing to speak to the tool they have would not advance the argument; it would only cost them a provider. OpenTofu implements the same plugin protocol and the provider is not built to exclude it, but it is not tested there and nothing here is promised of it.</p>
     </div>
   </div>
 </section>
@@ -3312,7 +3359,9 @@ resource "agentiik_workflow" "search" {
       <li>Install instructions: the Compose stack, the first administrator, the first workflow.</li>
       <li>The full documentation: the brick contract and the operations guide, written by hand, alongside the language reference and the API reference, both generated from <code>agentiik/schemas</code> so that the site, the command line and the MCP tools can never teach three different languages.</li>
       <li>A browsable brick catalog built from the manifests of the standard bricks, with parameters and ports rendered from their schemas.</li>
-      <li>Release notes per component, and the compatibility matrix between API version, console, command line and mobile applications.</li>
+      <li>Release notes per version, saying which components actually moved in it, and the API version each release speaks. There is no compatibility matrix to publish, because there is nothing to cross: the console, the command line and the applications of a release are that release.</li>
+      <li>Every version's documentation, kept rather than replaced: <code>/docs</code> serves the default and <code>/docs/v/1.4.0</code> serves that release, unchanged, for as long as anyone might still be running it. The version selector sits in the header of every page and reads a list the site publishes beside them; on a page opened straight from a clone, where there is no list to fetch, it shows the one version there is and offers no menu.</li>
+      <li>Which version is the default is decided when the site is published, not in the reader's browser: the highest stable release, failing that the highest <code>0.y.z</code> release, then the highest rc, beta and alpha in turn, and <code>main</code> when nothing has been tagged. Resolving it at publication rather than by redirecting means a shared address answers with a page. <a href="#versioning">Versioning</a> has the rest.</li>
       <li>No account, no tracking, no third-party script. The site is HTML, CSS and its own assets.</li>
     </ul>
   </div>
@@ -3946,28 +3995,30 @@ post_task = [
     </div>
 
     <h3 id="versioning">Versioning</h3>
-    <p>Semantic Versioning 2.0.0, one stream per repository, released as a git tag <code>vMAJOR.MINOR.PATCH</code>. The components release independently, so there is no project version and nothing is tagged in lockstep: <code>agentiik</code> at 2.4.0 alongside <code>console</code> at 1.9.3 is the normal state, not a drift to be corrected.</p>
+    <p>One version for the whole project. Every repository carries the same number, tagged at the same moment, released together: <code>vMAJOR.MINOR.PATCH</code> on each of them, on the same commit day. There is no such thing as the console being at 1.9.3 while the core is at 2.4.0, and a repository with nothing to ship that release is tagged anyway.</p>
 
-    <p>A version number is a claim about compatibility, and a claim is worthless until it says what it covers. So each repository names its public interface, and the rules below apply to that and to nothing else. What is not on this list may change in a patch.</p>
+    <p>The reason is the sentence a person says out loud. <em>I am running Agentiik 1.4.0</em> has to name one thing — a set of images, a console, two applications, a schema set, a catalog and the documentation that describes them — and be enough for somebody else to reproduce it. Per-repository versions make that sentence a table, and a table nobody keeps up to date becomes a compatibility matrix that is wrong more often than it is right.</p>
 
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Repository</th><th>What the version is a promise about</th></tr></thead>
+        <thead><tr><th>What the version promises</th><th>Where it lives</th></tr></thead>
         <tbody>
-          <tr><td>agentiik/agentiik</td><td>The HTTP API at its declared version, the <code>agk</code> command line and its output formats, the environment a brick is given, the task message, and the runner registration and heartbeat protocol.</td></tr>
-          <tr><td>agentiik/schemas</td><td>The workflow file, the brick manifest and the envelope, as schemas: what a document that validated yesterday may be.</td></tr>
-          <tr><td>agentiik/bricks</td><td>Each brick's ports, parameters and exit codes. One version per brick, not one for the catalog.</td></tr>
-          <tr><td>agentiik/brick-sdk</td><td>The exported functions and types, per language.</td></tr>
-          <tr><td>agentiik/design</td><td>Token names and their meaning. A palette value may change in a minor; a token disappearing is a major.</td></tr>
-          <tr><td class="wrapcell">agentiik/console<br>agentiik/ios<br>agentiik/android</td><td>The API version they require. A client has no other interface to promise.</td></tr>
-          <tr><td>agentiik/deploy</td><td>The shape of the configuration an operator writes, and the upgrade path from the previous minor.</td></tr>
+          <tr><td class="wrapcell">The HTTP API at its declared version, the <code>agk</code> command line and its output formats</td><td>agentiik/agentiik</td></tr>
+          <tr><td class="wrapcell">The environment a brick is given, the task message, and the runner registration and heartbeat protocol</td><td>agentiik/agentiik</td></tr>
+          <tr><td class="wrapcell">What a workflow file, a brick manifest and an envelope that validated yesterday may be</td><td>agentiik/schemas</td></tr>
+          <tr><td class="wrapcell">Each catalog brick's ports, parameters and exit codes</td><td>agentiik/bricks</td></tr>
+          <tr><td class="wrapcell">The exported functions and types of the helpers, per language</td><td>agentiik/brick-sdk</td></tr>
+          <tr><td class="wrapcell">Token names and their meaning</td><td>agentiik/design</td></tr>
+          <tr><td class="wrapcell">The shape of the configuration an operator writes, and the upgrade path from the previous minor</td><td>agentiik/deploy, terraform-provider-agentiik</td></tr>
         </tbody>
       </table>
     </div>
 
+    <p>That list is the public interface, and the rules below apply to it and to nothing else. What is not on it may change in a patch. A breaking change to any single line of it is a major for all of them, which is the cost of the sentence above and is paid deliberately.</p>
+
     <h4>Before and after 1.0.0</h4>
     <ul class="plain">
-      <li><b>0.y.z</b> promises nothing. Anything may change in any release, and a workflow file, a brick or a deployment may have to be adjusted to follow. This is where every repository starts, and staying there while the design is still moving is more honest than a 1.0.0 that has to be taken back.</li>
+      <li><b>0.y.z</b> promises nothing. Anything on that list may change in any release, and a workflow file, a brick or a deployment may have to be adjusted to follow. This is where the project is, and staying here while the design is still moving is more honest than a 1.0.0 that has to be taken back.</li>
       <li><b>1.0.0</b> is the moment somebody else's work can depend on this one. It is not a statement about how finished the software feels; it is the point at which breaking the interface becomes a major version rather than an ordinary release.</li>
       <li><b>Afterwards</b>: a patch fixes behaviour that was already wrong, a minor adds without taking away, and a major is the only place something published disappears or changes meaning. A major carries a migration note in <code>agentiik/deploy</code> saying what to change and in what order, and the note ships with the release, not after it.</li>
     </ul>
@@ -3989,21 +4040,34 @@ post_task = [
     <ul class="plain">
       <li>Precedence is Semantic Versioning's own: <code>1.0.0-alpha.3</code> &lt; <code>1.0.0-beta.1</code> &lt; <code>1.0.0-rc.1</code> &lt; <code>1.0.0</code>, and every one of them is below <code>1.0.0</code> itself. A tool resolving a range takes none of them unless asked, which is the behaviour to rely on rather than a separate channel to publish to.</li>
       <li>Counters start at 1 and never reset within a target: after <code>1.0.0-beta.4</code> comes <code>1.0.0-rc.1</code>, and if the release slips to 1.1.0 the pre-releases are renumbered from <code>1.1.0-alpha.1</code> rather than continued.</li>
+      <li>A pre-release is tagged everywhere too. Mixing a <code>1.0.0-rc.2</code> core with a <code>1.0.0-beta.1</code> console is not a supported configuration and is not something the project tests.</li>
       <li>Images carry the same string: <code>ghcr.io/agentiik/api:1.0.0-rc.2</code> exists and is signed like any other. <code>latest</code> never points at a pre-release, and a pre-release never moves a <code>1</code> or <code>1.0</code> rolling tag.</li>
-      <li>A pre-release of <code>agentiik/schemas</code> is the one that matters most, because everything else pins it: a workflow file accepted by <code>2.0.0-beta.1</code> may be rejected by <code>2.0.0</code>, and a repository should pin an exact pre-release rather than a range.</li>
+    </ul>
+
+    <h4>What this costs, and what it does not</h4>
+    <ul class="plain">
+      <li><b>Repositories are tagged having changed nothing.</b> A release where only the console moved still tags the core, the schemas and the catalog. The tag is cheap; a reader having to work out which four numbers go together is not.</li>
+      <li><b>A major reaches repositories nothing broke in.</b> When one published interface changes meaning, the whole project goes to the next major, including the SDK whose exported functions are exactly as they were. The number then says <em>something in Agentiik broke</em> rather than <em>this library broke</em>, and the release note says which — that is what the release note is for.</li>
+      <li><b>It does not make the version an API version.</b> <code>/api/v1</code> is separate and moves far more slowly: the API version says what the wire contract is, the project version says what this build is. A client pins the first and reports the second, and a minor release never moves <code>v1</code> to <code>v2</code>.</li>
+      <li><b>The alternative, weighed rather than dismissed.</b> Per-repository streams would let <code>agentiik/schemas</code> tell a brick author exactly what changed for them, which is real and is what independent versioning is good at. It is given up because the people who have to hold this in their heads are operators running an installation, not library consumers tracking one dependency — and for them a matrix is worse than a number that occasionally moves for somebody else's reason.</li>
     </ul>
 
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>The milestones in the <a href="roadmap/">roadmap</a> are not these versions, and the collision of notation is worth naming rather than leaving to be discovered. <code>v0.4</code> there is a point in an order — what has to be true before what — and belongs to the project as a whole; a version here belongs to one repository and is a promise to whoever depends on it. They meet once: the roadmap's <code>v1.0</code> is the milestone at which the repositories that are the service are expected to tag their own <code>1.0.0</code>, because that milestone is precisely the point where somebody else can rely on them. Before then, every repository sits in <code>0.y.z</code> and promises nothing, which is the accurate description of where the project is.</p>
+      <p>The milestones in the <a href="roadmap/">roadmap</a> are these versions, not a parallel numbering. <code>v0.4</code> there is the release tagged <code>v0.4.0</code> across every repository, and the roadmap's <code>v1.0</code> is the <code>1.0.0</code> described above — the point at which the list of promises starts being kept. This is only true because there is one version to be the same as: with per-repository streams the two notations would have collided, and the roadmap would have had to explain that its numbers meant something else entirely.</p>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The documentation is versioned with everything else, and the site keeps every version rather than only the current one: <code>/docs</code> serves the default and <code>/docs/v/1.4.0</code> serves that release's documentation, unchanged, for as long as somebody might still be running it. The default is resolved when the site is published, not in the reader's browser, so that an address someone shares resolves to a page rather than to a redirect: the highest stable release, failing that the highest <code>0.y.z</code> release, then the highest rc, beta and alpha in turn, and <code>main</code> when nothing has been tagged at all. A reader on a release therefore reads what that release does, and a reader following <code>main</code> has to ask for it.</p>
     </div>
 
     <h3 id="conventions-across-repositories">Conventions across repositories</h3>
     <ul class="plain">
-      <li>Default branch <code>main</code>, releases as tags, semantic versioning per repository. <a href="#versioning">Versioning</a> sets out what each version is a promise about, and what alpha, beta and rc each mean.</li>
+      <li>Default branch <code>main</code>, releases as tags, one version across every repository. <a href="#versioning">Versioning</a> sets out what that version promises, what it costs, and what alpha, beta and rc each mean.</li>
       <li>Every repository carries the same security policy and the same code of conduct, sourced from <code>agentiik/.github</code>. The licence file is the one thing that is not uniform, for the reasons below.</li>
-      <li>The core, the console and the two applications release independently. Compatibility is expressed by the API version alone, which is why the URL carries <code>/api/v1</code>.</li>
-      <li><code>agentiik/schemas</code> is the only cross-repository dependency for the workflow format. Nothing else redefines those shapes, and a schema change is a release of that repository first.</li>
+      <li>The core, the console and the two applications release together, at one version. What they agree on across a release boundary is the API version, which is why the URL carries <code>/api/v1</code> and why that number moves far more slowly than the project's own.</li>
+      <li><code>agentiik/schemas</code> is the only cross-repository dependency for the workflow format. Nothing else redefines those shapes, and a schema change lands there first — every other repository picks it up at the same version, in the same release.</li>
       <li>Images are published to <code>ghcr.io/agentiik/&lt;name&gt;</code>, signed, and carry the same OCI annotations required of any brick.</li>
       <li>Documentation lives in <code>agentiik/agentiik.github.io</code>, not scattered in each repository, so that a reader never has to guess which copy is current. Each repository keeps only a short README pointing there.</li>
       <li>All documentation and code, including comments, identifiers and commit messages, are written in English.</li>
@@ -4143,6 +4207,73 @@ post_task = [
   window.addEventListener('scroll', onScroll, {passive:true});
   window.addEventListener('resize', onScroll);
   sync();
+})();
+</script>
+<script>
+(function(){
+  var box = document.querySelector('.version');
+  if(!box || !window.fetch) return;
+  var slot = box.querySelector('.version-current');
+
+  // Where we are, derived from the URL rather than written into the page — a
+  // page archived under /docs/v/1.2.0/ is a byte copy of the one at /docs/, so
+  // anything baked in at publish time would be wrong in one of the two places.
+  var path = location.pathname;
+  var at = path.indexOf('/docs/');
+  if(at < 0) return;
+  var root = path.slice(0, at + 6);
+  var rest = path.slice(at + 6);
+  var pinned = rest.match(/^v\/([^/]+)\/(.*)$/);
+  var here = pinned ? pinned[1] : null;
+  var sub = pinned ? pinned[2] : rest;
+
+  function url(v, def){
+    return v === def ? root + sub : root + 'v/' + encodeURIComponent(v) + '/' + sub;
+  }
+
+  fetch(root + 'versions.json', {cache: 'no-cache'}).then(function(r){
+    return r.ok ? r.json() : null;
+  }).then(function(data){
+    if(!data || !data.versions || data.versions.length < 2) return;
+    var def = data.default || 'main';
+    var current = here || def;
+
+    var sel = document.createElement('select');
+    sel.setAttribute('aria-label', 'Version of the documentation');
+
+    var groups = [
+      ['stable', 'Stable'],
+      ['rc', 'Release candidate'],
+      ['beta', 'Beta'],
+      ['alpha', 'Alpha'],
+      ['development', 'Development'],
+    ];
+    groups.forEach(function(g){
+      var inChannel = data.versions.filter(function(v){ return v.channel === g[0]; });
+      if(!inChannel.length) return;
+      var og = document.createElement('optgroup');
+      og.label = g[1];
+      inChannel.forEach(function(v){
+        var o = document.createElement('option');
+        o.value = v.version;
+        o.textContent = v.version + (v.version === def ? '  (default)' : '');
+        if(v.version === current) o.selected = true;
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+    });
+    if(!sel.querySelector('option[selected], option:checked')){
+      var o = document.createElement('option');
+      o.value = current; o.textContent = current; o.selected = true;
+      sel.insertBefore(o, sel.firstChild);
+    }
+
+    sel.addEventListener('change', function(){
+      location.href = url(sel.value, def);
+    });
+    box.setAttribute('data-version', current);
+    slot.replaceWith(sel);
+  }).catch(function(){ /* a clone opened from disk has one version, and says so */ });
 })();
 </script>
 </body>

@@ -77,6 +77,49 @@ html{scroll-behavior:smooth}
   background:var(--surface);
   border-bottom:1px solid var(--line-strong);
 }
+/* The version this documentation describes. Static text until the script has
+   the list — which it cannot get from a file:// clone, where a single version
+   is the honest thing to show anyway. */
+.version{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+  font-size:.7rem;
+  color:var(--muted);
+}
+.version-tag{
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  font-weight:600;
+  color:var(--faint);
+}
+.version-current{
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.76rem;
+  font-weight:500;
+  color:var(--ink);
+  padding:3px 8px;
+  border:1px solid var(--line);
+  background:var(--paper);
+}
+.version select{
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.76rem;
+  font-weight:500;
+  color:var(--ink);
+  background:var(--paper);
+  border:1px solid var(--line);
+  padding:3px 6px;
+  cursor:pointer;
+}
+.version select:hover{border-color:var(--line-strong)}
+.version select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:700px){
+  .version-tag{display:none}
+}
+
 .brand{
   display:flex;
   align-items:center;
@@ -569,6 +612,10 @@ img{max-width:100%}
     <h1>Agentiik</h1>
   </a>
   <span class="topbar-sub">Roadmap</span>
+  <div class="version" data-version="main" data-channel="development">
+    <span class="version-tag">Version</span>
+    <span class="version-current">main</span>
+  </div>
 </header>
 
 <div class="shell">
@@ -628,7 +675,7 @@ img{max-width:100%}
 
     <div class="decision">
       <span class="note-label">Why no dates</span>
-      <p>One maintainer cannot hold a calendar, and a missed date reads worse afterwards than an order does, because the order stays true at any pace while the date is simply wrong. The version numbers are markers of sequence, not promises of delivery: <code>v0.4</code> means <em>after v0.3 and before v0.5</em> and means nothing else. They are not the repositories' own versions either — those are set out under <a href="../#versioning">Versioning</a>, and they meet this plan at exactly one point, its last milestone. If dates ever become useful — because somebody else is waiting on one — they belong in milestones on the repositories, next to the issues that move, not in a document that is read months after it was written.</p>
+      <p>One maintainer cannot hold a calendar, and a missed date reads worse afterwards than an order does, because the order stays true at any pace while the date is simply wrong. The version numbers are markers of sequence, not promises of delivery: <code>v0.4</code> means <em>after v0.3 and before v0.5</em>, and says nothing about when. They are, however, the real versions: Agentiik carries <a href="../#versioning">one version across every repository</a>, so the milestone called <code>v0.4</code> is the release tagged <code>v0.4.0</code> everywhere, and this plan is a list of releases in the order they can be made rather than a numbering invented for the occasion. If dates ever become useful — because somebody else is waiting on one — they belong in milestones on the repositories, next to the issues that move, not in a document that is read months after it was written.</p>
     </div>
   </div>
 </section>
@@ -1099,6 +1146,73 @@ img{max-width:100%}
   window.addEventListener('scroll', onScroll, {passive:true});
   window.addEventListener('resize', onScroll);
   sync();
+})();
+</script>
+<script>
+(function(){
+  var box = document.querySelector('.version');
+  if(!box || !window.fetch) return;
+  var slot = box.querySelector('.version-current');
+
+  // Where we are, derived from the URL rather than written into the page — a
+  // page archived under /docs/v/1.2.0/ is a byte copy of the one at /docs/, so
+  // anything baked in at publish time would be wrong in one of the two places.
+  var path = location.pathname;
+  var at = path.indexOf('/docs/');
+  if(at < 0) return;
+  var root = path.slice(0, at + 6);
+  var rest = path.slice(at + 6);
+  var pinned = rest.match(/^v\/([^/]+)\/(.*)$/);
+  var here = pinned ? pinned[1] : null;
+  var sub = pinned ? pinned[2] : rest;
+
+  function url(v, def){
+    return v === def ? root + sub : root + 'v/' + encodeURIComponent(v) + '/' + sub;
+  }
+
+  fetch(root + 'versions.json', {cache: 'no-cache'}).then(function(r){
+    return r.ok ? r.json() : null;
+  }).then(function(data){
+    if(!data || !data.versions || data.versions.length < 2) return;
+    var def = data.default || 'main';
+    var current = here || def;
+
+    var sel = document.createElement('select');
+    sel.setAttribute('aria-label', 'Version of the documentation');
+
+    var groups = [
+      ['stable', 'Stable'],
+      ['rc', 'Release candidate'],
+      ['beta', 'Beta'],
+      ['alpha', 'Alpha'],
+      ['development', 'Development'],
+    ];
+    groups.forEach(function(g){
+      var inChannel = data.versions.filter(function(v){ return v.channel === g[0]; });
+      if(!inChannel.length) return;
+      var og = document.createElement('optgroup');
+      og.label = g[1];
+      inChannel.forEach(function(v){
+        var o = document.createElement('option');
+        o.value = v.version;
+        o.textContent = v.version + (v.version === def ? '  (default)' : '');
+        if(v.version === current) o.selected = true;
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+    });
+    if(!sel.querySelector('option[selected], option:checked')){
+      var o = document.createElement('option');
+      o.value = current; o.textContent = current; o.selected = true;
+      sel.insertBefore(o, sel.firstChild);
+    }
+
+    sel.addEventListener('change', function(){
+      location.href = url(sel.value, def);
+    });
+    box.setAttribute('data-version', current);
+    slot.replaceWith(sel);
+  }).catch(function(){ /* a clone opened from disk has one version, and says so */ });
 })();
 </script>
 </body>
