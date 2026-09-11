@@ -2139,7 +2139,7 @@ certs/
   "idempotency_key": "01JMZ8V1P9C4/invoice/2/3",
   "run_id": "01JMZ8V1P9C4",
   "namespace": "finance",
-  "workflow": "monthly-invoicing@14",
+  "workflow": "monthly-invoicing@a3f9c1e",
   "step": "invoice",
   "attempt": 2,
   "shard": { "index": 3, "of": 8 },
@@ -2422,7 +2422,7 @@ certs/
     <ul class="plain">
       <li>Images are referenced by digest in production. A tag is a mutable pointer and has no place in something that claims a commit determines what ran.</li>
       <li>Signature verification is a per-namespace policy naming which identities may sign, enforced by the runner before the container is created rather than by the registry it pulled from.</li>
-      <li>The standard catalog targets SLSA Build Level 3, which asks that a build platform "implements strong controls to prevent runs from influencing one another" and "prevent secret material from being accessible to user-defined build steps". Those are the same two properties this specification demands of a run, which makes building the catalog on Agentiik itself a reasonable ambition and not a circular one.</li>
+      <li>The standard catalog targets SLSA Build Level 3, which asks that a build platform "implements strong controls to prevent runs from influencing one another" and "prevent secret material from being accessible to user-defined build steps". Those are the same two properties this documentation demands of a run, which makes building the catalog on Agentiik itself a reasonable ambition and not a circular one.</li>
       <li>Each catalog image publishes an SBOM as an OCI referrer, so that an operator answering "are we affected" reads an attestation rather than unpacking a filesystem.</li>
       <li>Catalog images are rebuilt on a schedule and on base-image advisories, and the catalog shows the age of each image, because an image that has not been rebuilt is not stable, it is stale.</li>
     </ul>
@@ -2515,7 +2515,7 @@ certs/
     <ul class="plain">
       <li>The daemon socket is never mounted inside a brick. A brick that needs to build an image goes through an unprivileged builder, run like any other brick.</li>
       <li>The container user is non-root, required by the manifest and checked at publication.</li>
-      <li>Images are referenced by digest in production. Signature verification is a registry policy, enforced by the runner before start.</li>
+      <li>Images are referenced by digest in production. Signature verification is a per-namespace policy, enforced by the runner before start.</li>
       <li>The working directory of a task is created fresh, owned by an unprivileged account, and removed with the container, so no residue of one namespace survives into the next task on that host.</li>
     </ul>
 
@@ -2565,6 +2565,8 @@ certs/
           <tr><td class="wrapcell">PUT /api/v1/me/notifications</td><td>Per-principal notification preferences, per namespace and per event kind.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/namespaces</td><td>Creates a namespace with an owner and quotas. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/users, /groups</td><td>User and group administration, including group membership.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/service-accounts</td><td>Creates a non-human principal in a namespace the caller owns. Its tokens are issued through <code>/api/v1/auth/tokens</code> like anyone else's.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /api/v1/{ns}/secrets</td><td>The namespace's secret declarations: which provider holds each value and at what path. Never the values, which the API has no route to read and no reason to.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/grants</td><td>Lists grants and denies that apply, with the scope each comes from.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/grants</td><td>Shares the workflow: principal, role, optional expiry, optional deny. Requires <code>grant:manage</code>.</td></tr>
           <tr><td class="wrapcell">DELETE /api/v1/{ns}/workflows/{name}/grants/{id}</td><td>Revokes one grant. Takes effect on the next request and on the next run creation.</td></tr>
@@ -2582,7 +2584,9 @@ certs/
           <tr><td class="wrapcell">GET /api/v1/runs/{id}/steps/{step}/logs</td><td>SSE log stream, history then live.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runs/{id}/outputs/{name}</td><td>Envelope of one workflow output. Requires <code>run:read_data</code>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/artifacts/{uri}</td><td>302 redirect to a short-lived presigned URL. Requires <code>run:read_data</code>.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/bricks, /bricks/{name}</td><td>The catalog and one brick's manifest with its parameter schema, so a client can discover what exists before writing a workflow that uses it. Any authenticated principal.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runners</td><td>Runner inventory: labels, capacity, last heartbeat. Administrator only.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/runner-pools</td><td>The pools and the labels they carry, so that a namespace's allowed pools can be written against what exists. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /hooks/{ns}/{path}</td><td>Entry point for webhook triggers.</td></tr>
         </tbody>
       </table>
@@ -2842,7 +2846,6 @@ certs/
           <tr><td class="wrapcell">agentiik_service_account</td><td>A non-human principal, its label and its owning namespace.</td></tr>
           <tr><td>agentiik_api_token</td><td>A token for a service account, with its scope and expiry. The clear value is returned once, at creation, and is write-only.</td></tr>
           <tr><td>agentiik_secret</td><td>The declaration a workflow references: which provider holds the value and at what path. Never the value.</td></tr>
-          <tr><td>agentiik_trigger</td><td>A schedule or webhook on a workflow, where it is declared outside the entry point rather than in it.</td></tr>
           <tr><td>agentiik_run</td><td>A run of a workflow at a version with given inputs — the state being that such a run has happened, not the act of starting one. See <a href="#running-a-workflow-from-terraform">Running a workflow</a>.</td></tr>
         </tbody>
       </table>
@@ -2884,12 +2887,13 @@ resource "agentiik_namespace" "finance" {
   owner = "group:finance-leads"
 
   quotas {
-    concurrent_runs = 20
-    artifact_bytes  = 500 * 1024 * 1024 * 1024
-    retain_max      = "180d"
+    max_concurrent_tasks = 20
+    max_runs_per_hour    = 500
+    max_artifact_bytes   = 500 * 1024 * 1024 * 1024
+    max_retention_days   = 180
   }
 
-  runner_pools = ["default", "dmz"]
+  allowed_runner_pools = ["default", "dmz"]
 }
 
 resource "agentiik_workflow" "invoicing" {
@@ -2949,8 +2953,9 @@ resource "agentiik_grant" "accounting_runs_invoicing" {
   }
 }
 
-output "invoice_count" {
-  value = agentiik_run.migrate.outputs["invoices"].count
+data "agentiik_run_output" "invoices" {
+  run    = agentiik_run.migrate.id
+  output = "invoices"          <span class="c"># needs run:read_data, and lands in the state</span>
 }</code></pre>
     </div>
 
@@ -3456,7 +3461,7 @@ resource "agentiik_workflow" "search" {
         <thead><tr><th>Component</th><th>Single host</th><th>On-premise, redundant</th><th>AWS, managed</th></tr></thead>
         <tbody>
           <tr><td>API</td><td>one container</td><td>3 nodes behind a virtual IP</td><td>ECS Fargate service across 3 AZs</td></tr>
-          <tr><td>Controller</td><td>one container</td><td>3 nodes, one active by lease</td><td>Fargate service, 2 tasks, one active</td></tr>
+          <tr><td>Controller</td><td>one container</td><td>3 nodes, one active by advisory lock</td><td>Fargate service, 2 tasks, one active</td></tr>
           <tr><td>Console</td><td>one container</td><td>served by the same virtual IP</td><td>S3 behind CloudFront</td></tr>
           <tr><td>Runner</td><td>1, colocated</td><td>N hosts, pooled by label</td><td>EC2 Auto Scaling group</td></tr>
           <tr><td>Database</td><td>PostgreSQL container</td><td>primary, synchronous standby, asynchronous replica</td><td>RDS PostgreSQL, Multi-AZ</td></tr>
@@ -3938,7 +3943,7 @@ post_task = [
           <tr><td>agentiik/console</td><td>Web console: graph view, run inspector, sharing panel, format-preserving YAML editor.</td><td>TypeScript</td></tr>
           <tr><td>agentiik/ios</td><td>iOS and iPadOS application.</td><td>Swift</td></tr>
           <tr><td>agentiik/android</td><td>Android application.</td><td>Kotlin</td></tr>
-          <tr><td class="wrapcell">agentiik/agentiik.github.io</td><td>The public site and the documentation, including this specification, and later the generated language and API references and the brick catalog pages. Named for where it is served rather than for what it holds, because GitHub Pages resolves an organisation site from that name alone.</td><td>static</td></tr>
+          <tr><td class="wrapcell">agentiik/agentiik.github.io</td><td>The public site and the documentation, and later the generated language and API references and the brick catalog pages. Named for where it is served rather than for what it holds, because GitHub Pages resolves an organisation site from that name alone.</td><td>static</td></tr>
           <tr><td>agentiik/deploy</td><td>Compose stacks, installer, upgrade and migration notes, later a Helm chart. Holds no product code.</td><td>YAML, shell</td></tr>
           <tr><td class="wrapcell">agentiik/terraform-provider-agentiik</td><td>The Terraform provider: namespaces, workflow repositories, grants, groups, service accounts, tokens, secret declarations and triggers. A client of the API, holding no authority of its own. Named as the registry requires rather than as the organisation would otherwise name it.</td><td>Go</td></tr>
           <tr><td>agentiik/.github</td><td>Organisation profile, shared CI workflows, issue and pull request templates, security policy, code of conduct, contribution guide, and the licensing and trademark notes every repository points at rather than restates.</td><td>YAML</td></tr>
@@ -4065,7 +4070,7 @@ post_task = [
     <h3 id="conventions-across-repositories">Conventions across repositories</h3>
     <ul class="plain">
       <li>Default branch <code>main</code>, releases as tags, one version across every repository. <a href="#versioning">Versioning</a> sets out what that version promises, what it costs, and what alpha, beta and rc each mean.</li>
-      <li>Every repository carries the same security policy and the same code of conduct, sourced from <code>agentiik/.github</code>. The licence file is the one thing that is not uniform, for the reasons below.</li>
+      <li>Every repository carries the same security policy and the same code of conduct, sourced from <code>agentiik/.github</code>. The licence file is the one thing that is not uniform, for the reasons <a href="#licensing">Licensing</a> sets out.</li>
       <li>The core, the console and the two applications release together, at one version. What they agree on across a release boundary is the API version, which is why the URL carries <code>/api/v1</code> and why that number moves far more slowly than the project's own.</li>
       <li><code>agentiik/schemas</code> is the only cross-repository dependency for the workflow format. Nothing else redefines those shapes, and a schema change lands there first — every other repository picks it up at the same version, in the same release.</li>
       <li>Images are published to <code>ghcr.io/agentiik/&lt;name&gt;</code>, signed, and carry the same OCI annotations required of any brick.</li>

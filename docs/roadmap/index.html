@@ -992,7 +992,7 @@ img{max-width:100%}
 <section id="after">
   <div class="sec-head"><span class="mark">§</span><h2>Past v1</h2></div>
   <div class="prose">
-    <p>The documentation keeps a list of what v1 deliberately does not do, and that list is not a backlog: most of it was left out because doing it would cost more than it returns, and that is still true after v1. Four items on it are different, in that the design already leaves the door open and closing that door would be the mistake.</p>
+    <p>The documentation keeps a list of what v1 deliberately does not do, and that list is not a backlog: most of it was left out because doing it would cost more than it returns, and that is still true after v1. Three items on it are different, in that the design already leaves the door open and closing that door would be the mistake. A fourth is not on that list at all — the Helm chart, which <a href="../#repos">Repositories</a> names as later work rather than as something refused — and belongs beside them for the same reason.</p>
 
     <div class="tablewrap">
       <table>
@@ -1000,7 +1000,7 @@ img{max-width:100%}
         <tbody>
           <tr><td class="wrapcell">External identity providers — OIDC federation, SCIM provisioning</td><td>The principal model is provider-agnostic, so adding them touches authentication and not authorisation. That is the whole reason v0.3 was built the way it was.</td></tr>
           <tr><td class="wrapcell">Kubernetes as a substrate</td><td>The container driver sits behind an executor interface. A Job or Pod executor touches neither the controller nor the language.</td></tr>
-          <tr><td class="wrapcell">A Helm chart</td><td>Follows the executor above, and belongs to <code>agentiik/deploy</code> rather than to a release of the core.</td></tr>
+          <tr><td class="wrapcell">A Helm chart</td><td>Follows the executor above, and lives in <code>agentiik/deploy</code>, which ships it in the release it is ready for like anything else.</td></tr>
           <tr><td class="wrapcell">An external policy engine — OPA, Cedar</td><td>Roles and grants are evaluated in the API against the database. Delegating that later is a substitution, not a redesign, as long as the permission vocabulary does not grow in the meantime.</td></tr>
         </tbody>
       </table>
