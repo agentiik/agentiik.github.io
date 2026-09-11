@@ -564,6 +564,7 @@ img{max-width:100%}
             <li><a href="#the-workflow-repository">The workflow repository</a></li>
             <li><a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a></li>
             <li><a href="#includes-and-inheritance">Includes and inheritance</a></li>
+            <li><a href="#publishing-tools">Publishing the workflow as tools</a></li>
           </ul>
         </li>
         <li><a href="#expressions">Expressions</a>
@@ -1238,6 +1239,16 @@ on:
     - type: com.example.order.approved
       filter: ${{ event.data.amount &gt; 0 }}
 
+<span class="c"># --- Published as tools ---------------------------------------------</span>
+mcp:
+  name: invoicing
+  tools:
+    - name: create_invoice
+      description: Issue one invoice for a customer.
+      input:  { from: { input: orders } }
+      output: { from: { output: invoices } }
+      mode: sync
+
 <span class="c"># --- Reuse ----------------------------------------------------------</span>
 include:
   - path: ./common-bricks.yaml            <span class="c"># same commit, nothing to pin</span>
@@ -1481,6 +1492,45 @@ certs/
       region: [fr, be, ch]
       profile: [standard, reduced]
     max_parallel: 3</code></pre>
+  </div>
+
+  <div class="prose">
+    <h3 id="publishing-tools">Publishing the workflow as tools</h3>
+    <p>A workflow becomes callable by a model-driven client when, and only when, the entry point says so. The <code>mcp</code> block is where it says so: a root-level block beside <code>inputs</code> and <code>outputs</code>, declaring which of them are exposed, under what names, and with what descriptions. It is part of the language rather than a setting in the console because it belongs to the version: publishing a tool, renaming one or withdrawing one is a commit, reviewable and revertible like any other change to the file. <a href="#mcp">Native MCP</a> covers what happens on the wire; this covers what is written.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Key</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>name</td><td>Server name shown to a client. Defaults to the workflow name, and exists so that a published interface need not follow an internal rename.</td></tr>
+          <tr><td>description</td><td>What the server is for, in one or two sentences. Read by a model before it reads any tool, so it is the sentence that decides whether the rest is ever looked at.</td></tr>
+          <tr><td>tools</td><td>The published tools. An empty list publishes a server with nothing on it, which is not the same as declaring no <code>mcp</code> block at all: the first serves an empty tool list, the second serves nothing and returns 404.</td></tr>
+          <tr><td class="wrapcell">tools[].name</td><td>Tool identifier, unique within the workflow, stable across commits because clients hold it. Renaming one is removing a tool and adding another.</td></tr>
+          <tr><td class="wrapcell">tools[].title</td><td>Human-readable label. Optional; clients that show a list of tools show this.</td></tr>
+          <tr><td class="wrapcell">tools[].description</td><td>What the tool does, when to reach for it, and what it refuses. This is the field a model actually acts on, and the one worth spending sentences on.</td></tr>
+          <tr><td class="wrapcell">tools[].input</td><td><code>{ from: { input: &lt;name&gt; } }</code>. Names one declared workflow input, whose JSON Schema becomes the tool's <code>inputSchema</code> as it stands.</td></tr>
+          <tr><td class="wrapcell">tools[].output</td><td><code>{ from: { output: &lt;name&gt; } }</code>. Names one declared workflow output, whose envelope becomes the result. Optional: a tool may have an effect and return only that it succeeded.</td></tr>
+          <tr><td class="wrapcell">tools[].mode</td><td><code>sync</code> waits for the run and returns the output; <code>async</code> returns the run identifier at once, to be followed with the platform server's <code>run.get</code>. Defaults to <code>sync</code>.</td></tr>
+          <tr><td class="wrapcell">tools[].timeout</td><td>How long a <code>sync</code> call waits. Capped at 120 seconds, because clients time out; a workflow that cannot finish inside it must be <code>async</code>.</td></tr>
+          <tr><td class="wrapcell">tools[].annotations</td><td>The protocol's own hints — <code>readOnlyHint</code>, <code>idempotentHint</code>, <code>destructiveHint</code>, <code>openWorldHint</code> — passed through unchanged. They are hints to a client, never a permission: what a tool may do is decided by the grants, not by a field in the file.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>What validation refuses</h4>
+    <p>These are language rules, so they are checked before the push is accepted rather than at the first call. A workflow whose published surface does not hold together cannot reach the branch.</p>
+    <ul class="plain">
+      <li>An <code>input.from</code> or <code>output.from</code> naming something the workflow does not declare. The reference is to a workflow input or output, never to a step or a port: a tool is a view of the workflow's own boundary, which is what keeps the graph free to change beneath it.</li>
+      <li>Two tools with the same <code>name</code>, or a name that is not a valid identifier.</li>
+      <li>A tool whose input is a workflow input carrying no schema. A tool has to publish an <code>inputSchema</code>, so the input it maps has to have one — the surest way to discover a workflow input that was never given a schema.</li>
+      <li><code>mode: sync</code> with a timeout above the ceiling, or <code>timeout</code> on an <code>async</code> tool, where it would mean nothing.</li>
+      <li>An <code>mcp</code> block in an included file. Reuse applies to steps and defaults; the published surface is declared by the workflow that publishes it, so that reading one file tells you everything that workflow exposes.</li>
+    </ul>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The tool's schema is the workflow input's schema, used as it stands, and there is no way to write a second one. A separate tool schema would be the more flexible design and the wrong one: two schemas for the same value drift, and they drift silently, because nothing fails until a client sends something the workflow rejects. Tying them together costs a little expressiveness at the boundary and removes a class of bug entirely — and where the two genuinely differ, the honest answer is a workflow input shaped for callers, not a second schema describing the first.</p>
+    </div>
   </div>
 </section>
 
@@ -2600,7 +2650,7 @@ certs/
     <p>The intended sequence is therefore: <code>workflow.language</code> to learn the shape, <code>brick.list</code> and <code>brick.get</code> to find the bricks and their parameter schemas, a draft, <code>workflow.validate</code> until it passes, then <code>workflow.commit</code>. Only the last step has a side effect, and the three read-only tools carry <code>readOnlyHint</code> so a client can tell without being told.</p>
 
     <h3 id="a-workflow-as-an-mcp-server">A workflow as an MCP server</h3>
-    <p>At <code>/mcp/{namespace}/{workflow}</code>, and only if the entry point says so. The declaration maps a workflow input to a tool's input schema and a workflow output to its result.</p>
+    <p>At <code>/mcp/{namespace}/{workflow}</code>, and only if the entry point says so. The declaration maps a workflow input to a tool's input schema and a workflow output to its result; <a href="#publishing-tools">Publishing the workflow as tools</a> sets out the block key by key and what validation refuses.</p>
   </div>
 
   <div class="block">
