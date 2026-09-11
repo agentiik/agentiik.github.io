@@ -671,6 +671,7 @@ img{max-width:100%}
           <ul class="subs">
             <li><a href="#what-the-provider-does-not-manage">What the provider does not manage</a></li>
             <li><a href="#state-and-authentication">State, drift and authentication</a></li>
+            <li><a href="#running-a-workflow-from-terraform">Running a workflow</a></li>
           </ul>
         </li>
       </ul>
@@ -1631,6 +1632,7 @@ certs/
           <tr><td>event</td><td><code>type</code>, <code>source</code>, <code>filter</code></td><td>Consumes CloudEvents 1.0 from the bus. The filter is a CEL expression evaluated over the context attributes and over <code>data</code>. A workflow only sees events published into its own namespace, or into a namespace that granted it read access.</td></tr>
           <tr><td>manual</td><td><code>inputs</code></td><td>Started from the API, the command line, the console or a mobile app by a principal holding <code>workflow:run</code>, with workflow inputs supplied explicitly.</td></tr>
           <tr><td>mcp</td><td>declared in <code>mcp.tools</code></td><td>An MCP <code>tools/call</code> starts a run whose inputs are the tool's arguments. Attributed to the calling principal, subject to <code>workflow:run</code>, and rate limited like every other trigger. See <a href="#mcp">Native MCP</a>.</td></tr>
+          <tr><td>terraform</td><td class="wrapcell"><code>agentiik_run</code>, or the provider's action</td><td>An apply starts a run whose inputs are the resource's. Attributed to the token's principal, subject to <code>workflow:run</code>, and quota-limited like every other trigger. It is distinguished from <code>manual</code> rather than folded into it because a run that appears here is reproducible from a configuration, which is exactly what a person looking at the run list wants to know. See <a href="#terraform">Terraform provider</a>.</td></tr>
           <tr><td>workflow</td><td><code>from</code></td><td>Called by a <code>workflow:</code> step of another workflow. Configurable maximum depth, default 8. A cross-namespace call requires <code>workflow:run</code> on the callee.</td></tr>
         </tbody>
       </table>
@@ -2794,6 +2796,7 @@ certs/
           <tr><td>agentiik_api_token</td><td>A token for a service account, with its scope and expiry. The clear value is returned once, at creation, and is write-only.</td></tr>
           <tr><td>agentiik_secret</td><td>The declaration a workflow references: which provider holds the value and at what path. Never the value.</td></tr>
           <tr><td>agentiik_trigger</td><td>A schedule or webhook on a workflow, where it is declared outside the entry point rather than in it.</td></tr>
+          <tr><td>agentiik_run</td><td>A run of a workflow at a version with given inputs — the state being that such a run has happened, not the act of starting one. See <a href="#running-a-workflow-from-terraform">Running a workflow</a>.</td></tr>
         </tbody>
       </table>
     </div>
@@ -2806,6 +2809,7 @@ certs/
           <tr><td>agentiik_workflow</td><td>Default branch head, resolved graph at that commit, declared inputs and outputs.</td></tr>
           <tr><td>agentiik_brick</td><td>A catalog manifest: ports, parameters, digest. For pinning an image by digest from the version a workflow was written against.</td></tr>
           <tr><td>agentiik_runner_pool</td><td>Labels and capacity, so that a namespace's allowed pools are written against what exists.</td></tr>
+          <tr><td class="wrapcell">agentiik_run_output</td><td>The envelope of one output of one run. Requires <code>run:read_data</code>, and is sensitive: what it reads lands in the state file.</td></tr>
         </tbody>
       </table>
     </div>
@@ -2862,10 +2866,9 @@ resource "agentiik_grant" "accounting_runs_invoicing" {
 
   <div class="prose">
     <h3 id="what-the-provider-does-not-manage">What the provider does not manage</h3>
-    <p>The boundary is not an omission and it is not a roadmap item. Three things stay out, each for its own reason.</p>
+    <p>The boundary is not an omission and it is not a roadmap item. Two things stay out, each for its own reason; a third — starting a run — is in, but only in a shape that keeps an apply idempotent, and <a href="#running-a-workflow-from-terraform">Running a workflow</a> sets out which.</p>
     <ul class="plain">
       <li><b>The contents of a workflow.</b> A workflow is a git repository and <code>agentiik.yaml</code> is its source of truth; putting the graph in HCL would create a second one, and the two would disagree the first time somebody pushed. The provider creates the repository and stops at its first commit. What goes in it arrives by <code>git push</code>, validated by the same hook as every other push.</li>
-      <li><b>Runs.</b> Starting a run is an act, not a state, and it has no meaning in a plan. A resource that triggers on apply would make <code>terraform apply</code> non-idempotent in the one way the tool cannot tolerate. Runs are started by triggers, by the API, by <code>agk</code> or by a tool call — never by a converging plan.</li>
       <li><b>Secret values.</b> The provider writes the declaration — which provider, which path — and never the value, because a value passing through Terraform is a value in the state file. The state is not a secret store, and treating it as one is the single most common way secrets escape in infrastructure code.</li>
     </ul>
 
@@ -2877,6 +2880,78 @@ resource "agentiik_grant" "accounting_runs_invoicing" {
       <li>Drift is read back on refresh. A grant added in the console shows as a change to revert, which is the behaviour to want: if access is managed here, access granted elsewhere is drift, and the plan is where it surfaces.</li>
       <li>The provider tracks the API version, not the core's. It declares the <code>/api/v1</code> it speaks and refuses an endpoint answering a version it does not, rather than failing halfway through an apply.</li>
     </ul>
+
+    
+    <h3 id="running-a-workflow-from-terraform">Running a workflow</h3>
+    <p>Starting a run is an effect, and an effect sits badly in a tool whose whole contract is that applying twice changes nothing the second time. The resolution is not to smuggle the effect in, but to declare a state that happens to require one: <code>agentiik_run</code> does not mean <em>run this workflow</em>, it means <em>a run of this workflow, at this version, with these inputs, has happened</em>. Applying against a configuration whose answer is already yes does nothing, which is the property that was at risk.</p>
+
+    <div class="block">
+      <div class="note-label">a migration that runs once per schema version</div>
+<pre><code>resource "agentiik_run" "migrate" {
+  workflow = agentiik_workflow.invoicing.id
+  ref      = "v2.1.0"
+  inputs = {
+    period = "2026-09"
+  }
+
+  wait = "15m"          <span class="c"># apply fails if the run fails; false returns on acceptance</span>
+
+  <span class="c"># anything here joins the identity: change it and a new run happens</span>
+  triggers = {
+    schema_version = var.schema_version
+  }
+}
+
+output "invoice_count" {
+  value = agentiik_run.migrate.outputs["invoices"].count
+}</code></pre>
+    </div>
+
+    <ul class="plain">
+      <li><b>Identity is the workflow, the commit, the inputs and the triggers.</b> Change any of them and the resource is replaced, which is a new run; change none and no run happens, however many times the plan is applied. A moving <code>ref</code> is resolved to a commit at plan time and the commit is what enters the identity, so a branch that has advanced shows as a planned change rather than as a silent re-run — and a plan that shows nothing means nothing will happen.</li>
+      <li><b>Waiting is a choice with a consequence.</b> <code>wait</code> holds the apply until the run settles, and a failed run fails the apply, naming the step, its exit code and what was refused, in that order. <code>wait = false</code> returns as soon as the run is accepted, and leaves the outputs empty: a configuration that reads them has to wait for them.</li>
+      <li><b>Outputs are digests; contents are a data source.</b> The resource exports the run identifier, its state, its timings and one envelope digest per output. Reading what an envelope contains is <code>agentiik_run_output</code>, which requires <code>run:read_data</code> and is marked sensitive, because an output read into state is an output written to the state file.</li>
+      <li><b>Destroying does not undo.</b> A run that happened cannot be made not to have happened, so <code>terraform destroy</code> forgets the resource and touches nothing on the server. The exception is a run still going when the resource is destroyed: <code>on_destroy = "cancel"</code> cancels it, and the default leaves it to finish, because cancelling somebody's half-done work on the way out of a destroy is the more surprising behaviour of the two.</li>
+      <li><b>It is a run like any other.</b> Attributed to the token's principal, carrying <code>trigger_kind: terraform</code>, listed beside every other run, and subject to the namespace quota and the workflow's concurrency group. It needs <code>workflow:run</code> and nothing more — <code>operator</code> is the grant, and the provider never needs to read the file it runs.</li>
+    </ul>
+
+    <h4>Invoking one without declaring it</h4>
+    <p>Some runs are genuinely imperative — reindex after this deploy, replay this migration now — and wrapping them in a resource means inventing a state that nobody wanted. Terraform 1.14 added actions for exactly this, and the provider exposes one:</p>
+
+    <div class="block">
+      <div class="note-label">Terraform 1.14 and later</div>
+<pre><code>action "agentiik_run" "reindex" {
+  config {
+    workflow = agentiik_workflow.search.id
+    ref      = "v3.0.0"
+    inputs   = { full = true }
+  }
+}
+
+resource "agentiik_workflow" "search" {
+  namespace = agentiik_namespace.platform.name
+  name      = "search-index"
+
+  lifecycle {
+    action_trigger {
+      events  = [after_create, after_update]
+      actions = [action.agentiik_run.reindex]
+    }
+  }
+}</code></pre>
+    </div>
+
+    <p>The same action is invocable on its own with <code>terraform apply -invoke=action.agentiik_run.reindex</code>, which is the closest thing to <code>agk run</code> that stays inside the tool and its credentials.</p>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The action is the addition, never the replacement. OpenTofu has no <code>action</code> block — the request is open and undecided — so a configuration built on actions runs on one of the two tools and not the other, which is precisely what the <a href="#terraform">provider</a> set out not to require of anyone. <code>agentiik_run</code> therefore covers every case on both, and the action exists for the one case it covers better, on the tool that has it. If OpenTofu adopts actions the two paths converge; if it does not, nothing in this documentation has to be taken back.</p>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>Neither path turns Terraform into a scheduler. A run that should happen every month is a <code>schedule</code> trigger in the entry point, where it is visible to everyone who reads the workflow, survives the loss of a state file, and does not depend on somebody's pipeline running <code>apply</code>. The provider starts runs that belong to a change — a migration for a version, a reindex after a deploy — and a run that belongs to the calendar instead belongs to the workflow.</p>
+    </div>
 
     <div class="decision">
       <span class="note-label">Decision</span>
