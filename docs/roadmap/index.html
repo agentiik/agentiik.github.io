@@ -829,7 +829,7 @@ img{max-width:100%}
 </section>
 <!-- ============ v0.1.0 ============ -->
 <section id="m01">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2><span class="tally">28 of 59 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2><span class="tally">29 of 59 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> <code>agk run --local</code> takes an <code>agentiik.yaml</code>, runs its graph, and hands back the output envelopes. No server, no account, no database.</p>
 
@@ -854,7 +854,7 @@ img{max-width:100%}
           <li>Tag agentiik/schemas, agentiik/agentiik and agentiik/bricks at 0.1.0 on the same commit, each under the licence its role requires. <a class="ref" href="../#versioning">versioning</a><a class="ref" href="../#licensing">licensing</a></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The graph evaluator, as a library</h4>
           <span class="work-repo">agentiik</span>
@@ -868,7 +868,7 @@ img{max-width:100%}
           <li class="done">Implement the four fan-out strategies (none, item, batch(n) and matrix) under max_parallel and fail_fast, concatenating shard envelopes port by port before publication. <a class="ref" href="../#fan-out">fan-out</a><a class="ref" href="../#step-keywords">step-keywords</a> <span class="tick">done</span></li>
           <li class="done">Implement if and when: a false if moves the step to skipped and publishes empty envelopes on all its ports, and when decides a downstream step's fate from succeeded, failed, skipped and always. <a class="ref" href="../#scheduling-semantics">scheduling-semantics</a><a class="ref" href="../#step-keywords">step-keywords</a> <span class="tick">done</span></li>
           <li class="done">Implement retry with max, on and backoff, and continue_on_error, taking the verdict from the exit-code table. <a class="ref" href="../#step-keywords">step-keywords</a><a class="ref" href="../#exit-codes">exit-codes</a> <span class="tick">done</span></li>
-          <li>Evaluate ${{ ... }} with CEL, keeping the type of an expression that fills a whole value and converting an embedded one to text. <a class="ref" href="../#expressions">expressions</a></li>
+          <li class="done">Evaluate ${{ ... }} with CEL, keeping the type of an expression that fills a whole value and converting an embedded one to text. <a class="ref" href="../#expressions">expressions</a> <span class="tick">done</span></li>
           <li class="done">Expose exactly the context roots the documentation fixes (workflow, run, vars, inputs, steps, item, matrix, secrets) and refuse any other root at validation. <a class="ref" href="../#exposed-context">exposed-context</a> <span class="tick">done</span></li>
           <li class="done">Keep item contents out of evaluator expressions except the current item under fan_out: item, and keep secrets opaque outside params and secrets. <a class="ref" href="../#exposed-context">exposed-context</a><a class="ref" href="../#secrets">secrets</a> <span class="tick">done</span></li>
           <li class="done">Enforce the mcp language rules at validation: a from naming an undeclared input or output, a duplicate or invalid tool name, an input carrying no schema, a sync timeout above the ceiling, a timeout on an async tool, and an mcp block in an included file. <a class="ref" href="../#publishing-tools">publishing-tools</a> <span class="tick">done</span></li>
