@@ -906,14 +906,15 @@ img{max-width:100%}
     <ul class="plain">
       <li>Profile A, a single host. Profile B, on-premise and redundant. Profile C, AWS with managed resources.</li>
       <li>The installer, installing a runner, the runner-side hooks, sizing, and what the first run does.</li>
+      <li>The Terraform provider, which is what turns the second installation into an apply rather than a second afternoon: namespaces, workflow repositories, grants, groups, service accounts and secret declarations, written down instead of clicked. It belongs here and not earlier because it manages what v0.3 and v0.4 defined, and there is nothing to declare before they exist.</li>
       <li>Upgrade and migration notes, written against a real upgrade rather than an imagined one.</li>
     </ul>
 
     <div class="gate">
       <span class="note-label">Done when</span>
-      <p>Somebody who did not write the code installs profile A and runs a workflow, following the document and asking nothing.</p>
+      <p>Somebody who did not write the code installs profile A and runs a workflow, following the document and asking nothing — and a second environment is an apply against the first one's configuration rather than the same afternoon again.</p>
     </div>
-    <p class="where"><span>Repositories</span> <code>deploy</code> · <code>agentiik</code></p>
+    <p class="where"><span>Repositories</span> <code>deploy</code> · <code>terraform-provider-agentiik</code> · <code>agentiik</code></p>
   </div>
 </section>
 
