@@ -916,7 +916,7 @@ img{max-width:100%}
     <div class="note-label">envelope carried on a port</div>
 <pre><code>{
   "meta": {
-    "run_id": "01JMZ8W4K2R7Q0E3N5T9",
+    "run_id": "01JMZ8W4K2R7Q0E3N5T9ZQ4XKB",
     "step": "normalize",
     "port": "ok",
     "attempt": 1,
@@ -925,20 +925,20 @@ img{max-width:100%}
   },
   "items": [
     {
-      "id": "01JMZ8W4K7A1B2C3D4E5",
+      "id": "01JMZ8W4K7A1B2C3D4E5F6G7H8",
       "data": { "customer_id": "C-1042", "total": 1290.50, "currency": "EUR" },
       "files": []
     },
     {
-      "id": "01JMZ8W4K7A1B2C3D4E6",
+      "id": "01JMZ8W4K7A1B2C3D4E5F6G7H9",
       "data": { "customer_id": "C-1043", "total": 88.00, "currency": "EUR" },
       "files": [
         {
           "name": "purchase-order.pdf",
-          "uri": "agk://run/01JMZ8W4K2R7Q0E3N5T9/normalize/ok/purchase-order.pdf",
+          "uri": "agk://run/01JMZ8W4K2R7Q0E3N5T9ZQ4XKB/normalize/ok/purchase-order.pdf",
           "media_type": "application/pdf",
           "size": 481233,
-          "sha256": "c1f4a9...d02b"
+          "sha256": "c1f4a91dd87852afdeab8ce3212cb8fd034a63f37cc523c8fa6d9ead34c1d02b"
         }
       ]
     }
@@ -947,6 +947,14 @@ img{max-width:100%}
   </div>
 
   <div class="prose">
+    <p>The envelope is a closed document, and the runner refuses one that departs from it rather than ignoring the part it does not recognise. An emitter adding a field of its own, a shard number being the likely one, does not get that field carried and the rest accepted: the envelope is refused whole.</p>
+    <ul class="plain">
+      <li><code>meta</code> and <code>items</code> are both required, and <code>meta</code> carries exactly <code>run_id</code>, <code>step</code>, <code>port</code>, <code>attempt</code>, <code>count</code> and <code>produced_at</code>. There is no <code>shard</code> field, because what is published describes the step and not one of its shards: shard envelopes are concatenated port by port before publication. <code>run_id</code> is the run's ULID, the same value the container reads as <code>AGK_RUN_ID</code>.</li>
+      <li>An item carries <code>id</code>, <code>data</code> and <code>files</code>, all three required. An item with nothing attached writes <code>files: []</code>, as the first item above does; leaving the key out is refused. <code>data</code> is an object, never a scalar and never an array, so an item that is a single value carries it under a name.</li>
+      <li>A file entry carries <code>name</code>, <code>uri</code>, <code>media_type</code>, <code>size</code> and <code>sha256</code>, all five required. <code>media_type</code> is the one a brick writing its own envelope is most likely to leave out, and it is what a consumer reads to know what the bytes are, rather than the ending of the name.</li>
+      <li><code>sha256</code> travels in full, as sixty-four lowercase hexadecimal characters. It is the <code>&lt;digest&gt;</code> the physical key <code>sha256/&lt;digest&gt;</code> is built from, so an elided or truncated one addresses nothing.</li>
+    </ul>
+
     <h3 id="size-rules">Size rules</h3>
     <div class="tablewrap">
       <table>
@@ -981,6 +989,11 @@ img{max-width:100%}
 defaults:
   retain: 7d                       <span class="c"># intermediate artifacts, and any output not saying otherwise</span></code></pre>
     </div>
+
+    <ul class="plain">
+      <li><code>retain</code> is written on a workflow output or in <code>defaults</code>, never on a step. Everything travelling between two steps is an intermediate and lives by the workflow's default, so keeping one heavy intermediate longer than the rest is a change to <code>defaults</code> rather than something a step can ask for.</li>
+      <li>The long form always carries <code>for</code>, one-shot or not, and <code>fetches</code> starts at 1. <code>fetches</code> belongs to a workflow output alone: the long form written in <code>defaults</code> carries <code>for</code> and nothing else.</li>
+    </ul>
 
     <h4>What expiry acts on</h4>
     <p>Expiry applies to the reference, never to the object. The row in <code>artifacts</code> binding a run, a step and a port to a digest is what is dropped; the physical <code>sha256/&lt;digest&gt;</code> object is collected once its reference count reaches zero, and not before. This falls out of content addressing and is not a detail: two runs that produced identical bytes share one object, and expiring one run's output must not reach into the other's. A one-shot artifact collected by its owner therefore leaves the same bytes perfectly readable through another run that still references them. That is the correct behaviour, and worth knowing before it is mistaken for a leak.</p>
@@ -1208,11 +1221,12 @@ defaults:
           <tr><td>1 to 99</td><td>Application failure</td><td>Step failed. No retry unless <code>retry.on</code> says so explicitly.</td></tr>
           <tr><td>100 to 119</td><td>Transient failure</td><td>Retried according to the step policy.</td></tr>
           <tr><td>120</td><td>Invalid input</td><td>Permanent failure. Never retried, whatever <code>retry</code> says.</td></tr>
-          <tr><td>121 to 124</td><td>Reserved</td><td>Rejected at brick manifest validation.</td></tr>
+          <tr><td>121 to 124</td><td>Reserved</td><td>Held for the contract. A brick must not exit with one.</td></tr>
           <tr><td>125 and above</td><td>Reserved for the runtime</td><td>Read as an infrastructure failure, charged to the runner and not to the brick.</td></tr>
         </tbody>
       </table>
     </div>
+    <p>Every band is read off the code a container exited with, which is the only place it can be read: nothing in the manifest declares the codes a brick may exit with, so there is nothing for publication to refuse. A brick leaving 121 to 124 free is honouring a convention rather than passing a check.</p>
 
     <h3 id="environment-variables">Environment variables</h3>
     <div class="tablewrap">
@@ -1284,6 +1298,40 @@ spec:
     request:  { type: object, required: [url], properties: { url: { type: string } } }
     response: { type: object, properties: { status: { type: integer } } }
     failure:  { type: object, properties: { status: { type: integer }, message: { type: string } } }</code></pre>
+  </div>
+
+  <div class="prose">
+    <h4>What a manifest must declare</h4>
+    <p>The manifest above declares everything a brick can declare, which says nothing about what is required. Five keys are: <code>apiVersion</code>, which reads <code>agentiik.dev/v1</code> and nothing else; <code>kind</code>, which reads <code>Brick</code>; <code>metadata.name</code>; <code>metadata.version</code>; and <code>spec.runtime.user</code>. Everything else is optional. A brick may declare no port, no parameter, no secret, no resources and no definitions, because a brick that writes nothing under <code>/agk/out/ports/</code> and exits 0 is a legitimate brick. <code>spec.runtime.user</code> is the exception because the non-root rule is <a href="#further-rules">checked at publication</a>, and a manifest that leaves the account to the image gives publication nothing to check: <code>root</code>, <code>0</code> and <code>0:0</code> are refused. The group half is not read, so <code>nonroot:0</code> is accepted.</p>
+    <p>The manifest is closed wherever the document is its own. An unknown key on the root, on <code>metadata</code>, on <code>spec</code>, on a port entry, on <code>runtime</code>, on <code>resources</code> or on a secret entry fails publication rather than being ignored, so a misspelled key is found where it was written. It stays open wherever the author is writing JSON Schema: a <code>params</code> entry, a <code>definitions</code> entry and a port schema carry the whole 2020-12 vocabulary through untouched. A note added beside a port is a refused manifest; a keyword added inside a parameter schema is the author's own schema and is none of the engine's business.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Key</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">metadata.name</td><td>Lowercase letters and digits in hyphen-separated words, <code>^[a-z0-9]+(?:-[a-z0-9]+)*$</code>. This is narrower than a workflow name, deliberately: a person types a brick name and the catalog files a page under it, so <code>http_request</code> and <code>HttpRequest</code> are refused.</td></tr>
+          <tr><td class="wrapcell">metadata.version</td><td>Semantic Versioning 2.0.0, pre-releases included as <a href="#versioning">Versioning</a> spells them. The manifest carries the bare number, <code>1.4.0</code>, and not the <code>v</code> the project tags with; <code>1.4</code> or a date is refused.</td></tr>
+          <tr><td class="wrapcell">spec.runtime.read_only_root</td><td>What the brick expects, never a switch. The root filesystem is mounted read-only <a href="#settings-applied-to-every-container">in every case</a>, so a manifest writing <code>false</code> does not obtain a writable root: <code>/agk/out</code> and <code>/tmp</code> remain the only writable paths.</td></tr>
+          <tr><td class="wrapcell">spec.params.&lt;name&gt;.sensitive</td><td>Boolean. Marks a parameter that may carry a secret value, and is the only route by which a <a href="#secrets">secret</a> reaches a brick as a parameter rather than as a mounted file.</td></tr>
+          <tr><td class="wrapcell">spec.secrets[].name</td><td>Required, and written on the grammar a workflow secret name is written on, because it is the same name: the brick says what it needs, and the workflow decides which secret of its namespace answers to it.</td></tr>
+          <tr><td class="wrapcell">spec.secrets[].mount</td><td>Optional, and under <code>/agk/secrets/</code>: <code>^/agk/secrets/[^/]+$</code>. A mount elsewhere, <code>/run/secrets/bearer</code> out of habit, is refused.</td></tr>
+          <tr><td class="wrapcell">spec.secrets[].optional</td><td>Boolean, <code>false</code> when absent. A declared secret is therefore required unless the brick says otherwise, which is the difference between a brick that degrades and one that fails inside the container.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>How the values are written</h4>
+    <ul class="plain">
+      <li><b>A port name</b> is <code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>: letters, digits, hyphens and underscores, and no dot, space, slash or comma. The name travels three times over, as a directory under <code>/agk/in/</code>, as a file name under <code>/agk/out/ports/</code> and as one entry of the comma-separated <code>AGK_OUT_PORTS</code>, and a port called <code>in.raw</code> or <code>my port</code> breaks each of the three.</li>
+      <li><b>A port entry carries <code>schema</code> and nothing else</b>, and <code>schema</code> itself is optional: a port declared with no schema accepts whatever arrives, which is what a passthrough brick says. A title or a description written beside a port is a refused manifest.</li>
+      <li><b>A parameter name</b> is <code>^[A-Za-z_][A-Za-z0-9_]*$</code>, narrower than a port name and carrying no hyphen, because the parameter becomes a key of <code>/agk/params.json</code> for the container to read. <code>max-retries</code> is refused.</li>
+      <li><b><code>resources.cpu</code> is a quoted decimal string</b> above zero, <code>"0.5"</code> or <code>"1"</code>. The quotation marks above are load bearing rather than house style: YAML reads an unquoted <code>1</code> as a number, and a number is refused. <b><code>resources.memory</code></b> is a whole number above zero with a binary suffix, <code>Ki</code>, <code>Mi</code>, <code>Gi</code> or <code>Ti</code>, so <code>512M</code> is refused. A step writes both the same way.</li>
+    </ul>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A parameter declaration is a JSON Schema subschema carrying one keyword that is not JSON Schema's. <code>required: true</code>, written on the parameter itself, says a step must supply it, and a missing one is refused when the workflow is validated rather than inside a container. Both forms of the key are accepted, because the array keeps its JSON Schema meaning on a parameter that is itself an object, where it names the members the value must carry. The collision is worth the convenience: everything said about a parameter stays on the parameter, instead of a list on the block above repeating names written just below it.</p>
+    </div>
   </div>
 </section>
 
@@ -1372,6 +1420,11 @@ defaults:
   network: none
   runs_on: [arch=amd64]
 
+<span class="c"># --- One run at a time ----------------------------------------------</span>
+concurrency:
+  group: monthly-invoicing
+  cancel_in_progress: false
+
 <span class="c"># --- Graph ----------------------------------------------------------</span>
 steps:
 
@@ -1412,6 +1465,18 @@ steps:
   </div>
 
   <div class="prose">
+    <p>Names in the file are written on one grammar: <code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>, letters, digits, hyphens and underscores, beginning with a letter or a digit. It governs the workflow name and its namespace, each half of a <code>&lt;namespace&gt;/&lt;name&gt;</code> reference, a step, an input, an output, a port, a variable, a secret and a published tool name, so that one name survives a URL, a directory and a tool list unchanged. Parameter names are the exception and are narrower, <code>^[A-Za-z_][A-Za-z0-9_]*$</code>, with no hyphen, in a step's <code>params</code> and in the <a href="#brick-manifest">manifest</a> that declares them alike: the name is exported as <code>AGK_PARAM_&lt;NAME&gt;</code> to a <a href="#running-a-script-instead-of-a-brick">script</a>, so <code>api-key</code> is refused.</p>
+
+    <ul class="plain">
+      <li><b>What <code>defaults</code> may carry.</b> Execution settings, and only those: <code>timeout</code>, <code>retain</code>, <code>retry</code>, <code>resources</code>, <code>network</code>, <code>egress</code>, <code>runs_on</code>, <code>secrets</code>, <code>cache</code>, <code>continue_on_error</code>, <code>idempotent</code>, <code>files</code>, <code>shell</code>, <code>before_script</code>, <code>after_script</code> and <code>when</code>.</li>
+      <li><b>What it may not.</b> <code>image</code>, <code>script</code>, <code>needs</code>, <code>inputs</code>, <code>outputs</code>, <code>params</code>, <code>if</code>, <code>merge</code>, <code>strategy</code>, <code>extends</code> and <code>workflow</code> are refused there. Anything deciding what a step runs, or where it sits in the graph, belongs to the step: the cut is what keeps the graph readable from the <code>steps</code> block alone, without another block held in mind to know what a step actually does.</li>
+    </ul>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The file is closed. Every block the language owns refuses a key it does not recognise: the root, <code>metadata</code>, a step, <code>defaults</code>, a trigger, an include, a published tool. <code>apiVersion</code> accepts <code>agentiik.dev/v1</code> and nothing else, and <code>kind</code> accepts <code>Workflow</code>. Most YAML tooling ignores what it does not know, which is the expectation worth correcting here: <code>timout: 10m</code> is a rejected push, not a line that quietly does nothing. Failing at the push is cheaper by a wide margin than a timeout that was never applied and a container discovered three hours later. What it costs is that a workflow cannot carry a key of its own invention, which is what <code>metadata.labels</code> and <code>vars</code> are there for.</p>
+    </div>
+
     <h3 id="step-keywords">Step keywords</h3>
     <div class="tablewrap">
       <table>
@@ -1426,25 +1491,28 @@ steps:
           <tr><td>when</td><td>Upstream states that allow the step to start: <code>succeeded</code>, <code>failed</code>, <code>skipped</code>, <code>always</code>. Defaults to <code>[succeeded]</code>.</td></tr>
           <tr><td>merge</td><td>Merge strategy for edges arriving on the same port.</td></tr>
           <tr><td>strategy</td><td><code>fan_out</code>, <code>max_parallel</code>, <code>matrix</code>, <code>fail_fast</code>.</td></tr>
-          <tr><td>retry</td><td><code>max</code>, <code>on</code> (<code>transient</code>, <code>failed</code>, <code>lost</code>, <code>timeout</code>), <code>backoff</code>.</td></tr>
-          <tr><td>timeout</td><td>Maximum duration of one shard. On expiry the container gets SIGTERM, then SIGKILL after <code>grace</code>.</td></tr>
+          <tr><td>retry</td><td><code>max</code>, <code>on</code> (<code>transient</code>, <code>failed</code>, <code>lost</code>, <code>timeout</code>), <code>backoff</code>. A backoff is <code>{ type, base, max }</code>, and <code>exponential</code> is the only type there is: the wait starts at <code>base</code>, lengthens after each failure and never goes past <code>max</code>.</td></tr>
+          <tr><td>timeout</td><td>Maximum duration of one shard, written as a duration. On expiry the container gets SIGTERM, then SIGKILL once its grace period is over. No keyword in this file sets that grace period.</td></tr>
           <tr><td>continue_on_error</td><td>A failure of this step does not fail the run. Downstream steps see the <code>failed</code> state through <code>when</code>.</td></tr>
-          <tr><td>resources</td><td><code>cpu</code>, <code>memory</code>, <code>pids</code>. Capped by the runner policy and by the namespace quota.</td></tr>
+          <tr><td>resources</td><td><code>cpu</code>, <code>memory</code>, <code>pids</code>. Capped by the runner policy and by the namespace quota. <code>cpu</code> and <code>memory</code> are written exactly as the <a href="#brick-manifest">brick manifest</a> writes them, quotation marks included: <code>cpu: 1</code> unquoted is refused.</td></tr>
           <tr><td>network</td><td><code>none</code>, <code>egress</code>, <code>internal</code>. See <a href="#security">Isolation and secrets</a>.</td></tr>
           <tr><td>egress</td><td>Allow list of <code>host:port</code> entries enforced by the runner egress proxy.</td></tr>
           <tr><td>runs_on</td><td>Runner label selectors, for example <code>[zone=dmz, arch=arm64]</code>. Restricted to the runner pools the namespace is allowed to use.</td></tr>
           <tr><td>secrets</td><td>Secrets to mount, by the name declared in the workflow <code>secrets</code> block. Only secrets of the owning namespace can be referenced.</td></tr>
           <tr><td>cache</td><td>Enables result memoisation. The key combines the image digest, the resolved parameters and the digests of the input envelopes.</td></tr>
+          <tr><td>idempotent</td><td>Whether running the step again on the same inputs is safe. A boolean, <code>true</code> by default, settable in <code>defaults</code>. Only an idempotent step is requeued when its task is lost, because a lost task may well have finished without the result coming back, and only an idempotent step can be cached. See <a href="#memoisation-and-replay">Memoisation and replay</a>.</td></tr>
           <tr><td>files</td><td>Narrows what the step receives from the repository tree, which it otherwise gets whole under <code>/agk/repo/</code>. Short form is a path or a glob relative to the root; long form <code>{ from, to, mode }</code> relocates a path.</td></tr>
           <tr><td>script</td><td>Shell commands to run in <code>image</code> instead of using it as a brick. Mutually exclusive with a brick manifest: the image is treated as a base image and nothing about its ports is inferred, so <code>outputs</code> must be declared.</td></tr>
           <tr><td>before_script</td><td>Commands prepended to <code>script</code>, merged from <code>defaults</code> and <code>extends</code> outwards in. Runs in the same container.</td></tr>
           <tr><td>after_script</td><td>Commands appended to <code>script</code>, run in the same container even when <code>script</code> failed, so that a diagnostic dump survives a failure. Its own exit code does not change the step's verdict.</td></tr>
           <tr><td>shell</td><td>Interpreter and flags for <code>script</code>. Defaults to <code>["/bin/sh", "-e"]</code>.</td></tr>
           <tr><td>extends</td><td>Inheritance from a hidden block, whose name starts with a dot and which is never executed.</td></tr>
-          <tr><td>workflow</td><td>Alternative to <code>image</code>: a call to a sub-workflow, local or published.</td></tr>
+          <tr><td>workflow</td><td>Alternative to <code>image</code>: a call to a sub-workflow, local or published, written <code>workflow: &lt;namespace&gt;/&lt;name&gt;</code>, with <code>@&lt;ref&gt;</code> appended to pin a tag or a commit, or in long form <code>{ workflow, ref }</code>. A step carries <code>image</code> or <code>workflow</code> and never both, and <code>script</code>, <code>before_script</code>, <code>after_script</code> and <code>shell</code> are refused beside it: a sub-workflow call runs no container of its own.</td></tr>
         </tbody>
       </table>
     </div>
+
+    <p>A duration, anywhere in the file, is one number and one unit taken from <code>ms</code>, <code>s</code>, <code>m</code>, <code>h</code> and <code>d</code>: <code>500ms</code>, <code>2s</code>, <code>10m</code>, <code>24h</code>, <code>90d</code>. A compound such as <code>1h30m</code> is refused, and so is a bare number. <code>timeout</code>, <code>retain</code>, the schedule <code>jitter</code> and both <code>backoff</code> values are all written that way.</p>
 
     <h3 id="the-workflow-repository">The workflow repository</h3>
     <p>A workflow is a git repository, served by Agentiik itself. <code>agentiik.yaml</code> at the root is the entry point; the rest of the tree is yours to arrange. Scripts, SQL, templates, schemas, fixtures and certificates live where you would put them in any project, and every step of every run sees them.</p>
@@ -1559,7 +1627,7 @@ certs/
     </div>
 
     <ul class="plain">
-      <li>Commands run as the image's user, with the shell named by <code>shell</code>, and the first non-zero exit ends the step with that code, which the <a href="#exit-codes">exit-code table</a> then interprets.</li>
+      <li><code>script</code>, <code>before_script</code> and <code>after_script</code> are lists of command strings, one command per entry, and a single multi-line block scalar is refused. Commands run as the image's user, with the shell named by <code>shell</code>, and the first non-zero exit ends the step with that code, which the <a href="#exit-codes">exit-code table</a> then interprets. The list is what makes that exit attributable to one command rather than to a script.</li>
       <li>Input arrives where it always does: the envelope on standard input and at <code>/agk/in/&lt;port&gt;/envelope.json</code>, artifacts beside it.</li>
       <li>Output is whatever the script writes to <code>/agk/out/ports/&lt;port&gt;.json</code>. A script that writes nothing and exits 0 publishes, on <code>out</code>, one item carrying its captured standard output and any file it left in <code>/agk/out/files/</code>. That is what makes a two-line script worth writing.</li>
       <li><code>/agk/bin/agk</code> is mounted read-only: a static helper for scripts that want to be precise rather than lucky, with <code>agk items</code>, <code>agk emit</code> and <code>agk attach</code>. It is a convenience, never a requirement; <code>jq</code> and a redirect do the same job.</li>
@@ -1593,6 +1661,12 @@ certs/
   </div>
 
   <div class="prose">
+    <ul class="plain">
+      <li>An included file is a fragment, not an entry point. It carries hidden blocks and shared settings; it has no <code>apiVersion</code>, no <code>kind</code> and no <code>metadata</code>, and <code>common-bricks.yaml</code> above is the whole of one. Validating a fragment against the workflow schema is a category error, and a client that does it gets three errors that mean nothing: the entry point is the document that schema is for.</li>
+      <li>A hidden block may be written at the root of the entry point as well as at the root of an included file, and a step under <code>steps</code> may be named with a leading dot. Settings one workflow uses twice do not need a second file to live in.</li>
+      <li>A <code>workflow</code> include must carry <code>ref</code>, a <code>path</code> include must not, and a <code>ref</code> beside a <code>path</code> is refused. Requiring it is not tidiness: an unpinned cross-repository include would let another repository change what this commit does, which is the one property a versioned entry point exists to hold.</li>
+    </ul>
+
     <h3 id="publishing-tools">Publishing the workflow as tools</h3>
     <p>A workflow becomes callable by a model-driven client when, and only when, the entry point says so. The <code>mcp</code> block is where it says so: a root-level block beside <code>inputs</code> and <code>outputs</code>, declaring which of them are exposed, under what names, and with what descriptions. It is part of the language rather than a setting in the console because it belongs to the version: publishing a tool, renaming one or withdrawing one is a commit, reviewable and revertible like any other change to the file. <a href="#mcp">Native MCP</a> covers what happens on the wire; this covers what is written.</p>
 
@@ -1609,7 +1683,7 @@ certs/
           <tr><td class="wrapcell">tools[].input</td><td><code>{ from: { input: &lt;name&gt; } }</code>. Names one declared workflow input, whose JSON Schema becomes the tool's <code>inputSchema</code> as it stands.</td></tr>
           <tr><td class="wrapcell">tools[].output</td><td><code>{ from: { output: &lt;name&gt; } }</code>. Names one declared workflow output, whose envelope becomes the result. Optional: a tool may have an effect and return only that it succeeded.</td></tr>
           <tr><td class="wrapcell">tools[].mode</td><td><code>sync</code> waits for the run and returns the output; <code>async</code> returns the run identifier at once, to be followed with the platform server's <code>run.get</code>. Defaults to <code>sync</code>.</td></tr>
-          <tr><td class="wrapcell">tools[].timeout</td><td>How long a <code>sync</code> call waits. Capped at 120 seconds, because clients time out; a workflow that cannot finish inside it must be <code>async</code>.</td></tr>
+          <tr><td class="wrapcell">tools[].timeout</td><td>How long a <code>sync</code> call waits, written as a duration. Capped at 120 seconds, because clients time out; a workflow that cannot finish inside it must be <code>async</code>. The cap is on the value and not on the unit, so <code>120s</code>, <code>2m</code> and <code>120000ms</code> are the longest forms it accepts and an hour cannot be written at all.</td></tr>
           <tr><td class="wrapcell">tools[].annotations</td><td>The protocol's own hints (<code>readOnlyHint</code>, <code>idempotentHint</code>, <code>destructiveHint</code>, <code>openWorldHint</code>) passed through unchanged. They are hints to a client, never a permission: what a tool may do is decided by the grants, not by a field in the file.</td></tr>
         </tbody>
       </table>
@@ -1618,6 +1692,7 @@ certs/
     <h4>What validation refuses</h4>
     <p>These are language rules, so they are checked before the push is accepted rather than at the first call. A workflow whose published surface does not hold together cannot reach the branch.</p>
     <ul class="plain">
+      <li>A tool with no <code>name</code>, no <code>description</code> or no <code>input</code>. Those three are the required ones: a tool published without a description is exactly the tool a model has no way to decide to call.</li>
       <li>An <code>input.from</code> or <code>output.from</code> naming something the workflow does not declare. The reference is to a workflow input or output, never to a step or a port: a tool is a view of the workflow's own boundary, which is what keeps the graph free to change beneath it.</li>
       <li>Two tools with the same <code>name</code>, or a name that is not a valid identifier.</li>
       <li>A tool whose input is a workflow input carrying no schema. A tool has to publish an <code>inputSchema</code>, so the input it maps has to have one: the surest way to discover a workflow input that was never given a schema.</li>
