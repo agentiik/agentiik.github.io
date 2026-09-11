@@ -957,7 +957,7 @@ img{max-width:100%}
 
 <!-- ============ v0.2.0 ============ -->
 <section id="m02">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">0 of 90 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">0 of 91 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> the same workflow, sent to a server, executed by a runner somewhere else, and watched while it happens.</p>
 
@@ -1074,6 +1074,7 @@ img{max-width:100%}
           <li>Upload artifacts and envelopes through presigned URLs, publish the result on the bus, then destroy the container and the working directory. <a class="ref" href="../#runner">runner</a></li>
           <li>Cache trees by version and image layers by digest on the host, checking that the requesting namespace is entitled to a reference before any pull rather than separating the cache. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><a class="ref" href="../#two-questions-that-come-up">two-questions-that-come-up</a></li>
           <li>Enforce the runner policy on every task: accepted namespaces, resource ceilings over what the task asked for, allowed capabilities, and the nofile and nproc ulimits. <a class="ref" href="../#runner">runner</a><a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a></li>
+                  <li>Build the egress proxy and apply a step's <code>egress.allow</code> list through it, so that <code>network: egress</code> restricts what it says it restricts. Until it exists the driver refuses the mode rather than opening the network and calling it filtered. <a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a><a class="ref" href="../#step-keywords">step-keywords</a></li>
         </ul>
       </div>
       <div class="work-group">

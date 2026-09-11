@@ -2492,7 +2492,7 @@ certs/
       <table>
         <thead><tr><th>Tier</th><th>What runs the container</th><th>When</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">hardened</td><td>The default runtime with the settings in <a href="#security">Isolation and secrets</a>, plus user-namespace remapping, so that container root maps to an unprivileged host account. Docker's own guidance is the reason: "If a process attempts to escalate privilege outside of the namespace, the process is running as an unprivileged high-number UID on the host, which does not even map to a real user."</td><td>Every installation, always. This is not an option.</td></tr>
+          <tr><td class="wrapcell">hardened</td><td>The default runtime with the settings in <a href="#security">Isolation and secrets</a>, plus user-namespace remapping, so that container root maps to an unprivileged host account. Docker's own guidance is the reason: "If a process attempts to escalate privilege outside of the namespace, the process is running as an unprivileged high-number UID on the host, which does not even map to a real user."</td><td>Every installation, always. The runner refuses a daemon without the remapping, and only an operator who sets <code>require_userns_remap: false</code> in the runner's configuration gets past that refusal. The setting exists because a development machine is not an installation, and it is written in a file rather than passed on a command line so that lifting the floor is a thing somebody did on purpose and can be read back.</td></tr>
           <tr><td class="wrapcell">sandboxed</td><td>gVisor's <code>runsc</code> on a dedicated pool. It "provides a strong layer of isolation" by intercepting system calls in a userspace kernel written in a memory-safe language, at a documented cost: "reduced application compatibility and higher per-system call overhead", worst for system-call heavy work.</td><td>A namespace running code its own owners will not vouch for.</td></tr>
           <tr><td class="wrapcell">separated</td><td>A dedicated runner pool on hosts of its own.</td><td>When the requirement is separation rather than sandboxing, and no runtime setting satisfies it.</td></tr>
         </tbody>
@@ -3855,6 +3855,8 @@ resource "agentiik_workflow" "search" {
         </tbody>
       </table>
     </div>
+    <p>One setting on a runner is a floor rather than a preference, and it belongs here because this is the page somebody reads while installing one. <code>require_userns_remap</code> defaults to true, and a runner that finds a daemon without user-namespace remapping refuses to take work rather than starting containers whose root maps to the host's. An operator who sets it to false has decided that this machine does not need the floor, which is a reasonable thing to decide about a laptop and a serious thing to decide about a fleet. It is a line in <code>/etc/agentiik/runner.toml</code> and not a command line flag, so the decision survives in something reviewable rather than in somebody's shell history. <a href="#three-tiers-of-containment">Three tiers of containment</a> says what the remapping buys.</p>
+
     <p>Bare metal describes the agent, not the work. Bricks are containers in both forms: the runner still resolves images by digest and still starts them through the Docker Engine API on that host. What changes is only that the agent itself is a process rather than a container, so it survives a restart of the container platform it is driving and can be given host resources directly.</p>
   </div>
 
