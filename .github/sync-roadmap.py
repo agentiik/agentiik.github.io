@@ -23,15 +23,34 @@ REPOS = ["agentiik", "schemas", "bricks", "brick-sdk", "design", "console", "ios
 
 
 def issue_state():
-    """Every issue in the organisation, by title, with whether it is closed."""
+    """Every issue in the organisation, by title, with whether it is closed.
+
+    Refuses to return a partial picture. A token that cannot read one of the
+    repositories would otherwise make this script strike nothing through and
+    commit that as the truth, which is how the roadmap lost its marks once.
+    """
     state = {}
+    unreadable = []
     for repo in REPOS:
-        out = subprocess.run(
+        r = subprocess.run(
             ["gh", "issue", "list", "--repo", f"agentiik/{repo}", "--state", "all",
              "--limit", "500", "--json", "title,state"],
-            capture_output=True, text=True).stdout
-        for issue in json.loads(out or "[]"):
+            capture_output=True, text=True)
+        if r.returncode != 0 or not r.stdout.strip():
+            unreadable.append(repo)
+            continue
+        for issue in json.loads(r.stdout):
             state[issue["title"].strip()] = issue["state"] == "CLOSED"
+
+    if unreadable:
+        raise SystemExit(
+            "refusing to mark anything: cannot read issues in "
+            + ", ".join(unreadable)
+            + ".\nThe default GITHUB_TOKEN only reaches its own repository, so this needs a"
+            " token that can read issues across the organisation."
+        )
+    if not state:
+        raise SystemExit("refusing to mark anything: no issues found in any repository")
     return state
 
 

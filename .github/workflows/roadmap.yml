@@ -1,16 +1,23 @@
 # Keeps the roadmap showing what is actually done.
 #
-# The roadmap is the plan and the issues are the record. This runs the marker
-# after anything that could change the record, and commits only when the page
-# would say something different from what it says now.
+# The roadmap is the plan and the issues are the record. This reads the record
+# and marks the plan, committing only when the page would say something
+# different from what it says now.
+#
+# It runs on demand and nowhere else, for one reason worth writing down. The
+# tasks live in twelve repositories, and the default GITHUB_TOKEN reaches only
+# the one it runs in. An issues trigger here would fire on this repository's own
+# issues and miss every other, and a schedule would run with the same blind
+# token. The marker refuses to write on a partial read rather than striking
+# nothing through and calling that the truth, so a scheduled run would fail
+# daily and tell nobody anything.
+#
+# To run it on a schedule, give it a token that can read issues across the
+# organisation, put it in ORG_READ_TOKEN, and add the schedule back.
 
 name: Roadmap
 
 on:
-  issues:
-    types: [closed, reopened, deleted, transferred]
-  schedule:
-    - cron: "17 6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -28,7 +35,7 @@ jobs:
 
       - name: Mark what is done
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || secrets.GITHUB_TOKEN }}
         run: python3 .github/sync-roadmap.py
 
       - name: Commit when the page changed

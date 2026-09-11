@@ -829,7 +829,7 @@ img{max-width:100%}
 </section>
 <!-- ============ v0.1.0 ============ -->
 <section id="m01">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2><span class="tally">0 of 59 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2><span class="tally">15 of 59 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> <code>agk run --local</code> takes an <code>agentiik.yaml</code>, runs its graph, and hands back the output envelopes. No server, no account, no database.</p>
 
@@ -844,13 +844,13 @@ img{max-width:100%}
           <span class="work-repo">schemas</span>
         </div>
         <ul>
-          <li>Write the JSON Schema 2020-12 document for the workflow entry point, covering apiVersion, kind, metadata, inputs, outputs, on, mcp, include, vars, secrets, defaults and steps. <a class="ref" href="../#yaml">yaml</a></li>
-          <li>Cover every step keyword in the workflow schema, from image, needs, inputs, outputs and params through script, shell, files, extends and workflow. <a class="ref" href="../#step-keywords">step-keywords</a></li>
-          <li>Write the brick manifest schema for /agk/brick.yaml: inputs, outputs, params, secrets, runtime, resources and definitions. <a class="ref" href="../#brick-manifest">brick-manifest</a></li>
-          <li>Write the envelope schema: meta with run_id, step, port, attempt, count and produced_at, and items with id, data and files entries carrying name, uri, media_type, size and sha256. <a class="ref" href="../#envelope-structure">envelope-structure</a></li>
-          <li>Express the retain grammar in the schema (a duration, or { for, fetches }) and allow fetches only on a workflow output. <a class="ref" href="../#artifact-expiry">artifact-expiry</a></li>
-          <li>Give every keyword a description and examples, and fail the build when one is missing. <a class="ref" href="../#repos">repos</a></li>
-          <li>Ship valid and invalid fixture documents for the three schemas and validate them in CI. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Write the JSON Schema 2020-12 document for the workflow entry point, covering apiVersion, kind, metadata, inputs, outputs, on, mcp, include, vars, secrets, defaults and steps. <a class="ref" href="../#yaml">yaml</a> <span class="tick">done</span></li>
+          <li class="done">Cover every step keyword in the workflow schema, from image, needs, inputs, outputs and params through script, shell, files, extends and workflow. <a class="ref" href="../#step-keywords">step-keywords</a> <span class="tick">done</span></li>
+          <li class="done">Write the brick manifest schema for /agk/brick.yaml: inputs, outputs, params, secrets, runtime, resources and definitions. <a class="ref" href="../#brick-manifest">brick-manifest</a> <span class="tick">done</span></li>
+          <li class="done">Write the envelope schema: meta with run_id, step, port, attempt, count and produced_at, and items with id, data and files entries carrying name, uri, media_type, size and sha256. <a class="ref" href="../#envelope-structure">envelope-structure</a> <span class="tick">done</span></li>
+          <li class="done">Express the retain grammar in the schema (a duration, or { for, fetches }) and allow fetches only on a workflow output. <a class="ref" href="../#artifact-expiry">artifact-expiry</a> <span class="tick">done</span></li>
+          <li class="done">Give every keyword a description and examples, and fail the build when one is missing. <a class="ref" href="../#repos">repos</a> <span class="tick">done</span></li>
+          <li class="done">Ship valid and invalid fixture documents for the three schemas and validate them in CI. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
           <li>Tag agentiik/schemas, agentiik/agentiik and agentiik/bricks at 0.1.0 on the same commit, each under the licence its role requires. <a class="ref" href="../#versioning">versioning</a><a class="ref" href="../#licensing">licensing</a></li>
         </ul>
       </div>
@@ -876,20 +876,20 @@ img{max-width:100%}
           <li>Keep the evaluator importable with no controller, no bus and no database, and hold that boundary with a test. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#repos">repos</a></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>Envelopes, ports and the size rules</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Read and write envelopes against the envelope schema, filling meta with run_id, step, port, attempt, count and produced_at. <a class="ref" href="../#envelope-structure">envelope-structure</a></li>
-          <li>Validate the workflow inputs supplied at the trigger against their declared schemas, applying required and default, and refuse a run whose inputs do not validate. <a class="ref" href="../#yaml">yaml</a></li>
-          <li>Enforce the size rules (inline_max_bytes, envelope_max_bytes, max_items and artifact_max_bytes), rejecting the envelope where the rule rejects and failing the emitting step where it fails. <a class="ref" href="../#size-rules">size-rules</a></li>
-          <li>Spill any value above inline_max_bytes to the artifact store and replace it with a files[] entry carrying name, uri, media_type, size and sha256. <a class="ref" href="../#data">data</a><a class="ref" href="../#size-rules">size-rules</a></li>
-          <li>Implement the content-addressed artifact store: the logical agk://run/&lt;run&gt;/&lt;step&gt;/&lt;port&gt;/&lt;name&gt; URI resolving to a physical sha256/&lt;digest&gt; key, with identical bytes stored once. <a class="ref" href="../#size-rules">size-rules</a></li>
-          <li>Mount input artifacts read-only under /agk/in/&lt;port&gt;/ so a brick receives a path and never a store URL. <a class="ref" href="../#data">data</a><a class="ref" href="../#brick">brick</a></li>
-          <li>Publish an empty envelope for a declared output port the container never wrote, and treat that as success rather than as an error. <a class="ref" href="../#scheduling-semantics">scheduling-semantics</a><a class="ref" href="../#brick">brick</a></li>
-          <li>Assign item identifiers and carry them unchanged through fan-out and merge, so an item keeps the identity of the port that produced it. <a class="ref" href="../#concepts">concepts</a><a class="ref" href="../#envelope-structure">envelope-structure</a></li>
+          <li class="done">Read and write envelopes against the envelope schema, filling meta with run_id, step, port, attempt, count and produced_at. <a class="ref" href="../#envelope-structure">envelope-structure</a> <span class="tick">done</span></li>
+          <li class="done">Validate the workflow inputs supplied at the trigger against their declared schemas, applying required and default, and refuse a run whose inputs do not validate. <a class="ref" href="../#yaml">yaml</a> <span class="tick">done</span></li>
+          <li class="done">Enforce the size rules (inline_max_bytes, envelope_max_bytes, max_items and artifact_max_bytes), rejecting the envelope where the rule rejects and failing the emitting step where it fails. <a class="ref" href="../#size-rules">size-rules</a> <span class="tick">done</span></li>
+          <li class="done">Spill any value above inline_max_bytes to the artifact store and replace it with a files[] entry carrying name, uri, media_type, size and sha256. <a class="ref" href="../#data">data</a><a class="ref" href="../#size-rules">size-rules</a> <span class="tick">done</span></li>
+          <li class="done">Implement the content-addressed artifact store: the logical agk://run/&lt;run&gt;/&lt;step&gt;/&lt;port&gt;/&lt;name&gt; URI resolving to a physical sha256/&lt;digest&gt; key, with identical bytes stored once. <a class="ref" href="../#size-rules">size-rules</a> <span class="tick">done</span></li>
+          <li class="done">Mount input artifacts read-only under /agk/in/&lt;port&gt;/ so a brick receives a path and never a store URL. <a class="ref" href="../#data">data</a><a class="ref" href="../#brick">brick</a> <span class="tick">done</span></li>
+          <li class="done">Publish an empty envelope for a declared output port the container never wrote, and treat that as success rather than as an error. <a class="ref" href="../#scheduling-semantics">scheduling-semantics</a><a class="ref" href="../#brick">brick</a> <span class="tick">done</span></li>
+          <li class="done">Assign item identifiers and carry them unchanged through fan-out and merge, so an item keeps the identity of the port that produced it. <a class="ref" href="../#concepts">concepts</a><a class="ref" href="../#envelope-structure">envelope-structure</a> <span class="tick">done</span></li>
         </ul>
       </div>
       <div class="work-group">
