@@ -725,6 +725,7 @@ img{max-width:100%}
         <li><a href="#repos">Repositories</a>
           <ul class="subs">
             <li><a href="#licensing">Licensing</a></li>
+            <li><a href="#versioning">Versioning</a></li>
             <li><a href="#conventions-across-repositories">Conventions across repositories</a></li>
           </ul>
         </li>
@@ -3708,9 +3709,62 @@ post_task = [
       </table>
     </div>
 
+    <h3 id="versioning">Versioning</h3>
+    <p>Semantic Versioning 2.0.0, one stream per repository, released as a git tag <code>vMAJOR.MINOR.PATCH</code>. The components release independently, so there is no project version and nothing is tagged in lockstep: <code>agentiik</code> at 2.4.0 alongside <code>console</code> at 1.9.3 is the normal state, not a drift to be corrected.</p>
+
+    <p>A version number is a claim about compatibility, and a claim is worthless until it says what it covers. So each repository names its public interface, and the rules below apply to that and to nothing else. What is not on this list may change in a patch.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Repository</th><th>What the version is a promise about</th></tr></thead>
+        <tbody>
+          <tr><td>agentiik/agentiik</td><td>The HTTP API at its declared version, the <code>agk</code> command line and its output formats, the environment a brick is given, the task message, and the runner registration and heartbeat protocol.</td></tr>
+          <tr><td>agentiik/schemas</td><td>The workflow file, the brick manifest and the envelope, as schemas: what a document that validated yesterday may be.</td></tr>
+          <tr><td>agentiik/bricks</td><td>Each brick's ports, parameters and exit codes. One version per brick, not one for the catalog.</td></tr>
+          <tr><td>agentiik/brick-sdk</td><td>The exported functions and types, per language.</td></tr>
+          <tr><td>agentiik/design</td><td>Token names and their meaning. A palette value may change in a minor; a token disappearing is a major.</td></tr>
+          <tr><td class="wrapcell">agentiik/console<br>agentiik/ios<br>agentiik/android</td><td>The API version they require. A client has no other interface to promise.</td></tr>
+          <tr><td>agentiik/deploy</td><td>The shape of the configuration an operator writes, and the upgrade path from the previous minor.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Before and after 1.0.0</h4>
+    <ul class="plain">
+      <li><b>0.y.z</b> promises nothing. Anything may change in any release, and a workflow file, a brick or a deployment may have to be adjusted to follow. This is where every repository starts, and staying there while the design is still moving is more honest than a 1.0.0 that has to be taken back.</li>
+      <li><b>1.0.0</b> is the moment somebody else's work can depend on this one. It is not a statement about how finished the software feels; it is the point at which breaking the interface becomes a major version rather than an ordinary release.</li>
+      <li><b>Afterwards</b>: a patch fixes behaviour that was already wrong, a minor adds without taking away, and a major is the only place something published disappears or changes meaning. A major carries a migration note in <code>agentiik/deploy</code> saying what to change and in what order, and the note ships with the release, not after it.</li>
+    </ul>
+
+    <h4>Pre-releases</h4>
+    <p>A pre-release is a version with a hyphenated identifier — <code>1.0.0-alpha.3</code>, <code>1.0.0-beta.1</code>, <code>1.0.0-rc.2</code> — and it names the version it is heading towards rather than the one behind it. The three channels differ in what may still change, which is the only thing a reader needs from the label.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Channel</th><th>What it promises</th><th>Who it is for</th></tr></thead>
+        <tbody>
+          <tr><td>alpha</td><td>Nothing. The interface may change between two alphas with no notice and no migration. Data written by one alpha may not be readable by the next.</td><td>The people building it, and anyone willing to rebuild their setup.</td></tr>
+          <tr><td>beta</td><td>The interface is complete and no longer expected to change; what remains is to find out where it is wrong. Migrations are provided from the previous beta, and bugs are expected.</td><td>Anyone able to run it beside their real installation rather than as it.</td></tr>
+          <tr><td>rc</td><td>This is the release, unless something blocking is found. Only a fix for such a finding goes in; anything else waits for the next minor. An rc that survives a week with nothing blocking becomes the release, unchanged but for its tag.</td><td>Anyone who will run the release, verifying it before it is one.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="plain">
+      <li>Precedence is Semantic Versioning's own: <code>1.0.0-alpha.3</code> &lt; <code>1.0.0-beta.1</code> &lt; <code>1.0.0-rc.1</code> &lt; <code>1.0.0</code>, and every one of them is below <code>1.0.0</code> itself. A tool resolving a range takes none of them unless asked, which is the behaviour to rely on rather than a separate channel to publish to.</li>
+      <li>Counters start at 1 and never reset within a target: after <code>1.0.0-beta.4</code> comes <code>1.0.0-rc.1</code>, and if the release slips to 1.1.0 the pre-releases are renumbered from <code>1.1.0-alpha.1</code> rather than continued.</li>
+      <li>Images carry the same string: <code>ghcr.io/agentiik/api:1.0.0-rc.2</code> exists and is signed like any other. <code>latest</code> never points at a pre-release, and a pre-release never moves a <code>1</code> or <code>1.0</code> rolling tag.</li>
+      <li>A pre-release of <code>agentiik/schemas</code> is the one that matters most, because everything else pins it: a workflow file accepted by <code>2.0.0-beta.1</code> may be rejected by <code>2.0.0</code>, and a repository should pin an exact pre-release rather than a range.</li>
+    </ul>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The milestones in the <a href="roadmap/">roadmap</a> are not these versions, and the collision of notation is worth naming rather than leaving to be discovered. <code>v0.4</code> there is a point in an order — what has to be true before what — and belongs to the project as a whole; a version here belongs to one repository and is a promise to whoever depends on it. They meet once: the roadmap's <code>v1.0</code> is the milestone at which the repositories that are the service are expected to tag their own <code>1.0.0</code>, because that milestone is precisely the point where somebody else can rely on them. Before then, every repository sits in <code>0.y.z</code> and promises nothing, which is the accurate description of where the project is.</p>
+    </div>
+
     <h3 id="conventions-across-repositories">Conventions across repositories</h3>
     <ul class="plain">
-      <li>Default branch <code>main</code>, releases as tags, semantic versioning per repository.</li>
+      <li>Default branch <code>main</code>, releases as tags, semantic versioning per repository. <a href="#versioning">Versioning</a> sets out what each version is a promise about, and what alpha, beta and rc each mean.</li>
       <li>Every repository carries the same security policy and the same code of conduct, sourced from <code>agentiik/.github</code>. The licence file is the one thing that is not uniform, for the reasons below.</li>
       <li>The core, the console and the two applications release independently. Compatibility is expressed by the API version alone, which is why the URL carries <code>/api/v1</code>.</li>
       <li><code>agentiik/schemas</code> is the only cross-repository dependency for the workflow format. Nothing else redefines those shapes, and a schema change is a release of that repository first.</li>
