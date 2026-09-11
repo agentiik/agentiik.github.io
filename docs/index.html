@@ -542,6 +542,7 @@ img{max-width:100%}
           <ul class="subs">
             <li><a href="#envelope-structure">Envelope structure</a></li>
             <li><a href="#size-rules">Size rules</a></li>
+            <li><a href="#artifact-expiry">How long an artifact lives</a></li>
           </ul>
         </li>
         <li><a href="#graph">The graph and its ports</a>
@@ -909,6 +910,46 @@ img{max-width:100%}
       <span class="note-label">Decision</span>
       <p>Artifacts are content-addressed. The logical URI <code>agk://run/&lt;run&gt;/&lt;step&gt;/&lt;port&gt;/&lt;name&gt;</code> resolves to a physical key <code>sha256/&lt;digest&gt;</code>. Two steps producing identical bytes store one copy, and a replay that recomputes the same content writes nothing. Deduplication is scoped per namespace, so that two namespaces never share a physical object and an existence check can never reveal what another namespace holds.</p>
     </div>
+
+    <h3 id="artifact-expiry">How long an artifact lives</h3>
+    <p>An artifact does not live forever, and how long it lives is declared rather than inherited from whatever the object store was configured to do. Two mechanisms, which answer two different questions: <b>a duration</b> answers <em>how long may this be fetched</em>, and <b>a single fetch</b> answers <em>may this be fetched more than once</em>. They compose — a one-shot artifact still has a duration, which is what expires it when nobody ever comes for it.</p>
+
+    <div class="block">
+      <div class="note-label">in agentiik.yaml</div>
+<pre><code>outputs:
+  invoices:
+    from: { step: archive, port: out }
+    retain: 90d                    <span class="c"># available for ninety days</span>
+  payslips:
+    from: { step: render, port: out }
+    retain: { for: 24h, fetches: 1 }   <span class="c"># gone on collection, or a day later</span>
+
+defaults:
+  retain: 7d                       <span class="c"># intermediate artifacts, and any output not saying otherwise</span></code></pre>
+    </div>
+
+    <h4>What expiry acts on</h4>
+    <p>Expiry applies to the reference, never to the object. The row in <code>artifacts</code> binding a run, a step and a port to a digest is what is dropped; the physical <code>sha256/&lt;digest&gt;</code> object is collected once its reference count reaches zero, and not before. This falls out of content addressing and is not a detail: two runs that produced identical bytes share one object, and expiring one run's output must not reach into the other's. A one-shot artifact collected by its owner therefore leaves the same bytes perfectly readable through another run that still references them — which is the correct behaviour, and worth knowing before it is mistaken for a leak.</p>
+
+    <h4>A single fetch</h4>
+    <ul class="plain">
+      <li>Only a workflow output can be one-shot. An artifact travelling between two steps cannot be, because a fan-out reads it once per shard and a replay reads it again afterwards: consumption there would mean a graph that runs correctly the first time and not the second.</li>
+      <li>A fetch counts when the response completes. A transfer that is interrupted, refused, or ranged over part of the object does not consume the artifact, so a client that loses its connection retries against an artifact still there.</li>
+      <li>The count is per artifact, not per principal. Two people sharing a namespace share the one collection, which is why <code>fetches</code> is written as a number rather than as a flag: <code>fetches: 2</code> is what a workflow feeding two consumers declares.</li>
+      <li>Once consumed, the reference is gone immediately rather than at the next sweep. A later request answers <code>410 Gone</code> and not <code>404</code>, so that a client can tell <em>this existed and is finished</em> from <em>this never existed</em>, and the run detail keeps showing the artifact's name, size and digest with its collection recorded.</li>
+    </ul>
+
+    <h4>What it costs downstream</h4>
+    <ul class="plain">
+      <li><b>Replay.</b> Replaying from a chosen step reuses the artifacts produced upstream, so a run whose artifacts have expired can be replayed only from the beginning. A run says which it is: once any input to a step it could restart from is gone, the run is marked as replayable from the start only, and the console says so where it would otherwise offer the step.</li>
+      <li><b>Memoisation.</b> A cache entry is invalidated when an artifact it would hand back has expired. A cache hit that resolves to a collected one-shot artifact is not a hit, because the point of memoisation is to skip work whose result is still available — and a workflow that declares an output one-shot has said that its result is not.</li>
+      <li><b>The ceiling is the namespace's.</b> <code>retain</code> is capped by the namespace quota and cannot exceed it; a workflow may always ask for less. An operator raising the ceiling does not extend artifacts already expired, because what was dropped was the reference and the object may be gone.</li>
+    </ul>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>Expiry is availability, not erasure, and saying so is the honest version. When the last reference to an object goes, the object is deleted from the store — but a backup taken while it existed still holds it, a replica may not have caught up, and neither is something the engine can promise its way out of. An artifact that must be unrecoverable rather than merely unreachable is a workflow that should not have written it in the clear: encrypt it in the brick that produces it, hand the key to whoever collects it, and expiry then destroys the only copy that was ever readable. That is a property of the workflow, not of the platform, and the platform pretending otherwise would be the more dangerous design.</p>
+    </div>
   </div>
 </section>
 
@@ -1222,6 +1263,7 @@ inputs:
 outputs:
   invoices:
     from: { step: archive, port: out }
+    retain: 90d
   errors:
     from: { step: invoice, port: error }
 
@@ -1267,6 +1309,7 @@ secrets:
 
 defaults:
   timeout: 10m
+  retain: 7d
   retry:
     max: 2
     on: [transient]
@@ -2273,7 +2316,7 @@ certs/
     <h3 id="memoisation-and-replay">Memoisation and replay</h3>
     <ul class="plain">
       <li>With <code>cache: true</code>, the key is the digest of the image digest, the resolved parameters and the input envelope digests concatenated, prefixed by the namespace. A cache hit republishes the same envelopes without starting a container, and never crosses a namespace boundary.</li>
-      <li>Replaying a run from a step reuses the envelopes and artifacts already produced upstream; content addressing guarantees that nothing is rewritten.</li>
+      <li>Replaying a run from a step reuses the envelopes and artifacts already produced upstream; content addressing guarantees that nothing is rewritten. It also assumes they are still there: once they have expired, the run can be replayed only from the beginning, and a cache entry pointing at an expired artifact is not a hit. See <a href="#artifact-expiry">How long an artifact lives</a>.</li>
       <li>A step declared <code>idempotent: false</code> is excluded from the cache and from requeue after loss. The default is <code>true</code>, which puts the burden on the brick author.</li>
     </ul>
   </div>
@@ -3145,7 +3188,7 @@ certs/
         </tbody>
       </table>
     </div>
-    <p>Envelopes and logs are not stored in the database: it keeps only their digests and URIs. Object keys are prefixed by namespace, and every query path carries the namespace so that a missing filter fails closed rather than returning another tenant's rows. Retention is declared per workflow within the namespace ceiling, with separate purges for envelopes, artifacts and logs, and garbage collection of artifacts whose reference count reaches zero.</p>
+    <p>Envelopes and logs are not stored in the database: it keeps only their digests and URIs. Object keys are prefixed by namespace, and every query path carries the namespace so that a missing filter fails closed rather than returning another tenant's rows. Retention is declared per workflow within the namespace ceiling, with separate purges for envelopes, artifacts and logs, and garbage collection of artifacts whose reference count reaches zero. <a href="#artifact-expiry">How long an artifact lives</a> sets out what is declared and what expiry acts on.</p>
   </div>
 </section>
 
