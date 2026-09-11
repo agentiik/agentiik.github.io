@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap · Agentiik</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&amp;display=swap">
+<style>
+:root{
+  --paper:#F1F3EE;
+  --surface:#FBFCF8;
+  --sunken:#E7EBE3;
+  --ink:#17201C;
+  --muted:#5C6A62;
+  --faint:#7C887F;
+  --line:#D3D9CF;
+  --line-strong:#B9C2B5;
+  --accent:#0E6A5F;
+  --accent-soft:#DCE9E4;
+  --signal:#A8481B;
+  --shadow:0 1px 2px rgba(23,32,28,.05);
+  --header-h:58px;
+  --nav-w:270px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111614;
+    --surface:#181E1B;
+    --sunken:#0C110F;
+    --ink:#E5EAE3;
+    --muted:#9AA79E;
+    --faint:#7E8B83;
+    --line:#2A332E;
+    --line-strong:#3B463F;
+    --accent:#54C1AD;
+    --accent-soft:#12302B;
+    --signal:#E29063;
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111614;
+  --surface:#181E1B;
+  --sunken:#0C110F;
+  --ink:#E5EAE3;
+  --muted:#9AA79E;
+  --faint:#7E8B83;
+  --line:#2A332E;
+  --line-strong:#3B463F;
+  --accent:#54C1AD;
+  --accent-soft:#12302B;
+  --signal:#E29063;
+  --shadow:none;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
+  font-size:17px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+html{scroll-behavior:smooth}
+.topbar{
+  position:fixed;
+  top:0;left:0;right:0;
+  z-index:30;
+  height:var(--header-h);
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding-inline:clamp(16px,3vw,28px);
+  background:var(--surface);
+  border-bottom:1px solid var(--line-strong);
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:var(--ink);
+  text-decoration:none;
+}
+.logo{fill:var(--accent)}
+.brand .logo{
+  flex:none;
+  width:16px;
+  height:14px;
+}
+.topbar-sub{
+  font-size:.7rem;
+  text-transform:uppercase;
+  letter-spacing:.16em;
+  font-weight:600;
+  color:var(--muted);
+  border-left:1px solid var(--line-strong);
+  padding-left:14px;
+  white-space:nowrap;
+}
+.shell{
+  display:grid;
+  grid-template-columns:var(--nav-w) minmax(0,1fr);
+  gap:clamp(22px,3.5vw,52px);
+  max-width:1400px;
+  margin:0 auto;
+  padding-top:var(--header-h);
+  padding-inline:clamp(16px,3vw,28px);
+}
+main{
+  min-width:0;
+  padding-block:clamp(30px,4vw,52px) 96px;
+}
+.opening{
+  border-bottom:2px solid var(--ink);
+  padding-bottom:clamp(20px,3vw,30px);
+  margin-bottom:clamp(28px,4vw,44px);
+}
+.prose{max-width:68ch}
+
+h1,h2,h3,h4,.eyebrow,.chip,th,.tag,figcaption,.side a,.side summary,.topbar-sub,.note-label{
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+}
+h1{
+  font-size:1.04rem;
+  line-height:1.1;
+  letter-spacing:-.01em;
+  font-weight:600;
+  margin:0;
+}
+h2{
+  font-size:clamp(1.42rem,3.4vw,1.78rem);
+  line-height:1.15;
+  letter-spacing:-.02em;
+  font-weight:600;
+  margin:0;
+  text-wrap:balance;
+}
+h3{
+  font-size:1.06rem;
+  letter-spacing:-.005em;
+  font-weight:600;
+  margin:2.4em 0 .6em;
+  text-wrap:balance;
+}
+h4{
+  font-size:.78rem;
+  text-transform:uppercase;
+  letter-spacing:.13em;
+  font-weight:600;
+  color:var(--muted);
+  margin:2em 0 .5em;
+}
+p{margin:0 0 1.05em}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+.eyebrow{
+  font-size:.72rem;
+  text-transform:uppercase;
+  letter-spacing:.2em;
+  font-weight:600;
+  color:var(--accent);
+}
+.lede{
+  font-size:1.2rem;
+  line-height:1.5;
+  color:var(--muted);
+  max-width:56ch;
+  margin:0;
+}
+
+.hero-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:22px;
+}
+.tag{
+  font-size:.72rem;
+  font-weight:500;
+  letter-spacing:.02em;
+  padding:4px 10px;
+  border:1px solid var(--line-strong);
+  border-radius:999px;
+  color:var(--muted);
+  white-space:nowrap;
+}
+
+.side{
+  position:sticky;
+  top:var(--header-h);
+  align-self:start;
+  height:calc(100vh - var(--header-h));
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:22px 14px 48px 0;
+  border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+
+/* Which document you are in, before which part of it. */
+.side-docs{
+  display:flex;
+  gap:2px;
+  margin-bottom:22px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--line);
+}
+.side-docs a{
+  flex:1;
+  text-align:center;
+  padding:6px 8px;
+  font-size:.72rem;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  font-weight:600;
+  color:var(--faint);
+  text-decoration:none;
+  border:1px solid transparent;
+}
+.side-docs a:hover{color:var(--ink);background:var(--sunken)}
+.side-docs a[aria-current="page"]{
+  color:var(--ink);
+  border-color:var(--line);
+  background:var(--surface);
+}
+
+.side details.part{
+  margin:0;
+  border-bottom:1px solid var(--line);
+}
+.side details.part:last-child{border-bottom:0}
+.side summary{
+  list-style:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  font-size:.68rem;
+  text-transform:uppercase;
+  letter-spacing:.15em;
+  font-weight:600;
+  color:var(--faint);
+  padding:11px 0;
+}
+.side summary:hover{color:var(--muted)}
+.side summary::-webkit-details-marker{display:none}
+.side summary::before{
+  content:"";
+  flex:none;
+  width:6px;height:6px;
+  border-right:1.5px solid var(--line-strong);
+  border-bottom:1.5px solid var(--line-strong);
+  transform:rotate(-45deg);
+  transition:transform .12s ease;
+}
+.side details[open] > summary::before{transform:rotate(45deg)}
+.side details.part[open] > summary{color:var(--muted)}
+.side-toc ul{
+  list-style:none;
+  margin:0 0 10px;
+  padding:0;
+}
+.side-toc a{
+  display:block;
+  font-size:.85rem;
+  line-height:1.3;
+  padding:5px 10px 5px 13px;
+  color:var(--muted);
+  text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side-toc a:hover{color:var(--ink);background:var(--sunken)}
+.side-toc a[aria-current="true"]{
+  color:var(--accent);
+  font-weight:600;
+  border-left-color:var(--accent);
+  background:var(--accent-soft);
+}
+
+/* A chapter's sections appear only while you are in that chapter, so the
+   sidebar stays a list of 26 lines and becomes a list of 30 only where the
+   detail is what you are reading. */
+.side-toc .subs{
+  display:none;
+  margin:2px 0 6px 13px;
+  border-left:1px solid var(--line);
+}
+.side-toc li[data-open] > .subs{display:block}
+.side-toc .subs a{
+  font-size:.79rem;
+  padding:4px 10px 4px 12px;
+  color:var(--faint);
+  border-left:2px solid transparent;
+  margin-left:-1px;
+}
+.side-toc .subs a:hover{color:var(--ink)}
+.side-toc .subs a[aria-current="true"]{
+  color:var(--accent);
+  font-weight:500;
+  background:transparent;
+  border-left-color:var(--accent);
+}
+
+@media (prefers-reduced-motion:reduce){
+  .side summary::before{transition:none}
+}
+
+section{
+  padding-top:clamp(36px,5vw,60px);
+  border-top:1px solid var(--line);
+  margin-top:clamp(36px,5vw,60px);
+  scroll-margin-top:calc(var(--header-h) + 20px);
+}
+section:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.sec-head{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:16px;
+  align-items:baseline;
+  margin-bottom:1.4em;
+}
+.sec-head .mark{
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.72rem;
+  color:var(--faint);
+  letter-spacing:.06em;
+  padding-top:.35em;
+}
+
+ul.plain{list-style:none;margin:0 0 1.2em;padding:0;max-width:68ch}
+ul.plain > li{
+  position:relative;
+  padding-left:20px;
+  margin-bottom:.5em;
+}
+ul.plain > li::before{
+  content:"";
+  position:absolute;
+  left:0;top:.72em;
+  width:7px;height:1px;
+  background:var(--line-strong);
+}
+ol.steps{max-width:68ch;padding-left:1.2em;margin:0 0 1.2em}
+ol.steps li{margin-bottom:.5em}
+
+dl.defs{
+  margin:0 0 1.4em;
+  max-width:72ch;
+  border-top:1px solid var(--line);
+}
+dl.defs > div{
+  display:grid;
+  grid-template-columns:minmax(140px,190px) 1fr;
+  gap:4px 22px;
+  padding:12px 0;
+  border-bottom:1px solid var(--line);
+}
+dl.defs dt{
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.82rem;
+  font-weight:500;
+  color:var(--accent);
+  padding-top:.16em;
+  word-break:break-word;
+}
+dl.defs dd{margin:0;font-size:.96rem}
+@media (max-width:560px){
+  dl.defs > div{grid-template-columns:1fr;gap:2px}
+}
+
+code{
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.86em;
+  background:var(--sunken);
+  padding:1px 5px;
+  border-radius:3px;
+}
+.block{
+  margin:1.4em 0 1.8em;
+  border:1px solid var(--line);
+  background:var(--sunken);
+  box-shadow:var(--shadow);
+}
+.block .note-label{
+  font-size:.68rem;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  font-weight:600;
+  color:var(--muted);
+  padding:8px 14px;
+  border-bottom:1px solid var(--line);
+  background:var(--surface);
+}
+.block pre{
+  margin:0;
+  padding:16px 14px;
+  overflow-x:auto;
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.79rem;
+  line-height:1.7;
+  tab-size:2;
+}
+.block pre code{background:none;padding:0;font-size:inherit}
+.c{color:var(--faint);font-style:italic}
+
+.tablewrap{overflow-x:auto;margin:1.4em 0 1.8em;border:1px solid var(--line);background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.88rem}
+th{
+  text-align:left;
+  font-size:.7rem;
+  text-transform:uppercase;
+  letter-spacing:.11em;
+  font-weight:600;
+  color:var(--muted);
+  padding:11px 14px;
+  border-bottom:1px solid var(--line-strong);
+  white-space:nowrap;
+}
+td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td:first-child{
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.79rem;
+  color:var(--accent);
+  white-space:nowrap;
+}
+td.wrapcell:first-child{white-space:normal}
+.num{font-variant-numeric:tabular-nums}
+.no{color:var(--signal)}
+
+figure{
+  margin:2em 0 2.4em;
+  border:1px solid var(--line);
+  background:var(--surface);
+  box-shadow:var(--shadow);
+}
+figure .figbody{padding:20px 16px 8px;overflow-x:auto}
+figure svg{display:block;max-width:100%;height:auto;min-width:520px;margin:0 auto;color:var(--ink)}
+figcaption{
+  font-size:.8rem;
+  line-height:1.5;
+  color:var(--muted);
+  padding:12px 18px 16px;
+  border-top:1px solid var(--line);
+  margin-top:8px;
+}
+figcaption b{color:var(--ink);font-weight:600}
+
+.decision{
+  border-left:3px solid var(--accent);
+  background:var(--accent-soft);
+  padding:14px 18px;
+  margin:1.5em 0;
+  max-width:68ch;
+  font-size:.95rem;
+}
+.decision .note-label{
+  display:block;
+  font-size:.66rem;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  font-weight:600;
+  color:var(--accent);
+  margin-bottom:4px;
+}
+.decision p:last-child{margin-bottom:0}
+
+.endrule{margin-top:72px;border-top:2px solid var(--ink);padding-top:16px;font-size:.8rem;color:var(--faint);font-family:Archivo,sans-serif}
+
+
+figure img{display:block;width:100%;height:auto}
+figure img + figcaption, figure img + img + figcaption{margin-top:0}
+.shot-dark{display:none}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .shot-dark{display:block}
+  :root:not([data-theme="light"]) .shot-light{display:none}
+}
+:root[data-theme="dark"] .shot-dark{display:block}
+:root[data-theme="dark"] .shot-light{display:none}
+
+@media (max-width:980px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  .side{
+    position:static;
+    height:auto;
+    overflow:visible;
+    border-right:0;
+    border-bottom:1px solid var(--line);
+    padding:16px 0 8px;
+  }
+  .side-docs{max-width:320px}
+  /* The nine parts sit as a grid of closed headings, so the document starts
+     within a screen of the top rather than below a list of 26 chapters. */
+  .side-toc{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(168px,1fr));
+    gap:0 22px;
+    align-items:start;
+  }
+  .side details.part{border-bottom:0}
+  .side summary{padding:9px 0}
+  main{padding-block:clamp(22px,4vw,34px) 72px}
+}
+@media (max-width:700px){
+  .topbar-sub{display:none}
+}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+</style>
+<style>
+/* Roadmap only. A milestone reads as three fixed beats — what it makes
+   possible, what it takes, and the fact that closes it — so each beat is
+   given a shape the eye can find again in the next milestone. */
+.makes{
+  max-width:68ch;
+  padding-left:14px;
+  border-left:2px solid var(--line-strong);
+  color:var(--ink);
+}
+.makes b{
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+  font-size:.72rem;
+  text-transform:uppercase;
+  letter-spacing:.13em;
+  font-weight:600;
+  color:var(--faint);
+  margin-right:6px;
+}
+.gate{
+  border-left:3px solid var(--signal);
+  background:var(--sunken);
+  padding:14px 18px;
+  margin:1.6em 0;
+  max-width:68ch;
+  font-size:.95rem;
+}
+.gate .note-label{
+  display:block;
+  font-size:.66rem;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  font-weight:600;
+  color:var(--signal);
+  margin-bottom:4px;
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+}
+.gate p:last-child{margin-bottom:0}
+.where{
+  max-width:68ch;
+  font-size:.82rem;
+  color:var(--faint);
+  border-top:1px solid var(--line);
+  padding-top:10px;
+  margin-top:1.6em;
+}
+.where span{
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+  font-size:.66rem;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  font-weight:600;
+  margin-right:10px;
+}
+.where code{font-size:.8rem}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../index.html">
+    <svg class="logo" viewBox="0 0 16 14" aria-hidden="true" focusable="false">
+      <rect width="16" height="4" rx="1"/>
+      <g opacity=".62">
+        <rect y="6" width="7" height="4" rx="1"/>
+        <rect x="9" y="6" width="7" height="4" rx="1"/>
+      </g>
+      <rect y="12" width="16" height="2" rx="1" opacity=".3"/>
+    </svg>
+    <h1>Agentiik</h1>
+  </a>
+  <span class="topbar-sub">Roadmap</span>
+</header>
+
+<div class="shell">
+
+<nav class="side" aria-label="Contents">
+  <div class="side-docs">
+    <a href="../">Specification</a>
+    <a href="./" aria-current="page">Roadmap</a>
+  </div>
+  <div class="side-toc">
+    <details class="part" open>
+      <summary>How to read this</summary>
+      <ul>
+        <li><a href="#shape">The shape of the plan</a></li>
+        <li><a href="#order">Why this order</a></li>
+      </ul>
+    </details>
+    <details class="part" open>
+      <summary>Milestones</summary>
+      <ul>
+        <li><a href="#m01">v0.1 · The language runs on one machine</a></li>
+        <li><a href="#m02">v0.2 · A server runs it instead</a></li>
+        <li><a href="#m03">v0.3 · More than one person</a></li>
+        <li><a href="#m04">v0.4 · The workflow is a repository</a></li>
+        <li><a href="#m05">v0.5 · Runs start without being asked</a></li>
+        <li><a href="#m06">v0.6 · A console to watch it</a></li>
+        <li><a href="#m07">v0.7 · An agent can use it</a></li>
+        <li><a href="#m08">v0.8 · A catalog worth pulling from</a></li>
+        <li><a href="#m09">v0.9 · Somebody else can install it</a></li>
+        <li><a href="#m10">v1.0 · It fits in a pocket, and it holds</a></li>
+      </ul>
+    </details>
+    <details class="part">
+      <summary>Afterwards</summary>
+      <ul>
+        <li><a href="#after">Past v1</a></li>
+        <li><a href="#risks">What could reorder this</a></li>
+      </ul>
+    </details>
+  </div>
+</nav>
+
+<main>
+<div class="opening">
+  <p class="lede">An order, not a schedule. Ten milestones, each one making true something the next one needs, from a workflow that runs on a laptop to four clients reading the same run.</p>
+  <div class="hero-meta">
+    <span class="tag">No dates</span>
+    <span class="tag">The contract first</span>
+    <span class="tag">One path end to end before any width</span>
+    <span class="tag">Permission before any surface</span>
+    <span class="tag">v1 closes the scope, it does not extend it</span>
+  </div>
+</div>
+
+<!-- ============ SHAPE ============ -->
+<section id="shape">
+  <div class="sec-head"><span class="mark">§</span><h2>The shape of the plan</h2></div>
+  <div class="prose">
+    <p>The <a href="../">specification</a> says what Agentiik is. This says in what order it becomes that, and nothing else: no dates, no estimates, no capacity. It is the one document here that is expected to be rewritten rather than amended, because an order survives being wrong in a way a schedule does not.</p>
+
+    <p>A milestone here is not a batch of work. It is a sentence that becomes true and does not become false again. <em>A workflow runs to completion on one machine with no server</em> is a milestone. <em>The graph evaluator is written</em> is not one, because nothing outside the code can tell whether it happened.</p>
+
+    <p>Each of them carries four things, in the same order every time: what it makes possible, what it takes to get there, which repositories it touches, and the fact you can check to say it is done. The last is the one that matters. A milestone is crossed when its sentence is true, not when every line under it is ticked, and a line that turns out not to serve the sentence is dropped rather than carried.</p>
+
+    <div class="decision">
+      <span class="note-label">Why no dates</span>
+      <p>One maintainer cannot hold a calendar, and a missed date reads worse afterwards than an order does, because the order stays true at any pace while the date is simply wrong. The version numbers are markers of sequence, not promises of delivery: <code>v0.4</code> means <em>after v0.3 and before v0.5</em> and means nothing else. If dates ever become useful — because somebody else is waiting on one — they belong in milestones on the repositories, next to the issues that move, not in a document that is read months after it was written.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ORDER ============ -->
+<section id="order">
+  <div class="sec-head"><span class="mark">§</span><h2>Why this order</h2></div>
+  <div class="prose">
+    <p>Three rules decide the sequence. Everything else in it is negotiable.</p>
+
+    <ul class="plain">
+      <li><b>The contract ships before anything that reads it.</b> <code>agentiik/schemas</code> is released first and released again before each change, because it is the only cross-repository dependency for the workflow format. A format settled after the fact, by whichever code happened to consume it first, is a format the core, the console, the two applications and the <code>workflow.language</code> tool will each have learnt slightly differently — which is the exact failure the repository was extracted to prevent.</li>
+      <li><b>One path end to end before any width.</b> v0.1 runs a whole graph on one machine before a server exists. What an envelope has to carry, what a brick actually receives, which port a rejected item leaves by: all of it is discovered by running a workflow, and discovered far more cheaply with no controller, no task bus and no runner standing around it.</li>
+      <li><b>Nothing multi-user before the permission model.</b> Sharing, namespaces and roles land before the console, before triggers and before MCP, because each of those three is a way in. A door added before the lock never quite closes afterwards: there is always one path that worked before permissions existed, and nobody goes back to shut it.</li>
+    </ul>
+  </div>
+
+  <figure>
+    <div class="figbody">
+      <svg viewBox="0 0 900 300" role="img" aria-label="v0.1 leads to v0.2, then v0.3, then v0.4; from v0.4 four milestones run in parallel — v0.5 triggers, v0.6 console, v0.7 MCP and v0.8 catalog — and all four converge on v0.9 deployment, which leads to v1.0.">
+        <defs>
+          <marker id="rm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <g stroke="currentColor" stroke-width="1.5" fill="none">
+          <rect x="8" y="128" width="92" height="44"/>
+          <rect x="126" y="128" width="92" height="44"/>
+          <rect x="244" y="128" width="92" height="44"/>
+        </g>
+        <rect x="362" y="128" width="92" height="44" fill="none" stroke="currentColor" stroke-width="2.5"/>
+
+        <g stroke="currentColor" stroke-width="1.5" fill="none">
+          <rect x="504" y="18" width="104" height="44"/>
+          <rect x="504" y="91" width="104" height="44"/>
+          <rect x="504" y="165" width="104" height="44"/>
+          <rect x="504" y="238" width="104" height="44"/>
+        </g>
+
+        <g stroke="currentColor" stroke-width="1.5" fill="none">
+          <rect x="676" y="128" width="92" height="44"/>
+        </g>
+        <rect x="794" y="128" width="98" height="44" fill="none" stroke="currentColor" stroke-width="2.5"/>
+
+        <g font-family="JetBrains Mono, monospace" font-size="11" fill="currentColor" text-anchor="middle">
+          <text x="54" y="147">v0.1</text><text x="54" y="161" font-size="8.5" opacity=".65">local</text>
+          <text x="172" y="147">v0.2</text><text x="172" y="161" font-size="8.5" opacity=".65">server</text>
+          <text x="290" y="147">v0.3</text><text x="290" y="161" font-size="8.5" opacity=".65">people</text>
+          <text x="408" y="147" font-weight="700">v0.4</text><text x="408" y="161" font-size="8.5" opacity=".65">repository</text>
+          <text x="556" y="37">v0.5</text><text x="556" y="51" font-size="8.5" opacity=".65">triggers</text>
+          <text x="556" y="110">v0.6</text><text x="556" y="124" font-size="8.5" opacity=".65">console</text>
+          <text x="556" y="184">v0.7</text><text x="556" y="198" font-size="8.5" opacity=".65">MCP</text>
+          <text x="556" y="257">v0.8</text><text x="556" y="271" font-size="8.5" opacity=".65">catalog</text>
+          <text x="722" y="147">v0.9</text><text x="722" y="161" font-size="8.5" opacity=".65">deploy</text>
+          <text x="843" y="147" font-weight="700">v1.0</text><text x="843" y="161" font-size="8.5" opacity=".65">mobile</text>
+        </g>
+
+        <g fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#rm)">
+          <path d="M 100 150 H 120"/>
+          <path d="M 218 150 H 238"/>
+          <path d="M 336 150 H 356"/>
+          <path d="M 454 150 H 478 V 40 H 498"/>
+          <path d="M 454 150 H 478 V 113 H 498"/>
+          <path d="M 454 150 H 478 V 187 H 498"/>
+          <path d="M 454 150 H 478 V 260 H 498"/>
+          <path d="M 608 40 H 640 V 150 H 670"/>
+          <path d="M 608 113 H 640 V 150 H 670"/>
+          <path d="M 608 187 H 640 V 150 H 670"/>
+          <path d="M 608 260 H 640 V 150 H 670"/>
+          <path d="M 768 150 H 788"/>
+        </g>
+
+        <path d="M 54 128 V 96 H 556 V 12" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity=".45"/>
+        <text x="300" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8.5" fill="currentColor" opacity=".55">the catalog needs only the brick contract</text>
+      </svg>
+    </div>
+    <figcaption><b>One spine, four branches.</b> Everything up to v0.4 is a chain, because each link is what makes the next one safe to build. After it the four branches are genuinely parallel and their order is a matter of appetite — except that v0.8 never needed to wait at all: the brick contract settles at v0.1, and the catalog could be built against it from that day.</figcaption>
+  </figure>
+</section>
+<!-- ============ v0.1 ============ -->
+<section id="m01">
+  <div class="sec-head"><span class="mark">§</span><h2>v0.1 — The language runs on one machine</h2></div>
+  <div class="prose">
+    <p class="makes"><b>Makes possible:</b> <code>agk run --local</code> takes an <code>agentiik.yaml</code>, runs its graph, and hands back the output envelopes. No server, no account, no database.</p>
+
+    <p>This exists so that the workflow language and the brick contract meet reality before anything depends on them. What an envelope has to carry, what a brick actually receives, which port a rejected item leaves by — all of that is learnt by running a graph, and it is learnt at a tenth of the cost with no controller, no task bus and no runner standing around it. Everything after this milestone assumes these two things are settled; this is the milestone whose job is to find out that they are not.</p>
+
+    <ul class="plain">
+      <li><code>agentiik/schemas</code> 0.1: the workflow file, the brick manifest and the envelope, every keyword carrying its <code>description</code> and <code>examples</code> from the first release rather than from the first time somebody needs them.</li>
+      <li>The graph evaluator and the container driver, as importable libraries. That is not a style preference: it is the only thing that makes <code>agk run --local</code> the same code path as a server run instead of a second implementation that will drift.</li>
+      <li>Ports, <code>needs</code>, merge strategies, fan-out, exit codes, the size rules, and the environment the container is given.</li>
+      <li><code>agk validate</code> and <code>agk run --local</code>.</li>
+      <li>Three or four bricks — enough that the contract is exercised rather than described.</li>
+    </ul>
+
+    <div class="gate">
+      <span class="note-label">Done when</span>
+      <p>A multi-step workflow with a fan-out and a merge runs end to end on a laptop, and running it again on the same inputs produces the same envelopes.</p>
+    </div>
+    <p class="where"><span>Repositories</span> <code>schemas</code> · <code>agentiik</code> · <code>bricks</code></p>
+  </div>
+</section>
+
+<!-- ============ v0.2 ============ -->
+<section id="m02">
+  <div class="sec-head"><span class="mark">§</span><h2>v0.2 — A server runs it instead</h2></div>
+  <div class="prose">
+    <p class="makes"><b>Makes possible:</b> the same workflow, sent to a server, executed by a runner somewhere else, and watched while it happens.</p>
+
+    <p>The split between controller, task bus and runner is where the specification takes its largest bet, and where being wrong costs the most to undo later. So the fact to make true here is narrow and checkable: a runner never speaks git, never holds a lasting credential, and obtains what its task names only by redeeming that task's grant. If that holds under a real run, the rest of the architecture follows; if it does not, better to know before four clients are built on it.</p>
+
+    <ul class="plain">
+      <li>Controller, task bus, runner, and the HTTP API at <code>/api/v1</code>.</li>
+      <li>Storage: envelopes and artifacts in an object store, runs in a database.</li>
+      <li>Grants: presigned URLs, secret values, repository objects — everything the task names and nothing beyond it.</li>
+      <li>Run states, the heartbeat, and what happens to a task whose runner stops answering.</li>
+      <li><code>agk</code> against a server, on the same evaluator it uses locally.</li>
+    </ul>
+
+    <div class="gate">
+      <span class="note-label">Done when</span>
+      <p>A runner on another machine executes a step having held nothing but its task's grant, and killing that runner mid-step leaves the run in a state it resumes from rather than one it has to be rescued from.</p>
+    </div>
+    <p class="where"><span>Repositories</span> <code>agentiik</code> · <code>schemas</code></p>
+  </div>
+</section>
+
+<!-- ============ v0.3 ============ -->
+<section id="m03">
+  <div class="sec-head"><span class="mark">§</span><h2>v0.3 — More than one person</h2></div>
+  <div class="prose">
+    <p class="makes"><b>Makes possible:</b> two people, two namespaces, and nothing of one visible from the other except what was shared.</p>
+
+    <p>This comes before the console, before triggers and before MCP, and the reason is the third rule: each of those is a way in. A door added before the lock never quite closes afterwards — there is always one path that worked back when permissions did not exist, and nobody goes back to shut it. Local accounts only, authenticated by passkey; the principal model stays provider-agnostic so that federating it later touches authentication and not authorisation.</p>
+
+    <ul class="plain">
+      <li>Principals, namespaces, and passkey authentication.</li>
+      <li>Permissions, roles, scopes and their resolution order.</li>
+      <li>Sharing, and what sharing deliberately does not expose.</li>
+      <li>Quotas per namespace, sessions and tokens.</li>
+    </ul>
+
+    <div class="gate">
+      <span class="note-label">Done when</span>
+      <p>A principal with no permission on a namespace cannot establish that it exists — not through the API, and not through an error that distinguishes <em>absent</em> from <em>forbidden</em>.</p>
+    </div>
+    <p class="where"><span>Repositories</span> <code>agentiik</code> · <code>schemas</code></p>
+  </div>
+</section>
+
+<!-- ============ v0.4 ============ -->
+<section id="m04">
+  <div class="sec-head"><span class="mark">§</span><h2>v0.4 — The workflow is a repository</h2></div>
+  <div class="prose">
+    <p class="makes"><b>Makes possible:</b> a workflow is a git repository served by Agentiik, pushed to like any other, and a run resolves a commit.</p>
+
+    <p>This is the claim the specification defends at greatest length: the repository is integrated, not connected. What hosting buys over a connection to a forge is precise — a version cannot drift beneath a run, an invalid workflow cannot be pushed at all, and repository access is the permission model that already exists rather than a second one to reconcile with it. That last clause is exactly why this milestone sits after v0.3 and not before it.</p>
+
+    <ul class="plain">
+      <li>Git hosting, the default branch and its protection.</li>
+      <li>Refusing an invalid <code>agentiik.yaml</code> at the push, which is the only place the refusal is worth anything.</li>
+      <li><code>files</code>, includes, <code>extends</code> and <code>defaults</code>, resolved in the order the specification fixes.</li>
+      <li>The runner fetching the tree as content-addressed objects with the task's grant, exactly as it fetches an artifact — so the earlier claim survives the arrival of git.</li>
+      <li>Memoisation and replay.</li>
+    </ul>
+
+    <div class="gate">
+      <span class="note-label">Done when</span>
+      <p>Pushing an invalid workflow fails at the push. A run records the commit it resolved, and replaying it replays that commit even after the branch has moved on.</p>
+    </div>
+    <p class="where"><span>Repositories</span> <code>agentiik</code> · <code>schemas</code></p>
+  </div>
+</section>
+
+<!-- ============ v0.5 ============ -->
+<section id="m05">
+  <div class="sec-head"><span class="mark">§</span><h2>v0.5 — Runs start without being asked</h2></div>
+  <div class="prose">
+    <p class="makes"><b>Makes possible:</b> a workflow starts on a schedule, on a webhook, or because another workflow called it.</p>
+
+    <p>Short, and placed here rather than earlier for one reason: a trigger resolves a commit, so it needs v0.4 to have something to resolve. A scheduled run that silently follows a moving branch is the drift the whole repository design exists to prevent.</p>
+
+    <ul class="plain">
+      <li>Manual, scheduled and webhook triggers.</li>
+      <li>Signed webhooks, and the handling the specification requires of them.</li>
+      <li>What a trigger puts into the context the expressions can see.</li>
+      <li>Sub-workflow calls, bounded by the maximum depth — the only way the graph is allowed to repeat itself.</li>
+    </ul>
+
+    <div class="gate">
+      <span class="note-label">Done when</span>
+      <p>A scheduled workflow runs with nobody present, a webhook whose signature does not verify starts nothing, and every triggered run names what triggered it and at which commit.</p>
+    </div>
+    <p class="where"><span>Repositories</span> <code>agentiik</code> · <code>schemas</code></p>
+  </div>
+</section>
+<!-- ============ v0.6 ============ -->
+<section id="m06">
+  <div class="sec-head"><span class="mark">§</span><h2>v0.6 — A console to watch it</h2></div>
+  <div class="prose">
+    <p class="makes"><b>Makes possible:</b> a run is read from end to end without a command line, and a workflow is edited without leaving the browser.</p>
+
+    <p>The console arrives late on purpose. Everything it shows has to exist and be right already, or it becomes the place where the rules get decided — and a rule decided in an interface is a rule the API does not enforce. Built in this order it is a view of a system rather than the system itself, which is also what lets YAML stay the source of truth even while editing happens here.</p>
+
+    <ul class="plain">
+      <li><code>agentiik/design</code>: the tokens, the type roles, the icon set and the specimen sheet, extracted before two clients disagree about them rather than after.</li>
+      <li>The run list, the workflow and its graph, the run inspector, the repository browser.</li>
+      <li>The sharing panel — the one part of the console with no YAML counterpart, by design.</li>
+      <li>A format-preserving YAML editor, so that a change made here produces a diff a human would have written.</li>
+    </ul>
+
+    <div class="gate">
+      <span class="note-label">Done when</span>
+      <p>A failed run is diagnosed in the console alone — the step, the exit code, what was refused — and a workflow edited there comes back as YAML whose diff contains only what changed.</p>
+    </div>
+    <p class="where"><span>Repositories</span> <code>design</code> · <code>console</code> · <code>schemas</code></p>
+  </div>
+</section>
+
+<!-- ============ v0.7 ============ -->
+<section id="m07">
+  <div class="sec-head"><span class="mark">§</span><h2>v0.7 — An agent can use it</h2></div>
+  <div class="prose">
+    <p class="makes"><b>Makes possible:</b> a model-driven client discovers Agentiik, learns the language, writes a valid workflow and runs it — and a workflow itself appears to such a client as a server of tools.</p>
+
+    <p>MCP is native here, not a gateway bolted onto the API, and that is the part worth getting right rather than early. Two distinct servers: the platform's, and any workflow exposed as one. The second is where the discipline shows — a workflow's server exposes tools and nothing else, because a resource would quietly turn <code>workflow:run</code> into a read path into the repository and undo the separation the roles were built around.</p>
+
+    <ul class="plain">
+      <li>The platform server and its tools, each one bound to the permission it already needed.</li>
+      <li><code>workflow.language</code>, generated from <code>schemas</code> — which is why that repository has carried descriptions and examples since v0.1, and why its build fails without them.</li>
+      <li>A workflow as an MCP server: tools only, no resources, no prompts, no access to its tree.</li>
+      <li>Errors and obligations, so that a client is told what it did wrong in terms it can act on.</li>
+    </ul>
+
+    <div class="gate">
+      <span class="note-label">Done when</span>
+      <p>A client that has never seen Agentiik writes a valid workflow from <code>workflow.language</code> alone, and <code>workflow:run</code> on a workflow reveals nothing of its tree.</p>
+    </div>
+    <p class="where"><span>Repositories</span> <code>agentiik</code> · <code>schemas</code></p>
+  </div>
+</section>
+
+<!-- ============ v0.8 ============ -->
+<section id="m08">
+  <div class="sec-head"><span class="mark">§</span><h2>v0.8 — A catalog worth pulling from</h2></div>
+  <div class="prose">
+    <p class="makes"><b>Makes possible:</b> somebody who did not write the engine writes a brick, in a language the project does not use, and it runs.</p>
+
+    <p>The brick contract has held since v0.1; this is what turns it into a catalog other people can build on. It is also the one milestone that never needed to wait — it depends on v0.1 and on nothing after it, so it can be pulled forward into any gap. That is a property worth stating, because a plan whose every item is blocked by the previous one has no room to absorb a week where the appetite is elsewhere.</p>
+
+    <ul class="plain">
+      <li>The standard catalog, one directory per brick, built and published as one matrix.</li>
+      <li>Images signed, carrying the OCI annotations required of any brick, each with its SBOM — which is what lets an operator answer an advisory about a dependency without waiting for one about Agentiik.</li>
+      <li><code>agentiik/brick-sdk</code>: the optional helpers for Go, Python and TypeScript, written so that nothing in them is ever required.</li>
+      <li>Catalog pages on the site, generated rather than maintained by hand.</li>
+    </ul>
+
+    <div class="gate">
+      <span class="note-label">Done when</span>
+      <p>A third-party brick, in a language the project does not use and under a licence it did not choose, runs unmodified — and its author never had to read the engine to write it.</p>
+    </div>
+    <p class="where"><span>Repositories</span> <code>bricks</code> · <code>brick-sdk</code> · <code>agentiik.github.io</code></p>
+  </div>
+</section>
+
+<!-- ============ v0.9 ============ -->
+<section id="m09">
+  <div class="sec-head"><span class="mark">§</span><h2>v0.9 — Somebody else can install it</h2></div>
+  <div class="prose">
+    <p class="makes"><b>Makes possible:</b> an installation that its author did not perform.</p>
+
+    <p>Everything up to here runs where it was written, which hides a great deal: every assumption about the host, every step that only works because somebody knows to do it. This is the milestone where installing stops being knowledge and becomes a document — and where the three deployment profiles either hold or are found to be two profiles and a wish.</p>
+
+    <ul class="plain">
+      <li>Profile A, a single host. Profile B, on-premise and redundant. Profile C, AWS with managed resources.</li>
+      <li>The installer, installing a runner, the runner-side hooks, sizing, and what the first run does.</li>
+      <li>Upgrade and migration notes, written against a real upgrade rather than an imagined one.</li>
+    </ul>
+
+    <div class="gate">
+      <span class="note-label">Done when</span>
+      <p>Somebody who did not write the code installs profile A and runs a workflow, following the document and asking nothing.</p>
+    </div>
+    <p class="where"><span>Repositories</span> <code>deploy</code> · <code>agentiik</code></p>
+  </div>
+</section>
+
+<!-- ============ v1.0 ============ -->
+<section id="m10">
+  <div class="sec-head"><span class="mark">§</span><h2>v1.0 — It fits in a pocket, and it holds</h2></div>
+  <div class="prose">
+    <p class="makes"><b>Makes possible:</b> the four clients the specification promised, on one model, and a project that knows what to do when a vulnerability arrives.</p>
+
+    <p>v1.0 adds no capability. It closes the scope: the mobile applications complete the set of clients, and the security work turns a written threat model into one that has been tested against the running thing. A version number is a claim about what somebody else can rely on, which is why the disclosure process has to work before the number is handed out, not after.</p>
+
+    <ul class="plain">
+      <li>iOS and Android: the common scope, the platform choices, and what the applications deliberately do not do — authoring and offline editing are not on this list by accident.</li>
+      <li>Push notification delivery.</li>
+      <li>A security review against the threat model, the three tiers of containment included, and against what the specification openly says it does not defend.</li>
+      <li>The supply chain end to end: signed images, SBOMs, advisories per component rather than per project.</li>
+      <li>The disclosure process live, and exercised once before it is needed.</li>
+    </ul>
+
+    <div class="gate">
+      <span class="note-label">Done when</span>
+      <p>All four clients read the same run with none of them knowing anything the others cannot, and a vulnerability report travels the whole path from private disclosure to published advisory.</p>
+    </div>
+    <p class="where"><span>Repositories</span> <code>ios</code> · <code>android</code> · <code>agentiik</code> · <code>.github</code></p>
+  </div>
+</section>
+<!-- ============ AFTER ============ -->
+<section id="after">
+  <div class="sec-head"><span class="mark">§</span><h2>Past v1</h2></div>
+  <div class="prose">
+    <p>The specification keeps a list of what v1 deliberately does not do, and that list is not a backlog: most of it was left out because doing it would cost more than it returns, and that is still true after v1. Four items on it are different, in that the design already leaves the door open and closing that door would be the mistake.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Deferred</th><th>What v1 already did for it</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">External identity providers — OIDC federation, SCIM provisioning</td><td>The principal model is provider-agnostic, so adding them touches authentication and not authorisation. That is the whole reason v0.3 was built the way it was.</td></tr>
+          <tr><td class="wrapcell">Kubernetes as a substrate</td><td>The container driver sits behind an executor interface. A Job or Pod executor touches neither the controller nor the language.</td></tr>
+          <tr><td class="wrapcell">A Helm chart</td><td>Follows the executor above, and belongs to <code>agentiik/deploy</code> rather than to a release of the core.</td></tr>
+          <tr><td class="wrapcell">An external policy engine — OPA, Cedar</td><td>Roles and grants are evaluated in the API against the database. Delegating that later is a substitution, not a redesign, as long as the permission vocabulary does not grow in the meantime.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The rest of the list — field-level permissions inside an envelope, authoring on mobile, hardware-level tenant separation, long-running bricks and continuous streams, loops in the graph, a public brick marketplace — stays out. Each of them is set out with its reasoning under <a href="../#nonscope">Out of scope for v1</a>, and the reasoning does not expire with the version number.</p>
+  </div>
+</section>
+
+<!-- ============ RISKS ============ -->
+<section id="risks">
+  <div class="sec-head"><span class="mark">§</span><h2>What could reorder this</h2></div>
+  <div class="prose">
+    <p>A plan is more useful when it says where it expects to be wrong.</p>
+
+    <ul class="plain">
+      <li><b>The brick contract does not survive v0.1.</b> The most likely single failure, and the cheapest place for it to happen. If running real workflows shows that the envelope has to carry something it does not, or that a per-port barrier is the wrong shape, everything after it moves — and that is the milestone doing its job, not the plan failing.</li>
+      <li><b>v0.8 can move anywhere after v0.1.</b> It depends on the brick contract and on nothing later. It is the slack in the plan, and it is deliberate.</li>
+      <li><b>v0.6 and v0.7 can swap.</b> Whichever is done first makes the other easier to judge — the console shows what a run looks like to a person, MCP shows what it looks like to a client that cannot see. Either order works.</li>
+      <li><b>v0.5 before v0.4 does not work.</b> A trigger has to resolve a commit. Starting runs against a moving branch is exactly the drift the hosted repository exists to prevent, and building it that way first means building it twice.</li>
+      <li><b>v0.3 before every surface does not move.</b> This is the one ordering that is not up for discussion. Console, triggers and MCP are three ways in, and permissions have to exist before any of them, not alongside.</li>
+      <li><b>Somebody else starts using it.</b> The plan assumes one maintainer and no users. A single real user reorders everything after the milestone they arrived on, because their installation cannot be broken in the way an empty one can — and at that point <a href="../#repos">deployment and migration notes</a> stop being a v0.9 concern.</li>
+    </ul>
+
+    <div class="decision">
+      <span class="note-label">How this document changes</span>
+      <p>By rewriting, not by amending. A milestone that turns out to be two milestones becomes two; one that turns out to be unnecessary is deleted rather than marked as dropped. This is not a record of what was planned — the repositories hold that, in their commits and their releases — it is a statement of the current best order, and a statement of that kind is only worth reading if it is current.</p>
+    </div>
+  </div>
+</section>
+
+<div class="endrule">Agentiik · roadmap · © 2026 François Rousselet · <a href="../../legal/index.html">Legal notice</a></div>
+
+</main>
+
+</div>
+
+<script>
+(function(){
+  var nav = document.querySelector('.side');
+  if(!nav) return;
+  var parts = Array.prototype.slice.call(nav.querySelectorAll('details.part'));
+  var links = Array.prototype.slice.call(nav.querySelectorAll('.side-toc a[href^="#"]'));
+  var narrow = window.matchMedia('(max-width:980px)');
+
+  // Every navigable target, in document order: chapters and their sections alike.
+  var targets = [], map = {};
+  links.forEach(function(a){
+    var el = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    if(!el) return;
+    targets.push(el);
+    map[el.id] = a;
+  });
+  targets.sort(function(x, y){
+    return (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
+  });
+
+  // A chapter's own line, for the chapter a section belongs to.
+  function chapterItem(a){
+    var li = a.parentNode;
+    while(li && !(li.tagName === 'LI' && li.parentNode && !li.parentNode.classList.contains('subs'))){
+      li = li.parentNode;
+    }
+    return li;
+  }
+  function partOf(a){
+    var d = a.parentNode;
+    while(d && d.tagName !== 'DETAILS'){ d = d.parentNode; }
+    return d;
+  }
+
+  var current = null, openItem = null;
+
+  function reveal(a){
+    var part = partOf(a);
+    if(part && !part.open){
+      parts.forEach(function(d){ if(d !== part && !narrow.matches) d.open = false; });
+      part.open = true;
+    }
+    var item = chapterItem(a);
+    if(item !== openItem){
+      if(openItem) openItem.removeAttribute('data-open');
+      if(item) item.setAttribute('data-open', '');
+      openItem = item;
+    }
+  }
+
+  function scrollIntoNav(a){
+    if(narrow.matches || nav.scrollHeight <= nav.clientHeight) return;
+    var r = a.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+    if(r.top < nr.top + 12 || r.bottom > nr.bottom - 12){
+      nav.scrollTop += (r.top - nr.top) - (nav.clientHeight / 2) + (r.height / 2);
+    }
+  }
+
+  function sync(){
+    if(!targets.length) return;
+    var bar = document.querySelector('.topbar');
+    var line = (bar ? bar.offsetHeight : 58) + 26;
+    var active = targets[0];
+    for(var i = 0; i < targets.length; i++){
+      if(targets[i].getBoundingClientRect().top <= line){ active = targets[i]; } else { break; }
+    }
+    if(window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 4){
+      active = targets[targets.length - 1];
+    }
+    if(active === current) return;
+    if(current && map[current.id]) map[current.id].removeAttribute('aria-current');
+    current = active;
+    var a = map[current.id];
+    if(!a) return;
+    a.setAttribute('aria-current', 'true');
+    reveal(a);
+    scrollIntoNav(a);
+  }
+
+  // On a phone the sidebar sits above the document, so a chosen chapter folds
+  // it away again rather than pushing the text off the screen.
+  nav.addEventListener('click', function(e){
+    var t = e.target;
+    while(t && t !== nav && t.tagName !== 'A'){ t = t.parentNode; }
+    if(t && t.tagName === 'A' && narrow.matches){
+      var d = partOf(t);
+      if(d) setTimeout(function(){ d.open = false; }, 0);
+    }
+  });
+
+  if(narrow.matches) parts.forEach(function(d){ d.open = false; });
+  narrow.addEventListener('change', function(){
+    current = null;
+    parts.forEach(function(d){ d.open = false; });
+    sync();
+  });
+
+  var queued = false;
+  function onScroll(){
+    if(queued) return;
+    queued = true;
+    window.requestAnimationFrame(function(){ queued = false; sync(); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  sync();
+})();
+</script>
+</body>
+</html>

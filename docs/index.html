@@ -195,51 +195,117 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
   height:calc(100vh - var(--header-h));
   overflow-y:auto;
   overscroll-behavior:contain;
-  padding:28px 16px 48px 0;
+  padding:22px 14px 48px 0;
   border-right:1px solid var(--line);
+  scrollbar-width:thin;
 }
-.side details{margin:0}
+
+/* Which document you are in, before which part of it. */
+.side-docs{
+  display:flex;
+  gap:2px;
+  margin-bottom:22px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--line);
+}
+.side-docs a{
+  flex:1;
+  text-align:center;
+  padding:6px 8px;
+  font-size:.72rem;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  font-weight:600;
+  color:var(--faint);
+  text-decoration:none;
+  border:1px solid transparent;
+}
+.side-docs a:hover{color:var(--ink);background:var(--sunken)}
+.side-docs a[aria-current="page"]{
+  color:var(--ink);
+  border-color:var(--line);
+  background:var(--surface);
+}
+
+.side details.part{
+  margin:0;
+  border-bottom:1px solid var(--line);
+}
+.side details.part:last-child{border-bottom:0}
 .side summary{
   list-style:none;
   cursor:pointer;
   display:flex;
   align-items:center;
   gap:9px;
-  font-size:.7rem;
+  font-size:.68rem;
   text-transform:uppercase;
-  letter-spacing:.16em;
+  letter-spacing:.15em;
   font-weight:600;
-  color:var(--muted);
-  padding:0 0 14px;
+  color:var(--faint);
+  padding:11px 0;
 }
+.side summary:hover{color:var(--muted)}
 .side summary::-webkit-details-marker{display:none}
 .side summary::before{
   content:"";
+  flex:none;
   width:6px;height:6px;
   border-right:1.5px solid var(--line-strong);
   border-bottom:1.5px solid var(--line-strong);
   transform:rotate(-45deg);
+  transition:transform .12s ease;
 }
 .side details[open] > summary::before{transform:rotate(45deg)}
-.side ol{
+.side details.part[open] > summary{color:var(--muted)}
+.side-toc ul{
   list-style:none;
-  margin:0;padding:0;
+  margin:0 0 10px;
+  padding:0;
 }
-.side a{
+.side-toc a{
   display:block;
-  font-size:.855rem;
-  line-height:1.28;
-  padding:6px 10px 6px 13px;
+  font-size:.85rem;
+  line-height:1.3;
+  padding:5px 10px 5px 13px;
   color:var(--muted);
   text-decoration:none;
   border-left:2px solid transparent;
 }
-.side a:hover{color:var(--ink);background:var(--sunken)}
-.side a[aria-current="true"]{
+.side-toc a:hover{color:var(--ink);background:var(--sunken)}
+.side-toc a[aria-current="true"]{
   color:var(--accent);
   font-weight:600;
   border-left-color:var(--accent);
   background:var(--accent-soft);
+}
+
+/* A chapter's sections appear only while you are in that chapter, so the
+   sidebar stays a list of 26 lines and becomes a list of 30 only where the
+   detail is what you are reading. */
+.side-toc .subs{
+  display:none;
+  margin:2px 0 6px 13px;
+  border-left:1px solid var(--line);
+}
+.side-toc li[data-open] > .subs{display:block}
+.side-toc .subs a{
+  font-size:.79rem;
+  padding:4px 10px 4px 12px;
+  color:var(--faint);
+  border-left:2px solid transparent;
+  margin-left:-1px;
+}
+.side-toc .subs a:hover{color:var(--ink)}
+.side-toc .subs a[aria-current="true"]{
+  color:var(--accent);
+  font-weight:500;
+  background:transparent;
+  border-left-color:var(--accent);
+}
+
+@media (prefers-reduced-motion:reduce){
+  .side summary::before{transition:none}
 }
 
 section{
@@ -423,13 +489,19 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
     overflow:visible;
     border-right:0;
     border-bottom:1px solid var(--line);
-    padding:16px 0 12px;
+    padding:16px 0 8px;
   }
-  .side ol{
+  .side-docs{max-width:320px}
+  /* The nine parts sit as a grid of closed headings, so the document starts
+     within a screen of the top rather than below a list of 26 chapters. */
+  .side-toc{
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(184px,1fr));
-    gap:0 20px;
+    grid-template-columns:repeat(auto-fill,minmax(168px,1fr));
+    gap:0 22px;
+    align-items:start;
   }
+  .side details.part{border-bottom:0}
+  .side summary{padding:9px 0}
   main{padding-block:clamp(22px,4vw,34px) 72px}
 }
 @media (max-width:700px){
@@ -464,37 +536,217 @@ img{max-width:100%}
 <div class="shell">
 
 <nav class="side" aria-label="Contents">
-  <details open>
-    <summary>Contents</summary>
-    <ol>
-      <li><a href="#scope">Scope</a></li>
-      <li><a href="#concepts">Concepts</a></li>
-      <li><a href="#data">Data exchange model</a></li>
-      <li><a href="#graph">The graph and its ports</a></li>
-      <li><a href="#brick">Brick contract</a></li>
-      <li><a href="#yaml">Workflow language</a></li>
-      <li><a href="#expressions">Expressions</a></li>
-      <li><a href="#triggers">Triggers</a></li>
-      <li><a href="#access">Identity and access control</a></li>
-      <li><a href="#architecture">Runtime architecture</a></li>
-      <li><a href="#comms">Component communication</a></li>
-      <li><a href="#lifecycle">Lifecycle and replay</a></li>
-      <li><a href="#threats">Security model</a></li>
-      <li><a href="#security">Isolation and secrets</a></li>
-      <li><a href="#observability">Observability</a></li>
-      <li><a href="#api">API and command line</a></li>
-      <li><a href="#mcp">Native MCP</a></li>
-      <li><a href="#design">Design system</a></li>
-      <li><a href="#ui">Web console</a></li>
-      <li><a href="#mobile">Mobile applications</a></li>
-      <li><a href="#site">Public site</a></li>
-      <li><a href="#catalog">Brick catalog</a></li>
-      <li><a href="#storage">Storage</a></li>
-      <li><a href="#deployment">Deployment profiles</a></li>
-      <li><a href="#repos">Repositories</a></li>
-      <li><a href="#nonscope">Out of scope for v1</a></li>
-    </ol>
-  </details>
+  <div class="side-docs">
+    <a href="./" aria-current="page">Specification</a>
+    <a href="roadmap/">Roadmap</a>
+  </div>
+  <div class="side-toc">
+    <details class="part" open>
+      <summary>Orientation</summary>
+      <ul>
+        <li><a href="#scope">Scope</a>
+        </li>
+        <li><a href="#concepts">Concepts</a>
+        </li>
+      </ul>
+    </details>
+    <details class="part">
+      <summary>The model</summary>
+      <ul>
+        <li><a href="#data">Data exchange model</a>
+          <ul class="subs">
+            <li><a href="#envelope-structure">Envelope structure</a></li>
+            <li><a href="#size-rules">Size rules</a></li>
+          </ul>
+        </li>
+        <li><a href="#graph">The graph and its ports</a>
+          <ul class="subs">
+            <li><a href="#scheduling-semantics">Scheduling semantics</a></li>
+            <li><a href="#merge-strategies">Merge strategies</a></li>
+            <li><a href="#fan-out">Fan-out</a></li>
+          </ul>
+        </li>
+        <li><a href="#brick">Brick contract</a>
+          <ul class="subs">
+            <li><a href="#exit-codes">Exit codes</a></li>
+            <li><a href="#environment-variables">Environment variables</a></li>
+            <li><a href="#brick-manifest">Brick manifest</a></li>
+          </ul>
+        </li>
+        <li><a href="#yaml">Workflow language</a>
+          <ul class="subs">
+            <li><a href="#step-keywords">Step keywords</a></li>
+            <li><a href="#the-workflow-repository">The workflow repository</a></li>
+            <li><a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a></li>
+            <li><a href="#includes-and-inheritance">Includes and inheritance</a></li>
+          </ul>
+        </li>
+        <li><a href="#expressions">Expressions</a>
+          <ul class="subs">
+            <li><a href="#exposed-context">Exposed context</a></li>
+          </ul>
+        </li>
+        <li><a href="#triggers">Triggers</a>
+        </li>
+      </ul>
+    </details>
+    <details class="part">
+      <summary>Access</summary>
+      <ul>
+        <li><a href="#access">Identity and access control</a>
+          <ul class="subs">
+            <li><a href="#principals">Principals</a></li>
+            <li><a href="#auth">Authentication</a></li>
+            <li><a href="#permissions">Permissions</a></li>
+            <li><a href="#roles">Roles</a></li>
+            <li><a href="#scopes-and-resolution">Scopes and resolution</a></li>
+            <li><a href="#administrators">Administrators</a></li>
+            <li><a href="#what-sharing-does-not-expose">What sharing does not expose</a></li>
+            <li><a href="#quotas-per-namespace">Quotas per namespace</a></li>
+            <li><a href="#sessions-and-tokens">Sessions and tokens</a></li>
+          </ul>
+        </li>
+      </ul>
+    </details>
+    <details class="part">
+      <summary>The runtime</summary>
+      <ul>
+        <li><a href="#architecture">Runtime architecture</a>
+          <ul class="subs">
+            <li><a href="#from-trigger-to-result">From trigger to result</a></li>
+            <li><a href="#controller">Controller</a></li>
+            <li><a href="#task-bus">Task bus</a></li>
+            <li><a href="#runner">Runner</a></li>
+          </ul>
+        </li>
+        <li><a href="#comms">Component communication</a>
+          <ul class="subs">
+            <li><a href="#channels">Channels</a></li>
+            <li><a href="#what-has-to-be-open">What has to be open</a></li>
+            <li><a href="#how-the-api-and-the-controller-stay-in-step">How the API and the controller stay in step</a></li>
+            <li><a href="#the-task-message">The task message</a></li>
+            <li><a href="#heartbeat">Heartbeat</a></li>
+            <li><a href="#registering-a-runner">Registering a runner</a></li>
+          </ul>
+        </li>
+        <li><a href="#lifecycle">Lifecycle and replay</a>
+          <ul class="subs">
+            <li><a href="#run-states">Run states</a></li>
+            <li><a href="#memoisation-and-replay">Memoisation and replay</a></li>
+          </ul>
+        </li>
+      </ul>
+    </details>
+    <details class="part">
+      <summary>Security</summary>
+      <ul>
+        <li><a href="#threats">Security model</a>
+          <ul class="subs">
+            <li><a href="#three-tiers-of-containment">Three tiers of containment</a></li>
+            <li><a href="#supply-chain">Supply chain</a></li>
+            <li><a href="#secrets-honestly">Secrets, honestly</a></li>
+            <li><a href="#webhooks">Webhooks</a></li>
+            <li><a href="#two-questions-that-come-up">Two questions that come up</a></li>
+            <li><a href="#cryptography-in-use">Cryptography in use</a></li>
+            <li><a href="#what-this-does-not-defend-against">What this does not defend against</a></li>
+            <li><a href="#disclosure">Disclosure</a></li>
+          </ul>
+        </li>
+        <li><a href="#security">Isolation and secrets</a>
+          <ul class="subs">
+            <li><a href="#settings-applied-to-every-container">Settings applied to every container</a></li>
+            <li><a href="#further-rules">Further rules</a></li>
+            <li><a href="#secrets">Secrets</a></li>
+          </ul>
+        </li>
+      </ul>
+    </details>
+    <details class="part">
+      <summary>Interfaces</summary>
+      <ul>
+        <li><a href="#observability">Observability</a>
+        </li>
+        <li><a href="#api">API and command line</a>
+          <ul class="subs">
+            <li><a href="#command-line">Command line</a></li>
+          </ul>
+        </li>
+        <li><a href="#mcp">Native MCP</a>
+          <ul class="subs">
+            <li><a href="#protocol">Protocol</a></li>
+            <li><a href="#the-platform-server">The platform server</a></li>
+            <li><a href="#teaching-a-client-the-language">Teaching a client the language</a></li>
+            <li><a href="#a-workflow-as-an-mcp-server">A workflow as an MCP server</a></li>
+            <li><a href="#errors-and-obligations">Errors and obligations</a></li>
+          </ul>
+        </li>
+      </ul>
+    </details>
+    <details class="part">
+      <summary>Clients</summary>
+      <ul>
+        <li><a href="#design">Design system</a>
+          <ul class="subs">
+            <li><a href="#colour-rules">Colour rules</a></li>
+            <li><a href="#typography">Typography</a></li>
+            <li><a href="#the-mark">The mark</a></li>
+            <li><a href="#density-and-rhythm">Density and rhythm</a></li>
+            <li><a href="#iconography">Iconography</a></li>
+            <li><a href="#voice">Voice</a></li>
+          </ul>
+        </li>
+        <li><a href="#ui">Web console</a>
+        </li>
+        <li><a href="#mobile">Mobile applications</a>
+          <ul class="subs">
+            <li><a href="#common-scope">Common scope</a></li>
+            <li><a href="#what-the-applications-do-not-do">What the applications do not do</a></li>
+            <li><a href="#platform-choices">Platform choices</a></li>
+          </ul>
+        </li>
+        <li><a href="#site">Public site</a>
+        </li>
+        <li><a href="#catalog">Brick catalog</a>
+          <ul class="subs">
+            <li><a href="#registry">Registry</a></li>
+          </ul>
+        </li>
+      </ul>
+    </details>
+    <details class="part">
+      <summary>Operations</summary>
+      <ul>
+        <li><a href="#storage">Storage</a>
+        </li>
+        <li><a href="#deployment">Deployment profiles</a>
+          <ul class="subs">
+            <li><a href="#what-every-profile-must-provide">What every profile must provide</a></li>
+            <li><a href="#profile-a-a-single-host">Profile A: a single host</a></li>
+            <li><a href="#profile-b-on-premise-redundant">Profile B: on-premise, redundant</a></li>
+            <li><a href="#profile-c-aws-with-managed-resources">Profile C: AWS with managed resources</a></li>
+            <li><a href="#installing-a-runner">Installing a runner</a></li>
+            <li><a href="#runner-side-hooks">Runner-side hooks</a></li>
+            <li><a href="#sizing">Sizing</a></li>
+            <li><a href="#first-run">First run</a></li>
+            <li><a href="#push-notification-delivery">Push notification delivery</a></li>
+          </ul>
+        </li>
+      </ul>
+    </details>
+    <details class="part">
+      <summary>The project</summary>
+      <ul>
+        <li><a href="#repos">Repositories</a>
+          <ul class="subs">
+            <li><a href="#licensing">Licensing</a></li>
+            <li><a href="#conventions-across-repositories">Conventions across repositories</a></li>
+          </ul>
+        </li>
+        <li><a href="#nonscope">Out of scope for v1</a>
+        </li>
+      </ul>
+    </details>
+  </div>
 </nav>
 
 <main>
@@ -624,7 +876,7 @@ img{max-width:100%}
   </figure>
 
   <div class="prose">
-    <h3>Envelope structure</h3>
+    <h3 id="envelope-structure">Envelope structure</h3>
   </div>
   <div class="block">
     <div class="note-label">envelope carried on a port</div>
@@ -661,7 +913,7 @@ img{max-width:100%}
   </div>
 
   <div class="prose">
-    <h3>Size rules</h3>
+    <h3 id="size-rules">Size rules</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Setting</th><th>Default</th><th>Effect</th></tr></thead>
@@ -761,7 +1013,7 @@ img{max-width:100%}
   </figure>
 
   <div class="prose">
-    <h3>Scheduling semantics</h3>
+    <h3 id="scheduling-semantics">Scheduling semantics</h3>
     <ul class="plain">
       <li>A step becomes runnable once every declared input port is satisfied. This is a barrier, not a continuous stream.</li>
       <li>A port produces exactly one envelope, once, when the emitting step ends. A step split into shards has its shard envelopes concatenated port by port before publication.</li>
@@ -770,7 +1022,7 @@ img{max-width:100%}
       <li>Cycles are rejected at validation, before registration. Looping is done by calling a sub-workflow, with a configurable maximum depth.</li>
     </ul>
 
-    <h3>Merge strategies</h3>
+    <h3 id="merge-strategies">Merge strategies</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>merge</th><th>Behaviour</th></tr></thead>
@@ -783,7 +1035,7 @@ img{max-width:100%}
       </table>
     </div>
 
-    <h3>Fan-out</h3>
+    <h3 id="fan-out">Fan-out</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>fan_out</th><th>Behaviour</th></tr></thead>
@@ -873,7 +1125,7 @@ img{max-width:100%}
       <p>Multiple outputs travel as files, one per port, rather than as a <code>port</code> field added to every item on standard output. Standard output then stays usable for diagnostics without corrupting the result, and a brick that crashes mid-write leaves an identifiable incomplete file rather than a truncated stream. Standard output is accepted as a shorthand for the single <code>out</code> port.</p>
     </div>
 
-    <h3>Exit codes</h3>
+    <h3 id="exit-codes">Exit codes</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Code</th><th>Meaning</th><th>Handling</th></tr></thead>
@@ -888,7 +1140,7 @@ img{max-width:100%}
       </table>
     </div>
 
-    <h3>Environment variables</h3>
+    <h3 id="environment-variables">Environment variables</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Variable</th><th>Contents</th></tr></thead>
@@ -907,7 +1159,7 @@ img{max-width:100%}
       </table>
     </div>
 
-    <h3>Brick manifest</h3>
+    <h3 id="brick-manifest">Brick manifest</h3>
     <p>The manifest is embedded in the image at <code>/agk/brick.yaml</code>. It is read on first pull and cached by digest. Standard OCI annotations are required at registry publication: <code>org.opencontainers.image.title</code>, <code>.description</code>, <code>.version</code>, <code>.source</code>, <code>.revision</code> and <code>.licenses</code>.</p>
   </div>
 
@@ -1074,7 +1326,7 @@ steps:
   </div>
 
   <div class="prose">
-    <h3>Step keywords</h3>
+    <h3 id="step-keywords">Step keywords</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Key</th><th>Role</th></tr></thead>
@@ -1108,7 +1360,7 @@ steps:
       </table>
     </div>
 
-    <h3>The workflow repository</h3>
+    <h3 id="the-workflow-repository">The workflow repository</h3>
     <p>A workflow is a git repository, served by Agentiik itself. <code>agentiik.yaml</code> at the root is the entry point; the rest of the tree is yours to arrange. Scripts, SQL, templates, schemas, fixtures and certificates live where you would put them in any project, and every step of every run sees them.</p>
 
     <div class="block">
@@ -1195,7 +1447,7 @@ certs/
 
     <p><code>agk run --local</code> is the one run no commit describes: it executes the working tree as it stands, uncommitted changes included, and the run is labelled as such so that it is never mistaken in a history for something reproducible.</p>
 
-    <h3>Running a script instead of a brick</h3>
+    <h3 id="running-a-script-instead-of-a-brick">Running a script instead of a brick</h3>
     <p>Not every step deserves an image of its own. A step may carry <code>script</code> instead, and the commands run inside <code>image</code> under exactly the contract every brick honours: the same mounts, the same environment, the same isolation, the same exit-code meaning. What changes is only that the image is a base image rather than a published brick, so no manifest is read and nothing about its ports is inferred.</p>
 
     <div class="block">
@@ -1234,7 +1486,7 @@ certs/
       <p>There is no shell executor. A step never runs commands in the runner's own shell, on the runner's own filesystem, as the runner's own account, and no configuration turns that on. GitLab, which offers one, documents the consequence in its own words: "Generally it's unsafe to run jobs with shell executors. The jobs are run with the user's permissions (<code>gitlab-runner</code>) and can 'steal' code from other projects that are run on this server", and elsewhere, "High-security risks exist to your runner host and network when running builds with the <code>shell</code> executor." In a product whose whole access model rests on namespaces, that would hand anyone holding <code>workflow:write</code> in any namespace code execution as the runner account on a shared host, which is every other namespace's secrets, artifacts and running containers. <code>script</code> gives the same ergonomics inside the container that was going to be started anyway.</p>
     </div>
 
-    <h3>Includes and inheritance</h3>
+    <h3 id="includes-and-inheritance">Includes and inheritance</h3>
     <p>Hidden blocks and includes cover reuse without introducing a macro system or a generation loop. Resolution is ordered: includes first, in declaration order, then <code>extends</code> depth-first, then <code>defaults</code>, then the step's own values. A <code>path</code> include resolves inside the same commit, so it can never be stale and nothing has to pin it. A <code>workflow</code> include resolves another repository at a tag or a commit, requires <code>workflow:read</code> on it, and records the commit it resolved to in the run.</p>
   </div>
 
@@ -1263,7 +1515,7 @@ certs/
 
     <p>The interpolation syntax is <code>${{ ... }}</code> inside a YAML string. An expression that fills the whole value keeps its type; an expression embedded in a string is converted to text.</p>
 
-    <h3>Exposed context</h3>
+    <h3 id="exposed-context">Exposed context</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Root</th><th>Contents</th><th>Available in</th></tr></thead>
@@ -1322,7 +1574,7 @@ certs/
   <div class="prose">
     <p>One installation serves many people. A workflow belongs to exactly one namespace, and access is granted by binding a principal to a role, either on the whole namespace or on a single workflow. Every request is authorised at the API boundary, deny by default: the API decides explicitly to permit or refuse, and no check is ever delegated to a client.</p>
 
-    <h3>Principals</h3>
+    <h3 id="principals">Principals</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Kind</th><th>Description</th></tr></thead>
@@ -1382,7 +1634,7 @@ certs/
       <p>Forbidding passwords does not touch automation. A service account holds neither a password nor a passkey, only API tokens, and the policy does not apply to it. What changes for a human at a terminal is how the token is obtained, not that one exists: <code>agk login</code> opens a browser, the passkey ceremony happens there against the same Relying Party, and the command line receives a token at the end of it. The mobile applications do the same through the platform's native passkey APIs. Enforcing passkeys is a change to how people prove who they are, never a change to how machines do.</p>
     </div>
 
-    <h3>Permissions</h3>
+    <h3 id="permissions">Permissions</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Permission</th><th>Allows</th></tr></thead>
@@ -1399,7 +1651,7 @@ certs/
       </table>
     </div>
 
-    <h3>Roles</h3>
+    <h3 id="roles">Roles</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Role</th><th>read</th><th>run</th><th>write</th><th>data</th><th>grant</th></tr></thead>
@@ -1414,7 +1666,7 @@ certs/
 
     <p>The three roles asked of the product map to <code>viewer</code>, <code>operator</code> and <code>editor</code>; <code>owner</code> exists because someone has to be able to share. <code>operator</code> deliberately carries no <code>workflow:read</code>, so that a colleague can be allowed to launch a job without being shown the queries, endpoints and business rules inside it. Someone who should do both gets both roles.</p>
 
-    <h3>Scopes and resolution</h3>
+    <h3 id="scopes-and-resolution">Scopes and resolution</h3>
   </div>
 
   <figure>
@@ -1495,14 +1747,14 @@ certs/
       <p>Grants live in the platform database and are managed through the API and its clients. They are deliberately absent from the workflow YAML. Putting them in the file would make <code>workflow:write</code> equivalent to <code>grant:manage</code>: anyone able to edit a workflow could hand themselves ownership of it in the same commit. It also keeps the file portable, since the same YAML can be registered in two installations with entirely different populations.</p>
     </div>
 
-    <h3>Administrators</h3>
+    <h3 id="administrators">Administrators</h3>
     <ul class="plain">
       <li>A platform administrator manages users, groups, namespaces, quotas, runners and runner policies.</li>
       <li>An administrator does not implicitly hold <code>run:read_data</code> anywhere. Reading another namespace's run payloads requires granting themselves access first, which is a distinct action written to the audit log and visible to the namespace owners.</li>
       <li>The first administrator is created by the installer through a one-time bootstrap token, which is invalidated on first use.</li>
     </ul>
 
-    <h3>What sharing does not expose</h3>
+    <h3 id="what-sharing-does-not-expose">What sharing does not expose</h3>
     <ul class="plain">
       <li>Secret values, never, at any role. <code>editor</code> and <code>owner</code> see secret names and where they are mounted; the value is only ever materialised inside a container.</li>
       <li>Artifacts from another namespace. A presigned URL is issued for one artifact of one run and expires in minutes.</li>
@@ -1510,7 +1762,7 @@ certs/
       <li>The existence of workflows they cannot read, in any listing, search result or error message.</li>
     </ul>
 
-    <h3>Quotas per namespace</h3>
+    <h3 id="quotas-per-namespace">Quotas per namespace</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Quota</th><th>Purpose</th></tr></thead>
@@ -1524,7 +1776,7 @@ certs/
       </table>
     </div>
 
-    <h3>Sessions and tokens</h3>
+    <h3 id="sessions-and-tokens">Sessions and tokens</h3>
     <ul class="plain">
       <li>The web console uses an opaque session identifier in a cookie marked <code>HttpOnly</code>, <code>Secure</code> and <code>SameSite=Lax</code>, with server-side revocation and an idle expiry. A session records which credential opened it, so an enrolment session and an ordinary one are distinguishable server-side rather than by convention.</li>
       <li>The API, the command line and the mobile applications use bearer tokens, stored hashed, presented once at creation, revocable individually and listed with their last use and their device label.</li>
@@ -1539,7 +1791,7 @@ certs/
   <div class="sec-head"><span class="mark">§</span><h2>Runtime architecture</h2></div>
   <div class="prose">
     <p>The controller holds the state and makes every decision; runners execute and decide nothing. No runner reaches the database or the secret store: it receives tasks over the bus and gets short-lived tokens and presigned URLs for everything else. A compromised runner therefore exposes the tasks it runs, not the installation.</p>
-    <h3>From trigger to result</h3>
+    <h3 id="from-trigger-to-result">From trigger to result</h3>
     <ol class="steps">
       <li>A trigger fires. The API authenticates it, authorises it, resolves the ref to a commit, writes the run and notifies the controller.</li>
       <li>The controller evaluates the graph <em>at that commit</em> and finds the steps whose every declared input port is already satisfied.</li>
@@ -1668,7 +1920,7 @@ certs/
   </figure>
 
   <div class="prose">
-    <h3>Controller</h3>
+    <h3 id="controller">Controller</h3>
     <ul class="plain">
       <li>Evaluates the graph on every task state change and publishes the tasks that have become ready.</li>
       <li>Holds concurrency-group locks, per-step parallelism counters and per-namespace quotas.</li>
@@ -1677,12 +1929,12 @@ certs/
       <li>Runs as several instances with one active at a time, elected by a session-level PostgreSQL advisory lock. Failover is a state resume, never a rebuild: the state lives in the database, not in the process.</li>
     </ul>
 
-    <h3>Task bus</h3>
+    <h3 id="task-bus">Task bus</h3>
     <p>NATS JetStream, with WorkQueue retention, where a message is removed as soon as it has been consumed, which is precisely what work distribution needs. Consumers are durable and of the pull kind: a runner asks for a batch of tasks when it has room, which makes distribution naturally proportional to each host's real capacity without the controller having to model load.</p>
     <p>JetStream guarantees at-least-once delivery. Every task is therefore built to be replayable: it carries an idempotency key <code>run_id/step/attempt/shard</code>, and the runner refuses to start a container for a key that has already completed.</p>
     <p>A task message carries no business payload and no secret value: it names the run, the step, the image digest, the resolved parameters minus secret material, and the URIs the runner must fetch. Fetching them requires the short-lived token issued with the task, which is scoped to that run alone.</p>
 
-    <h3>Runner</h3>
+    <h3 id="runner">Runner</h3>
     <ol class="steps">
       <li>Pulls a batch of tasks from its consumer, filtered by its declared labels and by the namespaces its policy accepts.</li>
       <li>Resolves and downloads the image by digest, verifying its signature where policy requires it.</li>
@@ -1702,7 +1954,7 @@ certs/
   <div class="prose">
     <p>One rule shapes every channel: the less trusted side always initiates. A runner opens no listening port and is never connected to; it reaches out to the API and to the bus and to nothing else. No runner ever touches the database or the secret store. That single property is what makes a runner in a demilitarised zone, on a bare-metal host, or in someone else's network, a firewall rule rather than a project.</p>
 
-    <h3>Channels</h3>
+    <h3 id="channels">Channels</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>From</th><th>To</th><th>Transport</th><th>Authentication</th><th>Carries</th></tr></thead>
@@ -1723,7 +1975,7 @@ certs/
       </table>
     </div>
 
-    <h3>What has to be open</h3>
+    <h3 id="what-has-to-be-open">What has to be open</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Host</th><th>Inbound</th><th>Outbound</th></tr></thead>
@@ -1737,7 +1989,7 @@ certs/
       </table>
     </div>
 
-    <h3>How the API and the controller stay in step</h3>
+    <h3 id="how-the-api-and-the-controller-stay-in-step">How the API and the controller stay in step</h3>
     <ul class="plain">
       <li>They share the database and nothing else. There is no remote call between them, in either direction.</li>
       <li>When the API creates a run it commits the row and issues a <code>NOTIFY</code> carrying the run identifier. PostgreSQL delivers such an event only once the transaction commits, and only to sessions currently listening.</li>
@@ -1750,7 +2002,7 @@ certs/
       <p>The active controller holds a <em>session-level</em> advisory lock, not a lease with an expiry. PostgreSQL documents that such a lock "is held until explicitly released or the session ends", so nothing has to invent a timeout or trust a clock: the lock frees itself when the process exits or when the server notices the connection is gone. Standbys call the non-blocking variant on a loop and take over the instant it succeeds. Because a partitioned former holder may not yet know it has lost, every controller write carries the lock's acquisition counter as a fencing token and a write bearing an older counter is refused. Election alone would not be safe; the fencing token is what makes it so.</p>
     </div>
 
-    <h3>The task message</h3>
+    <h3 id="the-task-message">The task message</h3>
     <p>A task message names everything the runner needs and contains nothing sensitive. It carries no business payload, no secret value and no URL that would work without the grant.</p>
   </div>
 
@@ -1805,7 +2057,7 @@ certs/
   </div>
 
   <div class="prose">
-    <h3>Heartbeat</h3>
+    <h3 id="heartbeat">Heartbeat</h3>
     <ul class="plain">
       <li>A runner posts one heartbeat every 10 seconds to the API, listing the idempotency keys it currently holds. One request covers every in-flight task on that host.</li>
       <li>Liveness therefore lives in the database beside the task state, rather than as traffic on a work queue that exists to distribute work.</li>
@@ -1815,7 +2067,7 @@ certs/
   </div>
 
   <div class="prose">
-    <h3>Registering a runner</h3>
+    <h3 id="registering-a-runner">Registering a runner</h3>
     <p>Registration exists to answer one question safely: how does a machine nobody has met prove which pool it belongs to, and get credentials that are worth having only on that machine.</p>
     <ol class="steps">
       <li>An administrator creates a runner pool with its labels, its accepted namespaces and its resource ceilings, then issues a <strong>join token</strong>. The token is single use, short lived (one hour by default), and bound both to that pool and to the exact set of labels a runner may claim with it.</li>
@@ -1974,7 +2226,7 @@ certs/
   </figure>
 
   <div class="prose">
-    <h3>Run states</h3>
+    <h3 id="run-states">Run states</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>State</th><th>Meaning</th></tr></thead>
@@ -1990,7 +2242,7 @@ certs/
       </table>
     </div>
 
-    <h3>Memoisation and replay</h3>
+    <h3 id="memoisation-and-replay">Memoisation and replay</h3>
     <ul class="plain">
       <li>With <code>cache: true</code>, the key is the digest of the image digest, the resolved parameters and the input envelope digests concatenated, prefixed by the namespace. A cache hit republishes the same envelopes without starting a container, and never crosses a namespace boundary.</li>
       <li>Replaying a run from a step reuses the envelopes and artifacts already produced upstream; content addressing guarantees that nothing is rewritten.</li>
@@ -2027,7 +2279,7 @@ certs/
       <p><code>workflow:write</code> is arbitrary code execution, and saying so plainly is part of the design. A workflow names container images and shell commands, so anyone able to push to a workflow repository can run code of their choosing inside a container on a runner in that namespace's pools. That is not a weakness awaiting a fix, it is what the product does. The consequence is the sentence that should govern how the grant is handed out: <code>workflow:write</code> is a trust decision of the same weight as commit access to a running service, and the container plus the runner pool is the boundary that contains it. A namespace whose authors are not trusted to that degree gets a pool of its own, and a sandboxed runtime on it.</p>
     </div>
 
-    <h3>Three tiers of containment</h3>
+    <h3 id="three-tiers-of-containment">Three tiers of containment</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Tier</th><th>What runs the container</th><th>When</th></tr></thead>
@@ -2040,7 +2292,7 @@ certs/
     </div>
     <p>Remapping is not free, and the cost lands exactly where this product lives: it "introduces some configuration complexity in situations where the container needs access to resources on the Docker host, such as bind mounts", and every brick receives bind mounts under <code>/agk</code>. The runner therefore prepares each task's working directory with ownership inside the remapped range before it creates the container, which is a thing the runner must get right rather than a thing an operator must configure.</p>
 
-    <h3>Supply chain</h3>
+    <h3 id="supply-chain">Supply chain</h3>
     <ul class="plain">
       <li>Images are referenced by digest in production. A tag is a mutable pointer and has no place in something that claims a commit determines what ran.</li>
       <li>Signature verification is a per-namespace policy naming which identities may sign, enforced by the runner before the container is created rather than by the registry it pulled from.</li>
@@ -2049,7 +2301,7 @@ certs/
       <li>Catalog images are rebuilt on a schedule and on base-image advisories, and the catalog shows the age of each image, because an image that has not been rebuilt is not stable, it is stale.</li>
     </ul>
 
-    <h3>Secrets, honestly</h3>
+    <h3 id="secrets-honestly">Secrets, honestly</h3>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>A secret handed to a step can be exfiltrated by that step, and no amount of secret-store engineering changes it: a brick that legitimately receives an API key can also send it somewhere else. The only control that actually bites is egress, which is why egress is per-step and default-deny rather than per-runner. <code>network: none</code> is the default, <code>egress.allow</code> names hosts and ports, and a proxy on the runner enforces the list. Everything else about secret handling, the tmpfs mount, the last-moment retrieval, the masking, reduces incidental exposure. None of it constrains code the workflow author deliberately chose to run.</p>
@@ -2061,20 +2313,20 @@ certs/
       <li>Revoking a grant does not retroactively protect a secret a step already used. Rotation does. The console says so at the moment of revocation rather than leaving the operator to reason it out.</li>
     </ul>
 
-    <h3>Webhooks</h3>
+    <h3 id="webhooks">Webhooks</h3>
     <ul class="plain">
       <li>HMAC-SHA256 over the raw body with a per-trigger secret, compared in constant time. The raw body, not the parsed one, because two JSON encoders do not agree on whitespace.</li>
       <li>A timestamp inside the signed material, a rejection window of five minutes, and a nonce cache covering that window, so a captured request cannot be replayed inside it or outside it.</li>
       <li>Signature failures are counted per trigger and surfaced, not merely refused. A webhook whose signatures suddenly fail is either a rotated secret nobody announced or somebody guessing.</li>
     </ul>
 
-    <h3>Two questions that come up</h3>
+    <h3 id="two-questions-that-come-up">Two questions that come up</h3>
     <ul class="plain">
       <li><strong>The image cache is shared between namespaces, and that is fine.</strong> A runner caches layers by digest. A digest is not a secret, so the control is not cache separation but entitlement: the runner checks that the requesting namespace may use the reference before it starts anything, and private registry credentials are namespace secrets, so no namespace can cause a pull it is not entitled to. A cached layer discloses nothing that knowing the digest would not.</li>
       <li><strong>The audit log is append-only and chained.</strong> Each entry carries the hash of the one before it, so a deletion or an edit leaves a break rather than a silence. It is exported continuously to a store outside the installation, because an audit trail that lives only where the incident happened is evidence you may not get to read.</li>
     </ul>
 
-    <h3>Cryptography in use</h3>
+    <h3 id="cryptography-in-use">Cryptography in use</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>For</th><th>What</th></tr></thead>
@@ -2090,7 +2342,7 @@ certs/
       </table>
     </div>
 
-    <h3>What this does not defend against</h3>
+    <h3 id="what-this-does-not-defend-against">What this does not defend against</h3>
     <ul class="plain">
       <li><strong>A compromised control-plane node.</strong> It holds the database credential and the secret-store role, so it can obtain whatever the secret store would give it. Nothing in this design pretends otherwise. What reduces the damage is scoping the secret-store role to the namespaces the installation actually uses, and rotating on suspicion rather than on schedule.</li>
       <li><strong>A malicious administrator.</strong> Constrained and recorded, not prevented. The audit chain makes the actions visible afterwards; it does not stop them.</li>
@@ -2099,7 +2351,7 @@ certs/
       <li><strong>Traffic analysis.</strong> Somebody who can watch the network learns when runs happen and roughly how large they are.</li>
     </ul>
 
-    <h3>Disclosure</h3>
+    <h3 id="disclosure">Disclosure</h3>
     <ul class="plain">
       <li>A security policy in <code>agentiik/.github</code>, shared by every repository, naming a contact and a coordinated disclosure window.</li>
       <li>Advisories published against the affected repository, with an identifier assigned where one is warranted, and the fixed versions named per component rather than for the project as a whole, because the components release independently.</li>
@@ -2112,7 +2364,7 @@ certs/
 <section id="security">
   <div class="sec-head"><span class="mark">§</span><h2>Isolation and secrets</h2></div>
   <div class="prose">
-    <h3>Settings applied to every container</h3>
+    <h3 id="settings-applied-to-every-container">Settings applied to every container</h3>
     <p>The runner builds the host configuration from the documented fields of <code>HostConfig</code> and of the <code>Resources</code> struct it embeds.</p>
     <div class="tablewrap">
       <table>
@@ -2133,7 +2385,7 @@ certs/
       </table>
     </div>
 
-    <h3>Further rules</h3>
+    <h3 id="further-rules">Further rules</h3>
     <ul class="plain">
       <li>The daemon socket is never mounted inside a brick. A brick that needs to build an image goes through an unprivileged builder, run like any other brick.</li>
       <li>The container user is non-root, required by the manifest and checked at publication.</li>
@@ -2141,7 +2393,7 @@ certs/
       <li>The working directory of a task is created fresh, owned by an unprivileged account, and removed with the container, so no residue of one namespace survives into the next task on that host.</li>
     </ul>
 
-    <h3>Secrets</h3>
+    <h3 id="secrets">Secrets</h3>
     <ul class="plain">
       <li>A secret belongs to a namespace. A workflow can only reference secrets from the namespace that owns it, so moving a workflow elsewhere breaks unresolved references at validation rather than silently carrying access along.</li>
       <li>A secret is mounted on tmpfs at <code>/agk/secrets/&lt;name&gt;</code>, never injected as an environment variable by default, because a process environment is readable by its children and ends up in diagnostic dumps.</li>
@@ -2210,7 +2462,7 @@ certs/
       </table>
     </div>
 
-    <h3>Command line</h3>
+    <h3 id="command-line">Command line</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Command</th><th>Effect</th></tr></thead>
@@ -2297,7 +2549,7 @@ certs/
   </figure>
 
   <div class="prose">
-    <h3>Protocol</h3>
+    <h3 id="protocol">Protocol</h3>
     <ul class="plain">
       <li>Revision <code>2026-07-28</code>. Every request declares its version in <code>_meta</code> under <code>io.modelcontextprotocol/protocolVersion</code>, and on HTTP in the <code>MCP-Protocol-Version</code> header. <code>server/discover</code> is implemented because the specification requires servers to implement it.</li>
       <li>Transport is Streamable HTTP on a single endpoint accepting POST and GET, with the <code>Origin</code> header validated on every connection as the transport requires, and an <code>Mcp-Session-Id</code> issued at initialisation.</li>
@@ -2306,7 +2558,7 @@ certs/
       <li>The <code>instructions</code> field of the discovery response carries the orientation a client needs before its first call: that a workflow is a git repository, that the entry point is <code>agentiik.yaml</code> at its root, that <code>workflow.language</code> comes before drafting and <code>workflow.validate</code> before committing. The specification describes that field as "natural-language guidance for LLMs on how to use this server effectively", which is exactly what it is used for and nothing more.</li>
     </ul>
 
-    <h3>The platform server</h3>
+    <h3 id="the-platform-server">The platform server</h3>
     <p>At <code>/mcp</code>. Its tools mirror the API and hold no authority of their own; each call runs as the presenting principal and is refused or permitted by the same grants that govern the console.</p>
 
     <div class="tablewrap">
@@ -2343,7 +2595,7 @@ certs/
       <p>A client authors by committing. <code>workflow.commit</code> produces a real git commit, attributed to the calling principal and marked as having arrived through MCP, so <code>git log</code> and the audit log tell the same story. There is no side channel that changes a workflow without leaving a commit behind, and <code>workflow.validate</code> exists so that a client can iterate without landing broken ones. The pre-receive hook remains the backstop for the ones it tries anyway.</p>
     </div>
 
-    <h3>Teaching a client the language</h3>
+    <h3 id="teaching-a-client-the-language">Teaching a client the language</h3>
     <p>A client that is going to write a workflow needs three different things, and they are three different mechanisms rather than one large one.</p>
     <div class="tablewrap">
       <table>
@@ -2370,7 +2622,7 @@ certs/
 
     <p>The intended sequence is therefore: <code>workflow.language</code> to learn the shape, <code>brick.list</code> and <code>brick.get</code> to find the bricks and their parameter schemas, a draft, <code>workflow.validate</code> until it passes, then <code>workflow.commit</code>. Only the last step has a side effect, and the three read-only tools carry <code>readOnlyHint</code> so a client can tell without being told.</p>
 
-    <h3>A workflow as an MCP server</h3>
+    <h3 id="a-workflow-as-an-mcp-server">A workflow as an MCP server</h3>
     <p>At <code>/mcp/{namespace}/{workflow}</code>, and only if the entry point says so. The declaration maps a workflow input to a tool's input schema and a workflow output to its result.</p>
   </div>
 
@@ -2423,7 +2675,7 @@ certs/
       <p>A workflow's server exposes tools and nothing else: no resources, no prompts, no access to its tree. A resource would turn <code>workflow:run</code> into a read path into the repository and quietly undo the separation the roles were built around.</p>
     </div>
 
-    <h3>Errors and obligations</h3>
+    <h3 id="errors-and-obligations">Errors and obligations</h3>
     <ul class="plain">
       <li>A run that fails returns a tool execution error, <code>isError: true</code>, naming the failing step, its exit code and its message, because the specification says clients should hand those to the model so it can correct itself. A malformed argument is a protocol error instead: the input schema is what rejects it, before any run exists.</li>
       <li>Secrets never appear in a result. The masking that applies to logs applies here unchanged.</li>
@@ -2536,7 +2788,7 @@ certs/
   </figure>
 
   <div class="prose">
-    <h3>Colour rules</h3>
+    <h3 id="colour-rules">Colour rules</h3>
     <ul class="plain">
       <li>The accent is the only brand colour. It marks what is interactive: primary buttons, links, selection, the active rail marker, port dots on the graph.</li>
       <li>The state ramp is separate from the accent, with one deliberate exception: <code>running</code> uses the accent hue because running is the live state. Hue is shared, form never is. A button is a solid fill with ink on it; a state is an outlined pill with a dot.</li>
@@ -2544,7 +2796,7 @@ certs/
       <li>Elevation comes from ground value plus a hairline, never from a shadow. The four surface tokens are the whole vocabulary: <code>sunken</code> for code and payload panes, <code>bg</code> for the page, <code>surface</code> for panels and rails, <code>raised</code> for rows, controls and the active item.</li>
     </ul>
 
-    <h3>Typography</h3>
+    <h3 id="typography">Typography</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Role</th><th>Face</th><th>Size and weight</th></tr></thead>
@@ -2562,7 +2814,7 @@ certs/
     </div>
     <p>Two faces, no third. Both come from Google Fonts with a system fallback stack. The split between them is a rule rather than a taste: anything a person copies, types, diffs or matches against a log is monospaced. That covers run identifiers, namespaces, workflow and step names, port names, image digests, exit codes, timestamps, durations, permission names, YAML and JSON. Everything a person only reads is Archivo.</p>
 
-    <h3>The mark</h3>
+    <h3 id="the-mark">The mark</h3>
     <p>The mark is the graph reduced to three rows: one bar in, two side by side, one out. It sits on the sixteen-unit grid the icons use, with bars four units high two units apart and the middle row split seven, two, seven. It carries one colour at three strengths rather than three colours, because what it draws is one run at three stages and not three separate things.</p>
   </div>
 
@@ -2655,7 +2907,7 @@ certs/
       <li>Never outlined, boxed, rotated, gradient-filled, or given a fourth row.</li>
     </ul>
 
-    <h3>Density and rhythm</h3>
+    <h3 id="density-and-rhythm">Density and rhythm</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Measure</th><th>Value</th></tr></thead>
@@ -2671,14 +2923,14 @@ certs/
       </table>
     </div>
 
-    <h3>Iconography</h3>
+    <h3 id="iconography">Iconography</h3>
     <ul class="plain">
       <li>Stroke only, drawn on a 16px grid at 1.5px, round caps and joins, no fill and no two-tone.</li>
       <li>An icon takes <code>muted</code> unless it carries a state, in which case it takes that state's colour and is always accompanied by a word.</li>
       <li>No emoji anywhere in the product, in any surface.</li>
     </ul>
 
-    <h3>Voice</h3>
+    <h3 id="voice">Voice</h3>
     <ul class="plain">
       <li>Sentence case throughout. No title case in buttons, tabs or headings.</li>
       <li>A control names its effect: Approve, Reject, Replay from invoice, Load 25 more. Never OK, never Submit.</li>
@@ -2747,7 +2999,7 @@ certs/
   <div class="prose">
     <p>The phone answers one question: is anything wrong, and can I unblock it from here. Authoring stays on the desktop. Both applications are native, share no code, and talk to the same authorised HTTP API as every other client.</p>
 
-    <h3>Common scope</h3>
+    <h3 id="common-scope">Common scope</h3>
     <ul class="plain">
       <li>Sign in against one or several installations with a passkey, through the platform's own credential APIs and against the same Relying Party Identifier as the console, then hold a token per installation.</li>
       <li>Run list, filtered by namespace, workflow and state, with the failing and waiting runs surfaced first.</li>
@@ -2758,14 +3010,14 @@ certs/
       <li>Read-only graph view, so that a step name in an alert can be located in the workflow.</li>
     </ul>
 
-    <h3>What the applications do not do</h3>
+    <h3 id="what-the-applications-do-not-do">What the applications do not do</h3>
     <ul class="plain">
       <li>Edit or register a workflow. Editing is a review-and-commit activity that belongs where the repository is.</li>
       <li>Show envelope payloads or download artifacts unless the principal holds <code>run:read_data</code>, and never write them to disk.</li>
       <li>Store credentials outside the platform keystore, or keep any payload in an offline cache. The offline cache holds run metadata only.</li>
     </ul>
 
-    <h3>Platform choices</h3>
+    <h3 id="platform-choices">Platform choices</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Item</th><th>iOS</th><th>Android</th></tr></thead>
@@ -2828,7 +3080,7 @@ certs/
       </table>
     </div>
 
-    <h3>Registry</h3>
+    <h3 id="registry">Registry</h3>
     <p>Bricks are published to an ordinary OCI registry. The catalog is an index built from the manifests and annotations read off that registry, with no parallel store. A private installation points its catalog at its own registry. A namespace can additionally declare private registry credentials, which are namespace secrets like any other and never appear in a workflow shared with another team.</p>
   </div>
 </section>
@@ -2875,7 +3127,7 @@ certs/
   <div class="prose">
     <p>The API, the controller, the console and the runner are the same images in every profile. What changes between a single machine and a redundant installation is where those images sit and what backs the four dependencies: a database, a bus, an object store and a secret store. Nothing in the workflow language, the brick contract or the access model varies by profile, so a workflow written against a laptop runs unchanged against a redundant fleet.</p>
 
-    <h3>What every profile must provide</h3>
+    <h3 id="what-every-profile-must-provide">What every profile must provide</h3>
     <ul class="plain">
       <li>Exactly one writable PostgreSQL. The controller's leader election is a session-level PostgreSQL advisory lock, so a second writable primary does not add availability, it breaks the election.</li>
       <li>A work queue with at-least-once delivery and one separate queue or subject per runner pool.</li>
@@ -2906,7 +3158,7 @@ certs/
     </div>
   </div>
 
-  <div class="prose"><h3>Profile A: a single host</h3>
+  <div class="prose"><h3 id="profile-a-a-single-host">Profile A: a single host</h3>
     <p>Everything on one machine, started by one Compose file. This is the homelab and the small team installation, and it is also what a developer runs to reproduce an incident. It has one failure domain and no redundancy anywhere, which is the correct trade at this size: a second copy of anything here costs more attention than the outage it prevents.</p>
   </div>
 
@@ -2997,7 +3249,7 @@ certs/
     </ul>
   </div>
 
-  <div class="prose"><h3>Profile B: on-premise, redundant</h3>
+  <div class="prose"><h3 id="profile-b-on-premise-redundant">Profile B: on-premise, redundant</h3>
     <p>Three failure domains, which in practice means three racks, three rooms or three sites with a low-latency link. Every stateful dependency is replicated across them and every stateless one runs in all three. Runners sit outside those domains entirely, in pools selected by label, because they hold no state worth protecting.</p>
   </div>
 
@@ -3094,7 +3346,7 @@ certs/
     </div>
   </div>
 
-  <div class="prose"><h3>Profile C: AWS with managed resources</h3>
+  <div class="prose"><h3 id="profile-c-aws-with-managed-resources">Profile C: AWS with managed resources</h3>
     <p>The same components, with every stateful dependency handed to a managed service and only the runners left as instances someone owns. Two AWS constraints shape the profile and are worth stating before the picture.</p>
   </div>
 
@@ -3193,7 +3445,7 @@ certs/
   </div>
 
   <div class="prose">
-    <h3>Installing a runner</h3>
+    <h3 id="installing-a-runner">Installing a runner</h3>
     <p>A runner is deliberately installable two ways, because the machines worth adding to a fleet are not always machines anyone wants to run a container platform on.</p>
     <div class="tablewrap">
       <table>
@@ -3248,7 +3500,7 @@ WantedBy=multi-user.target</code></pre>
       <li>Revoking the credential from the console stops the runner at its next poll. No inbound port is ever opened on a runner host: every connection is outbound to the API and the bus.</li>
     </ol>
 
-    <h3>Runner-side hooks</h3>
+    <h3 id="runner-side-hooks">Runner-side hooks</h3>
     <p>The machine's owner, and only the machine's owner, can have the runner run commands on the host around each task. These live in <code>/etc/agentiik/runner.toml</code>, readable by the agent account alone. No workflow can set them, read them, or discover that they exist.</p>
 
     <div class="block">
@@ -3281,21 +3533,21 @@ post_task = [
       <p>Runner hooks and step scripts never share a shell. In GitLab a <code>pre_build_script</code> "Runs in the same shell context as <code>before_script</code>, <code>script</code>, and <code>post_build_script</code>", which is convenient and is precisely the coupling that lets a job read what the administrator's hook set up, and the reverse. Here the hook runs on the host and the script runs in a container that is created afterwards: they share the workspace directory the runner chooses to mount, and nothing else. What the workflow author gets from a hook is a machine that is ready, never a variable.</p>
     </div>
 
-    <h3>Sizing</h3>
+    <h3 id="sizing">Sizing</h3>
     <ul class="plain">
       <li>Runner concurrency starts at one concurrent task per vCPU and is raised until memory or disk queue becomes the limit, not CPU. A runner refuses a task whose declared <code>resources</code> would take it past its own declared capacity, so oversubscription is a configuration choice rather than an accident.</li>
       <li>The control plane is small and stays small: it holds no payloads, only state. It is sized by run creation rate and by the number of open log streams, never by the volume of data moving through the workflows.</li>
       <li>The database is sized by run and task history, which is bounded by retention. The object store is sized by artifacts, which is not, and is what a retention policy actually controls.</li>
     </ul>
 
-    <h3>First run</h3>
+    <h3 id="first-run">First run</h3>
     <ol class="steps">
       <li>The installer prints a one-time bootstrap token, valid for a single use and a short window.</li>
       <li>That token creates the first administrator, after which it is invalidated.</li>
       <li>The administrator creates namespaces, groups and users; every user gets a personal namespace on first sign-in.</li>
     </ol>
 
-    <h3>Push notification delivery</h3>
+    <h3 id="push-notification-delivery">Push notification delivery</h3>
     <p>An installation that wants mobile alerts supplies its own APNs key and Firebase service account to the API. Neither is required to run the platform, and an installation without them simply has no push, with the applications falling back to foreground polling.</p>
   </div>
 </section>
@@ -3381,7 +3633,7 @@ post_task = [
       </table>
     </div>
 
-    <h3>Licensing</h3>
+    <h3 id="licensing">Licensing</h3>
     <p>One licence across an organisation is the tidy answer and the wrong one. What a repository is for decides what its licence has to allow, and these repositories are for two different things: one of them is a server somebody might host, the rest are things other people must embed in their own work.</p>
 
     <div class="tablewrap">
@@ -3429,7 +3681,7 @@ post_task = [
       </table>
     </div>
 
-    <h3>Conventions across repositories</h3>
+    <h3 id="conventions-across-repositories">Conventions across repositories</h3>
     <ul class="plain">
       <li>Default branch <code>main</code>, releases as tags, semantic versioning per repository.</li>
       <li>Every repository carries the same security policy and the same code of conduct, sourced from <code>agentiik/.github</code>. The licence file is the one thing that is not uniform, for the reasons below.</li>
@@ -3469,47 +3721,100 @@ post_task = [
 <script>
 (function(){
   var nav = document.querySelector('.side');
-  var box = nav ? nav.querySelector('details') : null;
-  var links = nav ? Array.prototype.slice.call(nav.querySelectorAll('a[href^="#"]')) : [];
-  var secs = [], map = {};
-  links.forEach(function(a){
-    var el = document.getElementById(a.getAttribute('href').slice(1));
-    if(el){ secs.push(el); map[el.id] = a; }
-  });
+  if(!nav) return;
+  var parts = Array.prototype.slice.call(nav.querySelectorAll('details.part'));
+  var links = Array.prototype.slice.call(nav.querySelectorAll('.side-toc a[href^="#"]'));
   var narrow = window.matchMedia('(max-width:980px)');
-  if(box && narrow.matches){ box.open = false; }
-  if(box){
-    box.addEventListener('click', function(e){
-      var t = e.target;
-      while(t && t !== box && t.tagName !== 'A'){ t = t.parentNode; }
-      if(t && t.tagName === 'A' && narrow.matches){ box.open = false; }
-    });
+
+  // Every navigable target, in document order: chapters and their sections alike.
+  var targets = [], map = {};
+  links.forEach(function(a){
+    var el = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    if(!el) return;
+    targets.push(el);
+    map[el.id] = a;
+  });
+  targets.sort(function(x, y){
+    return (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
+  });
+
+  // A chapter's own line, for the chapter a section belongs to.
+  function chapterItem(a){
+    var li = a.parentNode;
+    while(li && !(li.tagName === 'LI' && li.parentNode && !li.parentNode.classList.contains('subs'))){
+      li = li.parentNode;
+    }
+    return li;
   }
-  var current = null;
+  function partOf(a){
+    var d = a.parentNode;
+    while(d && d.tagName !== 'DETAILS'){ d = d.parentNode; }
+    return d;
+  }
+
+  var current = null, openItem = null;
+
+  function reveal(a){
+    var part = partOf(a);
+    if(part && !part.open){
+      parts.forEach(function(d){ if(d !== part && !narrow.matches) d.open = false; });
+      part.open = true;
+    }
+    var item = chapterItem(a);
+    if(item !== openItem){
+      if(openItem) openItem.removeAttribute('data-open');
+      if(item) item.setAttribute('data-open', '');
+      openItem = item;
+    }
+  }
+
+  function scrollIntoNav(a){
+    if(narrow.matches || nav.scrollHeight <= nav.clientHeight) return;
+    var r = a.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+    if(r.top < nr.top + 12 || r.bottom > nr.bottom - 12){
+      nav.scrollTop += (r.top - nr.top) - (nav.clientHeight / 2) + (r.height / 2);
+    }
+  }
+
   function sync(){
-    if(!secs.length) return;
+    if(!targets.length) return;
     var bar = document.querySelector('.topbar');
     var line = (bar ? bar.offsetHeight : 58) + 26;
-    var active = secs[0];
-    for(var i=0;i<secs.length;i++){
-      if(secs[i].getBoundingClientRect().top <= line){ active = secs[i]; } else { break; }
+    var active = targets[0];
+    for(var i = 0; i < targets.length; i++){
+      if(targets[i].getBoundingClientRect().top <= line){ active = targets[i]; } else { break; }
     }
     if(window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 4){
-      active = secs[secs.length-1];
+      active = targets[targets.length - 1];
     }
     if(active === current) return;
-    if(current && map[current.id]){ map[current.id].removeAttribute('aria-current'); }
+    if(current && map[current.id]) map[current.id].removeAttribute('aria-current');
     current = active;
     var a = map[current.id];
     if(!a) return;
-    a.setAttribute('aria-current','true');
-    if(nav && !narrow.matches && nav.scrollHeight > nav.clientHeight){
-      var r = a.getBoundingClientRect(), nr = nav.getBoundingClientRect();
-      if(r.top < nr.top + 12 || r.bottom > nr.bottom - 12){
-        nav.scrollTop += (r.top - nr.top) - (nav.clientHeight/2) + (r.height/2);
-      }
-    }
+    a.setAttribute('aria-current', 'true');
+    reveal(a);
+    scrollIntoNav(a);
   }
+
+  // On a phone the sidebar sits above the document, so a chosen chapter folds
+  // it away again rather than pushing the text off the screen.
+  nav.addEventListener('click', function(e){
+    var t = e.target;
+    while(t && t !== nav && t.tagName !== 'A'){ t = t.parentNode; }
+    if(t && t.tagName === 'A' && narrow.matches){
+      var d = partOf(t);
+      if(d) setTimeout(function(){ d.open = false; }, 0);
+    }
+  });
+
+  if(narrow.matches) parts.forEach(function(d){ d.open = false; });
+  narrow.addEventListener('change', function(){
+    current = null;
+    parts.forEach(function(d){ d.open = false; });
+    sync();
+  });
+
   var queued = false;
   function onScroll(){
     if(queued) return;

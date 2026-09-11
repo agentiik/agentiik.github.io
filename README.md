@@ -7,12 +7,15 @@ open in a browser without a build step or a server.
 | --- | --- | --- |
 | [index.html](index.html) | `/` | The home page: what Agentiik is, one screen of the console, and the list of documents. |
 | [docs/index.html](docs/index.html) | `/docs` | The functional and technical specification: scope, the workflow language, the brick contract, access control, the runtime, security, deployment profiles, MCP, and the repository and licensing layout. |
+| [docs/roadmap/index.html](docs/roadmap/index.html) | `/docs/roadmap` | The order in which the specification becomes code: ten milestones, each defined by what it makes possible and by the fact that closes it. No dates. |
 
 ## Layout
 
 ```
 index.html             the home page, one file, styles inline
-docs/                  the specification, as docs/index.html
+docs/                  the documentation
+  index.html           the specification
+  roadmap/index.html   the roadmap
 legal/                 the legal notice, as legal/index.html
 assets/                the images the documents reference
 brand/                 square exports of the mark, for avatars and slides
@@ -40,6 +43,11 @@ an icon.
 - **One HTML file per document.** Styles are inline; images live in `assets/` and are
   referenced relatively, so a picture can be opened, replaced and reviewed on its own
   instead of being buried in the page as base64.
+- **The sidebar is the same in every document of `docs/`.** It carries the list of
+  documents first, then the current one broken into parts, then the sections of whichever
+  chapter is being read. A document long enough to need a sidebar is long enough to need
+  it grouped: a flat list of twenty-six chapters tells a reader where they are and
+  nothing about where that is.
 - **Diagrams are inline SVG.** They are drawn with `currentColor` and the page palette,
   which is what lets them follow the reader's theme; an external image file cannot do
   that, so diagrams stay in the document while screenshots stay in `assets/`.
