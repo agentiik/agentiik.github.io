@@ -55,6 +55,7 @@
 }
 
 *{box-sizing:border-box}
+html{scrollbar-gutter:stable}
 body{
   background:var(--paper);
   color:var(--ink);
@@ -113,6 +114,7 @@ main{
   padding-block:clamp(30px,4vw,52px) 96px;
 }
 .opening{
+  min-height:98px;
   border-bottom:2px solid var(--ink);
   padding-bottom:clamp(20px,3vw,30px);
   margin-bottom:clamp(28px,4vw,44px);
@@ -419,7 +421,7 @@ figure{
   background:var(--surface);
   box-shadow:var(--shadow);
 }
-figure .figbody{padding:20px 16px 8px;overflow-x:auto}
+figure .figbody{padding:20px 0 8px;overflow-x:auto}
 figure svg{display:block;max-width:100%;height:auto;min-width:520px;margin:0 auto;color:var(--ink)}
 figcaption{
   font-size:.8rem;
