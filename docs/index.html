@@ -3361,7 +3361,7 @@ resource "agentiik_workflow" "search" {
       <li>A browsable brick catalog built from the manifests of the standard bricks, with parameters and ports rendered from their schemas.</li>
       <li>Release notes per version, saying which components actually moved in it, and the API version each release speaks. There is no compatibility matrix to publish, because there is nothing to cross: the console, the command line and the applications of a release are that release.</li>
       <li>Every version's documentation, kept rather than replaced: <code>/docs</code> serves the default and <code>/docs/v/1.4.0</code> serves that release, unchanged, for as long as anyone might still be running it. The version selector sits in the header of every page and reads a list the site publishes beside them; on a page opened straight from a clone, where there is no list to fetch, it shows the one version there is and offers no menu.</li>
-      <li>Which version is the default is decided when the site is published, not in the reader's browser: the highest stable release, failing that the highest <code>0.y.z</code> release, then the highest rc, beta and alpha in turn, and <code>main</code> when nothing has been tagged. Resolving it at publication rather than by redirecting means a shared address answers with a page. <a href="#versioning">Versioning</a> has the rest.</li>
+      <li>Which version is the default is decided when the site is published, not in the reader's browser: the highest stable release, failing that the highest <code>0.y.z</code> release, then the highest rc, beta and alpha in turn, and <code>main</code> when nothing has been tagged. The selector groups the two kinds of finished release separately for the same reason the chapter distinguishes them: <em>stable</em> is a version whose promises are kept, <em>release</em> is a tagged <code>0.y.z</code> that makes none. Resolving it at publication rather than by redirecting means a shared address answers with a page. <a href="#versioning">Versioning</a> has the rest.</li>
       <li>No account, no tracking, no third-party script. The site is HTML, CSS and its own assets.</li>
     </ul>
   </div>
@@ -4243,23 +4243,32 @@ post_task = [
 
     var groups = [
       ['stable', 'Stable'],
+      ['release', 'Release'],
       ['rc', 'Release candidate'],
       ['beta', 'Beta'],
       ['alpha', 'Alpha'],
       ['development', 'Development'],
     ];
+    var known = groups.map(function(g){ return g[0]; });
+    // Anything the site publishes under a channel this page has never heard of
+    // still appears: an old page must not silently drop a newer version.
+    var others = data.versions.filter(function(v){ return known.indexOf(v.channel) < 0; });
+    if(others.length) groups.push([null, 'Other']);
+
+    function option(v){
+      var o = document.createElement('option');
+      o.value = v.version;
+      o.textContent = v.version + (v.version === def ? '  (default)' : '');
+      if(v.version === current) o.selected = true;
+      return o;
+    }
     groups.forEach(function(g){
-      var inChannel = data.versions.filter(function(v){ return v.channel === g[0]; });
+      var inChannel = g[0] === null ? others
+        : data.versions.filter(function(v){ return v.channel === g[0]; });
       if(!inChannel.length) return;
       var og = document.createElement('optgroup');
       og.label = g[1];
-      inChannel.forEach(function(v){
-        var o = document.createElement('option');
-        o.value = v.version;
-        o.textContent = v.version + (v.version === def ? '  (default)' : '');
-        if(v.version === current) o.selected = true;
-        og.appendChild(o);
-      });
+      inChannel.forEach(function(v){ og.appendChild(option(v)); });
       sel.appendChild(og);
     });
     if(!sel.querySelector('option[selected], option:checked')){

@@ -1182,23 +1182,32 @@ img{max-width:100%}
 
     var groups = [
       ['stable', 'Stable'],
+      ['release', 'Release'],
       ['rc', 'Release candidate'],
       ['beta', 'Beta'],
       ['alpha', 'Alpha'],
       ['development', 'Development'],
     ];
+    var known = groups.map(function(g){ return g[0]; });
+    // Anything the site publishes under a channel this page has never heard of
+    // still appears: an old page must not silently drop a newer version.
+    var others = data.versions.filter(function(v){ return known.indexOf(v.channel) < 0; });
+    if(others.length) groups.push([null, 'Other']);
+
+    function option(v){
+      var o = document.createElement('option');
+      o.value = v.version;
+      o.textContent = v.version + (v.version === def ? '  (default)' : '');
+      if(v.version === current) o.selected = true;
+      return o;
+    }
     groups.forEach(function(g){
-      var inChannel = data.versions.filter(function(v){ return v.channel === g[0]; });
+      var inChannel = g[0] === null ? others
+        : data.versions.filter(function(v){ return v.channel === g[0]; });
       if(!inChannel.length) return;
       var og = document.createElement('optgroup');
       og.label = g[1];
-      inChannel.forEach(function(v){
-        var o = document.createElement('option');
-        o.value = v.version;
-        o.textContent = v.version + (v.version === def ? '  (default)' : '');
-        if(v.version === current) o.selected = true;
-        og.appendChild(o);
-      });
+      inChannel.forEach(function(v){ og.appendChild(option(v)); });
       sel.appendChild(og);
     });
     if(!sel.querySelector('option[selected], option:checked')){
