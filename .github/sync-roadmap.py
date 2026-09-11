@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Mark the roadmap with what is actually done, read from GitHub.
+
+The roadmap is the plan and GitHub is the record; this makes the plan show the
+record without either becoming the other. A task whose issue is closed is struck
+through, a group whose issues are all closed is marked, and each milestone gains
+a count. Nothing here decides anything: run it again after a merge and the page
+tells the truth again.
+
+Idempotent: marks are removed and rewritten from scratch on every run, so the
+file never accumulates state.
+"""
+
+import html
+import json
+import re
+import subprocess
+import sys
+
+ROADMAP = "docs/roadmap/index.html"
+REPOS = ["agentiik", "schemas", "bricks", "brick-sdk", "design", "console", "ios",
+         "android", "deploy", "terraform-provider-agentiik", "agentiik.github.io", ".github"]
+
+
+def issue_state():
+    """Every issue in the organisation, by title, with whether it is closed."""
+    state = {}
+    for repo in REPOS:
+        out = subprocess.run(
+            ["gh", "issue", "list", "--repo", f"agentiik/{repo}", "--state", "all",
+             "--limit", "500", "--json", "title,state"],
+            capture_output=True, text=True).stdout
+        for issue in json.loads(out or "[]"):
+            state[issue["title"].strip()] = issue["state"] == "CLOSED"
+    return state
+
+
+def task_title(task_text):
+    """The title expand_group.py gives a task: its first sentence, trimmed."""
+    t = task_text.split(". ")[0].rstrip(".")
+    return t if len(t) <= 110 else t[:107].rsplit(" ", 1)[0] + "..."
+
+
+def strip_marks(s):
+    """Remove every mark a previous run left, so this one starts from clean text."""
+    s = s.replace('<li class="done">', "<li>")
+    s = re.sub(r'\s*<span class="tick">[^<]*</span>', "", s)
+    s = re.sub(r'\s*<span class="tally">[^<]*</span>', "", s)
+    s = s.replace('<div class="work-group done">', '<div class="work-group">')
+    return s
+
+
+def main():
+    closed = issue_state()
+    s = strip_marks(open(ROADMAP, encoding="utf-8").read())
+
+    done_total = seen_total = 0
+    out = []
+    # Walk the file section by section so a milestone can be counted as it ends.
+    for chunk in re.split(r'(<section id="m\d+">)', s):
+        if not chunk.startswith("<section"):
+            out.append(chunk)
+            continue
+        out.append(chunk)
+
+    s = "".join(out)
+
+    def mark_task(m):
+        nonlocal done_total, seen_total
+        body = m.group(1)
+        text = html.unescape(re.sub(r"<[^>]*>", "", re.sub(r'<a class="ref".*?</a>|<span class="ref".*?</span>', "", body, flags=re.S))).strip()
+        text = re.sub(r"\s+", " ", text)
+        seen_total += 1
+        if closed.get(task_title(text)):
+            done_total += 1
+            return f'<li class="done">{body} <span class="tick">done</span></li>'
+        return m.group(0)
+
+    # Only the work blocks carry tasks; the prose uses ul.plain for other things.
+    def mark_block(m):
+        return re.sub(r"<li>(.*?)</li>", mark_task, m.group(0), flags=re.S)
+
+    s = re.sub(r'<div class="work">.*?(?=\n\s*<div class="gate">)', mark_block, s, flags=re.S)
+
+    # A group whose every task is struck through is itself done.
+    def mark_group(m):
+        block = m.group(0)
+        tasks = re.findall(r"<li( class=\"done\")?>", block)
+        if tasks and all(t for t in tasks):
+            return block.replace('<div class="work-group">', '<div class="work-group done">', 1)
+        return block
+
+    s = re.sub(r'<div class="work-group">.*?</ul>\s*</div>', mark_group, s, flags=re.S)
+
+    # A tally per milestone, beside its heading.
+    def mark_milestone(m):
+        head, body = m.group(1), m.group(2)
+        work = "".join(re.findall(r'<div class="work">.*?(?=\n\s*<div class="gate">)', body, flags=re.S))
+        total = len(re.findall(r"<li[ >]", work))
+        done = len(re.findall(r'<li class="done">', work))
+        if not total:
+            return m.group(0)
+        word = "done" if done == total else f"of {total} done"
+        tally = f'<span class="tally">{done} {word}</span>'
+        return head.replace("</h2>", f"</h2>{tally}", 1) + body
+
+    s = re.sub(r'(<div class="sec-head">.*?</h2>)(.*?)(?=<section id="m|<!-- ============ AFTER)',
+               mark_milestone, s, flags=re.S)
+
+    open(ROADMAP, "w", encoding="utf-8").write(s)
+    print(f"{done_total} of {seen_total} tasks marked done")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

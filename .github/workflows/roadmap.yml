@@ -1,0 +1,44 @@
+# Keeps the roadmap showing what is actually done.
+#
+# The roadmap is the plan and the issues are the record. This runs the marker
+# after anything that could change the record, and commits only when the page
+# would say something different from what it says now.
+
+name: Roadmap
+
+on:
+  issues:
+    types: [closed, reopened, deleted, transferred]
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: roadmap
+  cancel-in-progress: true
+
+jobs:
+  mark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Mark what is done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .github/sync-roadmap.py
+
+      - name: Commit when the page changed
+        run: |
+          if git diff --quiet docs/roadmap/index.html; then
+            echo "nothing to mark"
+            exit 0
+          fi
+          git config user.name "François Rousselet"
+          git config user.email "francois.rousselet@rslt.fr"
+          git add docs/roadmap/index.html
+          git commit -m "Mark the roadmap with what is done"
+          git push
