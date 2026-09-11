@@ -186,30 +186,33 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
 }
 
 /* Which document you are in, before which part of it. */
+/* One document per line, aligned on the chapters below. Side by side, each
+   tab sized itself to its own label — DOCUMENTATION is wider than ROADMAP —
+   so both moved every time the open document changed. Stacked, there is no
+   width to negotiate, and a third and fourth document will fit the same way. */
 .side-docs{
   display:flex;
-  gap:2px;
-  margin-bottom:22px;
-  padding-bottom:14px;
+  flex-direction:column;
+  margin-bottom:20px;
+  padding-bottom:12px;
   border-bottom:1px solid var(--line);
 }
 .side-docs a{
-  flex:1;
-  text-align:center;
-  padding:6px 8px;
+  display:block;
+  padding:6px 10px 6px 13px;
   font-size:.72rem;
   text-transform:uppercase;
   letter-spacing:.1em;
   font-weight:600;
   color:var(--faint);
   text-decoration:none;
-  border:1px solid transparent;
+  border-left:2px solid transparent;
 }
 .side-docs a:hover{color:var(--ink);background:var(--sunken)}
 .side-docs a[aria-current="page"]{
   color:var(--ink);
-  border-color:var(--line);
-  background:var(--surface);
+  background:var(--sunken);
+  border-left-color:var(--ink);
 }
 
 .side details.part{
@@ -474,7 +477,6 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
     border-bottom:1px solid var(--line);
     padding:16px 0 8px;
   }
-  .side-docs{max-width:320px}
   /* The nine parts sit as a grid of closed headings, so the document starts
      within a screen of the top rather than below a list of 26 chapters. */
   .side-toc{
