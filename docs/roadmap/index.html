@@ -829,7 +829,7 @@ img{max-width:100%}
 </section>
 <!-- ============ v0.1.0 ============ -->
 <section id="m01">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2><span class="tally">42 of 59 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2><span class="tally">51 of 59 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> <code>agk run --local</code> takes an <code>agentiik.yaml</code>, runs its graph, and hands back the output envelopes. No server, no account, no database.</p>
 
@@ -913,21 +913,21 @@ img{max-width:100%}
           <li class="done">Publish, for a script that writes nothing and exits 0, one item on out carrying its captured standard output and anything left in /agk/out/files/. <a class="ref" href="../#running-a-script-instead-of-a-brick">running-a-script-instead-of-a-brick</a> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The command line</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Implement agk validate: validate the YAML, detect cycles, and check ports against the manifests of the referenced images. <a class="ref" href="../#command-line">command-line</a></li>
-          <li>Implement agk graph, writing the resolved graph as DOT or Mermaid. <a class="ref" href="../#command-line">command-line</a></li>
-          <li>Implement agk run --local: run the whole graph against the local Docker daemon with no controller, no bus and no database, with artifacts landing in a working directory. <a class="ref" href="../#command-line">command-line</a></li>
-          <li>Mount the working tree at /agk/repo for a local run, give the run a ULID, label it as local so a history never mistakes it for something reproducible, and leave AGK_COMMIT unset. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><a class="ref" href="../#command-line">command-line</a></li>
-          <li>Take local secrets from the command line and mount them exactly as a server run would, since a local run has nothing to protect and no grants to check. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#secrets">secrets</a></li>
-          <li>Hand back the output envelopes named in outputs on completion, and report a failure naming the step, the exit code and what was refused, in that order. <a class="ref" href="../#graph">graph</a><a class="ref" href="../#voice">voice</a></li>
-          <li>Ship /agk/bin/agk as a static helper mounted read-only into every container, with agk items, agk emit and agk attach. <a class="ref" href="../#running-a-script-instead-of-a-brick">running-a-script-instead-of-a-brick</a></li>
-          <li>Implement agk brick test, running a brick against a set of sample envelopes and comparing against expected outputs. <a class="ref" href="../#command-line">command-line</a></li>
-          <li>Prove the milestone: an end-to-end test that runs a multi-step workflow with a fan-out and a merge twice on the same inputs and asserts the same envelopes both times. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Implement agk validate: validate the YAML, detect cycles, and check ports against the manifests of the referenced images. <a class="ref" href="../#command-line">command-line</a> <span class="tick">done</span></li>
+          <li class="done">Implement agk graph, writing the resolved graph as DOT or Mermaid. <a class="ref" href="../#command-line">command-line</a> <span class="tick">done</span></li>
+          <li class="done">Implement agk run --local: run the whole graph against the local Docker daemon with no controller, no bus and no database, with artifacts landing in a working directory. <a class="ref" href="../#command-line">command-line</a> <span class="tick">done</span></li>
+          <li class="done">Mount the working tree at /agk/repo for a local run, give the run a ULID, label it as local so a history never mistakes it for something reproducible, and leave AGK_COMMIT unset. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><a class="ref" href="../#command-line">command-line</a> <span class="tick">done</span></li>
+          <li class="done">Take local secrets from the command line and mount them exactly as a server run would, since a local run has nothing to protect and no grants to check. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#secrets">secrets</a> <span class="tick">done</span></li>
+          <li class="done">Hand back the output envelopes named in outputs on completion, and report a failure naming the step, the exit code and what was refused, in that order. <a class="ref" href="../#graph">graph</a><a class="ref" href="../#voice">voice</a> <span class="tick">done</span></li>
+          <li class="done">Ship /agk/bin/agk as a static helper mounted read-only into every container, with agk items, agk emit and agk attach. <a class="ref" href="../#running-a-script-instead-of-a-brick">running-a-script-instead-of-a-brick</a> <span class="tick">done</span></li>
+          <li class="done">Implement agk brick test, running a brick against a set of sample envelopes and comparing against expected outputs. <a class="ref" href="../#command-line">command-line</a> <span class="tick">done</span></li>
+          <li class="done">Prove the milestone: an end-to-end test that runs a multi-step workflow with a fan-out and a merge twice on the same inputs and asserts the same envelopes both times. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
       <div class="work-group">
