@@ -435,6 +435,8 @@ code{
 }
 .block pre code{background:none;padding:0;font-size:inherit}
 .c{color:var(--faint);font-style:italic}
+.block pre .p{color:var(--accent);user-select:none}
+.block pre .cmd{color:var(--ink);font-weight:500}
 
 .tablewrap{overflow-x:auto;margin:1.4em 0 1.8em;border:1px solid var(--line);background:var(--surface)}
 table{border-collapse:collapse;width:100%;min-width:520px;font-size:.88rem}
@@ -2697,6 +2699,121 @@ certs/
     <div class="decision">
       <span class="note-label">Decision</span>
       <p><code>agk run --local</code> is an architectural constraint, not a convenience. It forces the graph evaluator and the container driver to be libraries usable without a bus or a database, which rules out hiding execution rules inside the controller where the YAML file cannot show them. Local runs bypass grants entirely because there is nothing to protect: the operator already owns the file, the daemon and the secrets they supply on the command line.</p>
+    </div>
+
+    <h4>A local run, from the file to the envelopes</h4>
+    <p>The session below is a recording and not a transcript written by hand: four steps of <code>finance/monthly-invoicing</code> against the Docker daemon of a laptop, with a fan-out over three orders, a merge that waits for both of its edges and a script step that reads its items through the helper. Six containers, under a second. The recording is at <a href="../assets/agk-local-run.cast"><code>agk-local-run.cast</code></a>, which <code>asciinema play</code> replays at the speed it happened.</p>
+
+    <div class="block">
+      <div class="note-label">finance/monthly-invoicing, on a laptop</div>
+<pre><code><span class="p">$</span> <span class="cmd">agk validate
+</span>
+user namespace remapping is off on this daemon and require_userns_remap is false in /etc/agentiik/runner.toml, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+ghcr.io/acme/agk-charge:0.1.0: charge-order 0.1.0, reads in, writes ok rejected
+ghcr.io/acme/agk-split:0.1.0: split-orders 0.1.0, reads orders, writes ok
+ghcr.io/acme/agk-total:0.1.0: total-charges 0.1.0, reads charges, writes ok
+finance/monthly-invoicing is valid: 4 steps, 4 edges, 2 declared inputs, 4 declared outputs
+4 steps held to the manifests of 3 referenced images
+<span class="p">$</span> <span class="cmd">agk run --local --inputs inputs.json --secret-file billing_api=billing.key
+</span>
+the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.55 and runs linux/aarch64
+user namespace remapping is off on this daemon and require_userns_remap is false in /etc/agentiik/runner.toml, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+    0.0s  split    running
+charge is given a secret and this platform has no tmpfs for the runner to write secret values on, so the value is written into the task's working directory on disk, where it is removed with the container rather than never having been written at all. An operator with a tmpfs names it in /etc/agentiik/runner.toml.
+    0.2s  split    succeeded, ok 3
+    0.2s  charge   running
+    0.6s  charge   succeeded, ok 2, rejected 1
+    0.6s  total    running
+    0.7s  total    succeeded, ok 1
+    0.7s  archive  running
+    0.9s  archive  succeeded, out 1
+finance/monthly-invoicing succeeded in 0.9s: 4 steps, 6 containers
+archived: 1 item in .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4/outputs/archived.json
+charged: 2 items in .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4/outputs/charged.json
+invoiced: 1 item in .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4/outputs/invoiced.json
+rejected: 1 item in .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4/outputs/rejected.json
+run 01M2AB9C7R0EF6TVF6R5ADFKF4: .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4
+<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4/outputs/invoiced.json
+</span>
+{"id":"invoice-2026-01","data":{"charged_count":2,"charged_total":4600,"cycle":"2026-01","receipts_seen":3,"rejected_count":1},"files":[{"name":"summary.txt","uri":"agk://run/01M2AB9C7R0EF6TVF6R5ADFKF4/total/ok/summary.txt","media_type":"text/plain","size":57,"sha256":"a7e1875aa928e8a32bed8728639b06e8f8e2e297df096da697c85caffd34075a"}]}
+</code></pre>
+    </div>
+
+    <ul class="plain">
+      <li><code>--inputs</code> reads a JSON object of the workflow's declared inputs; <code>--input name=value</code> and <code>--input-file name=path</code> give them one at a time.</li>
+      <li><code>--secret name=value</code> and <code>--secret-file name=path</code> are where a local run's secrets come from, and a step that mounts a secret nobody supplied is refused before a container exists. Failing at the fourth shard of a fan-out for a value that was never coming wastes the run and says less.</li>
+      <li><code>-o json</code> writes the output envelopes to standard output as one object keyed by output name, so that a local run composes with whatever reads it next. The narration moves to standard error, where it already was.</li>
+      <li><code>--logs</code> prints what each container wrote. <code>-v</code> narrates every task and not only every step, which is the difference between one line for a fan-out and one line per shard of it.</li>
+      <li><code>--dir</code> moves the working directory. <code>--helper</code> names the static <code>/agk/bin/agk</code> to mount, or <code>none</code> to mount nothing.</li>
+    </ul>
+
+    <h4>What a local run leaves behind</h4>
+    <p>Everything a run produced is on disk when it ends, under <code>.agk</code> beside the entry point, because at three in the morning finding it matters more than tidiness. <code>--dir</code> moves it for anyone who minds.</p>
+
+    <div class="block">
+      <div class="note-label">.agk</div>
+<pre><code>objects/&lt;namespace&gt;/sha256/&lt;digest&gt;   <span class="c"># the artifact store, shared by every run</span>
+bin/agk-linux-arm64                   <span class="c"># the static helper, laid down once, bound read-only</span>
+runs/&lt;run&gt;/run.json                   <span class="c"># the run: workflow, commit, state, timings</span>
+runs/&lt;run&gt;/state.json                 <span class="c"># every step and every task, as the evaluator left it</span>
+runs/&lt;run&gt;/outputs/&lt;output&gt;.json      <span class="c"># one envelope per declared output</span>
+runs/&lt;run&gt;/logs/&lt;step&gt;/               <span class="c"># what each container wrote, masked</span></code></pre>
+    </div>
+
+    <p>The store is content addressed and shared across runs, so a second run over the same inputs that produces the same bytes adds nothing to it. A task's own working directory is not here: it is created outside the tree, because the tree is bound read-only into every container and a run must not be able to read another task's directory through it, and it is removed with the container.</p>
+
+    <p>A run carries a ULID and is labelled local, so a history that later holds server runs cannot mistake one for the other.</p>
+
+    <h4>The graph, for a merge request</h4>
+    <p><code>agk graph</code> writes the resolved graph rather than the file's text: the includes are resolved, the inheritance applied, the ports named as the manifests declare them. Mermaid renders inside a merge request on every forge worth the name, and <code>--format dot</code> writes a digraph for anything that reads DOT.</p>
+
+    <div class="block">
+      <div class="note-label">agk graph --format mermaid</div>
+<pre><code><span class="p">$</span> <span class="cmd">agk graph --format mermaid
+</span>
+flowchart LR
+	step_archive["archive&lt;br/&gt;script on alpine:3.21"]
+	step_charge["charge&lt;br/&gt;ghcr.io/acme/agk-charge:0.1.0&lt;br/&gt;fan_out: item"]
+	step_split["split&lt;br/&gt;ghcr.io/acme/agk-split:0.1.0"]
+	step_total["total&lt;br/&gt;ghcr.io/acme/agk-total:0.1.0&lt;br/&gt;merge: wait_all"]
+
+	step_total --&gt;|"ok to in"| step_archive
+	step_split --&gt;|"ok to in"| step_charge
+	step_charge --&gt;|"ok to charges"| step_total
+	step_charge --&gt;|"rejected to charges"| step_total
+
+	input_orders(["orders"])
+	input_orders -. "orders" .-&gt; step_split
+	output_archived(["archived"])
+	step_archive -. "out" .-&gt; output_archived
+	output_charged(["charged"])
+	step_charge -. "ok" .-&gt; output_charged
+	output_invoiced(["invoiced"])
+	step_total -. "ok" .-&gt; output_invoiced
+	output_rejected(["rejected"])
+	step_charge -. "rejected" .-&gt; output_rejected
+</code></pre>
+    </div>
+
+    <h4>The exit codes of agk</h4>
+    <p>Five, and each is a different thing for whoever typed the command to do next. These are the codes the command itself exits with, and they are not a brick's: a brick's exit code is read against <a href="#exit-codes">its own table</a> and decides a step's verdict, where these decide what a script around <code>agk</code> should do.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>The command did what it says, and a run reached <code>succeeded</code>.</td></tr>
+          <tr><td>1</td><td>Refused, and nothing ran: the workflow was refused, an input was refused, a secret a step mounts was not supplied, a brick test case did not match.</td></tr>
+          <tr><td>2</td><td>The command line was wrong.</td></tr>
+          <tr><td>3</td><td>The run reached a terminal state other than <code>succeeded</code>. It ran, and it did not succeed.</td></tr>
+          <tr><td>4</td><td>No outcome could be determined: the daemon could not be reached, the floor refused, a pull died, a working directory could not be prepared.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>3 and 4 are two codes rather than one because they are two different things to do next. A run that failed is a run to look at: the narration names the step, the exit code and the band it falls in. A run that produced no outcome is a machine to look at, and nothing about the workflow was refused. It is the same distinction the driver draws between a result and an error, carried to the shell, and collapsing it would have a broken daemon read as a broken workflow.</p>
     </div>
   </div>
 </section>
