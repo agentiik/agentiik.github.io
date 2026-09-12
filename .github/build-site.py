@@ -28,6 +28,26 @@ import sys
 SITE = "_site"
 DOCS = "docs"
 
+# ROADMAP is the plan, which lives under the documentation and is not versioned with it.
+# The reason is in main(), where the per-version sweep would otherwise freeze it.
+ROADMAP = os.path.join(DOCS, "roadmap")
+
+# REDIRECT is what /docs/v/ serves: the page an archived page's brand link lands on. Both
+# a meta refresh and a script, because the first works with no JavaScript and the second
+# does not leave an entry in the reader's history to go back through.
+REDIRECT = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Agentiik</title>
+<link rel="canonical" href="/">
+<meta http-equiv="refresh" content="0; url=/">
+<script>location.replace('/')</script>
+</head>
+<body><p><a href="/">Agentiik</a></p></body>
+</html>
+"""
+
 # Order of preference. A channel earlier in this list wins outright: the newest
 # alpha never outranks the oldest stable, because the question the default
 # answers is "what may a reader rely on", not "what is most recent".
@@ -140,14 +160,18 @@ def main():
     # shows today's screenshots. That is the wrong half of a trade whose other half is a
     # broken image, and naming it here is better than discovering it after a release.
     beside = os.path.join(SITE, DOCS, "v")
-    for name in ("assets", "legal", "index.html"):
+    for name in ("assets", "legal"):
         if not os.path.exists(name):
             continue
-        dest = os.path.join(beside, name)
-        if os.path.isdir(name):
-            shutil.copytree(name, dest, dirs_exist_ok=True)
-        else:
-            shutil.copy2(name, dest)
+        shutil.copytree(name, os.path.join(beside, name), dirs_exist_ok=True)
+
+    # /docs/v/ is where an archived page's brand link lands, and it is a redirect rather
+    # than a second copy of the home page. The home page's own links are relative to the
+    # root, so a copy of it one directory down offers "docs/" and "docs/roadmap/" and
+    # both are 404: a reader following the mark out of an archived page would land on a
+    # page whose every link is broken. A redirect has no links to break.
+    with open(os.path.join(beside, "index.html"), "w") as f:
+        f.write(REDIRECT)
 
     default = choose_default(versions)
     if default != "main":
@@ -160,6 +184,24 @@ def main():
         for name in os.listdir(src):
             s, d = os.path.join(src, name), os.path.join(target, name)
             shutil.copytree(s, d) if os.path.isdir(s) else shutil.copy2(s, d)
+
+        # The plan is not versioned with the documentation, and the sweep above would
+        # version it: ROADMAP sits under docs/, so the default's copy of it would be the
+        # one served at the address the project tells people to read. That copy is a
+        # snapshot taken at a tag, and the tag commit necessarily predates the mark for
+        # the task of tagging, so /docs/roadmap would say the release it published is
+        # unfinished and would say it for ever, while every later mark landed only under
+        # /docs/v/main/. The working tree's plan goes back on top.
+        #
+        # The archived copies are left where they are. A reader who pins 0.1.0 and asks
+        # for the plan gets the plan as it stood at 0.1.0, which is the one reading of a
+        # pinned URL that is not a lie, and it is what keeps the version selector's own
+        # links resolvable from /docs/roadmap/.
+        if os.path.isdir(ROADMAP):
+            roadmap = os.path.join(target, os.path.basename(ROADMAP))
+            if os.path.exists(roadmap):
+                shutil.rmtree(roadmap)
+            shutil.copytree(ROADMAP, roadmap)
 
     listing = [{"version": v["version"], "channel": v["channel"]} for v in versions]
     listing.append({"version": "main", "channel": "development"})
