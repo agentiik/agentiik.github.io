@@ -829,7 +829,7 @@ img{max-width:100%}
 </section>
 <!-- ============ v0.1.0 ============ -->
 <section id="m01">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2><span class="tally">51 of 59 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2><span class="tally">58 of 59 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> <code>agk run --local</code> takes an <code>agentiik.yaml</code>, runs its graph, and hands back the output envelopes. No server, no account, no database.</p>
 
@@ -930,19 +930,19 @@ img{max-width:100%}
           <li class="done">Prove the milestone: an end-to-end test that runs a multi-step workflow with a fan-out and a merge twice on the same inputs and asserts the same envelopes both times. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The first bricks</h4>
           <span class="work-repo">bricks</span>
         </div>
         <ul>
-          <li>Lay out the catalog repository, one directory per brick, each producing its own image, manifest and example envelopes. <a class="ref" href="../#repos">repos</a></li>
-          <li>Build http-request: one HTTP request per item, with url, method, headers and timeout params, an optional bearer secret, out and error ports, and network: egress. <a class="ref" href="../#catalog">catalog</a><a class="ref" href="../#brick-manifest">brick-manifest</a></li>
-          <li>Build jq: item transformation and filtering through a jq expression. <a class="ref" href="../#catalog">catalog</a></li>
-          <li>Build schema-validate: item validation against a schema, with invalid items routed to a dedicated port. <a class="ref" href="../#catalog">catalog</a></li>
-          <li>Build csv: conversion between tables and items both ways, writing a table above the spill threshold as an artifact. <a class="ref" href="../#catalog">catalog</a><a class="ref" href="../#size-rules">size-rules</a></li>
-          <li>Make every brick honour the contract without an Agentiik library: non-root, read-only root filesystem, ports written under /agk/out/ports/, and the exit codes the table defines. <a class="ref" href="../#brick">brick</a><a class="ref" href="../#exit-codes">exit-codes</a></li>
-          <li>Run each brick against its example envelopes in CI with agk brick test. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Lay out the catalog repository, one directory per brick, each producing its own image, manifest and example envelopes. <a class="ref" href="../#repos">repos</a> <span class="tick">done</span></li>
+          <li class="done">Build http-request: one HTTP request per item, with url, method, headers and timeout params, an optional bearer secret, out and error ports, and network: egress. <a class="ref" href="../#catalog">catalog</a><a class="ref" href="../#brick-manifest">brick-manifest</a> <span class="tick">done</span></li>
+          <li class="done">Build jq: item transformation and filtering through a jq expression. <a class="ref" href="../#catalog">catalog</a> <span class="tick">done</span></li>
+          <li class="done">Build schema-validate: item validation against a schema, with invalid items routed to a dedicated port. <a class="ref" href="../#catalog">catalog</a> <span class="tick">done</span></li>
+          <li class="done">Build csv: conversion between tables and items both ways, writing a table above the spill threshold as an artifact. <a class="ref" href="../#catalog">catalog</a><a class="ref" href="../#size-rules">size-rules</a> <span class="tick">done</span></li>
+          <li class="done">Make every brick honour the contract without an Agentiik library: non-root, read-only root filesystem, ports written under /agk/out/ports/, and the exit codes the table defines. <a class="ref" href="../#brick">brick</a><a class="ref" href="../#exit-codes">exit-codes</a> <span class="tick">done</span></li>
+          <li class="done">Run each brick against its example envelopes in CI with agk brick test. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
     </div>
