@@ -1637,7 +1637,7 @@ certs/
     <ul class="plain">
       <li><code>script</code>, <code>before_script</code> and <code>after_script</code> are lists of command strings, one command per entry, and a single multi-line block scalar is refused. Commands run as the image's user, with the shell named by <code>shell</code>, and the first non-zero exit ends the step with that code, which the <a href="#exit-codes">exit-code table</a> then interprets. The list is what makes that exit attributable to one command rather than to a script.</li>
       <li>Input arrives where it always does: the envelope on standard input and at <code>/agk/in/&lt;port&gt;/envelope.json</code>, artifacts beside it.</li>
-      <li>Output is whatever the script writes to <code>/agk/out/ports/&lt;port&gt;.json</code>. A script that writes nothing and exits 0 publishes, on <code>out</code>, one item carrying its captured standard output and any file it left in <code>/agk/out/files/</code>. That is what makes a two-line script worth writing.</li>
+      <li>Output is whatever the script writes to <code>/agk/out/ports/&lt;port&gt;.json</code>. A script that writes nothing and exits 0 publishes, on <code>out</code>, one item carrying its captured standard output under <code>data.stdout</code> and any file it left in <code>/agk/out/files/</code>, so a step below reads it as <code>${{ item.data.stdout }}</code>. That is what makes a two-line script worth writing.</li>
       <li><code>/agk/bin/agk</code> is mounted read-only: a static helper for scripts that want to be precise rather than lucky, with <code>agk items</code>, <code>agk emit</code> and <code>agk attach</code>. It is a convenience, never a requirement; <code>jq</code> and a redirect do the same job.</li>
       <li><code>params</code> has no manifest to be validated against here, so each entry is written to <code>/agk/params.json</code> and exported as <code>AGK_PARAM_&lt;NAME&gt;</code>.</li>
       <li>The image is pinned by digest in production, exactly as a brick image is. A floating base image would make a step's behaviour change without its file changing, which is the one thing the versioned workflow exists to prevent.</li>
@@ -2708,7 +2708,7 @@ certs/
       <div class="note-label">finance/monthly-invoicing, on a laptop</div>
 <pre><code><span class="p">$</span> <span class="cmd">agk validate
 </span>
-user namespace remapping is off on this daemon and require_userns_remap is false in /etc/agentiik/runner.toml, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
 ghcr.io/acme/agk-charge:0.1.0: charge-order 0.1.0, reads in, writes ok rejected
 ghcr.io/acme/agk-split:0.1.0: split-orders 0.1.0, reads orders, writes ok
 ghcr.io/acme/agk-total:0.1.0: total-charges 0.1.0, reads charges, writes ok
@@ -2717,7 +2717,7 @@ finance/monthly-invoicing is valid: 4 steps, 4 edges, 2 declared inputs, 4 decla
 <span class="p">$</span> <span class="cmd">agk run --local --inputs inputs.json --secret-file billing_api=billing.key
 </span>
 the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.55 and runs linux/aarch64
-user namespace remapping is off on this daemon and require_userns_remap is false in /etc/agentiik/runner.toml, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
     0.0s  split    running
 charge is given a secret and this platform has no tmpfs for the runner to write secret values on, so the value is written into the task's working directory on disk, where it is removed with the container rather than never having been written at all. An operator with a tmpfs names it in /etc/agentiik/runner.toml.
     0.2s  split    succeeded, ok 3
@@ -2728,14 +2728,14 @@ charge is given a secret and this platform has no tmpfs for the runner to write 
     0.7s  archive  running
     0.9s  archive  succeeded, out 1
 finance/monthly-invoicing succeeded in 0.9s: 4 steps, 6 containers
-archived: 1 item in .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4/outputs/archived.json
-charged: 2 items in .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4/outputs/charged.json
-invoiced: 1 item in .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4/outputs/invoiced.json
-rejected: 1 item in .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4/outputs/rejected.json
-run 01M2AB9C7R0EF6TVF6R5ADFKF4: .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4
-<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M2AB9C7R0EF6TVF6R5ADFKF4/outputs/invoiced.json
+archived: 1 item in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/archived.json
+charged: 2 items in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/charged.json
+invoiced: 1 item in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/invoiced.json
+rejected: 1 item in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/rejected.json
+run 01M2BQCB3DSYQ66AJ42ZN2JEWP: .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP
+<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/invoiced.json
 </span>
-{"id":"invoice-2026-01","data":{"charged_count":2,"charged_total":4600,"cycle":"2026-01","receipts_seen":3,"rejected_count":1},"files":[{"name":"summary.txt","uri":"agk://run/01M2AB9C7R0EF6TVF6R5ADFKF4/total/ok/summary.txt","media_type":"text/plain","size":57,"sha256":"a7e1875aa928e8a32bed8728639b06e8f8e2e297df096da697c85caffd34075a"}]}
+{"id":"invoice-2026-01","data":{"charged_count":2,"charged_total":4600,"cycle":"2026-01","receipts_seen":3,"rejected_count":1},"files":[{"name":"summary.txt","uri":"agk://run/01M2BQCB3DSYQ66AJ42ZN2JEWP/total/ok/summary.txt","media_type":"text/plain","size":57,"sha256":"a7e1875aa928e8a32bed8728639b06e8f8e2e297df096da697c85caffd34075a"}]}
 </code></pre>
     </div>
 
