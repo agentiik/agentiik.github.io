@@ -128,6 +128,27 @@ def main():
     main_dir = os.path.join(SITE, DOCS, "v", "main")
     shutil.copytree(DOCS, main_dir, dirs_exist_ok=True)
 
+    # What an archived page's relative links need to land on.
+    #
+    # An archived page is a byte copy of the one at /docs/, which is what the version
+    # selector depends on and what keeps a pinned URL honest. The price is that its
+    # ../assets, ../index.html and ../legal/ resolve one level up from /docs/v/ rather
+    # than from /docs/, so that is where a copy has to sit or every screenshot in every
+    # archived version is a 404.
+    #
+    # One copy serves them all, and it is the current one: an archived page therefore
+    # shows today's screenshots. That is the wrong half of a trade whose other half is a
+    # broken image, and naming it here is better than discovering it after a release.
+    beside = os.path.join(SITE, DOCS, "v")
+    for name in ("assets", "legal", "index.html"):
+        if not os.path.exists(name):
+            continue
+        dest = os.path.join(beside, name)
+        if os.path.isdir(name):
+            shutil.copytree(name, dest, dirs_exist_ok=True)
+        else:
+            shutil.copy2(name, dest)
+
     default = choose_default(versions)
     if default != "main":
         target = os.path.join(SITE, DOCS)
