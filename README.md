@@ -105,7 +105,7 @@ is current.
 | [terraform-provider-agentiik](https://github.com/agentiik/terraform-provider-agentiik) | Namespaces, workflow repositories, grants, tokens and runs, as HCL. |
 | [.github](https://github.com/agentiik/.github) | Security policy, code of conduct, contribution guide, licensing and trademark notes. |
 
-Those repositories are private until they hold something worth reading.
+All twelve are public, and eight of them hold a README and a licence and nothing else yet. The roadmap says which release fills each one.
 
 ## Where the rest will come from
 
