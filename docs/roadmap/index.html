@@ -829,7 +829,7 @@ img{max-width:100%}
 </section>
 <!-- ============ v0.1.0 ============ -->
 <section id="m01">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2><span class="tally">58 of 59 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.1.0: The language runs on one machine</h2><span class="tally">59 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> <code>agk run --local</code> takes an <code>agentiik.yaml</code>, runs its graph, and hands back the output envelopes. No server, no account, no database.</p>
 
@@ -838,7 +838,7 @@ img{max-width:100%}
     <p>The evaluator and the container driver are libraries here rather than internals, and that is a constraint the rest of the plan leans on: <code>agk run --local</code> has to be the same code path a server run takes, or it becomes a second implementation that drifts from the first. The schemas carry a <code>description</code> and <code>examples</code> on every keyword from this first release rather than from the day somebody needs them, because the language reference and <code>workflow.language</code> are both generated from them later.</p>
 
     <div class="work">
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The contract, released before anything reads it</h4>
           <span class="work-repo">schemas</span>
@@ -851,7 +851,7 @@ img{max-width:100%}
           <li class="done">Express the retain grammar in the schema (a duration, or { for, fetches }) and allow fetches only on a workflow output. <a class="ref" href="../#artifact-expiry">artifact-expiry</a> <span class="tick">done</span></li>
           <li class="done">Give every keyword a description and examples, and fail the build when one is missing. <a class="ref" href="../#repos">repos</a> <span class="tick">done</span></li>
           <li class="done">Ship valid and invalid fixture documents for the three schemas and validate them in CI. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
-          <li>Tag all twelve repositories at 0.1.0 on the same commit day, each under the licence its role requires. A repository with nothing to ship that release is tagged anyway, because the sentence a person says out loud has to name one thing. <a class="ref" href="../#versioning">versioning</a><a class="ref" href="../#licensing">licensing</a></li>
+          <li class="done">Tag all twelve repositories at 0.1.0 on the same commit day, each under the licence its role requires. A repository with nothing to ship that release is tagged anyway, because the sentence a person says out loud has to name one thing. <a class="ref" href="../#versioning">versioning</a><a class="ref" href="../#licensing">licensing</a> <span class="tick">done</span></li>
         </ul>
       </div>
       <div class="work-group done">
