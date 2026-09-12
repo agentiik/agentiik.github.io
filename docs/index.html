@@ -4266,6 +4266,7 @@ post_task = [
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>The documentation is versioned with everything else, and the site keeps every version rather than only the current one: <code>/docs</code> serves the default and <code>/docs/v/1.4.0</code> serves that release's documentation, unchanged, for as long as somebody might still be running it. The default is resolved when the site is published, not in the reader's browser, so that an address someone shares resolves to a page rather than to a redirect: the highest stable release, failing that the highest <code>0.y.z</code> release, then the highest rc, beta and alpha in turn, and <code>main</code> when nothing has been tagged at all. A reader on a release therefore reads what that release does, and a reader following <code>main</code> has to ask for it.</p>
+      <p>The plan is the exception, and it is not versioned with the documentation. <code>/docs/roadmap</code> is the plan as it stands, always, because a plan frozen at a release is a page that says the release it published is unfinished and goes on saying it: the commit a version is tagged on necessarily predates the mark for the task of tagging it. A pinned address still answers, <code>/docs/v/1.4.0/roadmap</code> being the plan as it stood at that release, which is the one reading of a pinned URL that is not a lie.</p>
     </div>
 
     <h3 id="conventions-across-repositories">Conventions across repositories</h3>
