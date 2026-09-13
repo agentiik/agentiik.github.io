@@ -685,6 +685,7 @@ img{max-width:100%}
         </li>
         <li><a href="#lifecycle">Lifecycle and replay</a>
           <ul class="subs">
+            <li><a href="#task-states">Task states</a></li>
             <li><a href="#run-states">Run states</a></li>
             <li><a href="#memoisation-and-replay">Memoisation and replay</a></li>
           </ul>
@@ -2647,6 +2648,25 @@ certs/
   </figure>
 
   <div class="prose">
+    <h3 id="task-states">Task states</h3>
+    <p>Nine, and the last three are what the diagram above draws as endings rather than as a path. A task ends in exactly one of them, and which one is what the step's <code>retry</code> policy and the run's own verdict are read from.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>State</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>pending</td><td>Decided and not yet handed to a runner.</td></tr>
+          <tr><td>dispatched</td><td>Handed out. The task's deadline runs from here, because that is when the work became somebody's.</td></tr>
+          <tr><td>running</td><td>The container is running.</td></tr>
+          <tr><td>publishing</td><td>The container is finished and its outputs are being collected and uploaded. Its own state because the work is done and the result is not yet safe, and losing a runner here is not the same as losing one mid-run.</td></tr>
+          <tr><td>succeeded</td><td>The container exited 0 and its envelopes were published.</td></tr>
+          <tr><td>failed</td><td>The container exited non-zero. Which failure it is, and whether it is worth another attempt, is read off the exit code and nowhere else.</td></tr>
+          <tr><td>lost</td><td>The runner holding it stopped reporting. Charged to the infrastructure, and requeued only where the step is idempotent.</td></tr>
+          <tr><td>timed_out</td><td>The attempt was stopped at its deadline, with SIGTERM and then SIGKILL after the grace period. Not <code>failed</code>: the brick did not decide anything, there is no exit code of its own to read, and a step whose <code>retry</code> answers a transient failure should not be answering a deadline the same way.</td></tr>
+          <tr><td>cancelled</td><td>The task was stopped before it could finish, because the run was cancelled by a principal, by a concurrency group or by a <code>merge: first</code>. Not <code>failed</code> for the same reason, and separate from <code>timed_out</code> because one is the workflow's own limit and the other is somebody changing their mind.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <h3 id="run-states">Run states</h3>
     <div class="tablewrap">
       <table>
