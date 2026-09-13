@@ -6,6 +6,10 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+**A tag does not publish the site, and no longer pretends to.** The trigger added in v0.1.2 fires, builds the right site, creates a deployment and is reported as succeeding, and the live site does not change: Pages serves the deployment made from its source branch, which is main. It was tried on v0.1.2 and the CDN served the previous release for half an hour while three green checkmarks said otherwise. The trigger is gone, the reason is written where it was, and the release sequence is named in the conventions instead: merge the entry, tag, then run the publish workflow.
+
 ## v0.1.2, 2026-09-13
 
 **Get started.** A chapter at the top of the documentation, covering what you need, installing the command line, starting a workflow repository, validating, running, reading what came out, and adding a second step. Everything in it was run against the release it names before it was written, and the page says so: it is what works today rather than what the rest of the documentation promises, and it grows with the product. It ends with what does not work yet, which at v0.1.1 is the seven verbs that reach a server, `network: egress`, and a secret on a platform with no tmpfs.
