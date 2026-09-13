@@ -186,6 +186,114 @@ html.js.ready [data-rise]{
 }
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* The recorded session. It is text on the page, and a player only if somebody asks for
+   one: the player is a quarter of a megabyte from a CDN, and a home page that fetched it
+   for every visitor to show a terminal nobody pressed play on would be spending somebody
+   else's bandwidth on decoration. */
+.cast{
+  position:relative;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(1240px, calc(100vw - 2 * clamp(16px,3vw,28px)));
+  margin:0 0 clamp(76px,12vw,140px);
+}
+.cast-frame{
+  position:relative;
+  border:1px solid var(--line);
+  background:var(--surface);
+  box-shadow:var(--shadow);
+}
+.cast pre{
+  margin:0;
+  padding:20px clamp(14px,2vw,22px) 60px;
+  max-height:min(60vh,440px);
+  overflow:auto;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:clamp(.66rem,1.15vw,.78rem);
+  line-height:1.75;
+  color:var(--ink);
+  white-space:pre-wrap;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+}
+.cast pre .p{color:var(--accent);user-select:none}
+.cast pre .cmd{font-weight:600}
+/* The fade says there is more below without hiding it: the block scrolls. */
+.cast-frame::after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0 0;
+  height:72px;
+  background:linear-gradient(to bottom,transparent,var(--surface));
+  pointer-events:none;
+}
+.cast-frame:has(.cast-player:not([hidden]))::after{display:none}
+.cast-play{
+  position:absolute;
+  right:clamp(12px,2vw,18px);
+  bottom:clamp(12px,2vw,18px);
+  z-index:1;
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  padding:9px 15px 9px 12px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--paper);
+  color:var(--ink);
+  font:inherit;
+  font-size:.82rem;
+  font-weight:500;
+  letter-spacing:-.01em;
+  cursor:pointer;
+}
+.cast-play:hover{border-color:var(--accent);color:var(--accent)}
+.cast-play:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.cast-play:disabled{cursor:default;color:var(--muted)}
+.cast-play svg{width:12px;height:12px;fill:currentColor}
+.cast-player{padding:14px clamp(10px,1.6vw,16px)}
+.cast figcaption{
+  margin-top:14px;
+  color:var(--muted);
+  font-size:.86rem;
+  line-height:1.6;
+}
+.cast figcaption b{color:var(--ink);font-weight:600}
+/* The player's own palette, set to this page's rather than left at its default black: a
+   terminal that does not belong to the page it sits on reads as an image somebody pasted. */
+.asciinema-player-theme-agentiik{
+  --term-color-foreground:#17201C;
+  --term-color-background:#FBFCF8;
+  --term-color-0:#3A463F; --term-color-1:#A8481B; --term-color-2:#0E6A5F;
+  --term-color-3:#8A6A1F; --term-color-4:#2F5E86; --term-color-5:#7A4B86;
+  --term-color-6:#12776C; --term-color-7:#17201C;
+  --term-color-8:#7C887F; --term-color-9:#C25A22; --term-color-10:#12897A;
+  --term-color-11:#A8842A; --term-color-12:#3D74A3; --term-color-13:#9460A3;
+  --term-color-14:#189387; --term-color-15:#0B0F0D;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .asciinema-player-theme-agentiik{
+    --term-color-foreground:#E5EAE3;
+    --term-color-background:#181E1B;
+    --term-color-0:#2A332E; --term-color-1:#E0834F; --term-color-2:#54C1AD;
+    --term-color-3:#D6B45C; --term-color-4:#7FB0DA; --term-color-5:#C39AD4;
+    --term-color-6:#6FD4C4; --term-color-7:#E5EAE3;
+    --term-color-8:#7E8B83; --term-color-9:#EC9A6A; --term-color-10:#74D6C4;
+    --term-color-11:#E6C87A; --term-color-12:#9AC4E8; --term-color-13:#D3B0E2;
+    --term-color-14:#8AE2D3; --term-color-15:#FFFFFF;
+  }
+}
+:root[data-theme="dark"] .asciinema-player-theme-agentiik{
+  --term-color-foreground:#E5EAE3;
+  --term-color-background:#181E1B;
+  --term-color-0:#2A332E; --term-color-1:#E0834F; --term-color-2:#54C1AD;
+  --term-color-3:#D6B45C; --term-color-4:#7FB0DA; --term-color-5:#C39AD4;
+  --term-color-6:#6FD4C4; --term-color-7:#E5EAE3;
+  --term-color-8:#7E8B83; --term-color-9:#EC9A6A; --term-color-10:#74D6C4;
+  --term-color-11:#E6C87A; --term-color-12:#9AC4E8; --term-color-13:#D3B0E2;
+  --term-color-14:#8AE2D3; --term-color-15:#FFFFFF;
+}
 </style>
 <style>
 html{color-scheme:light dark}
@@ -219,6 +327,43 @@ img{max-width:100%}
   <img class="shot-light" alt="The Agentiik run list: a namespace rail, filter chips, a band of runs needing attention, and a table of runs with state, identifier, workflow, trigger, a per-step progress strip, times and the principal who started each one." src="assets/console-runs-light.png">
   <img class="shot-dark" alt="The Agentiik run list: a namespace rail, filter chips, a band of runs needing attention, and a table of runs with state, identifier, workflow, trigger, a per-step progress strip, times and the principal who started each one." src="assets/console-runs-dark.png">
 </div>
+
+<figure class="cast" data-rise data-par="-.03" style="--delay:.22s">
+  <div class="cast-frame">
+<pre id="cast-poster"><code><span class="p">$</span> <span class="cmd">agk validate</span>
+user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+ghcr.io/acme/agk-charge:0.1.0: charge-order 0.1.0, reads in, writes ok rejected
+ghcr.io/acme/agk-split:0.1.0: split-orders 0.1.0, reads orders, writes ok
+ghcr.io/acme/agk-total:0.1.0: total-charges 0.1.0, reads charges, writes ok
+finance/monthly-invoicing is valid: 4 steps, 4 edges, 2 declared inputs, 4 declared outputs
+4 steps held to the manifests of 3 referenced images
+<span class="p">$</span> <span class="cmd">agk run --local --inputs inputs.json --secret-file billing_api=billing.key</span>
+the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.55 and runs linux/aarch64
+user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+    0.0s  split    running
+charge is given a secret and this platform has no tmpfs for the runner to write secret values on, so the value is written into the task's working directory on disk, where it is removed with the container rather than never having been written at all. An operator with a tmpfs names it in /etc/agentiik/runner.toml.
+    0.3s  split    succeeded, ok 3
+    0.3s  charge   running
+    0.7s  charge   succeeded, ok 2, rejected 1
+    0.7s  total    running
+    0.9s  total    succeeded, ok 1
+    0.9s  archive  running
+    1.2s  archive  succeeded, out 1
+finance/monthly-invoicing succeeded in 1.2s: 4 steps, 6 containers
+archived: 1 item in .agk/runs/01M2DKXV434DTJH5HTSGCB8S8C/outputs/archived.json
+charged: 2 items in .agk/runs/01M2DKXV434DTJH5HTSGCB8S8C/outputs/charged.json
+invoiced: 1 item in .agk/runs/01M2DKXV434DTJH5HTSGCB8S8C/outputs/invoiced.json
+rejected: 1 item in .agk/runs/01M2DKXV434DTJH5HTSGCB8S8C/outputs/rejected.json
+run 01M2DKXV434DTJH5HTSGCB8S8C: .agk/runs/01M2DKXV434DTJH5HTSGCB8S8C
+</code></pre>
+    <div class="cast-player" id="cast-player" hidden></div>
+    <button class="cast-play" id="cast-play" type="button" aria-controls="cast-player">
+      <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 1l9 5-9 5z"/></svg>
+      <span>Play the recording</span>
+    </button>
+  </div>
+  <figcaption><b>Four steps, six containers, 1.2 seconds.</b> A recording rather than a transcript written by hand. <code>agk validate</code> holds every step to the manifests of the images it names; <code>agk run --local</code> then runs the whole graph against the Docker daemon of a laptop, with no controller, no bus and no database. The machine says what it gives up before it starts anything. <a href="assets/agk-home.cast">The recording itself</a> plays with <code>asciinema play</code>.</figcaption>
+</figure>
 
 <nav class="docs">
   <a href="docs/index.html" data-rise data-par=".03" style="--delay:.26s">Documentation</a>
@@ -292,6 +437,56 @@ img{max-width:100%}
     if(!reduce.matches) return;
     items.forEach(function(it){ it.el.style.setProperty('--par', '0px'); });
     window.removeEventListener('scroll', onScroll);
+  });
+})();
+</script>
+<script>
+// The player is fetched when somebody presses play, and never before. Until then the
+// session is the text already on the page, which is readable, selectable and there with
+// no JavaScript at all.
+(function(){
+  var button = document.getElementById('cast-play');
+  var mount = document.getElementById('cast-player');
+  var poster = document.getElementById('cast-poster');
+  if(!button || !mount || !poster) return;
+
+  var BASE = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.10.0/dist/bundle/';
+  var label = button.querySelector('span');
+
+  function load(){
+    return new Promise(function(resolve, reject){
+      var css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = BASE + 'asciinema-player.css';
+      document.head.appendChild(css);
+      var js = document.createElement('script');
+      js.src = BASE + 'asciinema-player.min.js';
+      js.onload = resolve;
+      js.onerror = reject;
+      document.head.appendChild(js);
+    });
+  }
+
+  button.addEventListener('click', function(){
+    button.disabled = true;
+    label.textContent = 'Loading the player';
+    load().then(function(){
+      poster.hidden = true;
+      mount.hidden = false;
+      button.hidden = true;
+      window.AsciinemaPlayer.create('assets/agk-home.cast', mount, {
+        autoPlay: true,
+        idleTimeLimit: 1.5,
+        fit: 'width',
+        theme: 'agentiik',
+        terminalFontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+      });
+    }).catch(function(){
+      // The CDN is somebody else's machine. Where it is not there the page keeps the
+      // text it already had, and the button says why it did nothing.
+      button.disabled = false;
+      label.textContent = 'The player could not be loaded';
+    });
   });
 })();
 </script>

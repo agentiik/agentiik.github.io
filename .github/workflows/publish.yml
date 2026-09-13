@@ -12,6 +12,11 @@ name: Publish
 on:
   push:
     branches: [main]
+    # A tag is what makes a version archivable, and nothing else republishes for it: the
+    # tag pushed after the last commit to main left /docs serving the previous release
+    # until an unrelated change came along. The build reads the tags rather than the ref
+    # it was triggered by, so this only has to wake it up.
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
