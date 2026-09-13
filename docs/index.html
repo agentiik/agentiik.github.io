@@ -779,6 +779,9 @@ img{max-width:100%}
       <summary>Operations</summary>
       <ul>
         <li><a href="#storage">Storage</a>
+          <ul class="subs">
+            <li><a href="#what-the-purges-act-on">What each purge acts on</a></li>
+          </ul>
         </li>
         <li><a href="#deployment">Deployment profiles</a>
           <ul class="subs">
@@ -3861,6 +3864,20 @@ resource "agentiik_workflow" "search" {
       </table>
     </div>
     <p>Envelopes and logs are not stored in the database: it keeps only their digests and URIs. Object keys are prefixed by namespace, and every query path carries the namespace so that a missing filter fails closed rather than returning another tenant's rows. Retention is declared per workflow within the namespace ceiling, with separate purges for envelopes, artifacts and logs, and garbage collection of artifacts whose reference count reaches zero. <a href="#artifact-expiry">How long an artifact lives</a> sets out what is declared and what expiry acts on.</p>
+
+    <h3 id="what-the-purges-act-on">What each purge acts on</h3>
+    <p>Three purges, three clocks, because the three things do not expire for the same reason.</p>
+    <ul class="plain">
+      <li><strong>An artifact carries its own instant.</strong> <code>retain</code> is declared on the output that produced it, or inherited from <code>defaults</code>, and is resolved to a date when the reference is written. That is why raising a namespace ceiling later extends nothing: the date was already decided.</li>
+      <li><strong>An envelope and a log live by the run.</strong> Neither is declared one at a time the way an output is, so both live by the workflow's <code>defaults.retain</code>, capped by the namespace, resolved to one date when the run finishes. A run that has not finished has nothing to purge: a purge acts on what has stopped changing, and a run that never finishes is the controller's to end rather than a sweep's to tidy.</li>
+      <li><strong>Collection is not a retention at all.</strong> It is what falls out of the other two: an object whose reference count has reached zero, and which nothing has referenced since, is deleted from the store.</li>
+    </ul>
+    <p>An envelope is a counted object exactly like an artifact. Two steps publishing identical bytes publish one object, so a purge that deleted by digest alone would delete what another step still names, and the count is what makes sharing safe. A log is neither: one task wrote it, nothing else names it, and purging one is a deletion rather than a decrement. What stays behind in every case is the record: the digest of what was published, the line count of the log that was there, the name, size and digest of the artifact that was collected.</p>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>An object is collected no sooner than a grace period after its count reaches zero, twenty-four hours by default. The delay is not caution for its own sake. Content addressing means a run writing the same bytes tomorrow references the object that is there rather than uploading a new one, so collecting the instant the last reference went would turn every such write back into an upload. Inside the window a writer simply keeps the object; crossing it, a writer is told to send the bytes again, which is what closes the one gap the delay alone cannot: a sweep that has claimed an object and not yet deleted it, while a reference arrives for it. An installation that wants its store smaller sooner lowers the grace and pays in uploads.</p>
+    </div>
   </div>
 </section>
 
