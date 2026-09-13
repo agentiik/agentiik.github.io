@@ -8,6 +8,8 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**The plan is derived from the page rather than copied.** `.github/plan.py` reads `docs/roadmap/index.html` and answers with the groups and their tasks, which is what the scripts that file issues read. They used to read a snapshot taken by hand, and a snapshot drifts: the egress-proxy task added to v0.2.0 when the driver's refusal was decided never reached it, so starting that milestone from the copy would have filed ninety issues for ninety-one tasks and said nothing about the ninety-first. Found on the morning v0.2.0 started.
+
 **A tag does not publish the site, and no longer pretends to.** The trigger added in v0.1.2 fires, builds the right site, creates a deployment and is reported as succeeding, and the live site does not change: Pages serves the deployment made from its source branch, which is main. It was tried on v0.1.2 and the CDN served the previous release for half an hour while three green checkmarks said otherwise. The trigger is gone, the reason is written where it was, and the release sequence is named in the conventions instead: merge the entry, tag, then run the publish workflow.
 
 ## v0.1.2, 2026-09-13
