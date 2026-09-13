@@ -2706,16 +2706,14 @@ certs/
 
     <div class="block">
       <div class="note-label">finance/monthly-invoicing, on a laptop</div>
-<pre><code><span class="p">$</span> <span class="cmd">agk validate
-</span>
+<pre><code><span class="p">$</span> <span class="cmd">agk validate</span>
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
 ghcr.io/acme/agk-charge:0.1.0: charge-order 0.1.0, reads in, writes ok rejected
 ghcr.io/acme/agk-split:0.1.0: split-orders 0.1.0, reads orders, writes ok
 ghcr.io/acme/agk-total:0.1.0: total-charges 0.1.0, reads charges, writes ok
 finance/monthly-invoicing is valid: 4 steps, 4 edges, 2 declared inputs, 4 declared outputs
 4 steps held to the manifests of 3 referenced images
-<span class="p">$</span> <span class="cmd">agk run --local --inputs inputs.json --secret-file billing_api=billing.key
-</span>
+<span class="p">$</span> <span class="cmd">agk run --local --inputs inputs.json --secret-file billing_api=billing.key</span>
 the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.55 and runs linux/aarch64
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
     0.0s  split    running
@@ -2733,8 +2731,7 @@ charged: 2 items in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/charged.json
 invoiced: 1 item in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/invoiced.json
 rejected: 1 item in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/rejected.json
 run 01M2BQCB3DSYQ66AJ42ZN2JEWP: .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP
-<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/invoiced.json
-</span>
+<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/invoiced.json</span>
 {"id":"invoice-2026-01","data":{"charged_count":2,"charged_total":4600,"cycle":"2026-01","receipts_seen":3,"rejected_count":1},"files":[{"name":"summary.txt","uri":"agk://run/01M2BQCB3DSYQ66AJ42ZN2JEWP/total/ok/summary.txt","media_type":"text/plain","size":57,"sha256":"a7e1875aa928e8a32bed8728639b06e8f8e2e297df096da697c85caffd34075a"}]}
 </code></pre>
     </div>
@@ -2769,8 +2766,7 @@ runs/&lt;run&gt;/logs/&lt;step&gt;/               <span class="c"># what each co
 
     <div class="block">
       <div class="note-label">agk graph --format mermaid</div>
-<pre><code><span class="p">$</span> <span class="cmd">agk graph --format mermaid
-</span>
+<pre><code><span class="p">$</span> <span class="cmd">agk graph --format mermaid</span>
 flowchart LR
 	step_archive["archive&lt;br/&gt;script on alpine:3.21"]
 	step_charge["charge&lt;br/&gt;ghcr.io/acme/agk-charge:0.1.0&lt;br/&gt;fan_out: item"]
