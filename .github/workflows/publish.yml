@@ -12,12 +12,18 @@ name: Publish
 on:
   push:
     branches: [main]
-    # A tag is what makes a version archivable, and nothing else republishes for it: the
-    # tag pushed after the last commit to main left /docs serving the previous release
-    # until an unrelated change came along. The build reads the tags rather than the ref
-    # it was triggered by, so this only has to wake it up.
-    tags: ['v*']
   workflow_dispatch:
+
+# A tag does not trigger this, and it cannot usefully. Pages serves the deployment made
+# from its source branch, which is main: a run triggered by a tag builds the right site,
+# creates a deployment, is reported as succeeding, and the live site never changes. That
+# was tried on v0.1.2 and the CDN went on serving the previous release for half an hour
+# while three green checkmarks said otherwise, which is worse than no trigger at all.
+#
+# So a release ends with a run of this workflow rather than with the tag: merge the
+# changelog, tag, then run it from main, where it reads the tags and archives the new
+# version. Releasing is a sequence somebody follows, and the sequence is written in
+# https://agentiik.github.io/docs#conventions-across-repositories rather than guessed.
 
 permissions:
   contents: read
