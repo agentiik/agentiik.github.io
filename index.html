@@ -70,17 +70,32 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   gap:calc(var(--mark) * 9 / 14);
   margin-bottom:clamp(46px,7vw,76px);
 }
-.hero a{
+/* The one thing the page asks a reader to do. Under the lockup, the size of a
+   sentence rather than of a button: the page is quiet and a loud control in the
+   middle of it would be the only thing anybody saw. */
+.hero .start{
   display:inline-flex;
-  color:var(--muted);
+  align-items:center;
+  gap:8px;
+  padding:13px 20px 13px 24px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--surface);
+  box-shadow:var(--shadow);
+  color:var(--ink);
+  font-size:clamp(1rem,1.6vw,1.12rem);
+  font-weight:500;
+  letter-spacing:-.015em;
+  text-decoration:none;
 }
-.hero a svg{
+.hero .start:hover{border-color:var(--accent);color:var(--accent)}
+.hero .start svg{
   display:block;
-  width:26px;
-  height:26px;
-  fill:currentColor;
+  width:14px;
+  height:14px;
+  color:var(--accent);
 }
-.hero a:hover{color:var(--accent)}
+.hero .start:hover svg{color:inherit}
 .lockup svg{
   flex:none;
   width:calc(var(--mark) * 16 / 14);
@@ -147,6 +162,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   font-weight:600;
 }
 
+.ends{display:flex;gap:24px}
 footer{
   display:flex;
   flex-wrap:wrap;
@@ -318,8 +334,9 @@ img{max-width:100%}
   </svg>
   <h1>agentiik</h1>
 </div>
-<a href="https://github.com/agentiik" aria-label="Agentiik on GitHub" data-rise data-par=".12" style="--delay:.08s">
-  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+<a class="start" href="docs/#get-started" data-rise data-par=".12" style="--delay:.08s">
+  Get started
+  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
 </a>
 </div>
 
@@ -374,7 +391,10 @@ run 01M2DKXV434DTJH5HTSGCB8S8C: .agk/runs/01M2DKXV434DTJH5HTSGCB8S8C
 
 <footer data-rise data-par=".05" style="--delay:.52s">
   <span>&copy; 2026 Fran&ccedil;ois Rousselet</span>
-  <a href="legal/index.html">Legal notice</a>
+  <span class="ends">
+    <a href="https://github.com/agentiik">GitHub</a>
+    <a href="legal/index.html">Legal notice</a>
+  </span>
 </footer>
 
 </main>

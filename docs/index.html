@@ -576,6 +576,24 @@ img{max-width:100%}
   </div>
   <div class="side-toc">
     <details class="part" open>
+      <summary>Get started</summary>
+      <ul>
+        <li><a href="#get-started">Get started</a>
+          <ul class="subs">
+            <li><a href="#what-you-need">What you need</a></li>
+            <li><a href="#install">Install the command line</a></li>
+            <li><a href="#first-workflow">Start a workflow repository</a></li>
+            <li><a href="#validate-it">Validate it</a></li>
+            <li><a href="#run-it">Run it</a></li>
+            <li><a href="#read-the-result">Read what came out</a></li>
+            <li><a href="#second-step">Add a second step</a></li>
+            <li><a href="#where-next">Where to go next</a></li>
+            <li><a href="#not-yet">What does not work yet</a></li>
+          </ul>
+        </li>
+      </ul>
+    </details>
+    <details class="part" open>
       <summary>Orientation</summary>
       <ul>
         <li><a href="#scope">Scope</a>
@@ -798,6 +816,198 @@ img{max-width:100%}
 <div class="opening">
   <p class="lede">A multi-user workflow engine in which every brick is an ephemeral OCI container and every workflow is a YAML file, versioned alongside the code it serves.</p>
 </div>
+
+<!-- ============ GET STARTED ============ -->
+<section id="get-started">
+  <div class="sec-head"><span class="mark">§</span><h2>Get started</h2></div>
+  <div class="prose">
+    <p>This page is what works today, and it grows with the product. Everything below was run against the release it names before it was written: the commands, their output and the workflow file are what a terminal answered rather than what the rest of this documentation promises.</p>
+
+    <p>At <code>v0.1.1</code> a workflow runs on your machine and nowhere else. There is no server yet, so <code>agk login</code>, <code>agk whoami</code>, <code>agk push</code>, <code>agk share</code>, <code>agk grants</code>, <code>agk logs</code> and <code>agk brick init</code> refuse and name what is missing. <a href="roadmap/">The roadmap</a> says which release brings each of them.</p>
+
+    <h3 id="what-you-need">What you need</h3>
+    <ul class="plain">
+      <li><b>A Docker daemon.</b> Docker Desktop on macOS or Windows, or Docker on Linux. Nothing else runs a brick, because a brick is a container.</li>
+      <li><b>Go 1.27</b>, to install the command line. No binaries are published yet: building from source is the only way in, and <a href="roadmap/">the roadmap</a> is where that changes.</li>
+      <li><b>git</b>, because a workflow is a git repository. Nothing here pushes anywhere, and a local repository with no remote is enough to follow this page.</li>
+    </ul>
+
+    <h3 id="install">Install the command line</h3>
+
+    <div class="block">
+      <div class="note-label">install</div>
+<pre><code><span class="p">$</span> <span class="cmd">go install github.com/agentiik/agentiik/cmd/agk@v0.1.1</span>
+<span class="p">$</span> <span class="cmd">agk --version</span>
+agk v0.1.1, go1.27.1</code></pre>
+    </div>
+
+    <p><code>agk</code> on its own prints the table of verbs and what each one does, which is the same table <a href="#command-line">Command line</a> states. It takes a moment the first time: the module is fetched, verified against the checksum database and built.</p>
+
+    <h3 id="first-workflow">Start a workflow repository</h3>
+
+    <p>A workflow is a git repository whose <code>agentiik.yaml</code> at the root is the entry point. The rest of the tree is yours to arrange, and every step of every run sees it, mounted read-only at <code>/agk/repo</code>. <a href="#the-workflow-repository">The workflow repository</a> says what that means once a server is serving it; on your machine it means the directory you are standing in.</p>
+
+    <div class="block">
+      <div class="note-label">a directory and a file</div>
+<pre><code><span class="p">$</span> <span class="cmd">mkdir first-run &amp;&amp; cd first-run &amp;&amp; git init</span></code></pre>
+    </div>
+
+    <p>Then the smallest workflow that does something. It runs one command in a stock Alpine image, so it needs no brick of its own and nothing to pull but a public image:</p>
+
+    <div class="block">
+      <div class="note-label">agentiik.yaml</div>
+<pre><code>apiVersion: agentiik.dev/v1
+kind: Workflow
+
+metadata:
+  name: first-run
+  namespace: demo
+
+outputs:
+  greeting:
+    from: { step: greet, port: out }
+
+steps:
+  greet:
+    image: alpine:3.21
+    script:
+      - echo "hello from ${AGK_STEP}"
+    outputs: [out]</code></pre>
+    </div>
+
+    <ul class="plain">
+      <li><code>metadata.namespace</code> and <code>metadata.name</code> are what the workflow is called. Locally they name the run in the narration; on a server they are where it lives and who may see it.</li>
+      <li><code>steps.greet.image</code> is the container the step runs in. Any image will do: a brick is an image that carries a manifest at <code>/agk/brick.yaml</code>, and a step that writes <code>script</code> does not need one.</li>
+      <li><code>script</code> is a list of commands, one per entry. <code>AGK_STEP</code> is one of the <a href="#environment-variables">variables every container is given</a>.</li>
+      <li><code>outputs: [out]</code> is the port the step publishes on. A script that writes nothing under <code>/agk/out/ports/</code> and exits 0 publishes one item on <code>out</code> carrying its captured standard output under <code>data.stdout</code>.</li>
+      <li><code>outputs.greeting</code> at the top is what the run hands back, taken from a step and a port of that step.</li>
+    </ul>
+
+    <h3 id="validate-it">Validate it</h3>
+
+    <div class="block">
+      <div class="note-label">agk validate</div>
+<pre><code><span class="p">$</span> <span class="cmd">agk validate</span>
+demo/first-run is valid: 1 step, 0 edges, 1 declared output
+1 step held to the manifests of 0 referenced images</code></pre>
+    </div>
+
+    <p>Validation resolves the includes and the inheritance, detects cycles and holds every step's ports to the manifests of the images it names. This workflow names no brick, so there is no manifest to read and no daemon to reach: <code>agk validate</code> answers without one. A workflow that does name a brick reads its manifest off the image, and then a daemon has to be there.</p>
+
+    <h3 id="run-it">Run it</h3>
+
+    <div class="block">
+      <div class="note-label">agk run --local</div>
+<pre><code><span class="p">$</span> <span class="cmd">agk run --local</span>
+the daemon at /Users/you/.docker/run/docker.sock speaks API 1.55 and runs linux/aarch64
+user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+    0.0s  greet  running
+    0.4s  greet  succeeded, out 1
+demo/first-run succeeded in 0.4s: 1 step, 1 container
+greeting: 1 item in .agk/runs/01M2DMGM1ESABA8T001RT7XXKZ/outputs/greeting.json
+run 01M2DMGM1ESABA8T001RT7XXKZ: .agk/runs/01M2DMGM1ESABA8T001RT7XXKZ</code></pre>
+    </div>
+
+    <p>The second line is the machine telling you what it gives up. Docker Desktop does not remap user namespaces, so the runner's floor is lifted and root inside a container is the host's own root; <a href="#three-tiers-of-containment">Three tiers of containment</a> says what that costs and what a hardened daemon does instead. A run is told to hold the floor with <code>--require-userns-remap</code>, and on a laptop it will then refuse to start.</p>
+
+    <h3 id="read-the-result">Read what came out</h3>
+
+    <p>Everything the run produced is on disk when it ends, under <code>.agk</code> beside the entry point. The declared output is an envelope:</p>
+
+    <div class="block">
+      <div class="note-label">.agk/runs/&lt;run&gt;/outputs/greeting.json</div>
+<pre><code>{
+  "meta": {
+    "run_id": "01M2DMGM1ESABA8T001RT7XXKZ",
+    "step": "greet",
+    "port": "out",
+    "attempt": 1,
+    "count": 1,
+    "produced_at": "2026-09-13T15:00:03.063427Z"
+  },
+  "items": [
+    {
+      "id": "01M2DMGMBRYT76RK1CJJ7YH1X6",
+      "data": { "stdout": "hello from greet\n" },
+      "files": []
+    }
+  ]
+}</code></pre>
+    </div>
+
+    <p>That shape is the whole of what travels between steps, and <a href="#envelope-structure">Envelope structure</a> is where it is fixed. The identity here was minted by the runner because a script said nothing about one; a brick that cares about replay derives an identity from the payload instead, which is what makes two runs over the same input comparable.</p>
+
+    <h3 id="second-step">Add a second step</h3>
+
+    <p>One step is a command. Two steps and an edge are a workflow. <code>needs</code> names the step and the port to read, and <code>as</code> names the input port it arrives on:</p>
+
+    <div class="block">
+      <div class="note-label">agentiik.yaml, the second step</div>
+<pre><code>outputs:
+  counted:
+    from: { step: count, port: out }
+
+steps:
+  greet:
+    image: alpine:3.21
+    script:
+      - echo "hello from ${AGK_STEP}"
+    outputs: [out]
+
+  count:
+    image: alpine:3.21
+    needs:
+      - { step: greet, port: out, as: in }
+    script:
+      - echo "greet published $(/agk/bin/agk items | wc -l | tr -d ' ') item"
+    outputs: [out]</code></pre>
+    </div>
+
+    <p><code>/agk/bin/agk</code> is a static helper mounted read-only into every container, with <code>agk items</code>, <code>agk emit</code> and <code>agk attach</code>. It is a convenience and never a requirement: the envelope is also a file, at <code>/agk/in/&lt;port&gt;/envelope.json</code>, and <code>jq</code> and a redirect do the same job.</p>
+
+    <div class="block">
+      <div class="note-label">agk run --local, again</div>
+<pre><code><span class="p">$</span> <span class="cmd">agk run --local</span>
+    0.0s  greet  running
+    0.3s  greet  succeeded, out 1
+    0.3s  count  running
+    0.6s  count  succeeded, out 1
+demo/first-run succeeded in 0.6s: 2 steps, 2 containers
+counted: 1 item in .agk/runs/01M2DMJ192NQ7SMTFFBG1GXMFN/outputs/counted.json</code></pre>
+    </div>
+
+    <p>And the graph it resolved, which is what <code>agk graph</code> writes for review inside a merge request:</p>
+
+    <div class="block">
+      <div class="note-label">agk graph --format mermaid</div>
+<pre><code>flowchart LR
+	step_count["count&lt;br/&gt;script on alpine:3.21"]
+	step_greet["greet&lt;br/&gt;script on alpine:3.21"]
+
+	step_greet --&gt;|"out to in"| step_count
+
+	output_counted(["counted"])
+	step_count -. "out" .-&gt; output_counted</code></pre>
+    </div>
+
+    <h3 id="where-next">Where to go next</h3>
+
+    <ul class="plain">
+      <li><a href="#yaml">Workflow language</a> is every keyword the file accepts: inputs, parameters, matrices, includes, inheritance, conditions, retries, timeouts and triggers.</li>
+      <li><a href="#brick">Brick contract</a> is how to write a brick of your own, which is an image and a manifest and nothing more.</li>
+      <li><a href="#catalog">Brick catalog</a> is what comes ready made. Four of them exist today: <code>jq</code>, <code>schema-validate</code>, <code>csv</code> and <code>http-request</code>.</li>
+      <li><a href="#command-line">Command line</a> is the full table of verbs, the flags of a local run, and the five exit codes.</li>
+    </ul>
+
+    <h3 id="not-yet">What does not work yet</h3>
+
+    <ul class="plain">
+      <li><b>There is no server.</b> The seven verbs that reach an installation refuse, naming what is missing. A run is local or it does not happen.</li>
+      <li><b><code>network: egress</code> is refused</b> rather than opened. The proxy that enforces a step's <code>egress.allow</code> list does not exist yet, and opening the network and calling it filtered would be worse than refusing. <code>network: none</code> and <code>network: internal</code> run.</li>
+      <li><b>A secret needs a tmpfs the runner can reach.</b> Where the platform has none, which is macOS, the value is written into the task's working directory and removed with the container, and the run says so before it starts.</li>
+    </ul>
+  </div>
+</section>
 
 <!-- ============ SCOPE ============ -->
 <section id="scope">
