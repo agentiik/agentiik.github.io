@@ -1214,6 +1214,7 @@ defaults:
     <ul class="plain">
       <li>Only a workflow output can be one-shot. An artifact travelling between two steps cannot be, because a fan-out reads it once per shard and a replay reads it again afterwards: consumption there would mean a graph that runs correctly the first time and not the second.</li>
       <li>A fetch counts when the response completes. A transfer that is interrupted, refused, or ranged over part of the object does not consume the artifact, so a client that loses its connection retries against an artifact still there.</li>
+      <li>That is why an artifact with a fetch budget is served by the API rather than redirected to. Everything else is a 302 to a presigned URL and the bytes never touch the control plane, but a redirect ends the moment it is issued and the API would be counting the handing out of an address rather than the delivery of an object: a client that never arrived would have consumed its one fetch, which is the case the rule above exists to protect. A budget is therefore paid for in bytes through the API, bounded by what a workflow chose to declare one-shot.</li>
       <li>The count is per artifact, not per principal. Two people sharing a namespace share the one collection, which is why <code>fetches</code> is written as a number rather than as a flag: <code>fetches: 2</code> is what a workflow feeding two consumers declares.</li>
       <li>Once consumed, the reference is gone immediately rather than at the next sweep. A later request answers <code>410 Gone</code> and not <code>404</code>, so that a client can tell <em>this existed and is finished</em> from <em>this never existed</em>, and the run detail keeps showing the artifact's name, size and digest with its collection recorded.</li>
     </ul>
@@ -2877,7 +2878,7 @@ certs/
           <tr><td class="wrapcell">POST /api/v1/runs/{id}/replay</td><td>Replays from a named step, reusing everything upstream.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runs/{id}/steps/{step}/logs</td><td>SSE log stream, history then live.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runs/{id}/outputs/{name}</td><td>Envelope of one workflow output. Requires <code>run:read_data</code>.</td></tr>
-          <tr><td class="wrapcell">GET /api/v1/artifacts/{uri}</td><td>302 redirect to a short-lived presigned URL. Requires <code>run:read_data</code>.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/artifacts/{uri}</td><td>302 redirect to a short-lived presigned URL, or the bytes themselves where the artifact has a fetch budget, since a redirect cannot be counted. Requires <code>run:read_data</code>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/bricks, /bricks/{name}</td><td>The catalog and one brick's manifest with its parameter schema, so a client can discover what exists before writing a workflow that uses it. Any authenticated principal.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runners</td><td>Runner inventory: labels, capacity, last heartbeat. Administrator only.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runner-pools</td><td>The pools and the labels they carry, so that a namespace's allowed pools can be written against what exists. Administrator only.</td></tr>
@@ -4260,7 +4261,7 @@ post_task = [
     <h3 id="sizing">Sizing</h3>
     <ul class="plain">
       <li>Runner concurrency starts at one concurrent task per vCPU and is raised until memory or disk queue becomes the limit, not CPU. A runner refuses a task whose declared <code>resources</code> would take it past its own declared capacity, so oversubscription is a configuration choice rather than an accident.</li>
-      <li>The control plane is small and stays small: it holds no payloads, only state. It is sized by run creation rate and by the number of open log streams, never by the volume of data moving through the workflows.</li>
+      <li>The control plane is small and stays small: it holds no payloads, only state, with one exception it is worth sizing for: an artifact a workflow declared one-shot is served through the API rather than redirected to, because a redirect cannot be counted, so the plane carries those bytes and no others. It is sized by run creation rate and by the number of open log streams, never by the volume of data moving through the workflows.</li>
       <li>The database is sized by run and task history, which is bounded by retention. The object store is sized by artifacts, which is not, and is what a retention policy actually controls.</li>
     </ul>
 
