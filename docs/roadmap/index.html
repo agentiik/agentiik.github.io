@@ -957,44 +957,44 @@ img{max-width:100%}
 
 <!-- ============ v0.2.0 ============ -->
 <section id="m02">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">0 of 91 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">17 of 91 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> the same workflow, sent to a server, executed by a runner somewhere else, and watched while it happens.</p>
 
     <p>The split between controller, task bus and runner is where the documentation takes its largest bet, and where being wrong costs the most to undo later. So the fact to make true here is narrow and checkable: a runner never speaks git, never holds a lasting credential, and obtains what its task names only by redeeming that task's grant. If that holds under a real run, the rest of the architecture follows; if it does not, better to know before four clients are built on it.</p>
 
     <div class="work">
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The wire, written down first</h4>
           <span class="work-repo">schemas</span>
         </div>
         <ul>
-          <li>Release agentiik/schemas 0.2 carrying the task message and the task result, every field with its description and an example. <a class="ref" href="../#the-task-message">the-task-message</a></li>
-          <li>Schema the runner-facing payloads: registration, heartbeat, grant redemption and log shipping, so the runner and the API are written against one document rather than two readings of it. <a class="ref" href="../#registering-a-runner">registering-a-runner</a><a class="ref" href="../#heartbeat">heartbeat</a><a class="ref" href="../#channels">channels</a></li>
-          <li>Fix the run state vocabulary (queued, running, waiting, succeeded, failed, cancelled, timed_out) as an enumeration every component reads from. <a class="ref" href="../#run-states">run-states</a></li>
-          <li>Fix the task state vocabulary (pending, dispatched, running, publishing, succeeded, failed, lost) beside the run states. <a class="ref" href="../#lifecycle">lifecycle</a></li>
-          <li>Define the idempotency key as run_id/step/attempt/shard, with its uniqueness rule stated in the schema rather than in a comment. <a class="ref" href="../#task-bus">task-bus</a></li>
-          <li>Schema the runner pool and its join token: labels, accepted namespaces, resource ceilings, single use and expiry. <a class="ref" href="../#registering-a-runner">registering-a-runner</a></li>
-          <li>Ship fixtures for a task message, a task result, a heartbeat and a grant redemption, used as the conformance corpus by the controller, the runner and agk. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Release agentiik/schemas 0.2 carrying the task message and the task result, every field with its description and an example. <a class="ref" href="../#the-task-message">the-task-message</a> <span class="tick">done</span></li>
+          <li class="done">Schema the runner-facing payloads: registration, heartbeat, grant redemption and log shipping, so the runner and the API are written against one document rather than two readings of it. <a class="ref" href="../#registering-a-runner">registering-a-runner</a><a class="ref" href="../#heartbeat">heartbeat</a><a class="ref" href="../#channels">channels</a> <span class="tick">done</span></li>
+          <li class="done">Fix the run state vocabulary (queued, running, waiting, succeeded, failed, cancelled, timed_out) as an enumeration every component reads from. <a class="ref" href="../#run-states">run-states</a> <span class="tick">done</span></li>
+          <li class="done">Fix the task state vocabulary (pending, dispatched, running, publishing, succeeded, failed, lost) beside the run states. <a class="ref" href="../#lifecycle">lifecycle</a> <span class="tick">done</span></li>
+          <li class="done">Define the idempotency key as run_id/step/attempt/shard, with its uniqueness rule stated in the schema rather than in a comment. <a class="ref" href="../#task-bus">task-bus</a> <span class="tick">done</span></li>
+          <li class="done">Schema the runner pool and its join token: labels, accepted namespaces, resource ceilings, single use and expiry. <a class="ref" href="../#registering-a-runner">registering-a-runner</a> <span class="tick">done</span></li>
+          <li class="done">Ship fixtures for a task message, a task result, a heartbeat and a grant redemption, used as the conformance corpus by the controller, the runner and agk. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>Where the state lives</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Create the tables for runs, steps, tasks and approvals: run identifier, version, state, trigger, triggering principal, timestamps, workflow inputs and outputs; per-step state with an envelope digest per port; per-task shard, attempt, state, runner, idempotency key and exit code. <a class="ref" href="../#storage">storage</a></li>
-          <li>Create the tables for workflows, workflow_versions, artifacts and runners: the resolved graph per version, the artifact reference count and expiry, and each runner's labels, capacity, version, accepted namespaces and last heartbeat. <a class="ref" href="../#storage">storage</a></li>
-          <li>Write the migration tool and the first migration, so that an installation is upgraded rather than rebuilt. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
-          <li>Carry the namespace on every query path, so that a missing filter fails closed instead of returning another namespace's rows. <a class="ref" href="../#storage">storage</a></li>
-          <li>Keep envelopes and logs out of the database: store the digest and the URI there, and the bytes in the object store. <a class="ref" href="../#storage">storage</a></li>
-          <li>Resolve agk://run/&lt;run&gt;/&lt;step&gt;/&lt;port&gt;/&lt;name&gt; to the physical key sha256/&lt;digest&gt;, prefix object keys by namespace, and scope deduplication to the namespace so two namespaces never share a physical object. <a class="ref" href="../#size-rules">size-rules</a><a class="ref" href="../#storage">storage</a></li>
-          <li>Reference-count artifacts and collect the physical object only once the count reaches zero, so expiring one run's output never reaches into another run that still references the same bytes. <a class="ref" href="../#artifact-expiry">artifact-expiry</a></li>
-          <li>Implement retain as a duration and as { for, fetches }: count a fetch only when the response completes, drop the reference immediately on the last one, and answer 410 Gone thereafter rather than 404, keeping the artifact's name, size and digest visible with its collection recorded. <a class="ref" href="../#artifact-expiry">artifact-expiry</a></li>
-          <li>Refuse retain: { fetches } on anything but a workflow output, since an artifact travelling between two steps is read once per shard and again on replay. <a class="ref" href="../#artifact-expiry">artifact-expiry</a></li>
-          <li>Run the separate purges for envelopes, artifacts and logs against their declared retention, with garbage collection of objects whose reference count reached zero. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#artifact-expiry">artifact-expiry</a></li>
+          <li class="done">Create the tables for runs, steps, tasks and approvals: run identifier, version, state, trigger, triggering principal, timestamps, workflow inputs and outputs; per-step state with an envelope digest per port; per-task shard, attempt, state, runner, idempotency key and exit code. <a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
+          <li class="done">Create the tables for workflows, workflow_versions, artifacts and runners: the resolved graph per version, the artifact reference count and expiry, and each runner's labels, capacity, version, accepted namespaces and last heartbeat. <a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
+          <li class="done">Write the migration tool and the first migration, so that an installation is upgraded rather than rebuilt. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
+          <li class="done">Carry the namespace on every query path, so that a missing filter fails closed instead of returning another namespace's rows. <a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
+          <li class="done">Keep envelopes and logs out of the database: store the digest and the URI there, and the bytes in the object store. <a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
+          <li class="done">Resolve agk://run/&lt;run&gt;/&lt;step&gt;/&lt;port&gt;/&lt;name&gt; to the physical key sha256/&lt;digest&gt;, prefix object keys by namespace, and scope deduplication to the namespace so two namespaces never share a physical object. <a class="ref" href="../#size-rules">size-rules</a><a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
+          <li class="done">Reference-count artifacts and collect the physical object only once the count reaches zero, so expiring one run's output never reaches into another run that still references the same bytes. <a class="ref" href="../#artifact-expiry">artifact-expiry</a> <span class="tick">done</span></li>
+          <li class="done">Implement retain as a duration and as { for, fetches }: count a fetch only when the response completes, drop the reference immediately on the last one, and answer 410 Gone thereafter rather than 404, keeping the artifact's name, size and digest visible with its collection recorded. <a class="ref" href="../#artifact-expiry">artifact-expiry</a> <span class="tick">done</span></li>
+          <li class="done">Refuse retain: { fetches } on anything but a workflow output, since an artifact travelling between two steps is read once per shard and again on replay. <a class="ref" href="../#artifact-expiry">artifact-expiry</a> <span class="tick">done</span></li>
+          <li class="done">Run the separate purges for envelopes, artifacts and logs against their declared retention, with garbage collection of objects whose reference count reached zero. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#artifact-expiry">artifact-expiry</a> <span class="tick">done</span></li>
         </ul>
       </div>
       <div class="work-group">
