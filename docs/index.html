@@ -1187,6 +1187,7 @@ counted: 1 item in .agk/runs/01M2DMJ192NQ7SMTFFBG1GXMFN/outputs/counted.json</co
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>Artifacts are content-addressed. The logical URI <code>agk://run/&lt;run&gt;/&lt;step&gt;/&lt;port&gt;/&lt;name&gt;</code> resolves to a physical key <code>sha256/&lt;digest&gt;</code>. Two steps producing identical bytes store one copy, and a replay that recomputes the same content writes nothing. Deduplication is scoped per namespace, so that two namespaces never share a physical object and an existence check can never reveal what another namespace holds.</p>
+      <p>The scheme names a kind in its first segment, and there is a second: a log is <code>agk://log/&lt;run&gt;/&lt;task&gt;</code>. A log belongs to one task and not to one port, which is why it is not addressed like an artifact. A step fanned out over eight shards has eight logs and no port to tell them apart, and a task identifier tells them apart exactly, since that is what a task identifier is for.</p>
     </div>
 
     <h3 id="artifact-expiry">How long an artifact lives</h3>
@@ -1959,7 +1960,7 @@ certs/
 
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>Item contents are not exposed to controller expressions, except under <code>fan_out: item</code> where only the current item is. Tests read port metadata instead: <code>inputs.in.count</code>, <code>inputs.in.empty</code>. The controller therefore never loads whole envelopes into memory in order to schedule, and a high-throughput workflow does not make the controller grow. It also keeps one namespace's business data out of a process that serves every namespace.</p>
+      <p>Item contents are not exposed to controller expressions, except under <code>fan_out: item</code> where only the current item is. Tests read port metadata instead: <code>inputs.in.count</code>, <code>inputs.in.empty</code>. What the controller loads is therefore bounded by the envelope and never by what the envelope references, so a workflow moving a terabyte of artifacts does not make the controller grow. It is not nothing, and <a href="#sizing">Sizing</a> says so: sharding a <code>fan_out: item</code> and keying a <code>join</code> both read the items. What the rule buys is the rest of it. An expression cannot reach an item unless the workflow asked to be sharded by items, so a test written as <code>inputs.in.count</code> is answered from metadata, and one namespace's business data does not become the working set of a process that serves every namespace.</p>
     </div>
   </div>
 </section>
@@ -2435,7 +2436,7 @@ certs/
     <div class="note-label">published by the controller, consumed by one runner</div>
 <pre><code>{
   "task_id": "01JMZ8V1PC7K3M0",
-  "idempotency_key": "01JMZ8V1P9C4/invoice/2/3",
+  "idempotency_key": "01JMZ8V1P9C4/invoice/2/3/8",
   "run_id": "01JMZ8V1P9C4",
   "namespace": "finance",
   "workflow": "monthly-invoicing@a3f9c1e",
@@ -2465,7 +2466,7 @@ certs/
     <div class="note-label">published by the runner, consumed by the controller</div>
 <pre><code>{
   "task_id": "01JMZ8V1PC7K3M0",
-  "idempotency_key": "01JMZ8V1P9C4/invoice/2/3",
+  "idempotency_key": "01JMZ8V1P9C4/invoice/2/3/8",
   "runner": "runner-dmz-02",
   "state": "failed",
   "exit_code": 108,
@@ -2476,7 +2477,7 @@ certs/
     { "port": "error", "digest": "sha256:7c2e...9f11", "items": 3 }
   ],
   "artifacts": [ { "sha256": "c1f4a9...d02b", "bytes": 1284 } ],
-  "log": { "uri": "agk://run/01JMZ8V1P9C4/invoice/log", "lines": 412, "truncated": false },
+  "log": { "uri": "agk://log/01JMZ8V1P9C4/01JMZ8V1PC7K3M0", "lines": 412, "truncated": false },
   "usage": { "cpu_seconds": 12.4, "max_rss_bytes": 198443008, "image_pull_ms": 0 }
 }</code></pre>
   </div>
@@ -4299,6 +4300,7 @@ post_task = [
     <ul class="plain">
       <li>Runner concurrency starts at one concurrent task per vCPU and is raised until memory or disk queue becomes the limit, not CPU. A runner refuses a task whose declared <code>resources</code> would take it past its own declared capacity, so oversubscription is a configuration choice rather than an accident.</li>
       <li>The control plane is small and stays small: it holds no payloads, only state, with one exception it is worth sizing for: an artifact a workflow declared one-shot is served through the API rather than redirected to, because a redirect cannot be counted, so the plane carries those bytes and no others. It is sized by run creation rate and by the number of open log streams, never by the volume of data moving through the workflows.</li>
+      <li>There is a second exception, and it is the one that bounds the first. Sharding a <code>fan_out: item</code>, pairing a <code>zip</code>, keying a <code>join</code> and evaluating an expression over <code>item</code> all need the items themselves, so the controller reads a step's published envelopes at the moment it decides and retains none of them. What that costs is bounded by <a href="#size-rules"><code>envelope_max_bytes</code></a> per port per step, four mebibytes by default, and never by the artifacts those envelopes reference: a hundred gigabyte file travels as a digest and a URI, and its bytes go from the runner that wrote it to the runner that reads it without passing through here. Size the control plane's bandwidth by the rate at which steps publish, not by the size of what they publish.</li>
       <li>The database is sized by run and task history, which is bounded by retention. The object store is sized by artifacts, which is not, and is what a retention policy actually controls.</li>
     </ul>
 
