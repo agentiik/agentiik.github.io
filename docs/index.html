@@ -2514,7 +2514,7 @@ certs/
       <li><strong>Identity across restarts</strong> is the keypair on disk. A reimaged host is a new runner and joins again; its old record is left for the audit log rather than silently reused.</li>
       <li><strong>Rotation</strong> is automatic on a schedule. A runner offline past the rotation window must re-join, which is deliberate: a machine that has been dark for a month should be reconsidered, not readmitted.</li>
       <li><strong>Revocation</strong> from the console takes effect at the runner's next heartbeat. The runner stops accepting new tasks and drains what it holds; its results are still accepted for a grace period, so revoking a credential never destroys work already done.</li>
-      <li><strong>Labels are not self-asserted.</strong> A runner can only ever claim labels its join token allowed, so a machine cannot add <code>zone=lan</code> to itself and start receiving the steps that were kept off the internet.</li>
+      <li><strong>Labels are not self-asserted.</strong> A runner can only ever claim labels its join token allowed, and a token can only permit labels its pool carries, so a machine cannot add <code>zone=lan</code> to itself and start receiving the steps that were kept off the internet. The chain ends at an administrator who wrote that label on a pool.</li>
     </ul>
   </div>
 
@@ -2911,6 +2911,8 @@ certs/
           <tr><td class="wrapcell">GET /api/v1/bricks, /bricks/{name}</td><td>The catalog and one brick's manifest with its parameter schema, so a client can discover what exists before writing a workflow that uses it. Any authenticated principal.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runners</td><td>Runner inventory: labels, capacity, last heartbeat. Administrator only.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runner-pools</td><td>The pools and the labels they carry, so that a namespace's allowed pools can be written against what exists. Administrator only.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/runner-pools</td><td>Creates a pool with its labels, its accepted namespaces and its resource ceilings. Administrator only.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/runner-pools/{pool}/join-tokens</td><td>Issues a join token into a pool, single use and short lived, permitting labels the pool carries and no others. The value is shown once, in this answer. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /hooks/{ns}/{path}</td><td>Entry point for webhook triggers.</td></tr>
         </tbody>
       </table>
