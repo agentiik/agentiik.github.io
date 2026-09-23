@@ -1168,7 +1168,7 @@ img{max-width:100%}
           <li>Collect the result: one envelope per port, the artifacts, the exit code read against the exit-code table, the log with line count and truncation flag, and usage in cpu_seconds, max_rss_bytes and image_pull_ms. <a class="ref" href="../#the-task-message">the-task-message</a><a class="ref" href="../#exit-codes">exit-codes</a></li>
           <li>Reject an envelope breaking inline_max_bytes, envelope_max_bytes or max_items at the runner, before any upload. <a class="ref" href="../#size-rules">size-rules</a></li>
           <li>Mask secret values in collected logs by literal match against the task's values, before anything reaches the store. <a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#secrets-honestly">secrets-honestly</a></li>
-          <li>Upload artifacts and envelopes under the task's signed POST policy, publish the result on the bus, then destroy the container and the working directory. <a class="ref" href="../#runner">runner</a><a class="ref" href="../#the-task-message">the-task-message</a></li>
+          <li>Upload artifacts and envelopes under the task's signed POST policy, record the key's ending, destroy the container and the working directory, then publish the result on the runner's own results subject. <a class="ref" href="../#runner">runner</a><a class="ref" href="../#the-task-message">the-task-message</a></li>
           <li>Cache trees by version inside their namespace, and image layers by digest shared across namespaces, checking that the requesting namespace is entitled to a reference before any pull. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><a class="ref" href="../#two-questions-that-come-up">two-questions-that-come-up</a></li>
           <li>Enforce the runner policy on every task: accepted namespaces, resource ceilings over what it asks for, allowed capabilities, and the nofile and nproc ulimits. <a class="ref" href="../#runner">runner</a><a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a></li>
           <li>Build the egress proxy that enforces a step's <code>egress.allow</code> list; until it exists the driver refuses <code>network: egress</code> rather than open the network and call it filtered. <a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a><a class="ref" href="../#step-keywords">step-keywords</a></li>
@@ -2165,7 +2165,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.9.0 ============ -->
 <section id="m09">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.9.0: Somebody else can install it</h2><span class="tally">0 of 69 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.9.0: Somebody else can install it</h2><span class="tally">0 of 70 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> an installation that its author did not perform.</p>
 
@@ -2181,6 +2181,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
         </div>
         <ul>
           <li>Implement the SQS bus driver behind the same task bus interface as JetStream: one standard queue per runner pool, a long-poll receive as the pull consumer, a message leaving the queue when the consumer deletes it. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#task-bus">task-bus</a></li>
+          <li>Mint presigned URLs and the task's upload policy on MinIO and S3, behind the interface the built-in store fills: the prefix and the grant's expiry as conditions of the policy, and artifact_max_bytes as its content-length-range. <a class="ref" href="../#the-task-message">the-task-message</a><a class="ref" href="../#what-every-profile-must-provide">what-every-profile-must-provide</a></li>
           <li>Add the HashiCorp Vault and AWS Secrets Manager backends beside the built-in encrypted store, readable by the API alone. <a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#profile-b-on-premise-redundant">profile-b-on-premise-redundant</a><a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
           <li>Read the built-in store's master key from a file only the API account can open, or from the host keyring, and refuse to start without one. <a class="ref" href="../#profile-a-a-single-host">profile-a-a-single-host</a><a class="ref" href="../#secrets-honestly">secrets-honestly</a></li>
           <li>Take the Relying Party Identifier at installation as immutable and refuse any later change, since changing it invalidates every passkey. <a class="ref" href="../#what-every-profile-must-provide">what-every-profile-must-provide</a><a class="ref" href="../#auth">auth</a></li>
@@ -2266,7 +2267,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Run each runner pool as an EC2 Auto Scaling group across the three zones, bricks running as containers under Docker on the instances, not as Fargate tasks. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
           <li>Scale each group on its own queue's visible-message count, so a fan-out of ten thousand items adds instances and the run's tail gives them back. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
           <li>Enforce a step's egress.allow with a per-pool security group and a NAT carrying a filtered allow list. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a></li>
-          <li>Show that an Auto Scaling group replacing a runner mid-run leaves a lost task the engine already handles. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#run-states">run-states</a></li>
+          <li>Show that an Auto Scaling group replacing a runner mid-run leaves a lost task, requeued under its key where the step's retry.on names lost. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#run-states">run-states</a></li>
         </ul>
       </div>
       <div class="work-group">
