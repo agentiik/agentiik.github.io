@@ -2406,7 +2406,7 @@ certs/
           <tr><td class="wrapcell">controller</td><td>bus</td><td>TLS, or HTTPS for a managed queue</td><td>user JWT or instance role</td><td>publishes tasks that have become ready</td></tr>
           <tr><td class="wrapcell">runner</td><td>bus</td><td>TLS or HTTPS, outbound</td><td>short-lived token minted by the API</td><td>pulls tasks, publishes results</td></tr>
           <tr><td class="wrapcell">runner</td><td>API</td><td>HTTPS, outbound</td><td>runner credential, then a per-task grant</td><td>registration, heartbeat, grant redemption, log shipping</td></tr>
-          <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS, outbound</td><td>presigned URL only, no standing credential</td><td>input and output artifacts</td></tr>
+          <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS, outbound</td><td>presigned URL only, no standing credential</td><td>the workflow tree, input and output artifacts</td></tr>
           <tr><td class="wrapcell">runner</td><td>registry</td><td>HTTPS, outbound</td><td>the pool's pull credentials</td><td>brick images, resolved by digest</td></tr>
           <tr><td class="wrapcell">runner</td><td>Docker daemon</td><td>local unix socket</td><td>file permission on the socket</td><td>container lifecycle and the daemon event stream</td></tr>
           <tr><td class="wrapcell">brick container</td><td>nothing, or the egress proxy</td><td>HTTPS through the proxy</td><td>none. The proxy enforces the step's allow list.</td><td>only under <code>network: egress</code></td></tr>
@@ -2471,7 +2471,7 @@ certs/
   "runs_on": [ "zone=dmz", "arch=amd64" ],
   "deadline": "2026-09-10T06:12:00Z",
 
-  <span class="c">// redeemed at the API for input URLs, secret values and upload URLs</span>
+  <span class="c">// redeemed at the API for tree and input URLs, secret values and upload URLs</span>
   "grant": "agkgrant_01JMZ8V1PC7K3M0_…"
 }</code></pre>
   </div>
@@ -2529,7 +2529,7 @@ certs/
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 920 536" role="img" aria-label="A sequence diagram with five lanes: the runner joins by sending a token, a public key and its labels to the API, receives a credential and then a short-lived bus token; afterwards the controller publishes a task on the bus, the runner pulls it, redeems its grant at the API for input URLs and secret values, reads and writes artifacts in the object store, heartbeats to the API while it works, and publishes a result on the bus which the controller consumes.">
+      <svg viewBox="0 0 920 536" role="img" aria-label="A sequence diagram with five lanes: the runner joins by sending a token, a public key and its labels to the API, receives a credential and then a short-lived bus token; afterwards the controller publishes a task on the bus, the runner pulls it, redeems its grant at the API for tree and input URLs and secret values, fetches the workflow tree and reads and writes artifacts in the object store, heartbeats to the API while it works, and publishes a result on the bus which the controller consumes.">
         <defs>
           <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
         </defs>
@@ -2590,8 +2590,8 @@ certs/
           <text x="350" y="279" text-anchor="middle">pull a batch, filtered by label</text>
           <text x="356" y="309" text-anchor="middle" opacity=".7">task message</text>
           <text x="175" y="339" text-anchor="middle">redeem grant</text>
-          <text x="181" y="369" text-anchor="middle" opacity=".7">input URLs, secret values, upload URLs</text>
-          <text x="448" y="399" text-anchor="middle">GET inputs, run the container, PUT outputs</text>
+          <text x="181" y="369" text-anchor="middle" opacity=".7">tree, input, upload URLs, secret values</text>
+          <text x="448" y="399" text-anchor="middle">GET tree and inputs, run the container, PUT outputs</text>
           <text x="350" y="459" text-anchor="middle">publish result</text>
           <text x="541" y="487" text-anchor="middle" opacity=".7">result</text>
         </g>
