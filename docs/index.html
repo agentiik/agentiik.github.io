@@ -3514,11 +3514,11 @@ concurrency:
   </div>
 
   <div class="prose">
-    <p>The result is <code>$defs/taskResult</code> in <code>wire.schema.json</code>. The controller matches it on <code>idempotency_key</code>, so a result delivered twice is written once, and refuses a result whose <code>runner</code> is not the runner the task was bound to at redemption, reporting it rather than applying it.</p>
+    <p>The result is <code>$defs/taskResult</code> in <code>wire.schema.json</code>. The controller matches it on <code>idempotency_key</code>, so a result delivered twice is written once, and refuses a result whose <code>runner</code> is not the runner its <code>task_id</code> was bound to at redemption, reporting it rather than applying it. The binding is read off the <code>task_id</code> and not the key, because a requeued key has a dispatch on each host it was handed to.</p>
 
     <h3 id="heartbeat">Heartbeat</h3>
     <ul class="plain">
-      <li>A runner posts one heartbeat every 10 seconds to the API, listing the idempotency keys it currently holds. One request covers every in-flight task on that host.</li>
+      <li>A runner posts one heartbeat every 10 seconds to the API, listing the idempotency keys it currently holds. One request covers every in-flight task on that host. It keeps alive only the dispatches of those keys bound to that runner, since after a requeue one key can also name a dispatch on another host.</li>
       <li>Liveness therefore lives in the database beside the task state, rather than as traffic on a work queue that exists to distribute work.</li>
       <li>Three missed intervals move a task to <em>lost</em>, counted from its redemption until a heartbeat first names it; see <a href="#lifecycle">Lifecycle and replay</a>. A task no runner has redeemed is waiting in its pool's queue, and nothing holds it that could stop reporting, so it is never lost for waiting.</li>
       <li>The heartbeat is also how a revoked credential takes effect and how the console knows a runner is present: there is no separate liveness channel to keep in sync.</li>
