@@ -3897,12 +3897,12 @@ steps:
         <thead><tr><th>Provider</th><th>Holds the value in</th><th>path</th><th>Rule</th></tr></thead>
         <tbody>
           <tr><td>builtin</td><td>The installation's encrypted store</td><td>none</td><td>The value travels on the declaration's <code>PUT</code>, once, and never back; a <code>PUT</code> without one keeps the value stored. Rotating is writing again.</td></tr>
-          <tr><td>env</td><td>An environment variable of the API</td><td>the variable's name</td><td>Development only: refused unless the installation opts in explicitly.</td></tr>
-          <tr><td>vault</td><td>HashiCorp Vault</td><td>a path under the namespace's own prefix</td><td>The installation gives each namespace its prefix: <code>kv/data/agentiik/finance/</code> above.</td></tr>
+          <tr><td>env</td><td>An environment variable of the API</td><td>a variable name under the namespace's own prefix</td><td>Development only: refused unless the installation opts in explicitly, and the opt-in gives each namespace that may use it a prefix, <code>AGK_DEV_FINANCE_</code> for instance. A namespace given none declares no <code>env</code> secret.</td></tr>
+          <tr><td>vault</td><td>HashiCorp Vault</td><td>a path under the namespace's own prefix, with no empty, <code>.</code> or <code>..</code> segment and no <code>%</code>, <code>?</code> or <code>#</code></td><td>The installation gives each namespace its prefix: <code>kv/data/agentiik/finance/</code> above.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>AWS Secrets Manager, which <a href="#profile-c-aws-with-managed-resources">profile C</a> uses, joins them under an identifier of its own. A declaration naming a path outside its namespace's own is refused.</p>
+    <p>AWS Secrets Manager, which <a href="#profile-c-aws-with-managed-resources">profile C</a> uses, joins them under an identifier of its own. A declaration outside its namespace's prefix is refused when it is made, and so is a path that could climb out of it once the store resolves it. No two prefixes nest and none reaches a variable or a path the API reads for itself, so a namespace reaches neither another's values nor the installation's. The API follows no redirect when it reads a value, so a store cannot send it somewhere the declaration does not name.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>The namespace says where a value lives, not the workflow file: a path in <code>agentiik.yaml</code> would let anyone able to push aim a step at whatever the store holds, while a declaration sits behind <code>secret:write</code> and inside the namespace's own paths.</p>
