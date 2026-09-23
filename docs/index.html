@@ -3204,13 +3204,22 @@ concurrency:
       <table>
         <thead><tr><th>When</th><th>The runner</th></tr></thead>
         <tbody>
-          <tr><td>on take</td><td>Records the key as <code>dispatched</code>, then acknowledges the message, and starts nothing until the bus confirms the acknowledgement. A key this host already carried to an ending is refused here: acknowledged and dropped, not put back, since another runner of the pool has no record of it and would run it.</td></tr>
+          <tr><td>on take</td><td>Records the key as <code>dispatched</code>, then acknowledges the message, and starts nothing until the bus confirms the acknowledgement. A key this host already carried to an ending is not run again: the message is acknowledged, not put back, since another runner of the pool has no record of the key and would run it, and the recorded ending is reported under the message's <code>task_id</code>.</td></tr>
           <tr><td class="wrapcell">before a container</td><td>Reads the record again and refuses a key that has already ended, whichever ending, before a network, a pull or a secret.</td></tr>
-          <tr><td class="wrapcell">at the end</td><td>Writes the ending (temporary file, sync, rename) before it removes the container and the task's directory.</td></tr>
+          <tr><td class="wrapcell">at the end</td><td>Writes each port's envelope to the object store, then the ending (temporary file, sync, rename), then removes the container and the task's directory.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The record is one file per key, <code>&lt;work root&gt;/.keys/&lt;run&gt;/&lt;step&gt;/&lt;attempt&gt;[/&lt;index&gt;-&lt;of&gt;].json</code> under <code>AGK_RUNNER_WORKDIR</code>, outside every task directory since those go with their containers. It holds the key, the state, the exit code and a moment, never the message, its grant or a payload, and is pruned 7 days after its last write, the longest a message waits on the stream.</p>
+    <p>The record is one file per key, <code>&lt;work root&gt;/.keys/&lt;run&gt;/&lt;step&gt;/&lt;attempt&gt;[/&lt;index&gt;-&lt;of&gt;].json</code> under <code>AGK_RUNNER_WORKDIR</code>, outside every task directory since those go with their containers. It is pruned 7 days after its last write, the longest a message waits on the stream.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>The record keeps</th><th>Never</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">the key, the state, the exit code, when it started and ended</td><td>the message or its grant</td></tr>
+          <tr><td class="wrapcell">what the ending left, by reference: each port's envelope digest and item count, each artifact's digest and size, the log's URI and line count</td><td>a payload: the envelopes are in the store before the ending is written</td></tr>
+        </tbody>
+      </table>
+    </div>
     <div class="tablewrap">
       <table>
         <thead><tr><th>What goes wrong</th><th>What follows</th></tr></thead>
@@ -3218,7 +3227,7 @@ concurrency:
           <tr><td class="wrapcell">no acknowledgement reaches the bus</td><td>The pool consumer's AckWait, one minute, passes and the bus hands the task out again.</td></tr>
           <tr><td class="wrapcell">the host dies after redeeming</td><td>Its heartbeat stops, the task becomes <code>lost</code> and comes back only as <a href="#task-states">Back to pending</a> says.</td></tr>
           <tr><td class="wrapcell">the host dies between the acknowledgement and the redemption, or only the confirmation is lost</td><td>Nothing hands the task out again, and the heartbeat does not see it, since only a redeemed task is held. The run's own <code>timeout</code> ends it; a run without one waits indefinitely.</td></tr>
-          <tr><td class="wrapcell">the requeue of a lost task reaches the host that already ended its key</td><td>Acknowledged and dropped on take, so nothing redeems or ends the requeue, and the controller reads that host's own late ending as no news. The run's <code>timeout</code> ends it; a run without one waits indefinitely. Likeliest with one colocated runner, where every requeue comes back to the same host.</td></tr>
+          <tr><td class="wrapcell">the requeue of a lost task reaches the host that already ended its key</td><td>The host acknowledges it and reports the ending it recorded under the requeue's <code>task_id</code>. The controller takes that ending from a runner that redeemed an earlier dispatch of the key, as the requeue's answer, and the brick does not run twice.</td></tr>
         </tbody>
       </table>
     </div>
@@ -3227,8 +3236,8 @@ concurrency:
       <p>A runner acknowledges a task on take, once the host has written the key down, and not when the container exits: acknowledging at the end would make AckWait as long as the longest step, and liveness lives in the <a href="#heartbeat">heartbeat</a> once the task is redeemed.</p>
     </div>
     <div class="decision">
-      <span class="note-label">Open question</span>
-      <p>Who ends a requeue that came back to the host that already ended its key? Either that host publishes the ending it recorded, as a result saying no container ran, or the controller takes the late ending while the requeue is unredeemed; neither is built.</p>
+      <span class="note-label">Decision</span>
+      <p>A host answers a requeue of a key it already ended with that ending, rather than dropping it. Nobody would redeem the requeue, so the sweep would declare it lost in its turn and send it round again, likeliest to the same host. Taking the answer only from a runner that redeemed an earlier dispatch of the key keeps a host's reach to the tasks it was given.</p>
     </div>
     <p>A task carries no payload and no secret value; see <a href="#the-task-message">The task message</a>.</p>
 
@@ -3559,9 +3568,10 @@ concurrency:
           <tr><td class="wrapcell">from the runner the <code>task_id</code> was bound to at redemption</td><td>taken</td></tr>
           <tr><td class="wrapcell">from another runner, or naming a runner other than its subject's</td><td>refused and reported, never applied</td></tr>
           <tr><td class="wrapcell">saying no container ran (a refused pull, a grant that would not redeem) for a dispatch nobody redeemed</td><td>taken, and binds the runner that sent it</td></tr>
-          <tr><td class="wrapcell">saying a container ran, or <code>lost</code>, for a dispatch nobody redeemed</td><td>refused</td></tr>
+          <tr><td class="wrapcell">saying a container ran, for a dispatch nobody redeemed, from a runner that redeemed an earlier dispatch of the key</td><td>taken, and binds that runner: a host answering a requeue from its record (<a href="#task-bus">Task bus</a>)</td></tr>
+          <tr><td class="wrapcell">saying a container ran, from any other runner, or <code>lost</code>, for a dispatch nobody redeemed</td><td>refused</td></tr>
           <tr><td class="wrapcell">whose <code>task_id</code> is no dispatch of its key</td><td>refused</td></tr>
-          <tr><td class="wrapcell">the late ending of a dispatch its key was <a href="#task-states">requeued</a> past</td><td>no news: the requeue owes its own ending, which it never gives if it came back to this same host (<a href="#task-bus">Task bus</a>)</td></tr>
+          <tr><td class="wrapcell">the late ending of a dispatch its key was <a href="#task-states">requeued</a> past</td><td>no news: the requeue owes its own ending, which the same host gives from its record if the requeue comes back to it</td></tr>
           <tr><td class="wrapcell">delivered twice</td><td>written once: the stream drops a copy from the same runner, <code>task_id</code> and state within two minutes, and the controller reads a known ending as no news</td></tr>
         </tbody>
       </table>
