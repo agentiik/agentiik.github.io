@@ -8,6 +8,8 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**Uploads, acknowledgements, requeues and secrets, settled.** A task's outputs are written under one signed POST policy, handed out at the first redemption. A runner acknowledges a task on take, once it is written down, and refuses a key its host has completed. A lost task is requeued under its key with a new `task_id` and spends no retry, and a result from a runner that does not hold its task is refused. A namespace declares its secrets, `builtin`, `env` or `vault` with a path, under a ninth permission, `secret:write`; a workflow only names them, `secrets: [billing]`. On the roadmap, suspending a waiting run joins the wait step in v0.8.0, and Vault leaves v0.2.0.
+
 **How a tree reaches a server before git hosting.** `agk push` carries the commit's tree, a version keeps a manifest with a counted reference to each object, and a runner redeems its task's grant for one presigned GET per object. The limits of that interim push sit in a decision block for François to confirm.
 
 **Shorter, with more pictures.** The documentation, Get started and the roadmap are rewritten with diagrams, tables and examples in place of long prose: 13 new figures and 31 new tables. The documentation goes from 32,600 to 26,400 words and the roadmap from 20,800 to 17,600. Every anchor, every rule and every task already filed as an issue is kept.
