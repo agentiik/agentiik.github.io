@@ -2167,7 +2167,7 @@ steps:
           <tr><td>timeout</td><td>One shard. On expiry, SIGTERM, then SIGKILL after a grace period the runner policy sets, not this file.</td></tr>
           <tr><td>retry</td><td><code>max</code>; <code>on</code>: <code>transient</code>, <code>failed</code>, <code>lost</code>, <code>timeout</code>; <code>backoff: { type, base, max }</code>, where <code>exponential</code> is the only type: the wait starts at <code>base</code>, lengthens, never passes <code>max</code>.</td></tr>
           <tr><td>continue_on_error</td><td>A failure does not fail the run; downstream sees <code>failed</code> through <code>when</code>.</td></tr>
-          <tr><td>idempotent</td><td>Safe to run again on the same inputs. Default <code>true</code>. Only an idempotent step is requeued when its task is lost, since a lost task may have finished unseen. Only an idempotent step can be <a href="#memoisation-and-replay">cached</a>.</td></tr>
+          <tr><td>idempotent</td><td>Safe to run again on the same inputs. Default <code>true</code>. A lost task is requeued only for an idempotent step, since it may have finished unseen, and only where <code>retry.on</code> names <code>lost</code>. Only an idempotent step can be <a href="#memoisation-and-replay">cached</a>.</td></tr>
           <tr><td>cache</td><td>Memoisation. The key combines the image digest, the resolved parameters and the digests of the input envelopes.</td></tr>
           <tr><td>resources</td><td><code>cpu</code>, <code>memory</code>, <code>pids</code>, capped by the runner policy and the namespace quota. <code>cpu</code> and <code>memory</code> are written exactly as the <a href="#brick-manifest">brick manifest</a> writes them, quotation marks included: <code>cpu: 1</code> unquoted is refused.</td></tr>
           <tr><td>network</td><td><code>none</code>, <code>egress</code>, <code>internal</code>: see <a href="#security">Isolation and secrets</a>.</td></tr>
@@ -3557,7 +3557,7 @@ concurrency:
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 964 330" role="img" aria-label="A task moves from pending to dispatched, running, publishing and succeeded. Dispatched, running and publishing sit inside a dashed box labelled held by a runner. From running, a non-zero exit leads to failed and the deadline to timed_out. From anywhere inside the box, a missing heartbeat leads to lost. From pending or from the box, a cancelled run leads to cancelled. Failed, timed_out and lost join a lane back to pending when the step's retry policy names the ending: failed and timed_out as a new attempt, lost as the same attempt requeued, and the branch from lost is marked only if idempotent.">
+      <svg viewBox="0 0 964 330" role="img" aria-label="A task moves from pending to dispatched, running, publishing and succeeded. Dispatched, running and publishing sit inside a dashed box labelled held by a runner. From running, a non-zero exit leads to failed and the deadline to timed_out. From anywhere inside the box, a missing heartbeat leads to lost. From pending or from the box, a cancelled run leads to cancelled. Failed, timed_out and lost join a lane back to pending when the step's retry policy accepts the failure: failed and timed_out as a new attempt, lost as the same attempt requeued, and the branch from lost is marked only if idempotent.">
         <defs>
           <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
@@ -3628,11 +3628,11 @@ concurrency:
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".75">
           <text x="856" y="284" text-anchor="end">only if idempotent</text>
-          <text x="34" y="316">back to pending if the retry policy names the ending: a new attempt after failed or timed_out, the same one after lost</text>
+          <text x="34" y="316">back to pending if the step's retry policy accepts the failure: a new attempt after failed or timed_out, the same one after lost</text>
         </g>
       </svg>
     </div>
-    <figcaption><b>Nine task states, five endings.</b> An arrow leaving the dashed box leaves any state inside it. A failed task is charged to the brick and follows the <code>retry</code> policy; a lost task is charged to the infrastructure and is requeued only when the step is declared idempotent, since it may well have completed without the result coming back.</figcaption>
+    <figcaption><b>Nine task states, five endings.</b> An arrow leaving the dashed box leaves any state inside it. A failed task is charged to the brick and follows the <code>retry</code> policy; a lost task is charged to the infrastructure and is requeued only when its retry policy names <code>lost</code> and the step is declared idempotent, since it may well have completed without the result coming back.</figcaption>
   </figure>
 
   <div class="prose">
@@ -3660,7 +3660,7 @@ concurrency:
       <table>
         <thead><tr><th>Ending</th><th>Comes back when</th><th>Key</th><th>task_id</th><th>retry.max</th><th>Backoff</th></tr></thead>
         <tbody>
-          <tr><td>failed, timed_out</td><td><code>retry.on</code> names it and an attempt is left</td><td>new: attempt + 1</td><td>new</td><td>uses one</td><td>waits</td></tr>
+          <tr><td>failed, timed_out</td><td>the retry policy accepts the failure, read off the <a href="#exit-codes">exit code</a> for failed and as <code>timeout</code> for timed_out, and an attempt is left</td><td>new: attempt + 1</td><td>new</td><td>uses one</td><td>waits</td></tr>
           <tr><td>lost</td><td><code>retry.on</code> names <code>lost</code> and the step is <code>idempotent</code></td><td>the same</td><td>new</td><td>uses none</td><td>none</td></tr>
         </tbody>
       </table>
@@ -3668,7 +3668,7 @@ concurrency:
     <p>A requeue is the same attempt handed out again, so its key, <code>run_id/step/attempt/shard</code>, does not change. The <code>tasks</code> table keeps one row per dispatch: the idempotency rule is about the key, the audit trail about the <code>task_id</code>.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>A loss uses up no <code>retry.max</code> attempt: it is charged to the infrastructure, and a brick that never failed has spent nothing.</p>
+      <p>A loss uses up no <code>retry.max</code> attempt: it is charged to the infrastructure, and a brick that never failed has spent nothing. Nor does it wait out a backoff, which spaces attempts so that a dependency can recover: what failed is the host, and going back on the queue leaves it behind.</p>
     </div>
 
     <h3 id="run-states">Run states</h3>
@@ -5574,7 +5574,7 @@ resource "agentiik_workflow" "search" {
       <table>
         <thead><tr><th>What fails</th><th>What the installation does</th></tr></thead>
         <tbody>
-          <tr><td>a runner</td><td>Its tasks stop heartbeating and move to <em>lost</em>: requeued if the step is idempotent, surfaced for a human otherwise.</td></tr>
+          <tr><td>a runner</td><td>Its tasks stop heartbeating and move to <em>lost</em>: requeued where the step is idempotent and its <code>retry.on</code> names <code>lost</code>, surfaced for a human otherwise.</td></tr>
           <tr><td>the active controller</td><td>Its session ends and the advisory lock is released; another node takes it and resumes from the database. Published tasks wait in the bus, untouched.</td></tr>
           <tr><td>an API node</td><td>The load balancer drops it. Open log streams reconnect elsewhere and resume from their last position.</td></tr>
           <tr><td>the PostgreSQL primary</td><td>The synchronous standby is promoted; the controller reacquires its lock there, the same code path as a restart.</td></tr>
