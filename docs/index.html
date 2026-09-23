@@ -3524,7 +3524,7 @@ concurrency:
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 964 330" role="img" aria-label="A task moves from pending to dispatched, running, publishing and succeeded. Dispatched, running and publishing sit inside a dashed box labelled held by a runner. From running, a non-zero exit leads to failed and the deadline to timed_out. From anywhere inside the box, a missing heartbeat leads to lost. From pending or from the box, a cancelled run leads to cancelled. Failed, timed_out and lost join a lane back to pending, labelled another attempt if the step's retry policy accepts the failure, and the branch from lost is marked only if idempotent.">
+      <svg viewBox="0 0 964 330" role="img" aria-label="A task moves from pending to dispatched, running, publishing and succeeded. Dispatched, running and publishing sit inside a dashed box labelled held by a runner. From running, a non-zero exit leads to failed and the deadline to timed_out. From anywhere inside the box, a missing heartbeat leads to lost. From pending or from the box, a cancelled run leads to cancelled. Failed, timed_out and lost join a lane back to pending when the step's retry policy names the ending: failed and timed_out as a new attempt, lost as the same attempt requeued, and the branch from lost is marked only if idempotent.">
         <defs>
           <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
@@ -3595,7 +3595,7 @@ concurrency:
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".75">
           <text x="856" y="284" text-anchor="end">only if idempotent</text>
-          <text x="34" y="316">another attempt, if the step's retry policy accepts the failure</text>
+          <text x="34" y="316">back to pending if the retry policy names the ending: a new attempt after failed or timed_out, the same one after lost</text>
         </g>
       </svg>
     </div>
@@ -3620,6 +3620,22 @@ concurrency:
           <tr><td>cancelled</td><td>Stopped because the run was cancelled by a principal, by a concurrency group or by a <code>merge: first</code>. Not <code>failed</code> for the same reason, and not <code>timed_out</code> because somebody changed their mind rather than a limit firing.</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <h4>Back to pending</h4>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Ending</th><th>Comes back when</th><th>Key</th><th>task_id</th><th>retry.max</th><th>Backoff</th></tr></thead>
+        <tbody>
+          <tr><td>failed, timed_out</td><td><code>retry.on</code> names it and an attempt is left</td><td>new: attempt + 1</td><td>new</td><td>uses one</td><td>waits</td></tr>
+          <tr><td>lost</td><td><code>retry.on</code> names <code>lost</code> and the step is <code>idempotent</code></td><td>the same</td><td>new</td><td>uses none</td><td>none</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A requeue is the same attempt handed out again, so its key, <code>run_id/step/attempt/shard</code>, does not change. The <code>tasks</code> table keeps one row per dispatch: the idempotency rule is about the key, the audit trail about the <code>task_id</code>.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A loss uses up no <code>retry.max</code> attempt: it is charged to the infrastructure, and a brick that never failed has spent nothing.</p>
     </div>
 
     <h3 id="run-states">Run states</h3>
@@ -5172,7 +5188,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>triggers</td><td>Active triggers per version, schedule state, last firing.</td></tr>
           <tr><td>runs</td><td>Identifier, version, state, trigger, triggering principal, timestamps, workflow inputs and outputs.</td></tr>
           <tr><td>steps</td><td>Per-step state within a run, envelope digests for each port.</td></tr>
-          <tr><td>tasks</td><td>Shard, attempt, state, runner, idempotency key, exit code.</td></tr>
+          <tr><td>tasks</td><td>One row per dispatch: <code>task_id</code>, idempotency key, shard, attempt, state, runner, exit code. A requeue after loss adds a row under the same key.</td></tr>
           <tr><td>approvals</td><td>Waiting run, requested at, decided by, decision, comment.</td></tr>
           <tr><td>artifacts</td><td>One row per reference: namespace, run, step, port, digest, size, media type and that reference's expiry. An object's reference count is the number of rows naming its digest.</td></tr>
           <tr><td>runners</td><td>Labels, capacity, version, accepted namespaces, last heartbeat.</td></tr>
