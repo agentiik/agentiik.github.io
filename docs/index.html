@@ -5845,9 +5845,10 @@ post_task = [
         </tbody>
       </table>
     </div>
-    <p>Only two kinds of payload pass through the control plane:</p>
+    <p>Only three kinds of payload pass through the control plane:</p>
     <ul class="plain">
       <li>A one-shot artifact is served through the API rather than redirected to, because a redirect cannot be counted.</li>
+      <li>Every object, where the installation has no object store of its own and the API is the store (<a href="#the-task-message">The task message</a>).</li>
       <li>Sharding a <code>fan_out: item</code>, pairing a <code>zip</code>, keying a <code>join</code> or evaluating an expression over <code>item</code> needs the items, so the controller reads a step's published envelopes as it decides and retains none. That costs at most <a href="#size-rules"><code>envelope_max_bytes</code></a> per port per step (4 MiB by default), never the artifacts: a hundred gigabyte file travels as a digest and a URI, from runner to runner.</li>
     </ul>
 
