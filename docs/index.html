@@ -3226,7 +3226,8 @@ concurrency:
         <tbody>
           <tr><td class="wrapcell">no acknowledgement reaches the bus</td><td>The pool consumer's AckWait, one minute, passes and the bus hands the task out again.</td></tr>
           <tr><td class="wrapcell">the host dies after redeeming</td><td>Its heartbeat stops, the task becomes <code>lost</code> and comes back only as <a href="#task-states">Back to pending</a> says.</td></tr>
-          <tr><td class="wrapcell">the host dies between the acknowledgement and the redemption, or only the confirmation is lost</td><td>Nothing hands the task out again, and the heartbeat does not see it, since only a redeemed task is held. The run's own <code>timeout</code> ends it; a run without one waits indefinitely.</td></tr>
+          <tr><td class="wrapcell">the host dies between the acknowledgement and the redemption, or only the confirmation is lost</td><td>Nobody redeems the task, so the controller's sweep declares it <code>lost</code> 30 seconds after its publication (see <a href="#heartbeat">Heartbeat</a>), and it comes back as any loss does.</td></tr>
+          <tr><td class="wrapcell">a task still on a full pool's queue, or still pulling its image, 30 seconds after its publication</td><td>Lost the same way. The message redeems nothing once a runner reaches it, and the loss counts against <a href="#task-states"><code>max_requeues</code></a>.</td></tr>
           <tr><td class="wrapcell">the requeue of a lost task reaches the host that already ended its key</td><td>The host acknowledges it and reports the ending it recorded under the requeue's <code>task_id</code>. The controller takes that ending from a runner that redeemed an earlier dispatch of the key, as the requeue's answer, and the brick does not run twice.</td></tr>
         </tbody>
       </table>
@@ -3585,9 +3586,18 @@ concurrency:
     <ul class="plain">
       <li>A runner posts one heartbeat every 10 seconds to the API, listing the idempotency keys it currently holds. One request covers every in-flight task on that host. It keeps alive only the dispatches of those keys bound to that runner, since after a requeue one key can also name a dispatch on another host.</li>
       <li>Liveness therefore lives in the database beside the task state, rather than as traffic on a work queue that exists to distribute work.</li>
-      <li>Three missed intervals move a task to <em>lost</em>, counted from its redemption until a heartbeat first names it; see <a href="#lifecycle">Lifecycle and replay</a>. The heartbeat does not see a task nobody has redeemed: on the queue it needs no watching, but between take and redemption it sits on a host unwatched (see <a href="#task-bus">Task bus</a>).</li>
       <li>The heartbeat is also how a revoked credential takes effect and how the console knows a runner is present: there is no separate liveness channel to keep in sync.</li>
     </ul>
+    <p>Three missed intervals, 30 seconds, move a task in flight to <em>lost</em>. The controller's <a href="#how-the-api-and-the-controller-stay-in-step">sweep</a> moves them before it decides anything, so the runs a loss wakes are decided on the same pass (see <a href="#lifecycle">Lifecycle and replay</a>).</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>A task in flight</th><th>Lost 30 seconds after</th></tr></thead>
+        <tbody>
+          <tr><td>redeemed</td><td>its runner's last heartbeat naming it, or its redemption until one does</td></tr>
+          <tr><td class="wrapcell">not redeemed: on the queue, or taken and still pulling</td><td>its publication, since no heartbeat names it and no delivery comes round again (see <a href="#task-bus">Task bus</a>)</td></tr>
+        </tbody>
+      </table>
+    </div>
 
     <h3 id="registering-a-runner">Registering a runner</h3>
     <p>Registration proves which pool an unknown machine belongs to, and gives it credentials worth having only on that machine.</p>
@@ -3622,7 +3632,7 @@ concurrency:
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 964 330" role="img" aria-label="A task moves from pending to dispatched, running, publishing and succeeded. Dispatched, running and publishing sit inside a dashed box labelled handed out. From running, a non-zero exit leads to failed and the deadline to timed_out. From inside the box, once a runner has redeemed the task's grant, a missing heartbeat leads to lost. From pending or from the box, a cancelled run leads to cancelled. Failed, timed_out and lost join a lane back to pending when the step's retry policy accepts the failure: failed and timed_out as a new attempt, lost as the same attempt requeued, and the branch from lost is marked only if idempotent.">
+      <svg viewBox="0 0 964 330" role="img" aria-label="A task moves from pending to dispatched, running, publishing and succeeded. Dispatched, running and publishing sit inside a dashed box labelled handed out. From running, a non-zero exit leads to failed and the deadline to timed_out. From inside the box, a missing heartbeat, or no redemption 30 seconds after publication, leads to lost. From pending or from the box, a cancelled run leads to cancelled. Failed, timed_out and lost join a lane back to pending when the step's retry policy accepts the failure: failed and timed_out as a new attempt, lost as the same attempt requeued, and the branch from lost is marked only if idempotent.">
         <defs>
           <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
@@ -3680,7 +3690,7 @@ concurrency:
           <text x="488" y="170">non-zero exit</text>
           <text x="668" y="170">deadline</text>
           <text x="872" y="176">no heartbeat</text>
-          <text x="872" y="190">once redeemed</text>
+          <text x="872" y="190">or unredeemed</text>
         </g>
 
         <g stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="4 4">
@@ -3698,7 +3708,7 @@ concurrency:
         </g>
       </svg>
     </div>
-    <figcaption><b>Nine task states, five endings.</b> An arrow leaving the dashed box leaves any state inside it, except that only a redeemed task can be lost: before redemption the heartbeat does not see it (see <a href="#task-bus">Task bus</a>). A failed task is charged to the brick and follows the <code>retry</code> policy; a lost task is charged to the infrastructure and is requeued only when its retry policy names <code>lost</code> and the step is declared idempotent, since it may well have completed without the result coming back.</figcaption>
+    <figcaption><b>Nine task states, five endings.</b> An arrow leaving the dashed box leaves any state inside it. A task is lost when its runner stops heartbeating or, unredeemed, 30 seconds after its publication (see <a href="#heartbeat">Heartbeat</a>). A failed task is charged to the brick and follows the <code>retry</code> policy; a lost task is charged to the infrastructure and is requeued only when its retry policy names <code>lost</code> and the step is declared idempotent, since it may well have completed without the result coming back.</figcaption>
   </figure>
 
   <div class="prose">
@@ -3709,12 +3719,12 @@ concurrency:
         <thead><tr><th>State</th><th>Meaning</th></tr></thead>
         <tbody>
           <tr><td>pending</td><td>Decided and not yet handed to a runner.</td></tr>
-          <tr><td>dispatched</td><td>Handed out: on its pool's queue, or taken by a runner that may still be pulling the image or running <code>pre_task</code>. The deadline starts only when the container is created, so a slow pull or hook costs the runner's time and never the step's (see <a href="#runner-side-hooks">Runner-side hooks</a>). The grant does not wait: it expires at the <code>deadline</code> the message carries, so a pull slower than that leaves a grant that answers <code>401</code>.</td></tr>
+          <tr><td>dispatched</td><td>Handed out: on its pool's queue, or taken by a runner that may still be pulling the image or running <code>pre_task</code>. The deadline starts only when the container is created, so a slow pull or hook costs the runner's time and never the step's (see <a href="#runner-side-hooks">Runner-side hooks</a>). The grant does not wait: it expires at the <code>deadline</code> the message carries, so a pull slower than that leaves a grant that answers <code>401</code>. Nor does the <a href="#heartbeat">sweep</a>: a task nobody has redeemed 30 seconds after its publication is lost.</td></tr>
           <tr><td>running</td><td>The container is running.</td></tr>
           <tr><td>publishing</td><td>The container is finished; its outputs are being collected and uploaded. A state of its own because the result is not yet safe, and losing a runner here is not losing one mid-run.</td></tr>
           <tr><td>succeeded</td><td>The container exited 0 and its envelopes were published.</td></tr>
           <tr><td>failed</td><td>The container exited non-zero. Which failure it is, and whether it is worth another attempt, is read off the exit code and nowhere else. See <a href="#exit-codes">Exit codes</a>.</td></tr>
-          <tr><td>lost</td><td>The runner that redeemed it stopped reporting.</td></tr>
+          <tr><td>lost</td><td>The runner that redeemed it stopped reporting, or nobody redeemed it within 30 seconds of its publication.</td></tr>
           <tr><td>timed_out</td><td>Stopped at its deadline: SIGTERM, then SIGKILL after the grace period. Not <code>failed</code>, because the brick decided nothing and a <code>retry</code> written for transient failures should not answer a deadline.</td></tr>
           <tr><td>cancelled</td><td>Stopped because the run was cancelled by a principal, by a concurrency group or by a <code>merge: first</code>. Not <code>failed</code> for the same reason, and not <code>timed_out</code> because somebody changed their mind rather than a limit firing.</td></tr>
         </tbody>
