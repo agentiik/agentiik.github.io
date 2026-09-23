@@ -3204,15 +3204,16 @@ concurrency:
       <table>
         <thead><tr><th>When</th><th>What happens</th><th>Why</th></tr></thead>
         <tbody>
-          <tr><td>on take</td><td>The runner writes the task down under its work directory (<code>AGK_RUNNER_WORKDIR</code>), outside any task's own directory, then acknowledges it.</td><td>The record outlives the task's directory, which is removed with the container.</td></tr>
+          <tr><td>on take</td><td>The runner records the task's idempotency key, never the message or its grant, under its work directory (<code>AGK_RUNNER_WORKDIR</code>) and outside any task's own directory. It then redeems the grant, which binds the task to it, and only then acknowledges the message.</td><td>The record outlives the task's directory, which is removed with the container. The binding tells the API who holds the task before the bus lets go of it.</td></tr>
           <tr><td class="wrapcell">before a container</td><td>The runner reads the host's record of completed keys, kept in the same place, and refuses a key that has already completed.</td><td>A redelivery or a <a href="#task-states">requeue</a> can hand a host a key it has finished.</td></tr>
-          <tr><td class="wrapcell">the host dies</td><td>Its heartbeat stops, its tasks become <code>lost</code>, and an idempotent step is requeued.</td><td>Liveness already lives in the <a href="#heartbeat">heartbeat</a>, so the bus need not redeliver.</td></tr>
+          <tr><td class="wrapcell">a host dies before the ack</td><td>The pool consumer's AckWait passes and the bus hands the message out again. A runner whose redemption is refused, because another runner holds the task, acknowledges it and runs nothing.</td><td>AckWait covers a take and its redemption, never a task.</td></tr>
+          <tr><td class="wrapcell">a host dies holding it</td><td>Its heartbeat stops, its tasks become <code>lost</code>, and each comes back only as <a href="#task-states">Back to pending</a> says.</td><td>Liveness already lives in the <a href="#heartbeat">heartbeat</a>, so the bus need not redeliver.</td></tr>
         </tbody>
       </table>
     </div>
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>A runner acknowledges a task when it takes it, not when the container exits: acknowledging at the end would make the ack wait as long as the longest step may run, and the heartbeat already catches a host that dies holding a task.</p>
+      <p>A runner acknowledges a task when it takes it, not when the container exits: acknowledging at the end would make the ack wait as long as the longest step may run. It acknowledges once its redemption has bound the task to it, so that the API knows who holds every task the bus has let go of, and the heartbeat catches a host that dies holding one.</p>
     </div>
     <p>A task carries no payload and no secret value; see <a href="#the-task-message">The task message</a>.</p>
 
@@ -3221,9 +3222,9 @@ concurrency:
       <table>
         <thead><tr><th>Step</th><th>The runner</th><th>Docker Engine API v1.56</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>Pulls a batch of tasks from its pool's consumer, filtered by its declared labels and by the namespaces its policy accepts, and writes each one down before acknowledging it (<a href="#task-bus">Task bus</a>).</td><td></td></tr>
+          <tr><td>1</td><td>Pulls a batch of tasks from its pool's consumer, filtered by its declared labels and by the namespaces its policy accepts. For each, it records the key, redeems the grant, once, for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, the secret values and one upload policy, and then acknowledges the message (<a href="#task-bus">Task bus</a>).</td><td></td></tr>
           <tr><td>2</td><td>Resolves and downloads the image by digest, verifying its signature where policy requires it.</td><td></td></tr>
-          <tr><td>3</td><td>Redeems the task's grant, once, for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, the secret values and one upload policy. Downloads the inputs into a local working directory and prepares the mounts.</td><td></td></tr>
+          <tr><td>3</td><td>Downloads the tree and the inputs into a local working directory and prepares the mounts.</td><td></td></tr>
           <tr><td>4</td><td>Creates one container, starts it, attaches to it, waits for it to exit and collects its logs.</td><td><code>ContainerCreate</code> (<code>POST /containers/create</code>), <code>ContainerStart</code> (<code>POST /containers/{id}/start</code>), <code>ContainerAttach</code>, <code>ContainerWait</code>, <code>ContainerLogs</code></td></tr>
           <tr><td>5</td><td>Collects the output envelopes, artifacts, log and exit code, posts the outputs under the upload policy, and publishes the result on the bus.</td><td></td></tr>
           <tr><td>6</td><td>Records the key as completed, then destroys the container and its working directory.</td><td><code>ContainerRemove</code></td></tr>
@@ -3459,7 +3460,7 @@ concurrency:
   </div>
 
   <div class="block">
-    <div class="note-label">answered to the runner once, at the first redemption</div>
+    <div class="note-label">answered to the runner at its redemption</div>
 <pre><code>{
   "task_id": "01JMZ8V1PC7K3M0",
   "expires_at": "2026-09-10T06:52:00Z",
@@ -3488,7 +3489,7 @@ concurrency:
     <p>The store hashes each file as it arrives and refuses one whose bytes do not match its key. Where the installation has no object store of its own, the API is the store, at <code>/objects/</code>, and checks a POST exactly as it checks a presigned PUT.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>One policy per task, handed out at the first redemption, rather than a URL per object: an output's key is the digest of bytes that do not exist until the container exits, and a policy in the first answer means a task redeems once and its secrets are read once.</p>
+      <p>One policy per task, handed out at the redemption, rather than a URL per object: an output's key is the digest of bytes that do not exist until the container exits, and a policy in the one answer means a task never redeems a second time, reading its secrets again, to learn where its outputs go.</p>
     </div>
   </div>
 
@@ -3519,7 +3520,7 @@ concurrency:
     <ul class="plain">
       <li>A runner posts one heartbeat every 10 seconds to the API, listing the idempotency keys it currently holds. One request covers every in-flight task on that host.</li>
       <li>Liveness therefore lives in the database beside the task state, rather than as traffic on a work queue that exists to distribute work.</li>
-      <li>Three missed intervals move a task to <em>lost</em>; see <a href="#lifecycle">Lifecycle and replay</a>.</li>
+      <li>Three missed intervals move a task to <em>lost</em>, counted from its redemption until a heartbeat first names it; see <a href="#lifecycle">Lifecycle and replay</a>. A task no runner has redeemed is waiting in its pool's queue, and nothing holds it that could stop reporting, so it is never lost for waiting.</li>
       <li>The heartbeat is also how a revoked credential takes effect and how the console knows a runner is present: there is no separate liveness channel to keep in sync.</li>
     </ul>
 
@@ -3758,7 +3759,7 @@ concurrency:
     <h3 id="secrets-honestly">Secrets, honestly</h3>
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>A step handed a secret can exfiltrate it, whatever the secret store does. The only control that bites is egress, so egress is per step and default-deny: <code>network: none</code> by default, <code>egress.allow</code> naming hosts and ports, a runner proxy enforcing the list, as the <a href="#yaml">worked example</a> shows. The tmpfs mount, last-moment retrieval and masking only reduce incidental exposure.</p>
+      <p>A step handed a secret can exfiltrate it, whatever the secret store does. The only control that bites is egress, so egress is per step and default-deny: <code>network: none</code> by default, <code>egress.allow</code> naming hosts and ports, a runner proxy enforcing the list, as the <a href="#yaml">worked example</a> shows. The tmpfs mount, retrieval only by the runner that took the task, and masking only reduce incidental exposure.</p>
     </div>
     <ul class="plain">
       <li><b>Masking</b> is a literal match against the values the task was given. A secret base64-encoded, URL-encoded, split across lines or hashed gets through. It is a guard against accident, never against intent.</li>
@@ -3966,7 +3967,7 @@ steps:
     <ul class="plain">
       <li>A secret belongs to a namespace. A workflow can name only secrets its own namespace declares, so moving it elsewhere breaks unresolved references at validation rather than carrying access along.</li>
       <li>Mounted on tmpfs at <code>/agk/secrets/&lt;name&gt;</code>, never an environment variable by default, because a process environment is readable by its children and ends up in diagnostic dumps.</li>
-      <li>The runner obtains the value at the last moment, by redeeming at the API the per-task grant the controller issued for that one task and that one secret. The API is the only component that reads the store; the controller names which secret a task may have and never sees its value.</li>
+      <li>The runner obtains the value when it takes the task and not before, by redeeming at the API the per-task grant the controller issued for that one task and that one secret. The API is the only component that reads the store; the controller names which secret a task may have and never sees its value.</li>
       <li>Secret values are masked in collected logs by literal match against the values known to the task, before anything is written to the store.</li>
       <li>Never reachable from condition expressions, only from <code>params</code> marked sensitive in the brick manifest.</li>
       <li>No role reads a secret value through the API. Rotation is a write, never a read-then-write, and every write is recorded in the audit log as a secret write.</li>
@@ -4020,7 +4021,7 @@ steps:
           <tr><td class="wrapcell">GET /api/v1/runner-pools</td><td>Pools and their labels, to write a namespace's allowed pools against. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools</td><td>A pool with its labels, accepted namespaces and resource ceilings. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools/{pool}/join-tokens</td><td>A join token: single use, short lived, only for labels the pool carries, shown once. Administrator only.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>Redeems a task's grant, once, for what the task message names and does not carry: presigned URLs for the tree and the inputs, the secret values, and one signed POST policy for the outputs (see <a href="#the-task-message">The task message</a>). Answered from what the controller wrote beside the grant and from nothing in the request, so a runner cannot read an object its task does not name. Runner credential only. The redemption binds the task to the runner that made it, and a task another runner holds is refused.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>Redeems a task's grant for what the task message names and does not carry: presigned URLs for the tree and the inputs, the secret values, and one signed POST policy for the outputs (see <a href="#the-task-message">The task message</a>). Answered from what the controller wrote beside the grant and from nothing in the request, so a runner cannot read an object its task does not name. Runner credential only. A runner redeems once, when it takes the task, and the redemption binds the task to it: another runner is refused, and the same runner asking again because an answer was lost on the way is answered again while the grant lives, its secrets read again.</td></tr>
           <tr><td class="wrapcell">GET, PUT /objects/{key...}<br>POST /objects/{ns}</td><td>The built-in object store, served only where the installation has no other. A presigned URL or a signed POST policy is the whole authorisation. A POST is taken only under the policy's prefix and 64 lowercase hex characters, hashed as it arrives, and refused if the bytes do not match, exactly as a PUT.</td></tr>
 
           <tr><th colspan="2">Namespaces, workflows and the catalog</th></tr>
