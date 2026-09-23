@@ -4199,7 +4199,7 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td>the answer</td><td><code>202</code> and the run's identifier, the same whether the run is going or has ended. How it stands is for <code>run:read</code> to show, which <code>operator</code> does not hold.</td></tr>
           <tr><td class="wrapcell">the controller's next pass</td><td>Before admission, so a <code>queued</code> run is never let in to be called off. The run ends <code>cancelled</code>; one that never left the queue has no <code>started_at</code>.</td></tr>
           <tr><td>its tasks</td><td>Every task not over is written <code>cancelled</code> in that pass, so a message still on the queue redeems nothing and the run's share of <code>max_concurrent_tasks</code> comes back at once. The runners holding redeemed ones are asked to stop them. A lost dispatch keeps its loss.</td></tr>
-          <tr><td>the audit log</td><td>Records it once the audit log exists, a <a href="roadmap/#m02">v0.2.0</a> task not yet built.</td></tr>
+          <tr><td>the audit log</td><td>Records the request once it exists, a <a href="roadmap/#m02">v0.2.0</a> task not yet built.</td></tr>
         </tbody>
       </table>
     </div>
