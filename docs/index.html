@@ -3769,7 +3769,7 @@ concurrency:
           <tr><td>waiting</td><td>Suspended at a <a href="#catalog"><code>wait</code></a> step, for a duration, an external signal or a human approval; nothing else puts a run here. The state a mobile notification is meant to clear.</td></tr>
           <tr><td>succeeded</td><td>Every reached step finished, none failed beyond tolerance.</td></tr>
           <tr><td>failed</td><td>At least one step failed without <code>continue_on_error</code>.</td></tr>
-          <tr><td>cancelled</td><td>Cancelled by a principal holding <code>workflow:run</code>, by a concurrency group or by a <code>merge: first</code>.</td></tr>
+          <tr><td>cancelled</td><td>Cancelled by a principal holding <code>workflow:run</code>, by a concurrency group or by a <code>merge: first</code>. The one state a run can end in without having started, when it is cancelled from <code>queued</code>.</td></tr>
           <tr><td>timed_out</td><td>The deadline set by the root <code>timeout</code> of the entry point expired, and the tasks still running were stopped.</td></tr>
         </tbody>
       </table>
@@ -4157,9 +4157,9 @@ steps:
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/runs</td><td>Manual trigger: the workflow inputs and, optionally, a ref other than the default branch. Example below.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runs</td><td>Runs, filtered by namespace, workflow, state and time. Where a mobile app opens.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runs/{id}</td><td>Run state, per-step state, envelope digests.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/runs/{id}/approve</td><td>Clears a waiting run. Optional comment, audited.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/runs/{id}/reject</td><td>Ends a waiting run as cancelled, with a reason.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/runs/{id}/cancel</td><td>Cancels pending tasks and sends SIGTERM to running containers.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/runs/{id}/cancel</td><td>Asks for the run to be cancelled, and the controller carries it out: <code>202</code>, example below. Requires <code>workflow:run</code> on the run's workflow.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/runs/{id}/approve</td><td>Clears a waiting run. Optional comment, audited. With the wait step, in <a href="roadmap/#m08">v0.8.0</a>.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/runs/{id}/reject</td><td>Ends a waiting run as cancelled, with a reason. With the wait step, in <a href="roadmap/#m08">v0.8.0</a>.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runs/{id}/replay</td><td>Replays from a named step, reusing everything upstream.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runs/{id}/steps/{step}/logs</td><td>SSE log stream, history then live.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runs/{id}/outputs/{name}</td><td>One workflow output's envelope. Requires <code>run:read_data</code>.</td></tr>
@@ -4180,8 +4180,29 @@ Content-Type: application/json
 { "inputs": { "orders": [ … ] } }</code></pre>
   </div>
 
+  <div class="block">
+    <div class="note-label">a cancellation</div>
+<pre><code><span class="p">&gt;</span> <span class="cmd">POST /api/v1/runs/01JMZ8V1P9C4/cancel</span>          <span class="c"># no body, or {}</span>
+Authorization: Bearer &lt;api token&gt;
+
+202 Accepted
+{ "run": "01JMZ8V1P9C4" }</code></pre>
+  </div>
+
   <div class="prose">
-    <p>A workflow the caller cannot see answers the same 404 as an absent one.</p>
+    <p>A workflow the caller cannot see answers the same 404 as an absent one, and so does a run of such a workflow.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Cancelling a run</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>the request</td><td>The API writes the moment on the run, keeping the first if asked again, and notifies the controller. It stops nothing itself: the two share the database and nothing else.</td></tr>
+          <tr><td>the answer</td><td><code>202</code> and the run's identifier, the same whether the run is going or has ended. How it stands is for <code>run:read</code> to show, which <code>operator</code> does not hold.</td></tr>
+          <tr><td class="wrapcell">the controller's next pass</td><td>Before admission, so a <code>queued</code> run is never let in to be called off. The run ends <code>cancelled</code>; one that never left the queue has no <code>started_at</code>.</td></tr>
+          <tr><td>its tasks</td><td>Every task not over is written <code>cancelled</code> in that pass, so a message still on the queue redeems nothing and the run's share of <code>max_concurrent_tasks</code> comes back at once. The runners holding redeemed ones are asked to stop them. A lost dispatch keeps its loss.</td></tr>
+          <tr><td>the audit log</td><td>Records it once the audit log exists, a <a href="roadmap/#m02">v0.2.0</a> task not yet built.</td></tr>
+        </tbody>
+      </table>
+    </div>
 
     <h3 id="command-line">Command line</h3>
     <div class="tablewrap">
@@ -5377,7 +5398,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>workflow_refs</td><td>The ref database of every workflow repository: ref name, commit, protection, who moved it and when. Git objects live in the object store as packfiles.</td></tr>
           <tr><td>workflow_versions</td><td>One row per commit accepted on a branch: commit, parent, resolved graph, the manifest of its tree (<code>path</code>, <code>sha256</code>, <code>size</code> and <code>mode</code> per file, each file a counted object), author, timestamp.</td></tr>
           <tr><td>triggers</td><td>Active triggers per version, schedule state, last firing.</td></tr>
-          <tr><td>runs</td><td>Identifier, version, state, trigger, triggering principal, timestamps, workflow inputs and outputs.</td></tr>
+          <tr><td>runs</td><td>Identifier, version, state, trigger, triggering principal, timestamps, workflow inputs and outputs, and when a cancellation was first asked for.</td></tr>
           <tr><td>steps</td><td>Per-step state within a run, envelope digests for each port.</td></tr>
           <tr><td>tasks</td><td>One row per dispatch: <code>task_id</code>, idempotency key, shard, attempt, state, runner, exit code. A requeue after loss adds a row under the same key, and at most one row of a key is anything but <code>lost</code>.</td></tr>
           <tr><td>task_grants</td><td>Every grant a dispatch was published with, hashed, each redeemable until it expires: a task published again keeps the grant its first message carries, and the first redemption binds the task.</td></tr>
