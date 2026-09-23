@@ -3225,9 +3225,9 @@ concurrency:
         <tbody>
           <tr><td>1</td><td>Pulls a batch of tasks from its pool's consumer, filtered by its declared labels and by the namespaces its policy accepts, and writes each one down before acknowledging it (<a href="#task-bus">Task bus</a>).</td><td></td></tr>
           <tr><td>2</td><td>Resolves and downloads the image by digest, verifying its signature where policy requires it.</td><td></td></tr>
-          <tr><td>3</td><td>Redeems the task's grant for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, and the secret values. Downloads the inputs into a local working directory and prepares the mounts.</td><td></td></tr>
+          <tr><td>3</td><td>Redeems the task's grant, once, for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, the secret values and one upload policy. Downloads the inputs into a local working directory and prepares the mounts.</td><td></td></tr>
           <tr><td>4</td><td>Creates one container, starts it, attaches to it, waits for it to exit and collects its logs.</td><td><code>ContainerCreate</code> (<code>POST /containers/create</code>), <code>ContainerStart</code> (<code>POST /containers/{id}/start</code>), <code>ContainerAttach</code>, <code>ContainerWait</code>, <code>ContainerLogs</code></td></tr>
-          <tr><td>5</td><td>Collects the output envelopes, artifacts, log and exit code, uploads the output artifacts through presigned URLs, and publishes the result on the bus.</td><td></td></tr>
+          <tr><td>5</td><td>Collects the output envelopes, artifacts, log and exit code, posts the outputs under the upload policy, and publishes the result on the bus.</td><td></td></tr>
           <tr><td>6</td><td>Records the key as completed, then destroys the container and its working directory.</td><td><code>ContainerRemove</code></td></tr>
           <tr><td>throughout</td><td>Emits a <a href="#heartbeat">heartbeat</a>. A prolonged absence moves the task to <em>lost</em>.</td><td></td></tr>
           <tr><td>throughout</td><td>Follows the daemon event stream to catch container exits it did not cause, an out-of-memory kill for instance.</td><td><code>GET /events</code></td></tr>
@@ -3248,7 +3248,7 @@ concurrency:
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 920 536" role="img" aria-label="A sequence diagram with five lanes: the runner joins by sending a token, a public key and its labels to the API, receives a credential and then a short-lived bus token; afterwards the controller publishes a task on the bus, the runner pulls it, redeems its grant at the API for tree and input URLs and secret values, fetches the workflow tree and reads and writes artifacts in the object store, heartbeats to the API while it works, and publishes a result on the bus which the controller consumes.">
+      <svg viewBox="0 0 920 536" role="img" aria-label="A sequence diagram with five lanes: the runner joins by sending a token, a public key and its labels to the API, receives a credential and then a short-lived bus token; afterwards the controller publishes a task on the bus, the runner pulls it, redeems its grant at the API once for tree and input URLs, secret values and an upload policy, fetches the workflow tree and reads and writes artifacts in the object store, heartbeats to the API while it works, and publishes a result on the bus which the controller consumes.">
         <defs>
           <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
         </defs>
@@ -3309,8 +3309,8 @@ concurrency:
           <text x="350" y="279" text-anchor="middle">pull a batch, filtered by label</text>
           <text x="356" y="309" text-anchor="middle" opacity=".7">task message</text>
           <text x="175" y="339" text-anchor="middle">redeem grant</text>
-          <text x="181" y="369" text-anchor="middle" opacity=".7">tree, input, upload URLs, secret values</text>
-          <text x="448" y="399" text-anchor="middle">GET tree and inputs, run the container, PUT outputs</text>
+          <text x="181" y="369" text-anchor="middle" opacity=".7">tree, inputs, upload policy, secrets</text>
+          <text x="448" y="399" text-anchor="middle">GET tree and inputs, run the container, POST outputs</text>
           <text x="350" y="459" text-anchor="middle">publish result</text>
           <text x="541" y="487" text-anchor="middle" opacity=".7">result</text>
         </g>
@@ -3337,7 +3337,7 @@ concurrency:
           <tr><td class="wrapcell">controller</td><td>bus</td><td>TLS, or HTTPS for a managed queue</td><td>user JWT or instance role</td><td>ready tasks</td></tr>
           <tr><td class="wrapcell">runner</td><td>bus</td><td>TLS or HTTPS</td><td>short-lived token minted by the API</td><td>pulls tasks, publishes results</td></tr>
           <tr><td class="wrapcell">runner</td><td>API</td><td>HTTPS</td><td>runner credential, then a per-task grant</td><td>registration, heartbeat, grant redemption, log shipping</td></tr>
-          <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS</td><td>presigned URL only, no standing credential</td><td>the workflow tree, input and output artifacts</td></tr>
+          <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS</td><td>presigned URL or signed POST policy, no standing credential</td><td>the workflow tree, input and output artifacts</td></tr>
           <tr><td class="wrapcell">runner</td><td>registry</td><td>HTTPS</td><td>the pool's pull credentials</td><td>brick images, by digest</td></tr>
           <tr><td class="wrapcell">runner</td><td>Docker daemon</td><td>local unix socket</td><td>file permission on the socket</td><td>container lifecycle, daemon event stream</td></tr>
           <tr><td class="wrapcell">brick container</td><td>nothing, or the egress proxy</td><td>HTTPS through the proxy</td><td>none; the proxy enforces the step's allow list</td><td>only under <code>network: egress</code></td></tr>
@@ -3455,9 +3455,43 @@ concurrency:
   "runs_on": [ "zone=dmz", "arch=amd64" ],
   "deadline": "2026-09-10T06:51:09Z",
 
-  <span class="c">// redeemed at the API for tree and input URLs, secret values and upload URLs</span>
+  <span class="c">// redeemed once at the API: tree and input URLs, secret values, one upload policy</span>
   "grant": "agkgrant_01JMZ8V1PC7K3M0_…"
 }</code></pre>
+  </div>
+
+  <div class="block">
+    <div class="note-label">answered to the runner once, at the first redemption</div>
+<pre><code>{
+  "task_id": "01JMZ8V1PC7K3M0",
+  "expires_at": "2026-09-10T06:52:00Z",
+  "tree": [ … ], "inputs": [ … ], "secrets": [ … ],
+
+  <span class="c">// one signed POST policy for every output, not a URL per object</span>
+  "uploads": {
+    "url": "https://objects.agentiik.example.com/finance",
+    "fields": { "policy": "eyJleHBpcmF0aW9uIjoi…", "x-amz-signature": "9d4b71e0…" },
+    "key_prefix": "finance/sha256/"
+  }
+}</code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>The policy is bound to</th><th>So</th></tr></thead>
+        <tbody>
+          <tr><td>&lt;namespace&gt;/sha256/</td><td>A key is <code>key_prefix</code> and 64 lowercase hex characters, the SHA-256 of the file: <code>finance/sha256/c1f4a9…d02b</code>. Anything else is refused.</td></tr>
+          <tr><td>the run</td><td>A runner writes for the run its task belongs to, and no other.</td></tr>
+          <tr><td>the grant's expiry</td><td>It stops working when the task's grant does.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The store hashes each file as it arrives and refuses one whose bytes do not match its key. Where the installation has no object store of its own, the API is the store, at <code>/objects/</code>, and checks a POST exactly as it checks a presigned PUT.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>One policy per task, handed out at the first redemption, rather than a URL per object: an output's key is the digest of bytes that do not exist until the container exits, and a policy in the first answer means a task redeems once and its secrets are read once.</p>
+    </div>
   </div>
 
   <div class="block">
@@ -3948,7 +3982,8 @@ concurrency:
           <tr><td class="wrapcell">GET /api/v1/runner-pools</td><td>Pools and their labels, to write a namespace's allowed pools against. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools</td><td>A pool with its labels, accepted namespaces and resource ceilings. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools/{pool}/join-tokens</td><td>A join token: single use, short lived, only for labels the pool carries, shown once. Administrator only.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>Redeems a task's grant for what the task message names and does not carry: presigned URLs for the tree and the inputs, the secret values, and somewhere to write the outputs. Everything read is answered from what the controller wrote beside the grant and from nothing in the request, so a runner cannot read an object its task does not name. What it writes is the one thing it names itself, because the key of an output is the digest of bytes that did not exist when the grant was issued, and it can only write into the task's namespace. Runner credential only. The first redemption binds the task to the runner that made it, and a task another runner holds is refused.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>Redeems a task's grant, once, for what the task message names and does not carry: presigned URLs for the tree and the inputs, the secret values, and one signed POST policy for the outputs (see <a href="#the-task-message">The task message</a>). Answered from what the controller wrote beside the grant and from nothing in the request, so a runner cannot read an object its task does not name. Runner credential only. The redemption binds the task to the runner that made it, and a task another runner holds is refused.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /objects/{key...}<br>POST /objects/{ns}</td><td>The built-in object store, served only where the installation has no other. A presigned URL or a signed POST policy is the whole authorisation. A POST is taken only under the policy's prefix and 64 lowercase hex characters, hashed as it arrives, and refused if the bytes do not match, exactly as a PUT.</td></tr>
 
           <tr><th colspan="2">Namespaces, workflows and the catalog</th></tr>
           <tr><td class="wrapcell">GET, PUT /api/v1/{ns}/secrets</td><td>Secret declarations: provider and path of each value. Never the values, which no route reads.</td></tr>
@@ -5297,7 +5332,7 @@ resource "agentiik_workflow" "search" {
         <tbody>
           <tr><td class="wrapcell">Exactly one writable PostgreSQL</td><td>Leader election is a session-level advisory lock: a second writable primary breaks the election rather than adding availability.</td></tr>
           <tr><td class="wrapcell">A work queue with at-least-once delivery, one queue or subject per runner pool</td><td>A runner pulls only from the queues its labels match.</td></tr>
-          <tr><td class="wrapcell">An object store every runner can reach</td><td>Artifacts move by presigned URL, never through the controller.</td></tr>
+          <tr><td class="wrapcell">An object store every runner can reach</td><td>Artifacts move by presigned URL and signed POST policy, never through the controller.</td></tr>
           <tr><td class="wrapcell">A secret store the API can read, and neither the controller nor the runners can</td><td><a href="#secrets">Secrets</a></td></tr>
           <tr><td class="wrapcell">An OCI registry every runner can pull from by digest</td><td><a href="#supply-chain">Supply chain</a></td></tr>
           <tr><td class="wrapcell">TLS terminated in front of the API and the console, both under the one registrable domain the next row requires</td><td>Passkeys need an HTTPS origin, and one Relying Party Identifier has to cover both.</td></tr>
