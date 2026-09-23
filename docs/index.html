@@ -2907,6 +2907,7 @@ certs/
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}</td><td>Returns the default branch head, the resolved graph at that commit, and the commit history.</td></tr>
           <tr><td class="wrapcell">GET, POST /{ns}/{name}.git/*</td><td>Git smart HTTP. Clone and fetch need <code>workflow:read</code>, push needs <code>workflow:write</code>, and a pre-receive hook validates the entry point before any ref moves.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/tree/{ref}</td><td>Browses the tree at a ref, for the console and for review.</td></tr>
+          <tr><td class="wrapcell">PUT /api/v1/{ns}/workflows/{name}/versions/{commit}</td><td>Registers a commit as a version: its entry point, its includes and the files of its tree, refused if the graph cannot be built from them. A PUT because a commit pushed twice is one version. What <code>agk push</code> sends until git hosting arrives. Requires <code>workflow:write</code>.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/runs</td><td>Manual trigger. The body carries the workflow inputs and, optionally, a ref other than the default branch.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runs</td><td>Run list with filters on namespace, workflow, state and time. The list a mobile app opens on.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runs/{id}</td><td>Run state, per-step state, envelope digests.</td></tr>
@@ -2922,6 +2923,8 @@ certs/
           <tr><td class="wrapcell">GET /api/v1/runner-pools</td><td>The pools and the labels they carry, so that a namespace's allowed pools can be written against what exists. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools</td><td>Creates a pool with its labels, its accepted namespaces and its resource ceilings. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools/{pool}/join-tokens</td><td>Issues a join token into a pool, single use and short lived, permitting labels the pool carries and no others. The value is shown once, in this answer. Administrator only.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>Redeems a task's grant for what the task message names and does not carry: presigned URLs for the tree, the inputs and the uploads, and the secret values. Answered from what the controller wrote beside the grant and from nothing in the request, so a runner cannot name an object of its choosing. Runner credential only, for a task that runner holds.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /api/v1/objects/{key...}</td><td>What a presigned URL points at when the installation uses the built-in object store, which cannot sign a URL itself. The signature is the whole authorisation, naming one method, one object, one run and one instant, so no credential is asked for. Absent where the object store presigns its own.</td></tr>
           <tr><td class="wrapcell">POST /hooks/{ns}/{path}</td><td>Entry point for webhook triggers.</td></tr>
         </tbody>
       </table>
