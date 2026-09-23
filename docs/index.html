@@ -2105,12 +2105,12 @@ steps:
       <table>
         <thead><tr><th>Grammar</th><th>Pattern</th><th>Applies to</th></tr></thead>
         <tbody>
-          <tr><td>identifier</td><td><code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>: letters, digits, hyphens and underscores, beginning with a letter or a digit</td><td>A workflow name and namespace, each half of <code>&lt;namespace&gt;/&lt;name&gt;</code>, a step, an input, an output, a port, a variable, a secret, a published tool name.</td></tr>
+          <tr><td>identifier</td><td><code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>: letters, digits, hyphens and underscores, beginning with a letter or a digit, at most 255 characters</td><td>A workflow name and namespace, each half of <code>&lt;namespace&gt;/&lt;name&gt;</code>, a step, an input, an output, a port, a variable, a secret, a published tool name.</td></tr>
           <tr><td>parameter name</td><td><code>^[A-Za-z_][A-Za-z0-9_]*$</code>, no hyphen</td><td>A step's <code>params</code> and the <a href="#brick-manifest">manifest</a> that declares them.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>One grammar, so that one name survives a URL, a directory and a tool list unchanged. A parameter is exported to a <a href="#running-a-script-instead-of-a-brick">script</a> as <code>AGK_PARAM_&lt;NAME&gt;</code>, so <code>api-key</code> is refused.</p>
+    <p>One grammar, so that one name survives a URL, a directory and a tool list unchanged, and 255 characters because a filesystem holds no longer name: a step, a port and a secret become directories and files. <code>agk validate</code> and <code>agk run --local</code> refuse a longer one. A push answers 400 for a workflow name off the grammar or past 255, and 422 for files writing a longer name, before any of its tree is stored. A parameter is exported to a <a href="#running-a-script-instead-of-a-brick">script</a> as <code>AGK_PARAM_&lt;NAME&gt;</code>, so <code>api-key</code> is refused.</p>
 
     <h4>Durations</h4>
     <p>One number and one unit from <code>ms</code>, <code>s</code>, <code>m</code>, <code>h</code>, <code>d</code>: <code>500ms</code>, <code>2s</code>, <code>10m</code>, <code>24h</code>, <code>90d</code>. A compound such as <code>1h30m</code> is refused, and so is a bare number. Used by <code>timeout</code>, <code>retain</code>, the schedule <code>jitter</code> and both <code>backoff</code> values.</p>
