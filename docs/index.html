@@ -3708,7 +3708,7 @@ concurrency:
         </g>
       </svg>
     </div>
-    <figcaption><b>Nine task states, five endings.</b> An arrow leaving the dashed box leaves any state inside it. A task is lost when its runner stops heartbeating or, unredeemed, 30 seconds after its publication (see <a href="#heartbeat">Heartbeat</a>). A failed task is charged to the brick and follows the <code>retry</code> policy; a lost task is charged to the infrastructure and is requeued only when its retry policy names <code>lost</code> and the step is declared idempotent, since it may well have completed without the result coming back.</figcaption>
+    <figcaption><b>Nine task states, five endings.</b> An arrow leaving the dashed box leaves any state inside it. A task is lost when its runner stops heartbeating or, unredeemed, 30 seconds after its publication (see <a href="#heartbeat">Heartbeat</a>). A failed task is charged to the brick and follows the <code>retry</code> policy; a lost task is charged to the infrastructure and is requeued only when its retry policy names <code>lost</code> and the step is declared idempotent, since it may well have completed without the result coming back, and at most <code>max_requeues</code> times.</figcaption>
   </figure>
 
   <div class="prose">
@@ -3737,14 +3737,26 @@ concurrency:
         <thead><tr><th>Ending</th><th>Comes back when</th><th>Key</th><th>task_id</th><th>retry.max</th><th>Backoff</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell">failed, timed_out</td><td>the retry policy accepts the failure, read off the <a href="#exit-codes">exit code</a> for failed and as <code>timeout</code> for timed_out, and <code>retry.max</code> leaves an attempt</td><td>new: attempt + 1</td><td>new</td><td>uses one</td><td><code>base</code>, doubling, never past <code>max</code>; none if unset</td></tr>
-          <tr><td>lost</td><td><code>retry.on</code> names <code>lost</code> and the step is <code>idempotent</code></td><td>the same</td><td>new</td><td>uses none</td><td>none: due at once</td></tr>
+          <tr><td>lost</td><td><code>retry.on</code> names <code>lost</code>, the step is <code>idempotent</code>, and the key has gone out again fewer than <code>max_requeues</code> times</td><td>the same</td><td>new</td><td>uses none</td><td>none: due at once</td></tr>
         </tbody>
       </table>
     </div>
-    <p>Nothing yet bounds how often one attempt is requeued but the run's own <code>timeout</code>: a step naming <code>lost</code> whose container takes down every host it lands on is requeued until then.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>max_requeues</th><th>Is</th></tr></thead>
+        <tbody>
+          <tr><td>set by</td><td>The installation, on its controller: <code>MaxRequeues</code> in <code>controller.Options</code> until the server reads a configuration of its own. Never the workflow file.</td></tr>
+          <tr><td>default</td><td>3. A negative number requeues nothing.</td></tr>
+          <tr><td>counted</td><td>Per key, every loss included, the sweep's too: a further attempt is a new key and starts again at none.</td></tr>
+          <tr><td>past it</td><td>The loss stands. The task stays <code>lost</code>, no <code>retry.max</code> attempt is spent, and the step fails on the infrastructure's account, its reason naming <code>max_requeues</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Under the default, a key waiting on a full pool's queue is lost every 30 seconds and fails its step about two minutes after it first went out.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>A loss uses up no <code>retry.max</code> attempt: it is charged to the infrastructure, and a brick that never failed has spent nothing. Nor does it wait out a backoff, which spaces attempts so that a dependency can recover: what failed is the host, and going back on the queue leaves it behind.</p>
+      <p>So <code>max_requeues</code> is what bounds a loss, and it is the installation's: without it, a step whose container takes down every host it lands on is requeued until the run's <code>timeout</code>, and for ever without one. An author who could raise it would be spending somebody else's fleet.</p>
     </div>
 
     <h3 id="run-states">Run states</h3>
@@ -5679,7 +5691,7 @@ resource "agentiik_workflow" "search" {
       <table>
         <thead><tr><th>What fails</th><th>What the installation does</th></tr></thead>
         <tbody>
-          <tr><td>a runner</td><td>Its tasks stop heartbeating and move to <em>lost</em>: requeued where the step is idempotent and its <code>retry.on</code> names <code>lost</code>, surfaced for a human otherwise.</td></tr>
+          <tr><td>a runner</td><td>Its tasks stop heartbeating and move to <em>lost</em>: requeued where the step is idempotent and its <code>retry.on</code> names <code>lost</code>, up to <code>max_requeues</code> times per key, surfaced for a human otherwise.</td></tr>
           <tr><td>the active controller</td><td>Its session ends and the advisory lock is released; another node takes it and resumes from the database. Published tasks wait in the bus, untouched.</td></tr>
           <tr><td>an API node</td><td>The load balancer drops it. Open log streams reconnect elsewhere and resume from their last position.</td></tr>
           <tr><td>the PostgreSQL primary</td><td>The synchronous standby is promoted; the controller reacquires its lock there, the same code path as a restart.</td></tr>
