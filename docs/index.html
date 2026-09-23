@@ -4204,6 +4204,37 @@ Authorization: Bearer &lt;api token&gt;
       </table>
     </div>
 
+    <h4>Request bodies</h4>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Body</th><th>At most</th><th>Counted</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">a pool, a join token, the join, a redemption, a bus credential, a cancellation</td><td class="num">64 KiB</td><td>1,024 labels or namespaces</td></tr>
+          <tr><td>a heartbeat</td><td class="num">1 MiB</td><td>4,096 keys</td></tr>
+          <tr><td>starting a run</td><td class="num">4 MiB</td><td>100,000 values in the inputs, at any depth. Both bounds are an envelope's, at the <a href="#size-rules">size rules</a>' defaults.</td></tr>
+          <tr><td>a push</td><td class="num">16 MiB</td><td>4,096 includes or manifests, and <a href="#until-the-repository-is-hosted">the tree's own limits</a></td></tr>
+          <tr><td>a secret's <code>PUT</code></td><td class="num">2 MiB</td><td>a value of 1 MiB (<a href="#secrets">Secrets</a>)</td></tr>
+          <tr><td class="wrapcell">a form posted to <code>/objects/{ns}</code></td><td class="num">64 KiB before the file</td><td>the file, up to <code>artifact_max_bytes</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Refused</th><th>With</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">a body past its size, a list or the inputs past their count</td><td>413</td></tr>
+          <tr><td class="wrapcell">a field written twice or in another case, text that is not UTF-8, anything after the document</td><td>400</td></tr>
+          <tr><td class="wrapcell">in a run's inputs: U+0000 in a string or a name, a number no 64-bit float holds or holds only as zero, or one written past 340 digits from the point</td><td>400</td></tr>
+          <tr><td>a body that is not JSON</td><td>400, saying where it stops being JSON and never repeating the bytes there, which may be part of a secret</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A run's inputs are written down as they were sent, never decoded and encoded again.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A cap per route, rather than one that fits the largest body, and every list counted as it is read: decoding costs values more than bytes, and 8 MiB of inputs written <code>[{},{},...]</code> once cost 508 MiB to read. Read a token at a time, a body now costs at most two and a half times its cap, and it is held as it arrives, not as it declares.</p>
+    </div>
+
     <h3 id="command-line">Command line</h3>
     <div class="tablewrap">
       <table>
