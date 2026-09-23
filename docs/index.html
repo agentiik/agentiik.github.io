@@ -2338,6 +2338,42 @@ certs/
 
     <p><code>agk run --local</code> is the one run no commit describes: it executes the working tree, uncommitted changes included, and is labelled so that no history mistakes it for something reproducible.</p>
 
+    <h4 id="until-the-repository-is-hosted">Until the repository is hosted</h4>
+    <p>Git hosting arrives in <code>v0.4.0</code>. Until then <code>agk push</code> carries the tree itself, read out of the commit and never off the working copy, because a version is a commit. What travels is the commit's tree at the entry point's directory. That directory becomes <code>/agk/repo</code> and the root includes resolve against, as it is for <code>agk run --local</code>, so the entry point is at the root as above and nothing outside its directory reaches a step.</p>
+
+    <div class="block">
+      <div class="note-label">agk push, run in billing/ or given -f billing/agentiik.yaml</div>
+<pre><code>README.md                     <span class="c"># left behind</span>
+tools/check.sh                <span class="c"># left behind</span>
+billing/agentiik.yaml         <span class="c"># /agk/repo/agentiik.yaml</span>
+billing/fragments/tax.yaml    <span class="c"># /agk/repo/fragments/tax.yaml</span>
+billing/scripts/render.sh     <span class="c"># /agk/repo/scripts/render.sh</span></code></pre>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>agk push finds</th><th>It</th><th>Because</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">an uncommitted edit, or a file neither committed nor ignored, anywhere in the repository</td><td>refuses and lists them. <code>--allow-dirty</code> pushes the commit as committed and leaves them behind.</td><td>whoever pushes most likely believes the edit goes with the push</td></tr>
+          <tr><td class="wrapcell">--commit &lt;hash|branch|tag&gt;</td><td>pushes that commit instead of <code>HEAD</code></td><td>any commit the repository holds can be a version</td></tr>
+          <tr><td class="wrapcell">a file</td><td>carries it as <code>0644</code> or <code>0755</code></td><td>those are the only two modes git gives a file</td></tr>
+          <tr><td class="wrapcell">a symlink</td><td>refuses</td><td>its target is resolved on whichever host lays the tree out, and can point outside the repository</td></tr>
+          <tr><td class="wrapcell">a submodule</td><td>refuses</td><td>it is another repository, and the runner holds no credential to fetch it</td></tr>
+          <tr><td class="wrapcell">a name that is not UTF-8</td><td>refuses</td><td>a name travels as JSON text, where it would arrive as another name</td></tr>
+          <tr><td class="wrapcell">a partial clone without some of the files</td><td>refuses until <code>git backfill</code> or a checkout fetches them</td><td>git would fetch each one with a request of its own before the size could be checked</td></tr>
+          <tr><td class="wrapcell">no git repository</td><td>refuses</td><td>there is no commit, so no version</td></tr>
+          <tr><td class="wrapcell">more than 4096 files, or more than 4 MiB counting the paths</td><td>refuses before reading a file, as the server would with 413</td><td>the decision below</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The server stores each file as an object addressed by its SHA-256, so a file two commits share is stored once, and the version keeps a manifest of <code>path</code>, <code>sha256</code>, <code>size</code> and <code>mode</code>. The version holds a counted reference to every object it names, so collection never takes a file a version still needs and a replay six months on still has its tree. A runner gets the tree by redeeming its task's grant, exactly as it fetches an artifact, and never speaks git: every file comes with a presigned GET for its object, and files with the same bytes share one, since they are one object and a runner that already holds it fetches nothing.</p>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A pushed tree is limited to 4096 files and to 4 MiB, its paths counted with its bytes, and the server answers 413 above either. Both are limits of the interim push rather than rules about repositories. That push is one JSON request held whole in memory at both ends, and every redemption of every task names every file with its URL, so a tree of many files or long names is paid for again at each task. A workflow repository is an entry point, its fragments and its scripts: 4096 files in 4 MiB is a kibibyte each, so a tree above either limit is usually carrying something that belongs in an image or an artifact, which is what the refusal says. Git hosting lifts both in <code>v0.4.0</code>: the 2 GiB fixture directory in the example above, and narrowing as an optimisation for large repositories, describe the hosted repository rather than this one.</p>
+    </div>
+
     <h3 id="running-a-script-instead-of-a-brick">Running a script instead of a brick</h3>
     <p>A step may carry <code>script</code> instead of being a brick. The commands run in <code>image</code> under the brick contract: same mounts, environment, isolation and exit codes. No manifest is read.</p>
 
@@ -3197,7 +3233,7 @@ concurrency:
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 920 536" role="img" aria-label="A sequence diagram with five lanes: the runner joins by sending a token, a public key and its labels to the API, receives a credential and then a short-lived bus token; afterwards the controller publishes a task on the bus, the runner pulls it, redeems its grant at the API for input URLs and secret values, reads and writes artifacts in the object store, heartbeats to the API while it works, and publishes a result on the bus which the controller consumes.">
+      <svg viewBox="0 0 920 536" role="img" aria-label="A sequence diagram with five lanes: the runner joins by sending a token, a public key and its labels to the API, receives a credential and then a short-lived bus token; afterwards the controller publishes a task on the bus, the runner pulls it, redeems its grant at the API for tree and input URLs and secret values, fetches the workflow tree and reads and writes artifacts in the object store, heartbeats to the API while it works, and publishes a result on the bus which the controller consumes.">
         <defs>
           <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
         </defs>
@@ -3258,8 +3294,8 @@ concurrency:
           <text x="350" y="279" text-anchor="middle">pull a batch, filtered by label</text>
           <text x="356" y="309" text-anchor="middle" opacity=".7">task message</text>
           <text x="175" y="339" text-anchor="middle">redeem grant</text>
-          <text x="181" y="369" text-anchor="middle" opacity=".7">input URLs, secret values, upload URLs</text>
-          <text x="448" y="399" text-anchor="middle">GET inputs, run the container, PUT outputs</text>
+          <text x="181" y="369" text-anchor="middle" opacity=".7">tree, input, upload URLs, secret values</text>
+          <text x="448" y="399" text-anchor="middle">GET tree and inputs, run the container, PUT outputs</text>
           <text x="350" y="459" text-anchor="middle">publish result</text>
           <text x="541" y="487" text-anchor="middle" opacity=".7">result</text>
         </g>
@@ -3286,7 +3322,7 @@ concurrency:
           <tr><td class="wrapcell">controller</td><td>bus</td><td>TLS, or HTTPS for a managed queue</td><td>user JWT or instance role</td><td>ready tasks</td></tr>
           <tr><td class="wrapcell">runner</td><td>bus</td><td>TLS or HTTPS</td><td>short-lived token minted by the API</td><td>pulls tasks, publishes results</td></tr>
           <tr><td class="wrapcell">runner</td><td>API</td><td>HTTPS</td><td>runner credential, then a per-task grant</td><td>registration, heartbeat, grant redemption, log shipping</td></tr>
-          <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS</td><td>presigned URL only, no standing credential</td><td>input and output artifacts</td></tr>
+          <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS</td><td>presigned URL only, no standing credential</td><td>the workflow tree, input and output artifacts</td></tr>
           <tr><td class="wrapcell">runner</td><td>registry</td><td>HTTPS</td><td>the pool's pull credentials</td><td>brick images, by digest</td></tr>
           <tr><td class="wrapcell">runner</td><td>Docker daemon</td><td>local unix socket</td><td>file permission on the socket</td><td>container lifecycle, daemon event stream</td></tr>
           <tr><td class="wrapcell">brick container</td><td>nothing, or the egress proxy</td><td>HTTPS through the proxy</td><td>none; the proxy enforces the step's allow list</td><td>only under <code>network: egress</code></td></tr>
@@ -3404,7 +3440,7 @@ concurrency:
   "runs_on": [ "zone=dmz", "arch=amd64" ],
   "deadline": "2026-09-10T06:51:09Z",
 
-  <span class="c">// redeemed at the API for input URLs, secret values and upload URLs</span>
+  <span class="c">// redeemed at the API for tree and input URLs, secret values and upload URLs</span>
   "grant": "agkgrant_01JMZ8V1PC7K3M0_…"
 }</code></pre>
   </div>
@@ -3879,6 +3915,7 @@ concurrency:
           <tr><td class="wrapcell">GET /api/v1/runner-pools</td><td>Pools and their labels, to write a namespace's allowed pools against. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools</td><td>A pool with its labels, accepted namespaces and resource ceilings. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools/{pool}/join-tokens</td><td>A join token: single use, short lived, only for labels the pool carries, shown once. Administrator only.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>Redeems a task's grant for what the task message names and does not carry: presigned URLs for the tree and the inputs, the secret values, and somewhere to write the outputs. Everything read is answered from what the controller wrote beside the grant and from nothing in the request, so a runner cannot read an object its task does not name. What it writes is the one thing it names itself, because the key of an output is the digest of bytes that did not exist when the grant was issued, and it can only write into the task's namespace. Runner credential only. The first redemption binds the task to the runner that made it, and a task another runner holds is refused.</td></tr>
 
           <tr><th colspan="2">Namespaces, workflows and the catalog</th></tr>
           <tr><td class="wrapcell">GET, PUT /api/v1/{ns}/secrets</td><td>Secret declarations: provider and path of each value. Never the values, which no route reads.</td></tr>
@@ -3889,6 +3926,7 @@ concurrency:
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}</td><td>Default branch head, resolved graph at that commit, commit history.</td></tr>
           <tr><td class="wrapcell">GET, POST /{ns}/{name}.git/*</td><td>Git smart HTTP. Clone and fetch need <code>workflow:read</code>, push needs <code>workflow:write</code>; a pre-receive hook validates the entry point before any ref moves.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/tree/{ref}</td><td>The tree at a ref, for the console and for review.</td></tr>
+          <tr><td class="wrapcell">PUT /api/v1/{ns}/workflows/{name}/versions/{commit}</td><td>Registers a commit as a version: its entry point, its includes and the files of its tree, refused if the graph cannot be built from them. A PUT because a commit pushed twice with the same files is one version; with other files it is refused with 409, since a commit names one tree. A tree above <a href="#until-the-repository-is-hosted">the limits</a> is refused with 413. What <code>agk push</code> sends until git hosting arrives. Requires <code>workflow:write</code>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/bricks, /bricks/{name}</td><td>The catalog, and a brick's manifest with its parameter schema, to discover what exists before writing a workflow. Any authenticated principal.</td></tr>
 
           <tr><th colspan="2">Runs and their data</th></tr>
@@ -3931,7 +3969,7 @@ Content-Type: application/json
           <tr><td>agk validate</td><td>Validates the YAML, resolves includes and inheritance, detects cycles, checks ports against the manifests of the referenced images.</td></tr>
           <tr><td>agk graph</td><td>Writes the resolved graph as DOT or Mermaid, for review inside a merge request.</td></tr>
           <tr><td>agk run --local</td><td>Runs the whole workflow against the local Docker daemon, with no controller, no bus and no database. Artifacts land in a working directory.</td></tr>
-          <tr><td>agk push</td><td>Registers the workflow in a namespace on a server.</td></tr>
+          <tr><td>agk push</td><td>Registers the workflow in a namespace on a server. Until git hosting, it carries the committed tree itself, <a href="#until-the-repository-is-hosted">as set out here</a>.</td></tr>
           <tr><td>agk share</td><td>Grants or revokes access: <code>agk share finance/monthly-invoicing --group team-ops --role operator</code>.</td></tr>
           <tr><td>agk grants</td><td>Shows who can do what on a workflow, and which scope each permission comes from.</td></tr>
           <tr><td>agk logs</td><td>Follows the logs of a run.</td></tr>
@@ -5113,7 +5151,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>grants</td><td>Principal, scope (namespace or workflow), role, allow or deny, expiry, who granted it and when.</td></tr>
           <tr><td>workflows</td><td>Name, namespace, default branch, labels.</td></tr>
           <tr><td>workflow_refs</td><td>The ref database of every workflow repository: ref name, commit, protection, who moved it and when. Git objects live in the object store as packfiles.</td></tr>
-          <tr><td>workflow_versions</td><td>One row per commit accepted on a branch: commit, parent, resolved graph, author, timestamp.</td></tr>
+          <tr><td>workflow_versions</td><td>One row per commit accepted on a branch: commit, parent, resolved graph, the manifest of its tree (<code>path</code>, <code>sha256</code>, <code>size</code> and <code>mode</code> per file, each file a counted object), author, timestamp.</td></tr>
           <tr><td>triggers</td><td>Active triggers per version, schedule state, last firing.</td></tr>
           <tr><td>runs</td><td>Identifier, version, state, trigger, triggering principal, timestamps, workflow inputs and outputs.</td></tr>
           <tr><td>steps</td><td>Per-step state within a run, envelope digests for each port.</td></tr>

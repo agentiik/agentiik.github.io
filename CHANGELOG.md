@@ -8,6 +8,8 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**How a tree reaches a server before git hosting.** `agk push` carries the commit's tree, a version keeps a manifest with a counted reference to each object, and a runner redeems its task's grant for one presigned GET per object. The limits of that interim push sit in a decision block for François to confirm.
+
 **Shorter, with more pictures.** The documentation, Get started and the roadmap are rewritten with diagrams, tables and examples in place of long prose: 13 new figures and 31 new tables. The documentation goes from 32,600 to 26,400 words and the roadmap from 20,800 to 17,600. Every anchor, every rule and every task already filed as an issue is kept.
 
 **The two routes that make a pool exist.** The route table served the pools and the runner inventory and had no route that created either, while Registering a runner opens on an administrator creating a pool with its labels, its accepted namespaces and its resource ceilings. So the one thing the chapter says happens first was the one thing the API could not do, and a pool was in practice a name that came into being the first time a join token used it. `POST /api/v1/runner-pools` and `POST /api/v1/runner-pools/{pool}/join-tokens` are named now, both administrator only. Labels are not self-asserted also gains its first link: a token may permit only labels its pool carries, so the chain from machine to token now ends at somebody who wrote the label down rather than in mid-air.
