@@ -1927,7 +1927,7 @@ spec:
           <tr><td class="wrapcell">a parameter name</td><td><code>^[A-Za-z_][A-Za-z0-9_]*$</code>, with no hyphen, because the parameter becomes a key of <code>/agk/params.json</code> for the container to read. Refused: <code>max-retries</code>.</td></tr>
           <tr><td class="wrapcell">spec.params.&lt;name&gt;.sensitive</td><td>Boolean. Marks a parameter that may carry a secret value, the only way a <a href="#secrets">secret</a> reaches a brick other than as a mounted file.</td></tr>
           <tr><td class="wrapcell">spec.secrets[].name</td><td>Required, on the workflow secret name grammar, because it is the same name: the workflow decides which secret of its namespace answers.</td></tr>
-          <tr><td class="wrapcell">spec.secrets[].mount</td><td>Optional, <code>^/agk/secrets/[^/]+$</code>. A mount elsewhere, <code>/run/secrets/bearer</code> out of habit, is refused.</td></tr>
+          <tr><td class="wrapcell">spec.secrets[].mount</td><td>Optional, <code>^/agk/secrets/[A-Za-z0-9][A-Za-z0-9._-]*$</code>: one file directly under <code>/agk/secrets/</code>, the same grammar in the task message and the redemption. Accepted: <code>/agk/secrets/client.key</code>. Refused: <code>/agk/secrets/..</code>, and <code>/run/secrets/bearer</code> out of habit.</td></tr>
           <tr><td class="wrapcell">spec.secrets[].optional</td><td>Boolean, <code>false</code> when absent, so a declared secret is required unless the brick says otherwise. It is the difference between a brick that degrades and one that fails inside the container.</td></tr>
           <tr><td class="wrapcell">resources.cpu</td><td>A quoted decimal string above zero: <code>"0.5"</code>, <code>"1"</code>. The quotes are load bearing rather than house style: YAML reads an unquoted <code>1</code> as a number, and a number is refused.</td></tr>
           <tr><td class="wrapcell">resources.memory</td><td>A whole number above zero with <code>Ki</code>, <code>Mi</code>, <code>Gi</code> or <code>Ti</code>. Refused: <code>512M</code>. A step writes <code>cpu</code> and <code>memory</code> the same way.</td></tr>
@@ -2013,17 +2013,14 @@ vars:
   currency: EUR
   dunning_days: 30
 
-secrets:
-  billing:
-    provider: vault
-    path: kv/data/agentiik/billing
+secrets: [billing]                        <span class="c"># named here, declared on the namespace</span>
 
 defaults:
   timeout: 10m
   retain: 7d
   retry:
     max: 2
-    on: [transient]
+    on: [transient, lost]                 <span class="c"># lost: requeued if its runner goes quiet</span>
     backoff: { type: exponential, base: 2s, max: 60s }
   resources: { cpu: "1", memory: 512Mi }
   network: none
@@ -2062,7 +2059,7 @@ steps:
     network: egress
     egress:
       allow: ["api.billing.example.com:443"]
-    retry: { max: 4, on: [transient] }
+    retry: { max: 4, on: [transient, lost] }
     outputs: [out, error]
 
   archive:
@@ -2088,7 +2085,7 @@ steps:
           <tr><td>mcp</td><td><a href="#publishing-tools">Published tools</a>.</td></tr>
           <tr><td>include</td><td><a href="#includes-and-inheritance">Reuse</a>.</td></tr>
           <tr><td>vars</td><td>Values read as <code>vars.&lt;name&gt;</code> in <a href="#expressions">expressions</a>.</td></tr>
-          <tr><td>secrets</td><td><a href="#secrets">Secrets</a> a step may mount, by name.</td></tr>
+          <tr><td>secrets</td><td>The namespace's <a href="#secrets">secrets</a> a step may mount, by name and nothing else: at least one, none twice. Where each lives is declared on the namespace, and a block still giving <code>provider</code> or <code>path</code> is refused.</td></tr>
           <tr><td>defaults</td><td>Execution settings for steps that set none.</td></tr>
           <tr><td>timeout</td><td>Deadline of the whole run.</td></tr>
           <tr><td>concurrency</td><td>One run at a time, per <a href="#triggers">group</a>.</td></tr>
@@ -2168,15 +2165,15 @@ steps:
         <tbody>
           <tr><td>when</td><td>Upstream states that let the step start: <code>succeeded</code>, <code>failed</code>, <code>skipped</code>, <code>always</code>. Default <code>[succeeded]</code>.</td></tr>
           <tr><td>timeout</td><td>One shard. On expiry, SIGTERM, then SIGKILL after a grace period the runner policy sets, not this file.</td></tr>
-          <tr><td>retry</td><td><code>max</code>; <code>on</code>: <code>transient</code>, <code>failed</code>, <code>lost</code>, <code>timeout</code>; <code>backoff: { type, base, max }</code>, where <code>exponential</code> is the only type: the wait starts at <code>base</code>, lengthens, never passes <code>max</code>.</td></tr>
+          <tr><td>retry</td><td><code>max</code>; <code>on</code>: <code>transient</code>, <code>failed</code>, <code>lost</code>, <code>timeout</code>, and <code>[transient]</code> when absent, so a lost task is requeued only where the author names <code>lost</code>; <code>backoff: { type, base, max }</code>, where <code>exponential</code> is the only type: the wait starts at <code>base</code>, lengthens, never passes <code>max</code>.</td></tr>
           <tr><td>continue_on_error</td><td>A failure does not fail the run; downstream sees <code>failed</code> through <code>when</code>.</td></tr>
-          <tr><td>idempotent</td><td>Safe to run again on the same inputs. Default <code>true</code>. Only an idempotent step is requeued when its task is lost, since a lost task may have finished unseen. Only an idempotent step can be <a href="#memoisation-and-replay">cached</a>.</td></tr>
+          <tr><td>idempotent</td><td>Safe to run again on the same inputs. Default <code>true</code>. A lost task is requeued only for an idempotent step, since it may have finished unseen, and only where <code>retry.on</code> names <code>lost</code>. Only an idempotent step can be <a href="#memoisation-and-replay">cached</a>.</td></tr>
           <tr><td>cache</td><td>Memoisation. The key combines the image digest, the resolved parameters and the digests of the input envelopes.</td></tr>
           <tr><td>resources</td><td><code>cpu</code>, <code>memory</code>, <code>pids</code>, capped by the runner policy and the namespace quota. <code>cpu</code> and <code>memory</code> are written exactly as the <a href="#brick-manifest">brick manifest</a> writes them, quotation marks included: <code>cpu: 1</code> unquoted is refused.</td></tr>
           <tr><td>network</td><td><code>none</code>, <code>egress</code>, <code>internal</code>: see <a href="#security">Isolation and secrets</a>.</td></tr>
           <tr><td>egress</td><td><code>host:port</code> allow list, enforced by the runner egress proxy.</td></tr>
           <tr><td>runs_on</td><td>Runner labels, such as <code>[zone=dmz, arch=arm64]</code>, within the namespace's runner pools.</td></tr>
-          <tr><td>secrets</td><td>Secrets to mount, by their name in the root <code>secrets</code> block. Owning namespace only.</td></tr>
+          <tr><td>secrets</td><td>Secrets to mount, by their name in the root <code>secrets</code> list. Owning namespace only.</td></tr>
           <tr><td>files</td><td>Narrows the repository tree, which it otherwise gets whole under <code>/agk/repo/</code>: a path or glob relative to the root, or <code>{ from, to, mode }</code> to relocate one.</td></tr>
           <tr><td>shell</td><td>Interpreter for <code>script</code>. Default <code>["/bin/sh", "-e"]</code>.</td></tr>
           <tr><td>before_script</td><td>Runs before <code>script</code>, in the same container, merged from <code>defaults</code> and <code>extends</code> outwards in.</td></tr>
@@ -2913,6 +2910,7 @@ concurrency:
           <tr><td>run:read</td><td>See run state, per-step state, timings and log lines.</td></tr>
           <tr><td>run:read_data</td><td>See envelope contents and download artifacts, not only state and digests.</td></tr>
           <tr><td>secret:use</td><td>Let a step reference a namespace secret. Never allows reading its value.</td></tr>
+          <tr><td>secret:write</td><td>Declare, change and delete the namespace's secrets, and write a <code>builtin</code> value. Never allows reading one. Reading the declarations takes <code>workflow:read</code>. Both count at namespace scope only, since a declaration serves every workflow of the namespace.</td></tr>
           <tr><td>grant:manage</td><td>Grant and revoke access at this scope.</td></tr>
         </tbody>
       </table>
@@ -2921,17 +2919,17 @@ concurrency:
     <h3 id="roles">Roles</h3>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Role</th><th>read</th><th>run</th><th>write</th><th>data</th><th>grant</th></tr></thead>
+        <thead><tr><th>Role</th><th>read</th><th>run</th><th>write</th><th>data</th><th>secret</th><th>grant</th></tr></thead>
         <tbody>
-          <tr><td>viewer</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
-          <tr><td>operator</td><td class="no">no</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
-          <tr><td>editor</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="no">no</td></tr>
-          <tr><td>owner</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td></tr>
+          <tr><td>viewer</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
+          <tr><td>operator</td><td class="no">no</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
+          <tr><td>editor</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="no">no</td></tr>
+          <tr><td>owner</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td></tr>
         </tbody>
       </table>
     </div>
 
-    <p><code>viewer</code>, <code>operator</code> and <code>editor</code> are the read, run and edit roles; <code>owner</code> exists because someone has to be able to share. <code>operator</code> deliberately lacks <code>workflow:read</code>, so a colleague can launch a job without seeing the queries, endpoints and business rules inside it; someone who needs both holds both roles.</p>
+    <p><code>viewer</code>, <code>operator</code> and <code>editor</code> are the read, run and edit roles; <code>owner</code> exists because someone has to be able to share. <code>operator</code> deliberately lacks <code>workflow:read</code>, so a colleague can launch a job without seeing the queries, endpoints and business rules inside it; someone who needs both holds both roles. The <code>secret</code> column is <code>secret:write</code>: <code>editor</code> holds it by default, and a deny takes it away where only owners should say where a value lives.</p>
 
     <h3 id="scopes-and-resolution">Scopes and resolution</h3>
   </div>
@@ -3022,7 +3020,7 @@ concurrency:
 
     <h3 id="what-sharing-does-not-expose">What sharing does not expose</h3>
     <ul class="plain">
-      <li>Secret values, at any role. <code>editor</code> and <code>owner</code> see secret names and mount points; the value only ever exists inside a container.</li>
+      <li>Secret values, at any role. <code>workflow:read</code> at namespace scope shows the declarations (names, providers, paths and mount points), and a grant on one workflow shows none; the value only ever exists inside a container.</li>
       <li>Artifacts from another namespace. A presigned URL covers one artifact of one run and expires in minutes.</li>
       <li>Runner internals. A user never learns which host executed a task beyond its runner name and labels.</li>
       <li>The existence of workflows they cannot read, in any listing, search result or error message.</li>
@@ -3062,7 +3060,7 @@ concurrency:
 <section id="architecture">
   <div class="sec-head"><span class="mark">§</span><h2>Runtime architecture</h2></div>
   <div class="prose">
-    <p>The controller holds the state and makes every decision; runners execute and decide nothing. No runner reaches the database or the secret store: it receives tasks over the bus and gets short-lived tokens and presigned URLs for everything else. A compromised runner therefore exposes the tasks it runs, not the installation.</p>
+    <p>The controller holds the state and makes every decision; runners execute and decide nothing. No runner reaches the database or the secret store: it receives tasks over the bus and gets short-lived tokens and presigned URLs for everything else. A compromised runner therefore exposes the tasks it runs, not the installation, though on MinIO or S3 it can also overwrite objects of those tasks' namespaces (see <a href="#what-this-does-not-defend-against">What this does not defend against</a>).</p>
   </div>
 
   <figure>
@@ -3200,20 +3198,51 @@ concurrency:
     </ul>
 
     <h3 id="task-bus">Task bus</h3>
-    <p>NATS JetStream, with WorkQueue retention, where a message is removed as soon as it has been consumed, which is precisely what work distribution needs. Consumers are durable and of the pull kind: a runner asks for a batch of tasks when it has room, which makes distribution naturally proportional to each host's real capacity without the controller having to model load.</p>
-    <p>JetStream guarantees at-least-once delivery, so every task is replayable: it carries the idempotency key <code>run_id/step/attempt/shard</code>, and the runner refuses to start a container for a key that has already completed. A task carries no payload and no secret value; see <a href="#the-task-message">The task message</a>.</p>
+    <p>NATS JetStream with WorkQueue retention: a message leaves the stream once it is acknowledged. The control plane creates one durable pull consumer per runner pool, and every runner of the pool takes from it and creates none. A runner asks for a batch only when it has room, so distribution follows each host's real capacity without the controller modelling load.</p>
+    <p>Delivery is at least once, so a task can arrive twice. Its idempotency key, <code>run_id/step/attempt/shard</code>, and a record each host keeps of the keys it took make that harmless:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>When</th><th>The runner</th></tr></thead>
+        <tbody>
+          <tr><td>on take</td><td>Records the key as <code>dispatched</code>, then acknowledges the message, and starts nothing until the bus confirms the acknowledgement. A key this host already carried to an ending is refused here: acknowledged and dropped, not put back, since another runner of the pool has no record of it and would run it.</td></tr>
+          <tr><td class="wrapcell">before a container</td><td>Reads the record again and refuses a key that has already ended, whichever ending, before a network, a pull or a secret.</td></tr>
+          <tr><td class="wrapcell">at the end</td><td>Writes the ending (temporary file, sync, rename) before it removes the container and the task's directory.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The record is one file per key, <code>&lt;work root&gt;/.keys/&lt;run&gt;/&lt;step&gt;/&lt;attempt&gt;[/&lt;index&gt;-&lt;of&gt;].json</code> under <code>AGK_RUNNER_WORKDIR</code>, outside every task directory since those go with their containers. It holds the key, the state, the exit code and a moment, never the message, its grant or a payload, and is pruned 7 days after its last write, the longest a message waits on the stream.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What goes wrong</th><th>What follows</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">no acknowledgement reaches the bus</td><td>The pool consumer's AckWait, one minute, passes and the bus hands the task out again.</td></tr>
+          <tr><td class="wrapcell">the host dies after redeeming</td><td>Its heartbeat stops, the task becomes <code>lost</code> and comes back only as <a href="#task-states">Back to pending</a> says.</td></tr>
+          <tr><td class="wrapcell">the host dies between the acknowledgement and the redemption, or only the confirmation is lost</td><td>Nothing hands the task out again, and the heartbeat does not see it, since only a redeemed task is held. The run's own <code>timeout</code> ends it; a run without one waits indefinitely.</td></tr>
+          <tr><td class="wrapcell">the requeue of a lost task reaches the host that already ended its key</td><td>Acknowledged and dropped on take, so nothing redeems or ends the requeue, and the controller reads that host's own late ending as no news. The run's <code>timeout</code> ends it; a run without one waits indefinitely. Likeliest with one colocated runner, where every requeue comes back to the same host.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A runner acknowledges a task on take, once the host has written the key down, and not when the container exits: acknowledging at the end would make AckWait as long as the longest step, and liveness lives in the <a href="#heartbeat">heartbeat</a> once the task is redeemed.</p>
+    </div>
+    <div class="decision">
+      <span class="note-label">Open question</span>
+      <p>Who ends a requeue that came back to the host that already ended its key? Either that host publishes the ending it recorded, as a result saying no container ran, or the controller takes the late ending while the requeue is unredeemed; neither is built.</p>
+    </div>
+    <p>A task carries no payload and no secret value; see <a href="#the-task-message">The task message</a>.</p>
 
     <h3 id="runner">Runner</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Step</th><th>The runner</th><th>Docker Engine API v1.56</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>Pulls a batch of tasks from its consumer, filtered by its declared labels and by the namespaces its policy accepts.</td><td></td></tr>
+          <tr><td>1</td><td>Pulls a batch from its pool's consumer (the pool's subject is the filter), records each key and acknowledges it (<a href="#task-bus">Task bus</a>).</td><td></td></tr>
           <tr><td>2</td><td>Resolves and downloads the image by digest, verifying its signature where policy requires it.</td><td></td></tr>
-          <tr><td>3</td><td>Redeems the task's grant for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, and the secret values. Downloads the inputs into a local working directory and prepares the mounts.</td><td></td></tr>
+          <tr><td>3</td><td>Redeems the task's grant, once, for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, the secret values and one upload policy. Downloads the tree and the inputs into a local working directory and prepares the mounts.</td><td></td></tr>
           <tr><td>4</td><td>Creates one container, starts it, attaches to it, waits for it to exit and collects its logs.</td><td><code>ContainerCreate</code> (<code>POST /containers/create</code>), <code>ContainerStart</code> (<code>POST /containers/{id}/start</code>), <code>ContainerAttach</code>, <code>ContainerWait</code>, <code>ContainerLogs</code></td></tr>
-          <tr><td>5</td><td>Collects the output envelopes, artifacts, log and exit code, uploads the output artifacts through presigned URLs, and publishes the result on the bus.</td><td></td></tr>
-          <tr><td>6</td><td>Destroys the container and its working directory.</td><td><code>ContainerRemove</code></td></tr>
+          <tr><td>5</td><td>Collects the output envelopes, artifacts, log and exit code, posts the outputs under the upload policy, and records the key's ending.</td><td></td></tr>
+          <tr><td>6</td><td>Destroys the container and its working directory, and publishes the result on its own results subject.</td><td><code>ContainerRemove</code></td></tr>
           <tr><td>throughout</td><td>Emits a <a href="#heartbeat">heartbeat</a>. A prolonged absence moves the task to <em>lost</em>.</td><td></td></tr>
           <tr><td>throughout</td><td>Follows the daemon event stream to catch container exits it did not cause, an out-of-memory kill for instance.</td><td><code>GET /events</code></td></tr>
         </tbody>
@@ -3233,7 +3262,7 @@ concurrency:
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 920 536" role="img" aria-label="A sequence diagram with five lanes: the runner joins by sending a token, a public key and its labels to the API, receives a credential and then a short-lived bus token; afterwards the controller publishes a task on the bus, the runner pulls it, redeems its grant at the API for tree and input URLs and secret values, fetches the workflow tree and reads and writes artifacts in the object store, heartbeats to the API while it works, and publishes a result on the bus which the controller consumes.">
+      <svg viewBox="0 0 920 536" role="img" aria-label="A sequence diagram with five lanes: the runner joins by sending a token, a public key and its labels to the API, receives a credential and then a short-lived bus token; afterwards the controller publishes a task on the bus, the runner pulls it, redeems its grant at the API once for tree and input URLs, secret values and an upload policy, fetches the workflow tree and reads and writes artifacts in the object store, heartbeats to the API while it works, and publishes a result on the bus which the controller consumes.">
         <defs>
           <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
         </defs>
@@ -3294,8 +3323,8 @@ concurrency:
           <text x="350" y="279" text-anchor="middle">pull a batch, filtered by label</text>
           <text x="356" y="309" text-anchor="middle" opacity=".7">task message</text>
           <text x="175" y="339" text-anchor="middle">redeem grant</text>
-          <text x="181" y="369" text-anchor="middle" opacity=".7">tree, input, upload URLs, secret values</text>
-          <text x="448" y="399" text-anchor="middle">GET tree and inputs, run the container, PUT outputs</text>
+          <text x="181" y="369" text-anchor="middle" opacity=".7">tree, inputs, upload policy, secrets</text>
+          <text x="448" y="399" text-anchor="middle">GET tree and inputs, run the container, POST outputs</text>
           <text x="350" y="459" text-anchor="middle">publish result</text>
           <text x="541" y="487" text-anchor="middle" opacity=".7">result</text>
         </g>
@@ -3322,7 +3351,7 @@ concurrency:
           <tr><td class="wrapcell">controller</td><td>bus</td><td>TLS, or HTTPS for a managed queue</td><td>user JWT or instance role</td><td>ready tasks</td></tr>
           <tr><td class="wrapcell">runner</td><td>bus</td><td>TLS or HTTPS</td><td>short-lived token minted by the API</td><td>pulls tasks, publishes results</td></tr>
           <tr><td class="wrapcell">runner</td><td>API</td><td>HTTPS</td><td>runner credential, then a per-task grant</td><td>registration, heartbeat, grant redemption, log shipping</td></tr>
-          <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS</td><td>presigned URL only, no standing credential</td><td>the workflow tree, input and output artifacts</td></tr>
+          <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS</td><td>presigned URL or signed POST policy, no standing credential</td><td>the workflow tree, input and output artifacts</td></tr>
           <tr><td class="wrapcell">runner</td><td>registry</td><td>HTTPS</td><td>the pool's pull credentials</td><td>brick images, by digest</td></tr>
           <tr><td class="wrapcell">runner</td><td>Docker daemon</td><td>local unix socket</td><td>file permission on the socket</td><td>container lifecycle, daemon event stream</td></tr>
           <tr><td class="wrapcell">brick container</td><td>nothing, or the egress proxy</td><td>HTTPS through the proxy</td><td>none; the proxy enforces the step's allow list</td><td>only under <code>network: egress</code></td></tr>
@@ -3440,9 +3469,65 @@ concurrency:
   "runs_on": [ "zone=dmz", "arch=amd64" ],
   "deadline": "2026-09-10T06:51:09Z",
 
-  <span class="c">// redeemed at the API for tree and input URLs, secret values and upload URLs</span>
+  <span class="c">// redeemed once at the API: tree and input URLs, secret values, one upload policy</span>
   "grant": "agkgrant_01JMZ8V1PC7K3M0_…"
 }</code></pre>
+  </div>
+
+  <div class="block">
+    <div class="note-label">redeemed by the runner, answered by the API</div>
+<pre><code><span class="p">&gt;</span> <span class="cmd">POST /api/v1/tasks/redeem</span>                   <span class="c"># runner credential</span>
+{ "grant": "agkgrant_01JMZ8V1PC7K3M0_…", "task_id": "01JMZ8V1PC7K3M0",
+  "idempotency_key": "01JMZ8V1P9C4/invoice/2/3/8" }
+<span class="c"># 401: grant expired or opens nothing · 409: task held by another runner, or ended</span>
+
+{
+  "task_id": "01JMZ8V1PC7K3M0",
+  "expires_at": "2026-09-10T06:51:09Z",          <span class="c">// the task's deadline</span>
+  "tree": [ … ], "inputs": [ … ],
+  "secrets": [ { "name": "billing", "mount": "/agk/secrets/billing", "encoding": "utf-8", "value": "…" } ],
+
+  <span class="c">// one signed POST policy for every output, not a URL per object</span>
+  "uploads": {
+    "url": "https://agentiik.example.com/objects/finance",
+    "fields": { "run": "01JMZ8V1P9C4", "expires": "1789023069", "signature": "9d4b71e0…" },
+    "key_prefix": "finance/sha256/"
+  }
+}</code></pre>
+  </div>
+
+  <div class="prose">
+    <p>A runner redeems once, after the image pull, and that first redemption binds the task to it; asking again after a lost answer gets the same answer while the grant lives. A value that is not UTF-8 travels as <code>"encoding": "base64"</code>. The <code>fields</code> are the store's own words, the built-in store's above, and a runner posts them as given: a <code>multipart/form-data</code> body of the fields, then <code>key</code>, the prefix and the file's SHA-256, then <code>file</code>, last.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>The policy is bound to</th><th>So</th></tr></thead>
+        <tbody>
+          <tr><td>&lt;namespace&gt;/sha256/</td><td>Every key is <code>key_prefix</code> and 64 lowercase hex characters: <code>finance/sha256/c1f4a9…d02b</code>. Nothing is written outside the task's namespace.</td></tr>
+          <tr><td>the run</td><td>Signed in, as into every presigned URL. It narrows no key: a namespace's objects are shared by all its runs, which is how identical bytes are stored once.</td></tr>
+          <tr><td>the grant's expiry</td><td>It stops working when the task's grant does.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Check</th><th>Built-in store</th><th>MinIO or S3, not built yet</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">the prefix and the expiry</td><td>yes: <code>403</code></td><td>to be set as conditions of the policy</td></tr>
+          <tr><td class="wrapcell">a size up to <a href="#size-rules"><code>artifact_max_bytes</code></a></td><td>yes: <code>413</code></td><td>to be set as <code>content-length-range</code></td></tr>
+          <tr><td class="wrapcell">a key of the prefix and 64 lowercase hex characters, and nothing else</td><td>yes: <code>403</code></td><td class="no">no: a policy can say only <code>starts-with</code></td></tr>
+          <tr><td class="wrapcell">bytes that hash to their key</td><td>yes, as they arrive, as for a presigned PUT: <code>400</code></td><td class="no">no: the store does not hash</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The built-in store is the API itself, at <code>/objects/</code> on a base URL the installation configures, never the request's <code>Host</code>: it answers <code>201</code> for an object stored and a refusal with no body, reads at most 64 KiB of form before the file, and serves an installation that attaches no object store, which no <a href="#deployment">deployment profile</a> does. It is also the only store built so far: the MinIO or S3 column is what their presigner, a <a href="roadmap/#m09">v0.9.0</a> task, has to set.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>One policy per task, handed out at the redemption, rather than a URL per object: an output's key is the digest of bytes that do not exist until the container exits, and a policy in the one answer means a task never needs to redeem a second time, reading its secrets again, to learn where its outputs go.</p>
+    </div>
+    <div class="decision">
+      <span class="note-label">Open question</span>
+      <p>On MinIO or S3, a runner holding any task of <code>finance</code> can overwrite any object of <code>finance</code>, one other runs already read included. An object is read back against its digest, so this costs availability rather than integrity; what refuses the write itself is not decided.</p>
+    </div>
   </div>
 
   <div class="block">
@@ -3466,11 +3551,31 @@ concurrency:
   </div>
 
   <div class="prose">
+    <p>The result is <code>$defs/taskResult</code> in <code>wire.schema.json</code>: outputs by digest, never envelopes, which the controller reads back from the store. Each runner publishes on <code>agentiik.results.&lt;runner&gt;</code>, a subject its bus credential alone may publish on. The controller matches a result on <code>idempotency_key</code> and <code>task_id</code> together, then holds it to the runner that dispatch was bound to:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>A result</th><th>Is</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">from the runner the <code>task_id</code> was bound to at redemption</td><td>taken</td></tr>
+          <tr><td class="wrapcell">from another runner, or naming a runner other than its subject's</td><td>refused and reported, never applied</td></tr>
+          <tr><td class="wrapcell">saying no container ran (a refused pull, a grant that would not redeem) for a dispatch nobody redeemed</td><td>taken, and binds the runner that sent it</td></tr>
+          <tr><td class="wrapcell">saying a container ran, or <code>lost</code>, for a dispatch nobody redeemed</td><td>refused</td></tr>
+          <tr><td class="wrapcell">whose <code>task_id</code> is no dispatch of its key</td><td>refused</td></tr>
+          <tr><td class="wrapcell">the late ending of a dispatch its key was <a href="#task-states">requeued</a> past</td><td>no news: the requeue owes its own ending, which it never gives if it came back to this same host (<a href="#task-bus">Task bus</a>)</td></tr>
+          <tr><td class="wrapcell">delivered twice</td><td>written once: the stream drops a copy from the same runner, <code>task_id</code> and state within two minutes, and the controller reads a known ending as no news</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A result is heard only from the runner its dispatch is bound to: otherwise any machine of a pool could settle any task of the pool, and a compromised host would reach beyond the tasks in its hands.</p>
+    </div>
+
     <h3 id="heartbeat">Heartbeat</h3>
     <ul class="plain">
-      <li>A runner posts one heartbeat every 10 seconds to the API, listing the idempotency keys it currently holds. One request covers every in-flight task on that host.</li>
+      <li>A runner posts one heartbeat every 10 seconds to the API, listing the idempotency keys it currently holds. One request covers every in-flight task on that host. It keeps alive only the dispatches of those keys bound to that runner, since after a requeue one key can also name a dispatch on another host.</li>
       <li>Liveness therefore lives in the database beside the task state, rather than as traffic on a work queue that exists to distribute work.</li>
-      <li>Three missed intervals move a task to <em>lost</em>; see <a href="#lifecycle">Lifecycle and replay</a>.</li>
+      <li>Three missed intervals move a task to <em>lost</em>, counted from its redemption until a heartbeat first names it; see <a href="#lifecycle">Lifecycle and replay</a>. The heartbeat does not see a task nobody has redeemed: on the queue it needs no watching, but between take and redemption it sits on a host unwatched (see <a href="#task-bus">Task bus</a>).</li>
       <li>The heartbeat is also how a revoked credential takes effect and how the console knows a runner is present: there is no separate liveness channel to keep in sync.</li>
     </ul>
 
@@ -3507,7 +3612,7 @@ concurrency:
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 964 330" role="img" aria-label="A task moves from pending to dispatched, running, publishing and succeeded. Dispatched, running and publishing sit inside a dashed box labelled held by a runner. From running, a non-zero exit leads to failed and the deadline to timed_out. From anywhere inside the box, a missing heartbeat leads to lost. From pending or from the box, a cancelled run leads to cancelled. Failed, timed_out and lost join a lane back to pending, labelled another attempt if the step's retry policy accepts the failure, and the branch from lost is marked only if idempotent.">
+      <svg viewBox="0 0 964 330" role="img" aria-label="A task moves from pending to dispatched, running, publishing and succeeded. Dispatched, running and publishing sit inside a dashed box labelled handed out. From running, a non-zero exit leads to failed and the deadline to timed_out. From inside the box, once a runner has redeemed the task's grant, a missing heartbeat leads to lost. From pending or from the box, a cancelled run leads to cancelled. Failed, timed_out and lost join a lane back to pending when the step's retry policy accepts the failure: failed and timed_out as a new attempt, lost as the same attempt requeued, and the branch from lost is marked only if idempotent.">
         <defs>
           <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
@@ -3518,7 +3623,7 @@ concurrency:
         </defs>
 
         <rect x="206" y="24" width="548" height="100" rx="4" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="4 4" opacity=".55"/>
-        <text x="218" y="43" font-family="Archivo, sans-serif" font-size="10" letter-spacing="1.3" fill="currentColor" opacity=".6">HELD BY A RUNNER</text>
+        <text x="218" y="43" font-family="Archivo, sans-serif" font-size="10" letter-spacing="1.3" fill="currentColor" opacity=".6">HANDED OUT</text>
 
         <g stroke="currentColor" stroke-width="1.5" fill="none">
           <rect x="34" y="56" width="148" height="44"/>
@@ -3564,7 +3669,8 @@ concurrency:
           <text x="189" y="170" text-anchor="middle">run cancelled</text>
           <text x="488" y="170">non-zero exit</text>
           <text x="668" y="170">deadline</text>
-          <text x="872" y="186">no heartbeat</text>
+          <text x="872" y="176">no heartbeat</text>
+          <text x="872" y="190">once redeemed</text>
         </g>
 
         <g stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="4 4">
@@ -3578,11 +3684,11 @@ concurrency:
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".75">
           <text x="856" y="284" text-anchor="end">only if idempotent</text>
-          <text x="34" y="316">another attempt, if the step's retry policy accepts the failure</text>
+          <text x="34" y="316">back to pending if the step's retry policy accepts the failure: a new attempt after failed or timed_out, the same one after lost</text>
         </g>
       </svg>
     </div>
-    <figcaption><b>Nine task states, five endings.</b> An arrow leaving the dashed box leaves any state inside it. A failed task is charged to the brick and follows the <code>retry</code> policy; a lost task is charged to the infrastructure and is requeued only when the step is declared idempotent, since it may well have completed without the result coming back.</figcaption>
+    <figcaption><b>Nine task states, five endings.</b> An arrow leaving the dashed box leaves any state inside it, except that only a redeemed task can be lost: before redemption the heartbeat does not see it (see <a href="#task-bus">Task bus</a>). A failed task is charged to the brick and follows the <code>retry</code> policy; a lost task is charged to the infrastructure and is requeued only when its retry policy names <code>lost</code> and the step is declared idempotent, since it may well have completed without the result coming back.</figcaption>
   </figure>
 
   <div class="prose">
@@ -3593,16 +3699,32 @@ concurrency:
         <thead><tr><th>State</th><th>Meaning</th></tr></thead>
         <tbody>
           <tr><td>pending</td><td>Decided and not yet handed to a runner.</td></tr>
-          <tr><td>dispatched</td><td>Handed out to a runner, which may still be pulling the image or running <code>pre_task</code>. The deadline starts only when the container is created, so a slow pull or hook costs the runner's time and never the step's (see <a href="#runner-side-hooks">Runner-side hooks</a>).</td></tr>
+          <tr><td>dispatched</td><td>Handed out: on its pool's queue, or taken by a runner that may still be pulling the image or running <code>pre_task</code>. The deadline starts only when the container is created, so a slow pull or hook costs the runner's time and never the step's (see <a href="#runner-side-hooks">Runner-side hooks</a>). The grant does not wait: it expires at the <code>deadline</code> the message carries, so a pull slower than that leaves a grant that answers <code>401</code>.</td></tr>
           <tr><td>running</td><td>The container is running.</td></tr>
           <tr><td>publishing</td><td>The container is finished; its outputs are being collected and uploaded. A state of its own because the result is not yet safe, and losing a runner here is not losing one mid-run.</td></tr>
           <tr><td>succeeded</td><td>The container exited 0 and its envelopes were published.</td></tr>
           <tr><td>failed</td><td>The container exited non-zero. Which failure it is, and whether it is worth another attempt, is read off the exit code and nowhere else. See <a href="#exit-codes">Exit codes</a>.</td></tr>
-          <tr><td>lost</td><td>The runner holding it stopped reporting.</td></tr>
+          <tr><td>lost</td><td>The runner that redeemed it stopped reporting.</td></tr>
           <tr><td>timed_out</td><td>Stopped at its deadline: SIGTERM, then SIGKILL after the grace period. Not <code>failed</code>, because the brick decided nothing and a <code>retry</code> written for transient failures should not answer a deadline.</td></tr>
           <tr><td>cancelled</td><td>Stopped because the run was cancelled by a principal, by a concurrency group or by a <code>merge: first</code>. Not <code>failed</code> for the same reason, and not <code>timed_out</code> because somebody changed their mind rather than a limit firing.</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <h4>Back to pending</h4>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Ending</th><th>Comes back when</th><th>Key</th><th>task_id</th><th>retry.max</th><th>Backoff</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">failed, timed_out</td><td>the retry policy accepts the failure, read off the <a href="#exit-codes">exit code</a> for failed and as <code>timeout</code> for timed_out, and <code>retry.max</code> leaves an attempt</td><td>new: attempt + 1</td><td>new</td><td>uses one</td><td><code>base</code>, doubling, never past <code>max</code>; none if unset</td></tr>
+          <tr><td>lost</td><td><code>retry.on</code> names <code>lost</code> and the step is <code>idempotent</code></td><td>the same</td><td>new</td><td>uses none</td><td>none: due at once</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Nothing yet bounds how often one attempt is requeued but the run's own <code>timeout</code>: a step naming <code>lost</code> whose container takes down every host it lands on is requeued until then.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A loss uses up no <code>retry.max</code> attempt: it is charged to the infrastructure, and a brick that never failed has spent nothing. Nor does it wait out a backoff, which spaces attempts so that a dependency can recover: what failed is the host, and going back on the queue leaves it behind.</p>
     </div>
 
     <h3 id="run-states">Run states</h3>
@@ -3612,7 +3734,7 @@ concurrency:
         <tbody>
           <tr><td>queued</td><td>Created, waiting on a concurrency lock or on namespace quota.</td></tr>
           <tr><td>running</td><td>At least one task active or ready.</td></tr>
-          <tr><td>waiting</td><td>Suspended until an external signal or a human approval. The state a mobile notification is meant to clear.</td></tr>
+          <tr><td>waiting</td><td>Suspended at a <a href="#catalog"><code>wait</code></a> step, for a duration, an external signal or a human approval; nothing else puts a run here. The state a mobile notification is meant to clear.</td></tr>
           <tr><td>succeeded</td><td>Every reached step finished, none failed beyond tolerance.</td></tr>
           <tr><td>failed</td><td>At least one step failed without <code>continue_on_error</code>.</td></tr>
           <tr><td>cancelled</td><td>Cancelled by a principal holding <code>workflow:run</code>, by a concurrency group or by a <code>merge: first</code>.</td></tr>
@@ -3650,9 +3772,9 @@ concurrency:
       <table>
         <thead><tr><th>Adversary</th><th>After</th><th>What stands in the way</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">A workflow author in one namespace</td><td>Another namespace's secrets, artifacts or run data</td><td>Deny by default. Secrets referenceable only from their own namespace. Artifacts namespaced, and reachable only through presigned URLs scoped to one run. Cache keys prefixed by namespace. No secret value in any task message.</td></tr>
+          <tr><td class="wrapcell">A workflow author in one namespace</td><td>Another namespace's secrets, artifacts or run data</td><td>Deny by default. Secrets referenceable only from their own namespace, and declared only at its own paths. Artifacts namespaced: read through presigned URLs scoped to one run, written under a policy that reaches only the task's own namespace. Cache keys prefixed by namespace. No secret value in any task message.</td></tr>
           <tr><td class="wrapcell">A brick image, hostile or compromised</td><td>The host, its other containers, the network</td><td>A non-root user, no daemon socket, and the <a href="#settings-applied-to-every-container">settings applied to every container</a>, user-namespace remapping and a network per task included.</td></tr>
-          <tr><td class="wrapcell">A compromised runner host</td><td>The installation</td><td>It holds no database credential, no secret-store credential and no standing object-store credential. Only a runner credential and per-task grants that expire. Its reach is the tasks in its hands and the namespaces its policy accepts.</td></tr>
+          <tr><td class="wrapcell">A compromised runner host</td><td>The installation</td><td>It holds no database credential, no secret-store credential and no standing object-store credential. Only a runner credential and per-task grants that expire. Its reach is the tasks in its hands and the namespaces its policy accepts, and on MinIO or S3 the objects of those tasks' namespaces too (<a href="#what-this-does-not-defend-against">below</a>).</td></tr>
           <tr><td class="wrapcell">A phisher, or a stolen password</td><td>A working sign-in</td><td>A passkey is bound to a Relying Party Identifier and the browser checks the origin, so a look-alike site gets nothing usable. With passwords forbidden, no shared secret is left to steal, phish or replay.</td></tr>
           <tr><td class="wrapcell">An unauthenticated caller</td><td>Anything</td><td>Deny by default; webhooks authenticated per trigger; an inaccessible workflow answering the same 404 as an absent one, so that probing yields nothing.</td></tr>
           <tr><td class="wrapcell">A caller with a narrow grant</td><td>More than they hold</td><td>Atomic permissions, a union recomputed per request, a deny that wins at any scope, and MCP tools they cannot use absent from the listing rather than refused on call.</td></tr>
@@ -3741,6 +3863,7 @@ concurrency:
           <tr><td class="wrapcell">A brick that mishandles its input</td><td>A brick that logs what it was given has logged it. The catalog is reviewed; a third-party brick is its author's responsibility.</td></tr>
           <tr><td class="wrapcell">A kernel exploit escaping a container</td><td>What the sandboxed tier and a separate pool are for, which makes the tier a real decision rather than a default.</td></tr>
           <tr><td class="wrapcell">Traffic analysis</td><td>A network observer learns when runs happen and roughly how large they are.</td></tr>
+          <tr><td class="wrapcell">Writes under an upload policy on MinIO or S3</td><td>A runner holding any task of a namespace can overwrite any object of it. Reads check the digest, so the cost is availability, not integrity; what refuses the write is <a href="#the-task-message">not decided</a>.</td></tr>
         </tbody>
       </table>
     </div>
@@ -3788,7 +3911,74 @@ concurrency:
     </ul>
 
     <h3 id="secrets">Secrets</h3>
-    <p>The <a href="#yaml">worked example</a> declares <code>billing</code> in Vault and mounts it in its <code>invoice</code> step. Here is where the value travels.</p>
+    <p>The namespace declares where each secret lives; a workflow only names the ones it uses. The <a href="#yaml">worked example</a> names <code>billing</code> and mounts it in its <code>invoice</code> step.</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">declared on finance, one secret per request</div>
+<pre><code><span class="p">&gt;</span> <span class="cmd">PUT /api/v1/finance/secrets/billing</span>                 <span class="c"># secret:write</span>
+{ "provider": "builtin", "value": "sk_live_…" }            <span class="c"># 201, and no answer ever returns it</span>
+
+<span class="p">&gt;</span> <span class="cmd">PUT /api/v1/finance/secrets/ledger</span>
+{ "provider": "env", "path": "AGK_DEV_FINANCE_LEDGER" }    <span class="c"># development only</span>
+
+<span class="p">&gt;</span> <span class="cmd">GET /api/v1/finance/secrets</span>                         <span class="c"># workflow:read</span>
+{ "secrets": [
+  { "name": "billing", "provider": "builtin", "mount": "/agk/secrets/billing",
+    "declared_by": "alice", "declared_at": "2026-09-10T06:30:00Z" },
+  { "name": "ledger", "provider": "env", "path": "AGK_DEV_FINANCE_LEDGER",
+    "mount": "/agk/secrets/ledger", "declared_by": "alice", "declared_at": "2026-09-10T06:31:00Z" } ] }</code></pre>
+  </div>
+
+  <div class="block">
+    <div class="note-label">named in agentiik.yaml</div>
+<pre><code>secrets: [billing]
+
+steps:
+  invoice:
+    secrets: [billing]      <span class="c"># mounted at /agk/secrets/billing</span></code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>provider</th><th>Holds the value in</th><th>path</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>builtin</td><td>The installation's encrypted store</td><td>none: one is refused</td><td>The value travels on the declaration's <code>PUT</code> as <code>value</code>, with <code>encoding</code> <code>utf-8</code> (the default) or <code>base64</code>, and never back. A <code>PUT</code> without one keeps the value stored; rotating is writing again. Moving the declaration to another provider, or deleting it, destroys the value, and one holding none is refused at redemption rather than mounted empty.</td></tr>
+          <tr><td>env</td><td>An environment variable of the API</td><td>a variable name under the namespace's prefix</td><td>Development only: refused unless the installation opts in, giving the namespace a prefix that starts with <code>AGK_DEV_</code>, under which the API reads nothing of its own, and starts no other namespace's prefix. Checked at the <code>PUT</code> and again at every read. An unset or empty variable is refused at redemption.</td></tr>
+          <tr><td>vault</td><td>HashiCorp Vault, from v0.9.0</td><td>a path under the namespace's prefix</td><td>Refused at the <code>PUT</code> until then, since nothing gives a namespace a prefix in Vault yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>AWS Secrets Manager, the store of the AWS profile, arrives in v0.9.0 beside Vault, under a provider identifier not yet named.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Limit</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">a name on <code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>, at most 255 characters</td><td>The workflow names it so, and a step is given it in a file of that name.</td></tr>
+          <tr><td class="wrapcell">a <code>path</code> of at most 1 KiB</td><td>More than a variable or a key needs, and every listing and Terraform plan prints it.</td></tr>
+          <tr><td class="wrapcell">a <code>value</code> of 1 to 1,048,576 bytes once decoded, in a body of at most 2 MiB</td><td>The most the store seals; an empty value would be an empty credential file.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Answer</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">200, 201 with <code>Location</code>, 204</td><td>a declaration read or changed, created, deleted</td></tr>
+          <tr><td>400</td><td>a name, provider, path, value or encoding refused, an unknown field, or anything after the document</td></tr>
+          <tr><td>404</td><td>no such declaration, or a namespace the caller may not see: one answer for both</td></tr>
+          <tr><td>413</td><td>a body above 2 MiB or a value above 1 MiB</td></tr>
+          <tr><td>503</td><td>a <code>value</code> sent to an installation with no built-in store attached; nothing is written</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A redemption that finds no value fails the task and names the secret to the runner; why, the store's own answer, goes only to whoever runs the installation.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The namespace says where a value lives, not the workflow file: a path in <code>agentiik.yaml</code> would let anyone able to push aim a step at whatever the store holds, while a declaration sits behind <code>secret:write</code> and inside the namespace's own paths.</p>
+    </div>
+    <p>Here is where the value travels.</p>
   </div>
 
   <figure>
@@ -3853,18 +4043,17 @@ concurrency:
         </g>
       </svg>
     </div>
-    <figcaption><b>The controller names, the API reads, the runner mounts.</b> The task message carries no value, and the store is read by one component only.</figcaption>
+    <figcaption><b>The controller names, the API reads, the runner mounts.</b> The task message carries no value, and one component only opens one.</figcaption>
   </figure>
 
   <div class="prose">
     <ul class="plain">
-      <li>A secret belongs to a namespace. A workflow can reference only its own namespace's secrets, so moving it elsewhere breaks unresolved references at validation rather than carrying access along.</li>
+      <li>A secret belongs to a namespace. A workflow can name only secrets its own namespace declares, so moving it elsewhere breaks the reference rather than carrying access along. The push is to refuse an undeclared name from <a href="roadmap/#m04">v0.4.0</a>; until then the redemption does, failing the task and naming the secret.</li>
       <li>Mounted on tmpfs at <code>/agk/secrets/&lt;name&gt;</code>, never an environment variable by default, because a process environment is readable by its children and ends up in diagnostic dumps.</li>
-      <li>The runner obtains the value at the last moment, by redeeming at the API the per-task grant the controller issued for that one task and that one secret. The API is the only component that reads the store; the controller names which secret a task may have and never sees its value.</li>
+      <li>The runner obtains the value at the last moment, once the image is pulled and before the container is created, by redeeming at the API the per-task grant the controller issued for that one task and that one secret. The API is the only component that opens a value; the controller names which secret a task may have and never sees its value. With <code>builtin</code> the controller's database connection can read the sealed rows, but holds no master key to open them.</li>
       <li>Secret values are masked in collected logs by literal match against the values known to the task, before anything is written to the store.</li>
       <li>Never reachable from condition expressions, only from <code>params</code> marked sensitive in the brick manifest.</li>
-      <li>No role reads a secret value through the API. Rotation is a write, never a read-then-write.</li>
-      <li>Providers: the built-in encrypted store, HashiCorp Vault, AWS Secrets Manager, and API environment variables for development.</li>
+      <li>No role reads a secret value through the API. Rotation is a write, never a read-then-write. Each write is to be recorded as a secret write by the audit log, a <a href="roadmap/#m02">v0.2.0</a> task not yet built; until then nothing records it.</li>
     </ul>
   </div>
 </section>
@@ -3915,10 +4104,13 @@ concurrency:
           <tr><td class="wrapcell">GET /api/v1/runner-pools</td><td>Pools and their labels, to write a namespace's allowed pools against. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools</td><td>A pool with its labels, accepted namespaces and resource ceilings. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools/{pool}/join-tokens</td><td>A join token: single use, short lived, only for labels the pool carries, shown once. Administrator only.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>Redeems a task's grant for what the task message names and does not carry: presigned URLs for the tree and the inputs, the secret values, and somewhere to write the outputs. Everything read is answered from what the controller wrote beside the grant and from nothing in the request, so a runner cannot read an object its task does not name. What it writes is the one thing it names itself, because the key of an output is the digest of bytes that did not exist when the grant was issued, and it can only write into the task's namespace. Runner credential only. The first redemption binds the task to the runner that made it, and a task another runner holds is refused.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>A task's grant, redeemed once by a runner for the tree and input URLs, the secret values and one upload policy, answered from what the controller wrote beside the grant and never from the request: see <a href="#the-task-message">The task message</a>.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /objects/{key...}<br>POST /objects/{ns}</td><td>The built-in object store, where a presigned URL or a signed POST policy is the whole authorisation and every object is held to its digest: see <a href="#the-task-message">The task message</a>.</td></tr>
 
           <tr><th colspan="2">Namespaces, workflows and the catalog</th></tr>
-          <tr><td class="wrapcell">GET, PUT /api/v1/{ns}/secrets</td><td>Secret declarations: provider and path of each value. Never the values, which no route reads.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/secrets</td><td><code>{"secrets": [...]}</code>, each declaration with <code>name</code>, <code>provider</code>, <code>path</code> where it has one, <code>mount</code>, <code>declared_by</code> and <code>declared_at</code>, never a value. Requires <code>workflow:read</code> at namespace scope.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/secrets/{name}</td><td>One declaration, the same way.</td></tr>
+          <tr><td class="wrapcell">PUT, DELETE /api/v1/{ns}/secrets/{name}</td><td>Declares, changes or deletes one secret: <code>provider</code>, <code>path</code>, and for <code>builtin</code> a <code>value</code> no answer returns. One secret per request, so two Terraform applies never drop each other's change. Requires <code>secret:write</code> at namespace scope. See <a href="#secrets">Secrets</a>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/grants</td><td>Grants and denies that apply, with the scope of each.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/grants</td><td>Shares the workflow: principal, role, optional expiry, optional deny. Requires <code>grant:manage</code>.</td></tr>
           <tr><td class="wrapcell">DELETE /api/v1/{ns}/workflows/{name}/grants/{id}</td><td>Revokes one grant, from the next request and the next run creation.</td></tr>
@@ -4391,7 +4583,7 @@ flowchart LR
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 940 412" role="img" aria-label="terraform apply, with its token taken from AGENTIIK_TOKEN, calls /api/v1 as the token's principal, under the same grants as the console, and manages namespaces, quotas and allowed runner pools, groups, service accounts and API tokens, grants, workflow repositories with their default branch and protection, secret declarations, and runs that have happened. Token clear values and run outputs read through Terraform land in the state file, and a configuration creating tokens needs an encrypted backend. Below a boundary, two things never go through Terraform: a workflow's contents, which arrive by git push through the pre-receive hook, the provider stopping at the repository's first commit; and secret values, which stay in the secret provider at the path the declaration names, never in the state file.">
+      <svg viewBox="0 0 940 412" role="img" aria-label="terraform apply, with its token taken from AGENTIIK_TOKEN, calls /api/v1 as the token's principal, under the same grants as the console, and manages namespaces, quotas and allowed runner pools, groups, service accounts and API tokens, grants, workflow repositories with their default branch and protection, secret declarations, and runs that have happened. Token clear values and run outputs read through Terraform land in the state file, and a configuration creating tokens needs an encrypted backend. Below a boundary, two things never go through Terraform: a workflow's contents, which arrive by git push through the pre-receive hook, the provider stopping at the repository's first commit; and secret values, which reach the secret provider by their own PUT for builtin, or sit at the path the declaration names for the others, never in the state file.">
         <defs><marker id="terraform-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
 
         <text x="16" y="18" font-family="Archivo, sans-serif" font-size="10" letter-spacing="1.3" fill="currentColor" opacity=".55">THROUGH TERRAFORM</text>
@@ -4454,7 +4646,7 @@ flowchart LR
         <g font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".65" text-anchor="middle">
           <text x="352" y="323">validates every push</text>
           <text x="712" y="323">the provider stops at the first commit</text>
-          <text x="712" y="387">at the path the declaration names</text>
+          <text x="712" y="387">by its own PUT for builtin, else at the declared path</text>
         </g>
         <text x="352" y="366" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".75">never in the state file</text>
       </svg>
@@ -4473,7 +4665,7 @@ flowchart LR
           <tr><td>agentiik_group</td><td>Definition and membership.</td></tr>
           <tr><td class="wrapcell">agentiik_service_account</td><td>A non-human principal, its label, its owning namespace.</td></tr>
           <tr><td>agentiik_api_token</td><td>A service account's token, scope and expiry. The clear value is returned once, at creation; write-only.</td></tr>
-          <tr><td>agentiik_secret</td><td>The declaration a workflow references: provider and path, never the value.</td></tr>
+          <tr><td>agentiik_secret</td><td>One secret a namespace declares: provider and path, never the value. The workflow file only names it. Needs <code>secret:write</code>.</td></tr>
           <tr><td>agentiik_run</td><td>That a run of a workflow, at a version, with given inputs, has happened. See <a href="#running-a-workflow-from-terraform">Running a workflow</a>.</td></tr>
         </tbody>
       </table>
@@ -4551,7 +4743,7 @@ resource "agentiik_grant" "ops_runs_invoicing" {
         <thead><tr><th>Stays out</th><th>Why</th><th>Instead</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell">a workflow's contents</td><td>HCL would be a second source of truth beside <code>agentiik.yaml</code>, disagreeing with it at the first push.</td><td><code>git push</code>, through the same hook as every push. The provider stops at the repository's first commit.</td></tr>
-          <tr><td class="wrapcell">secret values</td><td>A value passing through Terraform is a value in the state file, and treating the state as a secret store is how secrets most often escape infrastructure code.</td><td>The declaration only: which provider, which path.</td></tr>
+          <tr><td class="wrapcell">secret values</td><td>A value passing through Terraform is a value in the state file, and treating the state as a secret store is how secrets most often escape infrastructure code.</td><td>The declaration only: which provider, which path. A <code>builtin</code> value is written by its own <code>PUT</code>, outside Terraform.</td></tr>
         </tbody>
       </table>
     </div>
@@ -5155,8 +5347,11 @@ resource "agentiik_workflow" "search" {
           <tr><td>triggers</td><td>Active triggers per version, schedule state, last firing.</td></tr>
           <tr><td>runs</td><td>Identifier, version, state, trigger, triggering principal, timestamps, workflow inputs and outputs.</td></tr>
           <tr><td>steps</td><td>Per-step state within a run, envelope digests for each port.</td></tr>
-          <tr><td>tasks</td><td>Shard, attempt, state, runner, idempotency key, exit code.</td></tr>
+          <tr><td>tasks</td><td>One row per dispatch: <code>task_id</code>, idempotency key, shard, attempt, state, runner, exit code. A requeue after loss adds a row under the same key, and at most one row of a key is anything but <code>lost</code>.</td></tr>
+          <tr><td>task_grants</td><td>Every grant a dispatch was published with, hashed, each redeemable until it expires: a task published again keeps the grant its first message carries, and the first redemption binds the task.</td></tr>
           <tr><td>approvals</td><td>Waiting run, requested at, decided by, decision, comment.</td></tr>
+          <tr><td>secret_declarations</td><td>One row per namespace and name: provider, path, who declared it and when. No column could hold a value.</td></tr>
+          <tr><td>secret_values</td><td>For <code>builtin</code>, the value sealed under its own data key, which a dump alone cannot open, and a version that only goes up, so a row put back from a backup is refused rather than reopened. A value is forgotten, never its row deleted.</td></tr>
           <tr><td>artifacts</td><td>One row per reference: namespace, run, step, port, digest, size, media type and that reference's expiry. An object's reference count is the number of rows naming its digest.</td></tr>
           <tr><td>runners</td><td>Labels, capacity, version, accepted namespaces, last heartbeat.</td></tr>
           <tr><td>audit_log</td><td>Append-only log of sensitive actions: actor, target, scope, result.</td></tr>
@@ -5264,8 +5459,8 @@ resource "agentiik_workflow" "search" {
         <tbody>
           <tr><td class="wrapcell">Exactly one writable PostgreSQL</td><td>Leader election is a session-level advisory lock: a second writable primary breaks the election rather than adding availability.</td></tr>
           <tr><td class="wrapcell">A work queue with at-least-once delivery, one queue or subject per runner pool</td><td>A runner pulls only from the queues its labels match.</td></tr>
-          <tr><td class="wrapcell">An object store every runner can reach</td><td>Artifacts move by presigned URL, never through the controller.</td></tr>
-          <tr><td class="wrapcell">A secret store the API can read, and neither the controller nor the runners can</td><td><a href="#secrets">Secrets</a></td></tr>
+          <tr><td class="wrapcell">An object store every runner can reach</td><td>Artifacts move by presigned URL and signed POST policy, never through the controller.</td></tr>
+          <tr><td class="wrapcell">A secret store the API can read, and neither the controller nor the runners can</td><td><a href="#secrets">Secrets</a>. With <code>builtin</code> the sealed values sit in the PostgreSQL the controller shares, so the master key, held by the API alone, is what keeps them from it; a database role of the API's own is an open question.</td></tr>
           <tr><td class="wrapcell">An OCI registry every runner can pull from by digest</td><td><a href="#supply-chain">Supply chain</a></td></tr>
           <tr><td class="wrapcell">TLS terminated in front of the API and the console, both under the one registrable domain the next row requires</td><td>Passkeys need an HTTPS origin, and one Relying Party Identifier has to cover both.</td></tr>
           <tr><td class="wrapcell">One Relying Party Identifier, chosen at installation and never changed</td><td>Changing it invalidates every passkey, so the installer holds it immutable and offers re-enrolment instead. WebAuthn requires it to be the HTTPS origin's effective domain or a registrable domain suffix of it, so the console and the API share one registrable domain: <code>console.example.com</code> on a CDN and <code>api.example.com</code> behind a load balancer both work under <code>example.com</code>.</td></tr>
@@ -5464,7 +5659,7 @@ resource "agentiik_workflow" "search" {
       <table>
         <thead><tr><th>What fails</th><th>What the installation does</th></tr></thead>
         <tbody>
-          <tr><td>a runner</td><td>Its tasks stop heartbeating and move to <em>lost</em>: requeued if the step is idempotent, surfaced for a human otherwise.</td></tr>
+          <tr><td>a runner</td><td>Its tasks stop heartbeating and move to <em>lost</em>: requeued where the step is idempotent and its <code>retry.on</code> names <code>lost</code>, surfaced for a human otherwise.</td></tr>
           <tr><td>the active controller</td><td>Its session ends and the advisory lock is released; another node takes it and resumes from the database. Published tasks wait in the bus, untouched.</td></tr>
           <tr><td>an API node</td><td>The load balancer drops it. Open log streams reconnect elsewhere and resume from their last position.</td></tr>
           <tr><td>the PostgreSQL primary</td><td>The synchronous standby is promoted; the controller reacquires its lock there, the same code path as a restart.</td></tr>
@@ -5558,7 +5753,7 @@ resource "agentiik_workflow" "search" {
         </g>
       </svg>
     </div>
-    <figcaption><b>Managed where the state lives, owned where the containers run.</b> Only the runners get patched, and they are disposable: replacing one mid-run leaves a lost task, a state the engine already handles.</figcaption>
+    <figcaption><b>Managed where the state lives, owned where the containers run.</b> Only the runners get patched, and they are disposable: replacing one mid-run leaves a lost task, requeued where the step's <code>retry.on</code> names <code>lost</code> and failing the step otherwise.</figcaption>
   </figure>
 
   <div class="prose">
@@ -5741,6 +5936,7 @@ post_task = [
       <li>A one-shot artifact is served through the API rather than redirected to, because a redirect cannot be counted.</li>
       <li>Sharding a <code>fan_out: item</code>, pairing a <code>zip</code>, keying a <code>join</code> or evaluating an expression over <code>item</code> needs the items, so the controller reads a step's published envelopes as it decides and retains none. That costs at most <a href="#size-rules"><code>envelope_max_bytes</code></a> per port per step (4 MiB by default), never the artifacts: a hundred gigabyte file travels as a digest and a URI, from runner to runner.</li>
     </ul>
+    <p>An installation that attaches no object store carries every object through the API as well, since the API is then its <a href="#the-task-message">object store</a>.</p>
 
     <h3 id="first-run">First run</h3>
     <ol class="steps">

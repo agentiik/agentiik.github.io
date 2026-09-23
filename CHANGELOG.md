@@ -8,6 +8,10 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**Uploads, acknowledgements and requeues, as built.** A task redeems its grant once, after the image pull, for one signed POST policy; the built-in store holds each object to its digest, and a MinIO or S3 presigner joins v0.9.0. A runner records a key and acknowledges on take, and a result is heard only from the runner its dispatch is bound to. A lost task is requeued under its key with a new `task_id`, only where `retry.on` names `lost`, spending no retry. The gaps left are named: a host dying between acknowledgement and redemption, a requeue coming back to the host that already ended its key, requeues nothing bounds, and overwrites on MinIO or S3.
+
+**Secrets declared on the namespace.** A namespace declares each secret through `/api/v1/{ns}/secrets/{name}` under a ninth permission, `secret:write`: `builtin` with a write-only value, or `env` for development; `vault` waits for v0.9.0. A workflow only names them, `secrets: [billing]`, and a mount may carry a dot. Auditing a secret write and refusing an undeclared name at push are marked as not built yet. On the roadmap, suspending a waiting run joins the wait step in v0.8.0.
+
 **How a tree reaches a server before git hosting.** `agk push` carries the commit's tree, a version keeps a manifest with a counted reference to each object, and a runner redeems its task's grant for one presigned GET per object. The limits of that interim push sit in a decision block for François to confirm.
 
 **Shorter, with more pictures.** The documentation, Get started and the roadmap are rewritten with diagrams, tables and examples in place of long prose: 13 new figures and 31 new tables. The documentation goes from 32,600 to 26,400 words and the roadmap from 20,800 to 17,600. Every anchor, every rule and every task already filed as an issue is kept.

@@ -967,7 +967,7 @@ img{max-width:100%}
 
 <!-- ============ v0.2.0 ============ -->
 <section id="m02">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">47 of 91 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">47 of 90 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> the same workflow, sent to a server, executed by a runner somewhere else, and watched while it happens.</p>
 
@@ -975,7 +975,7 @@ img{max-width:100%}
 
     <figure id="m02-paths">
       <div class="figbody">
-        <svg viewBox="0 0 900 300" role="img" aria-label="Two rows. In v0.1.0, agk run --local reads agentiik.yaml and runs the evaluator and the container driver in one process, with no server, no bus and no database, against the local Docker daemon. In v0.2.0 a server runs it: the API hands the run to the controller, which holds the same evaluator library; tasks cross the task bus to a runner, which holds the same container driver library and drives the Docker daemon on its host. The runner redeems its task's grant at the API for input URLs, secret values and upload URLs, and holds nothing else.">
+        <svg viewBox="0 0 900 300" role="img" aria-label="Two rows. In v0.1.0, agk run --local reads agentiik.yaml and runs the evaluator and the container driver in one process, with no server, no bus and no database, against the local Docker daemon. In v0.2.0 a server runs it: the API hands the run to the controller, which holds the same evaluator library; tasks cross the task bus to a runner, which holds the same container driver library and drives the Docker daemon on its host. The runner redeems its task's grant at the API for input URLs, secret values and an upload policy, and holds nothing else.">
           <defs>
             <marker id="m02-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
@@ -1055,7 +1055,7 @@ img{max-width:100%}
           </g>
 
           <path d="M 642 250 V 268 H 60 V 220" fill="none" stroke="currentColor" stroke-width="1.5" marker-start="url(#m02-a)" marker-end="url(#m02-a)"/>
-          <text x="351" y="288" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor">the runner redeems its task's grant: input URLs · secret values · upload URLs</text>
+          <text x="351" y="288" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor">the runner redeems its task's grant: input URLs · secret values · upload policy</text>
         </svg>
       </div>
       <figcaption><b>One evaluator, one driver, two hosts.</b> The v0.1.0 libraries run unchanged in the controller and the runner.</figcaption>
@@ -1114,7 +1114,6 @@ img{max-width:100%}
           <li class="done">Hold the concurrency-group lock and the per-step max_parallel counter in the controller, keeping a run in queued rather than starting it, with groups scoped to the namespace. <a class="ref" href="../#controller">controller</a><a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
           <li class="done">Stamp a deadline on every task from the step timeout, and move the run to timed_out when the workflow-level deadline expires. <a class="ref" href="../#step-keywords">step-keywords</a><a class="ref" href="../#run-states">run-states</a> <span class="tick">done</span></li>
           <li class="done">Cancel a run: stop its pending tasks, ask the runners holding its running ones to stop them, and cancel the upstream steps a merge: first abandoned where no other consumer needs them. <a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#merge-strategies">merge-strategies</a> <span class="tick">done</span></li>
-          <li>Suspend a run in waiting on an external signal or a human approval without a task occupying a runner, and clear it on approval or rejection. <a class="ref" href="../#run-states">run-states</a></li>
           <li class="done">Emit the notification events the API turns into messages: failure, approval requested, and completion of a run the recipient started. <a class="ref" href="../#controller">controller</a> <span class="tick">done</span></li>
         </ul>
       </div>
@@ -1138,7 +1137,7 @@ img{max-width:100%}
           <li class="done">Build the built-in secret store on envelope encryption: per-secret AES-256-GCM data keys wrapped by a master key held outside the database, so a database dump alone yields nothing. <a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#cryptography-in-use">cryptography-in-use</a> <span class="tick">done</span></li>
           <li>Make the API the only component that reads a secret value, retrieved at the last moment on grant redemption, with the controller naming which secret a task may have and never seeing it. <a class="ref" href="../#secrets">secrets</a></li>
           <li>Serve the namespace's secret declarations (which provider holds each value and at what path) with no route that reads a value back, so rotation is a write and never a read-then-write. <a class="ref" href="../#api">api</a><a class="ref" href="../#secrets">secrets</a></li>
-          <li>Support the built-in encrypted store, HashiCorp Vault, and API environment variables for development use, as secret providers behind one interface. <a class="ref" href="../#secrets">secrets</a></li>
+          <li>Support the built-in encrypted store and API environment variables for development use, as secret providers behind one interface. <a class="ref" href="../#secrets">secrets</a></li>
           <li class="done">Generate grants, join tokens and bus tokens with 256 bits of entropy, store them hashed, show the clear value once at creation, and give each an expiry. <a class="ref" href="../#cryptography-in-use">cryptography-in-use</a> <span class="tick">done</span></li>
         </ul>
       </div>
@@ -1169,7 +1168,7 @@ img{max-width:100%}
           <li>Collect the result: one envelope per port, the artifacts, the exit code read against the exit-code table, the log with line count and truncation flag, and usage in cpu_seconds, max_rss_bytes and image_pull_ms. <a class="ref" href="../#the-task-message">the-task-message</a><a class="ref" href="../#exit-codes">exit-codes</a></li>
           <li>Reject an envelope breaking inline_max_bytes, envelope_max_bytes or max_items at the runner, before any upload. <a class="ref" href="../#size-rules">size-rules</a></li>
           <li>Mask secret values in collected logs by literal match against the task's values, before anything reaches the store. <a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#secrets-honestly">secrets-honestly</a></li>
-          <li>Upload artifacts and envelopes through presigned URLs, publish the result on the bus, then destroy the container and the working directory. <a class="ref" href="../#runner">runner</a></li>
+          <li>Upload artifacts and envelopes under the task's signed POST policy, record the key's ending, destroy the container and the working directory, then publish the result on the runner's own results subject. <a class="ref" href="../#runner">runner</a><a class="ref" href="../#the-task-message">the-task-message</a></li>
           <li>Cache trees by version inside their namespace, and image layers by digest shared across namespaces, checking that the requesting namespace is entitled to a reference before any pull. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><a class="ref" href="../#two-questions-that-come-up">two-questions-that-come-up</a></li>
           <li>Enforce the runner policy on every task: accepted namespaces, resource ceilings over what it asks for, allowed capabilities, and the nofile and nproc ulimits. <a class="ref" href="../#runner">runner</a><a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a></li>
           <li>Build the egress proxy that enforces a step's <code>egress.allow</code> list; until it exists the driver refuses <code>network: egress</code> rather than open the network and call it filtered. <a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a><a class="ref" href="../#step-keywords">step-keywords</a></li>
@@ -1296,7 +1295,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Implement the eight permissions (workflow:read, workflow:run, workflow:write, workflow:delete, run:read, run:read_data, secret:use, grant:manage) and bind each /api/v1 route to the one it requires. <a class="ref" href="../#permissions">permissions</a><a class="ref" href="../#api">api</a></li>
+          <li>Implement the nine permissions (workflow:read, workflow:run, workflow:write, workflow:delete, run:read, run:read_data, secret:use, secret:write, grant:manage) and bind each /api/v1 route to the one it requires. <a class="ref" href="../#permissions">permissions</a><a class="ref" href="../#api">api</a></li>
           <li>Implement the four roles (viewer, operator, editor, owner) as fixed permission sets, operator without workflow:read, and let a principal hold several roles at one scope. <a class="ref" href="../#roles">roles</a></li>
           <li>Implement the grant record: one principal, one scope (a namespace or one workflow), one role, allow or deny, an optional expiry, and who granted it when. <a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a><a class="ref" href="../#storage">storage</a></li>
           <li>Resolve effective permissions as the union of the principal's and its groups' grants at namespace and workflow scope, a workflow-scope grant only ever adding to the namespace's. <a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a></li>
@@ -1323,7 +1322,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Prefix every object and cache key with the namespace, and carry it on every query path so a missing filter fails closed rather than returning another tenant's rows. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#threats">threats</a></li>
           <li>Answer the same 404 for an absent workflow and an invisible one, in every listing, search result and error, so probing discovers no names. <a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a><a class="ref" href="../#threats">threats</a></li>
           <li>Hold what sharing never exposes: no secret value at any role, no artifact from another namespace, no runner detail beyond name and labels, no trace of a workflow the caller cannot read. <a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
-          <li>Serve GET and PUT /api/v1/{ns}/secrets as declarations only (provider and path per value), with secret:use letting a step reference one and no route reading a value back. <a class="ref" href="../#api">api</a><a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#permissions">permissions</a></li>
+          <li>Guard the secret routes: secret:write to declare, change or delete a secret, workflow:read to read the declarations, secret:use to let a step reference one, and no route reading a value back. <a class="ref" href="../#api">api</a><a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#permissions">permissions</a></li>
           <li>Issue an artifact presigned URL for one artifact of one run, expiring in minutes, behind run:read_data. <a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a><a class="ref" href="../#api">api</a></li>
           <li>Build the access fixture (two namespaces, two users, a group, a service account, grants and denies) and a suite asserting every resolution, refusal and non-disclosure rule against it. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
@@ -2134,7 +2133,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Let an installation point its catalog at its own registry, with no fork of the API or the site. <a class="ref" href="../#registry">registry</a></li>
           <li>Let a namespace declare private registry credentials as namespace secrets, redeemed for the pull, never carried into a workflow shared with another team. <a class="ref" href="../#registry">registry</a><a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
           <li>Enforce the per-namespace signature verification policy (which identities may sign) in the runner, before the container is created, never trusting the registry. <a class="ref" href="../#supply-chain">supply-chain</a><a class="ref" href="../#further-rules">further-rules</a><a class="ref" href="../#runner">runner</a></li>
-          <li>Suspend a run on a wait step instead of dispatching a task: waiting, no runner held, cleared by POST /api/v1/runs/{id}/approve or /reject, an external signal or the duration expiring, the decision recorded in approvals. <a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a></li>
+          <li>Suspend a run in waiting on a wait step, for a duration, an external signal or a human approval, without a task occupying a runner: cleared by POST /api/v1/runs/{id}/approve or /reject, the signal or the duration expiring, the decision recorded in approvals. <a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a></li>
         </ul>
       </div>
       <div class="work-group">
@@ -2166,13 +2165,13 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.9.0 ============ -->
 <section id="m09">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.9.0: Somebody else can install it</h2><span class="tally">0 of 69 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.9.0: Somebody else can install it</h2><span class="tally">0 of 70 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> an installation that its author did not perform.</p>
 
     <p>Until now everything ran where it was written, which hides every assumption about the host and every step nobody wrote down. Here installing becomes a document, and the three <a href="../#deployment">deployment profiles</a> either hold or turn out to be two profiles and a wish.</p>
 
-    <p>The Terraform provider belongs here too: a second environment becomes an apply, not a second afternoon. It manages what v0.3.0 and v0.4.0 defined (namespaces, repositories, grants, groups, service accounts, secret declarations), so it had nothing to declare earlier.</p>
+    <p>The Terraform provider belongs here too: a second environment becomes an apply, not a second afternoon. It manages what v0.2.0 to v0.4.0 defined (namespaces, repositories, grants, groups, service accounts, secret declarations), so it had nothing to declare earlier.</p>
 
     <div class="work">
       <div class="work-group">
@@ -2182,6 +2181,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
         </div>
         <ul>
           <li>Implement the SQS bus driver behind the same task bus interface as JetStream: one standard queue per runner pool, a long-poll receive as the pull consumer, a message leaving the queue when the consumer deletes it. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#task-bus">task-bus</a></li>
+          <li>Mint presigned URLs and the task's upload policy on MinIO and S3, behind the interface the built-in store fills: the prefix and the grant's expiry as conditions of the policy, and artifact_max_bytes as its content-length-range. <a class="ref" href="../#the-task-message">the-task-message</a><a class="ref" href="../#what-every-profile-must-provide">what-every-profile-must-provide</a></li>
           <li>Add the HashiCorp Vault and AWS Secrets Manager backends beside the built-in encrypted store, readable by the API alone. <a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#profile-b-on-premise-redundant">profile-b-on-premise-redundant</a><a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
           <li>Read the built-in store's master key from a file only the API account can open, or from the host keyring, and refuse to start without one. <a class="ref" href="../#profile-a-a-single-host">profile-a-a-single-host</a><a class="ref" href="../#secrets-honestly">secrets-honestly</a></li>
           <li>Take the Relying Party Identifier at installation as immutable and refuse any later change, since changing it invalidates every passkey. <a class="ref" href="../#what-every-profile-must-provide">what-every-profile-must-provide</a><a class="ref" href="../#auth">auth</a></li>
@@ -2267,7 +2267,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Run each runner pool as an EC2 Auto Scaling group across the three zones, bricks running as containers under Docker on the instances, not as Fargate tasks. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
           <li>Scale each group on its own queue's visible-message count, so a fan-out of ten thousand items adds instances and the run's tail gives them back. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
           <li>Enforce a step's egress.allow with a per-pool security group and a NAT carrying a filtered allow list. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a></li>
-          <li>Show that an Auto Scaling group replacing a runner mid-run leaves a lost task the engine already handles. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#run-states">run-states</a></li>
+          <li>Show that an Auto Scaling group replacing a runner mid-run leaves a lost task, requeued under its key where the step's retry.on names lost. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#run-states">run-states</a></li>
         </ul>
       </div>
       <div class="work-group">
