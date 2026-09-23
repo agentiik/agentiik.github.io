@@ -3224,7 +3224,7 @@ concurrency:
       <table>
         <thead><tr><th>What goes wrong</th><th>What follows</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">no acknowledgement reaches the bus</td><td>The pool consumer's AckWait, one minute, passes and the bus hands the task out again.</td></tr>
+          <tr><td class="wrapcell">no acknowledgement reaches the bus</td><td>The host starts nothing and nobody redeems the task, so the sweep declares it <code>lost</code> 30 seconds after its publication, before the pool consumer's AckWait, one minute from the delivery, hands the message out again. The runner that takes it then pulls the image for a grant that answers <code>409</code>, and the task comes back only as <a href="#task-states">Back to pending</a> says.</td></tr>
           <tr><td class="wrapcell">the host dies after redeeming</td><td>Its heartbeat stops, the task becomes <code>lost</code> and comes back only as <a href="#task-states">Back to pending</a> says.</td></tr>
           <tr><td class="wrapcell">the host dies between the acknowledgement and the redemption, or only the confirmation is lost</td><td>Nobody redeems the task, so the controller's sweep declares it <code>lost</code> 30 seconds after its publication (see <a href="#heartbeat">Heartbeat</a>), and it comes back as any loss does.</td></tr>
           <tr><td class="wrapcell">a task still on a full pool's queue, or still pulling its image, 30 seconds after its publication</td><td>Lost the same way. The message redeems nothing once a runner reaches it, and the loss counts against <a href="#task-states"><code>max_requeues</code></a>.</td></tr>
@@ -3594,7 +3594,7 @@ concurrency:
         <thead><tr><th>A task in flight</th><th>Lost 30 seconds after</th></tr></thead>
         <tbody>
           <tr><td>redeemed</td><td>its runner's last heartbeat naming it, or its redemption until one does</td></tr>
-          <tr><td class="wrapcell">not redeemed: on the queue, or taken and still pulling</td><td>its publication, since no heartbeat names it and no delivery comes round again (see <a href="#task-bus">Task bus</a>)</td></tr>
+          <tr><td class="wrapcell">not redeemed: on the queue, or taken and still pulling</td><td>its publication, since no heartbeat names it and the database cannot tell a message still on the queue from one a host took and never redeemed (see <a href="#task-bus">Task bus</a>)</td></tr>
         </tbody>
       </table>
     </div>
