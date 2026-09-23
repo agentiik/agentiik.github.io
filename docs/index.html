@@ -2910,7 +2910,7 @@ concurrency:
           <tr><td>run:read</td><td>See run state, per-step state, timings and log lines.</td></tr>
           <tr><td>run:read_data</td><td>See envelope contents and download artifacts, not only state and digests.</td></tr>
           <tr><td>secret:use</td><td>Let a step reference a namespace secret. Never allows reading its value.</td></tr>
-          <tr><td>secret:write</td><td>Declare, change and delete the namespace's secrets, and write a <code>builtin</code> value. Never allows reading one. Reading the declarations needs only <code>workflow:read</code>.</td></tr>
+          <tr><td>secret:write</td><td>Declare, change and delete the namespace's secrets, and write a <code>builtin</code> value. Never allows reading one. Reading the declarations needs only <code>workflow:read</code>. Both count only at namespace scope, since a declaration serves every workflow of the namespace: a grant on one workflow reads and changes none.</td></tr>
           <tr><td>grant:manage</td><td>Grant and revoke access at this scope.</td></tr>
         </tbody>
       </table>
@@ -3020,7 +3020,7 @@ concurrency:
 
     <h3 id="what-sharing-does-not-expose">What sharing does not expose</h3>
     <ul class="plain">
-      <li>Secret values, at any role. <code>workflow:read</code> shows the declarations (names, providers, paths and mount points); the value only ever exists inside a container.</li>
+      <li>Secret values, at any role. <code>workflow:read</code> at namespace scope shows the declarations (names, providers, paths and mount points), and a grant on one workflow shows none; the value only ever exists inside a container.</li>
       <li>Artifacts from another namespace. A presigned URL covers one artifact of one run and expires in minutes.</li>
       <li>Runner internals. A user never learns which host executed a task beyond its runner name and labels.</li>
       <li>The existence of workflows they cannot read, in any listing, search result or error message.</li>
@@ -4037,9 +4037,9 @@ steps:
           <tr><td class="wrapcell">GET, PUT /objects/{key...}<br>POST /objects/{ns}</td><td>The built-in object store, served only by an installation that attaches none, which no deployment profile does. A presigned URL or a signed POST policy is the whole authorisation. A POST is taken only under the policy's prefix and 64 lowercase hex characters, hashed as it arrives, and refused if the bytes do not match, exactly as a PUT.</td></tr>
 
           <tr><th colspan="2">Namespaces, workflows and the catalog</th></tr>
-          <tr><td class="wrapcell">GET /api/v1/{ns}/secrets</td><td>The namespace's secret declarations: names, providers, paths and mount points, never a value. Requires <code>workflow:read</code>.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/secrets</td><td>The namespace's secret declarations: names, providers, paths and mount points, never a value. Requires <code>workflow:read</code> at namespace scope.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/secrets/{name}</td><td>One declaration, the same way.</td></tr>
-          <tr><td class="wrapcell">PUT, DELETE /api/v1/{ns}/secrets/{name}</td><td>Declares, changes or deletes one secret, and for <code>builtin</code> writes its value, which no answer returns. One secret per request, so two Terraform applies never drop each other's change. Requires <code>secret:write</code>; each write is audited as a secret write. See <a href="#secrets">Secrets</a>.</td></tr>
+          <tr><td class="wrapcell">PUT, DELETE /api/v1/{ns}/secrets/{name}</td><td>Declares, changes or deletes one secret, and for <code>builtin</code> writes its value, which no answer returns. One secret per request, so two Terraform applies never drop each other's change. Requires <code>secret:write</code> at namespace scope; each write is audited as a secret write. See <a href="#secrets">Secrets</a>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/grants</td><td>Grants and denies that apply, with the scope of each.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/grants</td><td>Shares the workflow: principal, role, optional expiry, optional deny. Requires <code>grant:manage</code>.</td></tr>
           <tr><td class="wrapcell">DELETE /api/v1/{ns}/workflows/{name}/grants/{id}</td><td>Revokes one grant, from the next request and the next run creation.</td></tr>
