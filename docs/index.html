@@ -4512,7 +4512,7 @@ flowchart LR
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 940 412" role="img" aria-label="terraform apply, with its token taken from AGENTIIK_TOKEN, calls /api/v1 as the token's principal, under the same grants as the console, and manages namespaces, quotas and allowed runner pools, groups, service accounts and API tokens, grants, workflow repositories with their default branch and protection, secret declarations, and runs that have happened. Token clear values and run outputs read through Terraform land in the state file, and a configuration creating tokens needs an encrypted backend. Below a boundary, two things never go through Terraform: a workflow's contents, which arrive by git push through the pre-receive hook, the provider stopping at the repository's first commit; and secret values, which stay in the secret provider at the path the declaration names, never in the state file.">
+      <svg viewBox="0 0 940 412" role="img" aria-label="terraform apply, with its token taken from AGENTIIK_TOKEN, calls /api/v1 as the token's principal, under the same grants as the console, and manages namespaces, quotas and allowed runner pools, groups, service accounts and API tokens, grants, workflow repositories with their default branch and protection, secret declarations, and runs that have happened. Token clear values and run outputs read through Terraform land in the state file, and a configuration creating tokens needs an encrypted backend. Below a boundary, two things never go through Terraform: a workflow's contents, which arrive by git push through the pre-receive hook, the provider stopping at the repository's first commit; and secret values, which reach the secret provider by their own PUT for builtin, or sit at the path the declaration names for the others, never in the state file.">
         <defs><marker id="terraform-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
 
         <text x="16" y="18" font-family="Archivo, sans-serif" font-size="10" letter-spacing="1.3" fill="currentColor" opacity=".55">THROUGH TERRAFORM</text>
@@ -4575,7 +4575,7 @@ flowchart LR
         <g font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".65" text-anchor="middle">
           <text x="352" y="323">validates every push</text>
           <text x="712" y="323">the provider stops at the first commit</text>
-          <text x="712" y="387">at the path the declaration names</text>
+          <text x="712" y="387">by its own PUT for builtin, else at the declared path</text>
         </g>
         <text x="352" y="366" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".75">never in the state file</text>
       </svg>
