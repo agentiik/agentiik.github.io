@@ -3198,7 +3198,7 @@ concurrency:
     </ul>
 
     <h3 id="task-bus">Task bus</h3>
-    <p>NATS JetStream with WorkQueue retention: a message leaves the stream once it is acknowledged. The control plane creates one durable pull consumer per runner pool, and every runner of the pool takes from it and creates none. A runner asks for a batch only when it has room, so distribution follows each host's real capacity without the controller modelling load.</p>
+    <p>NATS JetStream with WorkQueue retention: a message leaves the stream once it is acknowledged. The control plane creates one durable pull consumer per runner pool, and every runner of the pool takes from it and creates none. A runner asks for a batch only when it has room, so distribution follows each host's real capacity without the controller modelling load. The controller does not wait for that room: it publishes what is runnable, and a task nobody has redeemed 30 seconds after its publication is lost, whether it waited on the queue or on a slow pull (see <a href="#heartbeat">Heartbeat</a>).</p>
     <p>Delivery is at least once, so a task can arrive twice. Its idempotency key, <code>run_id/step/attempt/shard</code>, and a record each host keeps of the keys it took make that harmless:</p>
     <div class="tablewrap">
       <table>
@@ -3227,7 +3227,7 @@ concurrency:
           <tr><td class="wrapcell">no acknowledgement reaches the bus</td><td>The host starts nothing and nobody redeems the task, so the sweep declares it <code>lost</code> 30 seconds after its publication, before the pool consumer's AckWait, one minute from the delivery, hands the message out again. The runner that takes it then pulls the image for a grant that answers <code>409</code>, and the task comes back only as <a href="#task-states">Back to pending</a> says.</td></tr>
           <tr><td class="wrapcell">the host dies after redeeming</td><td>Its heartbeat stops, the task becomes <code>lost</code> and comes back only as <a href="#task-states">Back to pending</a> says.</td></tr>
           <tr><td class="wrapcell">the host dies between the acknowledgement and the redemption, or only the confirmation is lost</td><td>Nobody redeems the task, so the controller's sweep declares it <code>lost</code> 30 seconds after its publication (see <a href="#heartbeat">Heartbeat</a>), and it comes back as any loss does.</td></tr>
-          <tr><td class="wrapcell">a task still on a full pool's queue, or still pulling its image, 30 seconds after its publication</td><td>Lost the same way. The message redeems nothing once a runner reaches it, and the loss counts against <a href="#task-states"><code>max_requeues</code></a>.</td></tr>
+          <tr><td class="wrapcell">a task still on a full pool's queue, or still pulling its image, 30 seconds after its publication</td><td>Lost the same way, and the message redeems nothing once a runner reaches it. A step that requeues on loss goes out again, the loss counting against <a href="#task-states"><code>max_requeues</code></a>; any other step fails with it.</td></tr>
           <tr><td class="wrapcell">the requeue of a lost task reaches the host that already ended its key</td><td>The host acknowledges it and reports the ending it recorded under the requeue's <code>task_id</code>. The controller takes that ending from a runner that redeemed an earlier dispatch of the key, as the requeue's answer, and the brick does not run twice.</td></tr>
         </tbody>
       </table>
@@ -3719,7 +3719,7 @@ concurrency:
         <thead><tr><th>State</th><th>Meaning</th></tr></thead>
         <tbody>
           <tr><td>pending</td><td>Decided and not yet handed to a runner.</td></tr>
-          <tr><td>dispatched</td><td>Handed out: on its pool's queue, or taken by a runner that may still be pulling the image or running <code>pre_task</code>. The deadline starts only when the container is created, so a slow pull or hook costs the runner's time and never the step's (see <a href="#runner-side-hooks">Runner-side hooks</a>). The grant does not wait: it expires at the <code>deadline</code> the message carries, so a pull slower than that leaves a grant that answers <code>401</code>. Nor does the <a href="#heartbeat">sweep</a>: a task nobody has redeemed 30 seconds after its publication is lost.</td></tr>
+          <tr><td>dispatched</td><td>Handed out: on its pool's queue, or taken by a runner that may still be pulling the image or running <code>pre_task</code>. The deadline starts only when the container is created, so a slow hook, which runs once the grant is redeemed, costs the runner's time and never the step's (see <a href="#runner-side-hooks">Runner-side hooks</a>). A slow pull costs more, since the redemption comes after it: a task nobody has redeemed 30 seconds after its publication is lost, however much of that it spent on the queue (see <a href="#heartbeat">Heartbeat</a>). The grant does not wait either: it expires at the <code>deadline</code> the message carries, so a pull slower than that leaves a grant that answers <code>401</code>.</td></tr>
           <tr><td>running</td><td>The container is running.</td></tr>
           <tr><td>publishing</td><td>The container is finished; its outputs are being collected and uploaded. A state of its own because the result is not yet safe, and losing a runner here is not losing one mid-run.</td></tr>
           <tr><td>succeeded</td><td>The container exited 0 and its envelopes were published.</td></tr>
@@ -3752,7 +3752,7 @@ concurrency:
         </tbody>
       </table>
     </div>
-    <p>Under the default, a key waiting on a full pool's queue is lost every 30 seconds and fails its step about two minutes after it first went out.</p>
+    <p>A task still on a full pool's queue, or still pulling its image, 30 seconds after its publication is lost like any other (see <a href="#heartbeat">Heartbeat</a>). A step that does not requeue on loss fails there, 30 to 40 seconds after its key went out: that is every step not <code>idempotent</code>, or whose <code>retry.on</code> leaves out <code>lost</code>, as it does by default. One that does is lost again every 30 seconds while it waits, and under the default fails on its fourth loss, about two minutes after the key first went out.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>A loss uses up no <code>retry.max</code> attempt: it is charged to the infrastructure, and a brick that never failed has spent nothing. Nor does it wait out a backoff, which spaces attempts so that a dependency can recover: what failed is the host, and going back on the queue leaves it behind.</p>
@@ -5854,7 +5854,7 @@ resource "agentiik_workflow" "search" {
     <ul class="plain">
       <li>An RDS Multi-AZ failover ends the session holding the advisory lock; the controller reacquires it as after a restart.</li>
       <li>Per-pool egress is a security group plus a NAT with a filtered allow list, which enforces each step's <code>egress.allow</code>.</li>
-      <li>Each Auto Scaling group tracks its own queue's visible-message count: a fan-out of ten thousand items adds instances, and the run's tail gives them back.</li>
+      <li>Each Auto Scaling group tracks its own queue's visible-message count: a fan-out of ten thousand items adds instances, and the run's tail gives them back. They come too late for the tasks that raised the count, which are lost 30 seconds after their publication if nobody has redeemed them (see <a href="#heartbeat">Heartbeat</a>), so a pool is sized for the largest burst it takes at once and scaling serves what comes after.</li>
     </ul>
   </div>
 
@@ -5971,7 +5971,7 @@ WantedBy=multi-user.target</code></pre>
         </g>
       </svg>
     </div>
-    <figcaption><b>Hooks on the host, the step in a container.</b> The task's deadline starts once <code>pre_task</code> has succeeded, so a slow hook eats the runner's time and never the step's. <code>post_task</code> runs whatever the verdict, which makes it the place to release a licence seat or wipe a scratch directory.</figcaption>
+    <figcaption><b>Hooks on the host, the step in a container.</b> <code>pre_task</code> runs once the task's grant is redeemed and its workspace laid out, while the <a href="#heartbeat">heartbeat</a> holds the task, and the task's deadline starts once it has succeeded, so a slow hook eats the runner's time and never the step's. <code>post_task</code> runs whatever the verdict, which makes it the place to release a licence seat or wipe a scratch directory.</figcaption>
   </figure>
 
   <div class="block">
