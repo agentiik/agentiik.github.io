@@ -3507,7 +3507,7 @@ concurrency:
   </div>
 
   <div class="prose">
-    <p>A runner redeems once, after the image pull, and that first redemption binds the task to it; asking again after a lost answer gets the same answer while the grant lives. A value that is not UTF-8 travels as <code>"encoding": "base64"</code>. The <code>fields</code> are the store's own words, the built-in store's above, and a runner posts them as given: a <code>multipart/form-data</code> body of the fields, then <code>key</code>, the prefix and the file's SHA-256, then <code>file</code>, last.</p>
+    <p>A runner redeems once, after the image pull. A redemption binds the task only once it has an answer to give: one refused for a missing tree, an input it cannot read or a secret the store cannot give binds nothing, and the runner reports that no container ran. Asking again after a lost answer gets the same answer while the grant lives, except the secret values, read from the store again at every redemption and kept by nothing, so one rotated in between arrives rotated. A value that is not UTF-8 travels as <code>"encoding": "base64"</code>. The <code>fields</code> are the store's own words, the built-in store's above, and a runner posts them as given: a <code>multipart/form-data</code> body of the fields, then <code>key</code>, the prefix and the file's SHA-256, then <code>file</code>, last.</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>The policy is bound to</th><th>So</th></tr></thead>
