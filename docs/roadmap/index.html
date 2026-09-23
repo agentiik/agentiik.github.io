@@ -1780,7 +1780,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Stream the log tail over SSE, history then live, indexed by run, step, attempt and shard, with secrets already masked. <a class="ref" href="../#observability">observability</a><a class="ref" href="../#secrets">secrets</a></li>
           <li>List a step's artifacts (name, media type, size, digest), fetch one via GET /api/v1/artifacts/{uri}, and show a 410 Gone as collected, not missing. <a class="ref" href="../#artifact-expiry">artifact-expiry</a><a class="ref" href="../#api">api</a><a class="ref" href="../#envelope-structure">envelope-structure</a></li>
           <li>Show the run's workflow outputs with their retain and collected state, fetched via GET /api/v1/runs/{id}/outputs/{name} under run:read_data. <a class="ref" href="../#api">api</a><a class="ref" href="../#artifact-expiry">artifact-expiry</a><a class="ref" href="../#permissions">permissions</a></li>
-          <li>Offer cancel, replay from a step, and approve or reject with a comment under workflow:run, saying a run replays only from the start where the step would otherwise be offered. <a class="ref" href="../#api">api</a><a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#artifact-expiry">artifact-expiry</a></li>
+          <li>Offer cancel and replay from a step under workflow:run, saying a run replays only from the start where the step would otherwise be offered. <a class="ref" href="../#api">api</a><a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#artifact-expiry">artifact-expiry</a></li>
           <li>Diff two runs of the same commit, to read a failed run against a good one. <a class="ref" href="../#ui">ui</a></li>
         </ul>
       </div>
@@ -1914,7 +1914,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
         <ul>
           <li>Implement workflow.list, workflow.get, workflow.create, workflow.commit and workflow.run over their API routes, under workflow:read, namespace owner, workflow:write and workflow:run. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#api">api</a></li>
           <li>Implement run.list, run.get and run.logs under run:read, with the log tail masked, and run.output under run:read_data. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
-          <li>Implement run.cancel, run.replay, run.approve and run.reject under workflow:run, on a run in flight or waiting. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#run-states">run-states</a></li>
+          <li>Implement run.cancel and run.replay under workflow:run. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#run-states">run-states</a></li>
           <li>Implement brick.list and brick.get (manifest and parameter schema) for any authenticated principal, and runner.list for an administrator. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
           <li>Filter tools/list by effective permissions on every request, so an unusable tool is absent rather than refused. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
           <li>Mark workflow.language, workflow.schema, workflow.validate and every other read-only tool with readOnlyHint. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a></li>
@@ -1984,7 +1984,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.8.0 ============ -->
 <section id="m08">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.8.0: A catalog worth pulling from</h2><span class="tally">0 of 57 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.8.0: A catalog worth pulling from</h2><span class="tally">0 of 58 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> somebody who did not write the engine writes a brick, in a language the project does not use, and it runs.</p>
 
@@ -2123,7 +2123,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <div class="work-group">
         <div class="work-head">
           <h4>What the engine owes a brick author</h4>
-          <span class="work-repo">agentiik</span>
+          <span class="work-repo">agentiik · console</span>
         </div>
         <ul>
           <li>Implement agk brick init: scaffold a brick in Go, Python or TypeScript with its manifest, example envelopes and test harness. <a class="ref" href="../#command-line">command-line</a></li>
@@ -2134,6 +2134,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Let a namespace declare private registry credentials as namespace secrets, redeemed for the pull, never carried into a workflow shared with another team. <a class="ref" href="../#registry">registry</a><a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
           <li>Enforce the per-namespace signature verification policy (which identities may sign) in the runner, before the container is created, never trusting the registry. <a class="ref" href="../#supply-chain">supply-chain</a><a class="ref" href="../#further-rules">further-rules</a><a class="ref" href="../#runner">runner</a></li>
           <li>Suspend a run in waiting on a wait step, for a duration, an external signal or a human approval, without a task occupying a runner: cleared by the signal, the duration expiring, or POST /api/v1/runs/{id}/approve or /reject, served here, the decision recorded in approvals and in the audit log with its optional comment or reason. <a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a></li>
+          <li>Offer approve and reject with a comment on a waiting run under workflow:run, as run.approve and run.reject over MCP and in the console, now that a wait step can put a run in waiting. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#ui">ui</a></li>
         </ul>
       </div>
       <div class="work-group">
