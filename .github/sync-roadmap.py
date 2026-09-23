@@ -65,6 +65,22 @@ def task_title(task_text):
     return t if len(t) <= 110 else t[:107].rsplit(" ", 1)[0] + "..."
 
 
+def filed_title(task_text):
+    """The title file-tasks.py gives a task: the whole task, cut at 103 characters.
+
+    v0.1.0 was filed by expand_group.py and everything since by file-tasks.py, so both kinds
+    of title exist and keep existing. A task is matched by either, or a task filed the second
+    way is never marked however long ago its issue closed.
+    """
+    stripped = task_text.rstrip(".")
+    if len(stripped) <= 105:
+        return stripped
+    cut = stripped[:103]
+    if not stripped[103:104].isspace() and " " in cut:
+        cut = cut[: cut.rfind(" ")]
+    return cut.rstrip() + "..."
+
+
 def strip_marks(s):
     """Remove every mark a previous run left, so this one starts from clean text."""
     s = s.replace('<li class="done">', "<li>")
@@ -95,7 +111,7 @@ def main():
         text = html.unescape(re.sub(r"<[^>]*>", "", re.sub(r'<a class="ref".*?</a>|<span class="ref".*?</span>', "", body, flags=re.S))).strip()
         text = re.sub(r"\s+", " ", text)
         seen_total += 1
-        if closed.get(task_title(text)):
+        if closed.get(task_title(text)) or closed.get(filed_title(text)):
             done_total += 1
             return f'<li class="done">{body} <span class="tick">done</span></li>'
         return m.group(0)
