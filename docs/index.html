@@ -3200,20 +3200,35 @@ concurrency:
     </ul>
 
     <h3 id="task-bus">Task bus</h3>
-    <p>NATS JetStream, with WorkQueue retention, where a message is removed as soon as it has been consumed, which is precisely what work distribution needs. Consumers are durable and of the pull kind: a runner asks for a batch of tasks when it has room, which makes distribution naturally proportional to each host's real capacity without the controller having to model load.</p>
-    <p>JetStream guarantees at-least-once delivery, so every task is replayable: it carries the idempotency key <code>run_id/step/attempt/shard</code>, and the runner refuses to start a container for a key that has already completed. A task carries no payload and no secret value; see <a href="#the-task-message">The task message</a>.</p>
+    <p>NATS JetStream with WorkQueue retention: a message leaves the stream once it is acknowledged. The control plane creates one durable pull consumer per runner pool, and every runner of the pool takes from it and creates none. A runner asks for a batch only when it has room, so distribution follows each host's real capacity without the controller modelling load.</p>
+    <p>Delivery is at least once, so a task can arrive twice. Its idempotency key, <code>run_id/step/attempt/shard</code>, makes that harmless:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>When</th><th>What happens</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>on take</td><td>The runner writes the task down under its work directory (<code>AGK_RUNNER_WORKDIR</code>), outside any task's own directory, then acknowledges it.</td><td>The record outlives the task's directory, which is removed with the container.</td></tr>
+          <tr><td class="wrapcell">before a container</td><td>The runner reads the host's record of completed keys, kept in the same place, and refuses a key that has already completed.</td><td>A redelivery or a <a href="#task-states">requeue</a> can hand a host a key it has finished.</td></tr>
+          <tr><td class="wrapcell">the host dies</td><td>Its heartbeat stops, its tasks become <code>lost</code>, and an idempotent step is requeued.</td><td>Liveness already lives in the <a href="#heartbeat">heartbeat</a>, so the bus need not redeliver.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A runner acknowledges a task when it takes it, not when the container exits: acknowledging at the end would make the ack wait as long as the longest step may run, and the heartbeat already catches a host that dies holding a task.</p>
+    </div>
+    <p>A task carries no payload and no secret value; see <a href="#the-task-message">The task message</a>.</p>
 
     <h3 id="runner">Runner</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Step</th><th>The runner</th><th>Docker Engine API v1.56</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>Pulls a batch of tasks from its consumer, filtered by its declared labels and by the namespaces its policy accepts.</td><td></td></tr>
+          <tr><td>1</td><td>Pulls a batch of tasks from its pool's consumer, filtered by its declared labels and by the namespaces its policy accepts, and writes each one down before acknowledging it (<a href="#task-bus">Task bus</a>).</td><td></td></tr>
           <tr><td>2</td><td>Resolves and downloads the image by digest, verifying its signature where policy requires it.</td><td></td></tr>
           <tr><td>3</td><td>Redeems the task's grant for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, and the secret values. Downloads the inputs into a local working directory and prepares the mounts.</td><td></td></tr>
           <tr><td>4</td><td>Creates one container, starts it, attaches to it, waits for it to exit and collects its logs.</td><td><code>ContainerCreate</code> (<code>POST /containers/create</code>), <code>ContainerStart</code> (<code>POST /containers/{id}/start</code>), <code>ContainerAttach</code>, <code>ContainerWait</code>, <code>ContainerLogs</code></td></tr>
           <tr><td>5</td><td>Collects the output envelopes, artifacts, log and exit code, uploads the output artifacts through presigned URLs, and publishes the result on the bus.</td><td></td></tr>
-          <tr><td>6</td><td>Destroys the container and its working directory.</td><td><code>ContainerRemove</code></td></tr>
+          <tr><td>6</td><td>Records the key as completed, then destroys the container and its working directory.</td><td><code>ContainerRemove</code></td></tr>
           <tr><td>throughout</td><td>Emits a <a href="#heartbeat">heartbeat</a>. A prolonged absence moves the task to <em>lost</em>.</td><td></td></tr>
           <tr><td>throughout</td><td>Follows the daemon event stream to catch container exits it did not cause, an out-of-memory kill for instance.</td><td><code>GET /events</code></td></tr>
         </tbody>
@@ -3466,6 +3481,8 @@ concurrency:
   </div>
 
   <div class="prose">
+    <p>The result is <code>$defs/taskResult</code> in <code>wire.schema.json</code>. The controller matches it on <code>idempotency_key</code>, so a result delivered twice is written once, and refuses a result whose <code>runner</code> is not the runner the task was bound to at redemption, reporting it rather than applying it.</p>
+
     <h3 id="heartbeat">Heartbeat</h3>
     <ul class="plain">
       <li>A runner posts one heartbeat every 10 seconds to the API, listing the idempotency keys it currently holds. One request covers every in-flight task on that host.</li>
