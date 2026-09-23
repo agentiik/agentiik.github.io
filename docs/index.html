@@ -1830,6 +1830,15 @@ certs/
 
     <p><code>agk run --local</code> is the one run no commit describes: it executes the working tree as it stands, uncommitted changes included, and the run is labelled as such so that it is never mistaken in a history for something reproducible.</p>
 
+    <h4>Until the repository is hosted</h4>
+    <p>Git hosting arrives in <code>v0.4.0</code>. Until then <code>agk push</code> carries the tree itself: the files of the commit, read from the commit and not from the working copy, because a version is a commit and a working copy also holds whatever an editor or a build left behind. Every file travels as <code>0644</code> or <code>0755</code>, the only two modes git gives a file. A symlink is refused, because its target is resolved on whichever host lays the directory out and can point outside the repository. So is a submodule, because it is another repository and fetching it would take a credential the runner never holds.</p>
+    <p>The server stores each file as an object addressed by its SHA-256, so a file two commits share is stored once, and the version keeps a manifest of <code>path</code>, <code>sha256</code>, <code>size</code> and <code>mode</code>. The version holds a counted reference to every object it names, so collection never takes a file a version still needs and a replay six months on still has its tree. A runner gets the tree by redeeming its task's grant, one presigned GET per file, exactly as it fetches an artifact, and never speaks git.</p>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A pushed tree is limited to 4 MiB, as a limit of the interim push rather than a rule about repositories. That push is one JSON request held whole in memory at both ends, which is no way for a large repository to travel. A workflow repository is an entry point, its fragments and its scripts, and something above 4 MiB belongs in an image or an artifact, which is what the refusal says. Git hosting lifts the limit in <code>v0.4.0</code>: the 2 GiB fixture directory in the example above, and narrowing as an optimisation for large repositories, describe the hosted repository rather than this one.</p>
+    </div>
+
     <h3 id="running-a-script-instead-of-a-brick">Running a script instead of a brick</h3>
     <p>Not every step deserves an image of its own. A step may carry <code>script</code> instead, and the commands run inside <code>image</code> under exactly the contract every brick honours: the same mounts, the same environment, the same isolation, the same exit-code meaning. What changes is only that the image is a base image rather than a published brick, so no manifest is read and nothing about its ports is inferred.</p>
 
@@ -3859,7 +3868,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>grants</td><td>Principal, scope (namespace or workflow), role, allow or deny, expiry, who granted it and when.</td></tr>
           <tr><td>workflows</td><td>Name, namespace, default branch, labels.</td></tr>
           <tr><td>workflow_refs</td><td>The ref database of every workflow repository: ref name, commit, protection, who moved it and when. Git objects themselves live in the object store as packfiles.</td></tr>
-          <tr><td>workflow_versions</td><td>One row per commit accepted on a branch: commit, parent, resolved graph, author, timestamp.</td></tr>
+          <tr><td>workflow_versions</td><td>One row per commit accepted on a branch: commit, parent, resolved graph, the manifest of its tree (<code>path</code>, <code>sha256</code>, <code>size</code> and <code>mode</code> per file, each file a counted object), author, timestamp.</td></tr>
           <tr><td>triggers</td><td>Active triggers per version, schedule state, last firing.</td></tr>
           <tr><td>runs</td><td>Identifier, version, state, trigger, triggering principal, timestamps, workflow inputs and outputs.</td></tr>
           <tr><td>steps</td><td>Per-step state within a run, envelope digests for each port.</td></tr>
