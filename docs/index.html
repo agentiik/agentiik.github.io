@@ -3480,13 +3480,25 @@ concurrency:
       <table>
         <thead><tr><th>The policy is bound to</th><th>So</th></tr></thead>
         <tbody>
-          <tr><td>&lt;namespace&gt;/sha256/</td><td>A key is <code>key_prefix</code> and 64 lowercase hex characters, the SHA-256 of the file: <code>finance/sha256/c1f4a9…d02b</code>. Anything else is refused.</td></tr>
-          <tr><td>the run</td><td>A runner writes for the run its task belongs to, and no other.</td></tr>
+          <tr><td>&lt;namespace&gt;/sha256/</td><td>Every key starts with <code>key_prefix</code>, followed by the SHA-256 of the file: <code>finance/sha256/c1f4a9…d02b</code>. Nothing is written outside the task's namespace.</td></tr>
+          <tr><td>the run</td><td>Signed in, as into every presigned URL, to say which run a write came from. It narrows no key: a namespace's objects are shared by all its runs, which is how identical bytes are stored once.</td></tr>
           <tr><td>the grant's expiry</td><td>It stops working when the task's grant does.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The store hashes each file as it arrives and refuses one whose bytes do not match its key. Where the installation has no object store of its own, the API is the store, at <code>/objects/</code>, and checks a POST exactly as it checks a presigned PUT.</p>
+    <p>What the store checks of a POST depends on the store:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Check</th><th>Built-in store</th><th>MinIO or S3</th></tr></thead>
+        <tbody>
+          <tr><td>the prefix and the expiry</td><td>yes</td><td>yes, as conditions of the policy</td></tr>
+          <tr><td>a size up to <a href="#size-rules"><code>artifact_max_bytes</code></a></td><td>yes</td><td>yes, as <code>content-length-range</code></td></tr>
+          <tr><td>a key of the prefix and 64 lowercase hex characters, and nothing else</td><td>yes</td><td class="no">no: a policy can say only <code>starts-with</code></td></tr>
+          <tr><td>bytes that hash to their key</td><td>yes, as they arrive, exactly as for a presigned PUT</td><td class="no">no: the store does not hash</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The built-in store is the API itself, at <code>/objects/</code>, and serves an installation that attaches no object store, a development one for instance; every <a href="#deployment">deployment profile</a> attaches MinIO or S3. There, a runner holding a task of <code>finance</code> can store any bytes under any key of <code>finance</code>, one that other runs already read included, and what refuses that on those stores is still to be decided.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>One policy per task, handed out at the redemption, rather than a URL per object: an output's key is the digest of bytes that do not exist until the container exits, and a policy in the one answer means a task never redeems a second time, reading its secrets again, to learn where its outputs go.</p>
@@ -4022,7 +4034,7 @@ steps:
           <tr><td class="wrapcell">POST /api/v1/runner-pools</td><td>A pool with its labels, accepted namespaces and resource ceilings. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools/{pool}/join-tokens</td><td>A join token: single use, short lived, only for labels the pool carries, shown once. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>Redeems a task's grant for what the task message names and does not carry: presigned URLs for the tree and the inputs, the secret values, and one signed POST policy for the outputs (see <a href="#the-task-message">The task message</a>). Answered from what the controller wrote beside the grant and from nothing in the request, so a runner cannot read an object its task does not name. Runner credential only. A runner redeems once, when it takes the task, and the redemption binds the task to it: another runner is refused, and the same runner asking again because an answer was lost on the way is answered again while the grant lives, its secrets read again.</td></tr>
-          <tr><td class="wrapcell">GET, PUT /objects/{key...}<br>POST /objects/{ns}</td><td>The built-in object store, served only where the installation has no other. A presigned URL or a signed POST policy is the whole authorisation. A POST is taken only under the policy's prefix and 64 lowercase hex characters, hashed as it arrives, and refused if the bytes do not match, exactly as a PUT.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /objects/{key...}<br>POST /objects/{ns}</td><td>The built-in object store, served only by an installation that attaches none, which no deployment profile does. A presigned URL or a signed POST policy is the whole authorisation. A POST is taken only under the policy's prefix and 64 lowercase hex characters, hashed as it arrives, and refused if the bytes do not match, exactly as a PUT.</td></tr>
 
           <tr><th colspan="2">Namespaces, workflows and the catalog</th></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/secrets</td><td>The namespace's secret declarations: names, providers, paths and mount points, never a value. Requires <code>workflow:read</code>.</td></tr>
@@ -5846,12 +5858,12 @@ post_task = [
         </tbody>
       </table>
     </div>
-    <p>Only three kinds of payload pass through the control plane:</p>
+    <p>Only two kinds of payload pass through the control plane:</p>
     <ul class="plain">
       <li>A one-shot artifact is served through the API rather than redirected to, because a redirect cannot be counted.</li>
-      <li>Every object, where the installation has no object store of its own and the API is the store (<a href="#the-task-message">The task message</a>).</li>
       <li>Sharding a <code>fan_out: item</code>, pairing a <code>zip</code>, keying a <code>join</code> or evaluating an expression over <code>item</code> needs the items, so the controller reads a step's published envelopes as it decides and retains none. That costs at most <a href="#size-rules"><code>envelope_max_bytes</code></a> per port per step (4 MiB by default), never the artifacts: a hundred gigabyte file travels as a digest and a URI, from runner to runner.</li>
     </ul>
+    <p>An installation that attaches no object store, which no profile above does, carries every object through the API as well, since the API is then its <a href="#the-task-message">object store</a>.</p>
 
     <h3 id="first-run">First run</h3>
     <ol class="steps">
