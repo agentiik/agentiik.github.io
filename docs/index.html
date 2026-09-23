@@ -3529,7 +3529,7 @@ concurrency:
         </tbody>
       </table>
     </div>
-    <p>The built-in store is the API itself, at <code>/objects/</code> on a base URL the installation configures, never the request's <code>Host</code>: it answers <code>201</code> for an object stored and a refusal with no body, reads at most 64 KiB of form before the file, and serves an installation that attaches no object store, which no <a href="#deployment">deployment profile</a> does. It is also the only store built so far: the MinIO or S3 column is what their presigner, a <a href="roadmap/#m09">v0.9.0</a> task, has to set.</p>
+    <p>The built-in store is the API itself, at <code>/objects/</code> on a base URL the installation configures, never the request's <code>Host</code>: it answers <code>201</code> for an object stored and a refusal with no body, reads at most 64 KiB of form before the file and answers <code>400</code> to a form carrying more, and serves an installation that attaches no object store, which no <a href="#deployment">deployment profile</a> does. It is also the only store built so far: the MinIO or S3 column is what their presigner, a <a href="roadmap/#m09">v0.9.0</a> task, has to set.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>One policy per task, handed out at the redemption, rather than a URL per object: an output's key is the digest of bytes that do not exist until the container exits, and a policy in the one answer means a task never needs to redeem a second time, reading its secrets again, to learn where its outputs go.</p>
@@ -4223,6 +4223,7 @@ Authorization: Bearer &lt;api token&gt;
         <thead><tr><th>Refused</th><th>With</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell">a body past its size, a list or the inputs past their count</td><td>413</td></tr>
+          <tr><td class="wrapcell">a form posted to <code>/objects/{ns}</code> carrying more than 64 KiB before its file</td><td>400 with no body, as every refusal of the store; its 413 is for a file past <code>artifact_max_bytes</code></td></tr>
           <tr><td class="wrapcell">a field written twice or in another case, text that is not UTF-8, anything after the document</td><td>400</td></tr>
           <tr><td class="wrapcell">in a run's inputs: U+0000 in a string or a name, a number no 64-bit float holds or holds only as zero, or one written past 340 digits from the point</td><td>400</td></tr>
           <tr><td>a body that is not JSON</td><td>400, saying where it stops being JSON and never repeating the bytes there, which may be part of a secret</td></tr>
