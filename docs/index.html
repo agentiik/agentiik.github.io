@@ -3677,7 +3677,7 @@ concurrency:
         <tbody>
           <tr><td>queued</td><td>Created, waiting on a concurrency lock or on namespace quota.</td></tr>
           <tr><td>running</td><td>At least one task active or ready.</td></tr>
-          <tr><td>waiting</td><td>Suspended until an external signal or a human approval. The state a mobile notification is meant to clear.</td></tr>
+          <tr><td>waiting</td><td>Suspended at a <a href="#catalog"><code>wait</code></a> step, for a duration, an external signal or a human approval; nothing else puts a run here. The state a mobile notification is meant to clear.</td></tr>
           <tr><td>succeeded</td><td>Every reached step finished, none failed beyond tolerance.</td></tr>
           <tr><td>failed</td><td>At least one step failed without <code>continue_on_error</code>.</td></tr>
           <tr><td>cancelled</td><td>Cancelled by a principal holding <code>workflow:run</code>, by a concurrency group or by a <code>merge: first</code>.</td></tr>
