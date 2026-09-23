@@ -2013,10 +2013,7 @@ vars:
   currency: EUR
   dunning_days: 30
 
-secrets:
-  billing:
-    provider: vault
-    path: kv/data/agentiik/billing
+secrets: [billing]                        <span class="c"># named here, declared on the namespace</span>
 
 defaults:
   timeout: 10m
@@ -2088,7 +2085,7 @@ steps:
           <tr><td>mcp</td><td><a href="#publishing-tools">Published tools</a>.</td></tr>
           <tr><td>include</td><td><a href="#includes-and-inheritance">Reuse</a>.</td></tr>
           <tr><td>vars</td><td>Values read as <code>vars.&lt;name&gt;</code> in <a href="#expressions">expressions</a>.</td></tr>
-          <tr><td>secrets</td><td><a href="#secrets">Secrets</a> a step may mount, by name.</td></tr>
+          <tr><td>secrets</td><td>The namespace's <a href="#secrets">secrets</a> a step may mount, by name and nothing else: where each lives is declared on the namespace.</td></tr>
           <tr><td>defaults</td><td>Execution settings for steps that set none.</td></tr>
           <tr><td>timeout</td><td>Deadline of the whole run.</td></tr>
           <tr><td>concurrency</td><td>One run at a time, per <a href="#triggers">group</a>.</td></tr>
@@ -2913,6 +2910,7 @@ concurrency:
           <tr><td>run:read</td><td>See run state, per-step state, timings and log lines.</td></tr>
           <tr><td>run:read_data</td><td>See envelope contents and download artifacts, not only state and digests.</td></tr>
           <tr><td>secret:use</td><td>Let a step reference a namespace secret. Never allows reading its value.</td></tr>
+          <tr><td>secret:write</td><td>Declare, change and delete the namespace's secrets, and write a <code>builtin</code> value. Never allows reading one. Reading the declarations needs only <code>workflow:read</code>.</td></tr>
           <tr><td>grant:manage</td><td>Grant and revoke access at this scope.</td></tr>
         </tbody>
       </table>
@@ -2921,17 +2919,17 @@ concurrency:
     <h3 id="roles">Roles</h3>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Role</th><th>read</th><th>run</th><th>write</th><th>data</th><th>grant</th></tr></thead>
+        <thead><tr><th>Role</th><th>read</th><th>run</th><th>write</th><th>data</th><th>secret</th><th>grant</th></tr></thead>
         <tbody>
-          <tr><td>viewer</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
-          <tr><td>operator</td><td class="no">no</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
-          <tr><td>editor</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="no">no</td></tr>
-          <tr><td>owner</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td></tr>
+          <tr><td>viewer</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
+          <tr><td>operator</td><td class="no">no</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
+          <tr><td>editor</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="no">no</td></tr>
+          <tr><td>owner</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td></tr>
         </tbody>
       </table>
     </div>
 
-    <p><code>viewer</code>, <code>operator</code> and <code>editor</code> are the read, run and edit roles; <code>owner</code> exists because someone has to be able to share. <code>operator</code> deliberately lacks <code>workflow:read</code>, so a colleague can launch a job without seeing the queries, endpoints and business rules inside it; someone who needs both holds both roles.</p>
+    <p><code>viewer</code>, <code>operator</code> and <code>editor</code> are the read, run and edit roles; <code>owner</code> exists because someone has to be able to share. <code>operator</code> deliberately lacks <code>workflow:read</code>, so a colleague can launch a job without seeing the queries, endpoints and business rules inside it; someone who needs both holds both roles. The <code>secret</code> column is <code>secret:write</code>: <code>editor</code> holds it by default, and a deny takes it away where only owners should say where a value lives.</p>
 
     <h3 id="scopes-and-resolution">Scopes and resolution</h3>
   </div>
@@ -3022,7 +3020,7 @@ concurrency:
 
     <h3 id="what-sharing-does-not-expose">What sharing does not expose</h3>
     <ul class="plain">
-      <li>Secret values, at any role. <code>editor</code> and <code>owner</code> see secret names and mount points; the value only ever exists inside a container.</li>
+      <li>Secret values, at any role. <code>workflow:read</code> shows the declarations (names, providers, paths and mount points); the value only ever exists inside a container.</li>
       <li>Artifacts from another namespace. A presigned URL covers one artifact of one run and expires in minutes.</li>
       <li>Runner internals. A user never learns which host executed a task beyond its runner name and labels.</li>
       <li>The existence of workflows they cannot read, in any listing, search result or error message.</li>
@@ -3717,7 +3715,7 @@ concurrency:
       <table>
         <thead><tr><th>Adversary</th><th>After</th><th>What stands in the way</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">A workflow author in one namespace</td><td>Another namespace's secrets, artifacts or run data</td><td>Deny by default. Secrets referenceable only from their own namespace. Artifacts namespaced, and reachable only through presigned URLs scoped to one run. Cache keys prefixed by namespace. No secret value in any task message.</td></tr>
+          <tr><td class="wrapcell">A workflow author in one namespace</td><td>Another namespace's secrets, artifacts or run data</td><td>Deny by default. Secrets referenceable only from their own namespace, and declared only at its own paths. Artifacts namespaced, and reachable only through presigned URLs scoped to one run. Cache keys prefixed by namespace. No secret value in any task message.</td></tr>
           <tr><td class="wrapcell">A brick image, hostile or compromised</td><td>The host, its other containers, the network</td><td>A non-root user, no daemon socket, and the <a href="#settings-applied-to-every-container">settings applied to every container</a>, user-namespace remapping and a network per task included.</td></tr>
           <tr><td class="wrapcell">A compromised runner host</td><td>The installation</td><td>It holds no database credential, no secret-store credential and no standing object-store credential. Only a runner credential and per-task grants that expire. Its reach is the tasks in its hands and the namespaces its policy accepts.</td></tr>
           <tr><td class="wrapcell">A phisher, or a stolen password</td><td>A working sign-in</td><td>A passkey is bound to a Relying Party Identifier and the browser checks the origin, so a look-alike site gets nothing usable. With passwords forbidden, no shared secret is left to steal, phish or replay.</td></tr>
@@ -3855,7 +3853,48 @@ concurrency:
     </ul>
 
     <h3 id="secrets">Secrets</h3>
-    <p>The <a href="#yaml">worked example</a> declares <code>billing</code> in Vault and mounts it in its <code>invoice</code> step. Here is where the value travels.</p>
+    <p>The namespace declares where each secret lives; a workflow only names the ones it uses. The <a href="#yaml">worked example</a> names <code>billing</code> and mounts it in its <code>invoice</code> step.</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">declared on finance, one secret per request</div>
+<pre><code><span class="p">&gt;</span> <span class="cmd">PUT /api/v1/finance/secrets/billing</span>          <span class="c"># secret:write</span>
+{ "provider": "vault", "path": "kv/data/agentiik/finance/billing" }
+
+<span class="p">&gt;</span> <span class="cmd">PUT /api/v1/finance/secrets/ledger</span>
+{ "provider": "builtin", "value": "…" }             <span class="c"># write-only: no answer returns it</span>
+
+<span class="p">&gt;</span> <span class="cmd">GET /api/v1/finance/secrets</span>                  <span class="c"># workflow:read, and never a value</span>
+[ { "name": "billing", "provider": "vault", "path": "kv/data/agentiik/finance/billing", "mount": "/agk/secrets/billing" },
+  { "name": "ledger", "provider": "builtin", "mount": "/agk/secrets/ledger" } ]</code></pre>
+  </div>
+
+  <div class="block">
+    <div class="note-label">named in agentiik.yaml</div>
+<pre><code>secrets: [billing]
+
+steps:
+  invoice:
+    secrets: [billing]      <span class="c"># mounted at /agk/secrets/billing</span></code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Provider</th><th>Holds the value in</th><th>path</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>builtin</td><td>The installation's encrypted store</td><td>none</td><td>The value travels on the declaration's <code>PUT</code>, once, and never back; a <code>PUT</code> without one keeps the value stored. Rotating is writing again.</td></tr>
+          <tr><td>env</td><td>An environment variable of the API</td><td>the variable's name</td><td>Development only: refused unless the installation opts in explicitly.</td></tr>
+          <tr><td>vault</td><td>HashiCorp Vault</td><td>a path under the namespace's own prefix</td><td>The installation gives each namespace its prefix: <code>kv/data/agentiik/finance/</code> above.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>AWS Secrets Manager, which <a href="#profile-c-aws-with-managed-resources">profile C</a> uses, joins them under an identifier of its own. A declaration naming a path outside its namespace's own is refused.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The namespace says where a value lives, not the workflow file: a path in <code>agentiik.yaml</code> would let anyone able to push aim a step at whatever the store holds, while a declaration sits behind <code>secret:write</code> and inside the namespace's own paths.</p>
+    </div>
+    <p>Here is where the value travels.</p>
   </div>
 
   <figure>
@@ -3925,13 +3964,12 @@ concurrency:
 
   <div class="prose">
     <ul class="plain">
-      <li>A secret belongs to a namespace. A workflow can reference only its own namespace's secrets, so moving it elsewhere breaks unresolved references at validation rather than carrying access along.</li>
+      <li>A secret belongs to a namespace. A workflow can name only secrets its own namespace declares, so moving it elsewhere breaks unresolved references at validation rather than carrying access along.</li>
       <li>Mounted on tmpfs at <code>/agk/secrets/&lt;name&gt;</code>, never an environment variable by default, because a process environment is readable by its children and ends up in diagnostic dumps.</li>
       <li>The runner obtains the value at the last moment, by redeeming at the API the per-task grant the controller issued for that one task and that one secret. The API is the only component that reads the store; the controller names which secret a task may have and never sees its value.</li>
       <li>Secret values are masked in collected logs by literal match against the values known to the task, before anything is written to the store.</li>
       <li>Never reachable from condition expressions, only from <code>params</code> marked sensitive in the brick manifest.</li>
-      <li>No role reads a secret value through the API. Rotation is a write, never a read-then-write.</li>
-      <li>Providers: the built-in encrypted store, HashiCorp Vault, AWS Secrets Manager, and API environment variables for development.</li>
+      <li>No role reads a secret value through the API. Rotation is a write, never a read-then-write, and every write is recorded in the audit log as a secret write.</li>
     </ul>
   </div>
 </section>
@@ -3986,7 +4024,9 @@ concurrency:
           <tr><td class="wrapcell">GET, PUT /objects/{key...}<br>POST /objects/{ns}</td><td>The built-in object store, served only where the installation has no other. A presigned URL or a signed POST policy is the whole authorisation. A POST is taken only under the policy's prefix and 64 lowercase hex characters, hashed as it arrives, and refused if the bytes do not match, exactly as a PUT.</td></tr>
 
           <tr><th colspan="2">Namespaces, workflows and the catalog</th></tr>
-          <tr><td class="wrapcell">GET, PUT /api/v1/{ns}/secrets</td><td>Secret declarations: provider and path of each value. Never the values, which no route reads.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/secrets</td><td>The namespace's secret declarations: names, providers, paths and mount points, never a value. Requires <code>workflow:read</code>.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/secrets/{name}</td><td>One declaration, the same way.</td></tr>
+          <tr><td class="wrapcell">PUT, DELETE /api/v1/{ns}/secrets/{name}</td><td>Declares, changes or deletes one secret, and for <code>builtin</code> writes its value, which no answer returns. One secret per request, so two Terraform applies never drop each other's change. Requires <code>secret:write</code>; each write is audited as a secret write. See <a href="#secrets">Secrets</a>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/grants</td><td>Grants and denies that apply, with the scope of each.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/grants</td><td>Shares the workflow: principal, role, optional expiry, optional deny. Requires <code>grant:manage</code>.</td></tr>
           <tr><td class="wrapcell">DELETE /api/v1/{ns}/workflows/{name}/grants/{id}</td><td>Revokes one grant, from the next request and the next run creation.</td></tr>
@@ -4541,7 +4581,7 @@ flowchart LR
           <tr><td>agentiik_group</td><td>Definition and membership.</td></tr>
           <tr><td class="wrapcell">agentiik_service_account</td><td>A non-human principal, its label, its owning namespace.</td></tr>
           <tr><td>agentiik_api_token</td><td>A service account's token, scope and expiry. The clear value is returned once, at creation; write-only.</td></tr>
-          <tr><td>agentiik_secret</td><td>The declaration a workflow references: provider and path, never the value.</td></tr>
+          <tr><td>agentiik_secret</td><td>One secret a namespace declares: provider and path, never the value. The workflow file only names it. Needs <code>secret:write</code>.</td></tr>
           <tr><td>agentiik_run</td><td>That a run of a workflow, at a version, with given inputs, has happened. See <a href="#running-a-workflow-from-terraform">Running a workflow</a>.</td></tr>
         </tbody>
       </table>
@@ -4619,7 +4659,7 @@ resource "agentiik_grant" "ops_runs_invoicing" {
         <thead><tr><th>Stays out</th><th>Why</th><th>Instead</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell">a workflow's contents</td><td>HCL would be a second source of truth beside <code>agentiik.yaml</code>, disagreeing with it at the first push.</td><td><code>git push</code>, through the same hook as every push. The provider stops at the repository's first commit.</td></tr>
-          <tr><td class="wrapcell">secret values</td><td>A value passing through Terraform is a value in the state file, and treating the state as a secret store is how secrets most often escape infrastructure code.</td><td>The declaration only: which provider, which path.</td></tr>
+          <tr><td class="wrapcell">secret values</td><td>A value passing through Terraform is a value in the state file, and treating the state as a secret store is how secrets most often escape infrastructure code.</td><td>The declaration only: which provider, which path. A <code>builtin</code> value is written by its own <code>PUT</code>, outside Terraform.</td></tr>
         </tbody>
       </table>
     </div>
@@ -5225,6 +5265,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>steps</td><td>Per-step state within a run, envelope digests for each port.</td></tr>
           <tr><td>tasks</td><td>One row per dispatch: <code>task_id</code>, idempotency key, shard, attempt, state, runner, exit code. A requeue after loss adds a row under the same key.</td></tr>
           <tr><td>approvals</td><td>Waiting run, requested at, decided by, decision, comment.</td></tr>
+          <tr><td>secrets</td><td>One declaration per namespace and name: provider, path. For <code>builtin</code>, the value sealed under its own data key, which a dump alone cannot open.</td></tr>
           <tr><td>artifacts</td><td>One row per reference: namespace, run, step, port, digest, size, media type and that reference's expiry. An object's reference count is the number of rows naming its digest.</td></tr>
           <tr><td>runners</td><td>Labels, capacity, version, accepted namespaces, last heartbeat.</td></tr>
           <tr><td>audit_log</td><td>Append-only log of sensitive actions: actor, target, scope, result.</td></tr>
