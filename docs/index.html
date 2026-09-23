@@ -3746,7 +3746,7 @@ concurrency:
         <thead><tr><th>max_requeues</th><th>Is</th></tr></thead>
         <tbody>
           <tr><td>set by</td><td>The installation, on its controller: <code>MaxRequeues</code> in <code>controller.Options</code> until the server reads a configuration of its own. Never the workflow file.</td></tr>
-          <tr><td>default</td><td>3. A negative number requeues nothing.</td></tr>
+          <tr><td>default</td><td>3, and 0 means 3 too: a field left at zero is one nobody set. A negative number requeues nothing.</td></tr>
           <tr><td>counted</td><td>Per key, every loss included, the sweep's too: a further attempt is a new key and starts again at none.</td></tr>
           <tr><td>past it</td><td>The loss stands. The task stays <code>lost</code>, no <code>retry.max</code> attempt is spent, and the step fails on the infrastructure's account, its reason naming <code>max_requeues</code>.</td></tr>
         </tbody>
