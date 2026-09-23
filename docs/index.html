@@ -3498,7 +3498,7 @@ concurrency:
         </tbody>
       </table>
     </div>
-    <p>The built-in store is the API itself, at <code>/objects/</code>, and serves an installation that attaches no object store, a development one for instance; every <a href="#deployment">deployment profile</a> attaches MinIO or S3. There, a runner holding a task of <code>finance</code> can store any bytes under any key of <code>finance</code>, one that other runs already read included, and what refuses that on those stores is still to be decided.</p>
+    <p>The built-in store is the API itself, at <code>/objects/</code>, and serves an installation that attaches no object store, a development one for instance; every <a href="#deployment">deployment profile</a> attaches MinIO or S3. On those, a runner holding a task of <code>finance</code> can store any bytes under any key of <code>finance</code>, one that other runs already read included, and what refuses that is still to be decided.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>One policy per task, handed out at the redemption, rather than a URL per object: an output's key is the digest of bytes that do not exist until the container exits, and a policy in the one answer means a task never redeems a second time, reading its secrets again, to learn where its outputs go.</p>
@@ -5863,7 +5863,7 @@ post_task = [
       <li>A one-shot artifact is served through the API rather than redirected to, because a redirect cannot be counted.</li>
       <li>Sharding a <code>fan_out: item</code>, pairing a <code>zip</code>, keying a <code>join</code> or evaluating an expression over <code>item</code> needs the items, so the controller reads a step's published envelopes as it decides and retains none. That costs at most <a href="#size-rules"><code>envelope_max_bytes</code></a> per port per step (4 MiB by default), never the artifacts: a hundred gigabyte file travels as a digest and a URI, from runner to runner.</li>
     </ul>
-    <p>An installation that attaches no object store, which no profile above does, carries every object through the API as well, since the API is then its <a href="#the-task-message">object store</a>.</p>
+    <p>An installation that attaches no object store, which no deployment profile does, carries every object through the API as well, since the API is then its <a href="#the-task-message">object store</a>.</p>
 
     <h3 id="first-run">First run</h3>
     <ol class="steps">
