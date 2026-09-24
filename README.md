@@ -103,9 +103,10 @@ is current.
 | [ios](https://github.com/agentiik/ios) · [android](https://github.com/agentiik/android) | The mobile applications. |
 | [deploy](https://github.com/agentiik/deploy) | Compose stacks, installer, migration notes. |
 | [terraform-provider-agentiik](https://github.com/agentiik/terraform-provider-agentiik) | Namespaces, workflow repositories, grants, tokens and runs, as HCL. |
+| [homebrew-tap](https://github.com/agentiik/homebrew-tap) | The Homebrew formulae: `agk`, and the server programs with it. |
 | [.github](https://github.com/agentiik/.github) | Security policy, code of conduct, contribution guide, licensing and trademark notes. |
 
-All twelve are public, and eight of them hold a README and a licence and nothing else yet. The roadmap says which release fills each one.
+All thirteen are public, and eight of them hold a README and a licence and nothing else yet. The roadmap says which release fills each one.
 
 ## Where the rest will come from
 
