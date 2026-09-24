@@ -3259,7 +3259,7 @@ concurrency:
       <table>
         <thead><tr><th>Step</th><th>The runner</th><th>Docker Engine API v1.56</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>Pulls a batch from its pool's consumer (the pool's subject is the filter) and writes each key down in its record as <code>dispatched</code> (<a href="#task-bus">Task bus</a>). A key this host already ended is answered from the record, and one it still has in flight is left on the queue; neither is redeemed.</td><td></td></tr>
+          <tr><td>1</td><td>Pulls a batch from its pool's consumer (the pool's subject is the filter). A key this host already ended is answered from the record, and one it still has in flight is left on the queue; neither is redeemed. Of the rest, before anything is written down: a message whose image is not <code>name@sha256</code> is reported as no container ran, on the platform's account, then acknowledged, since no runner of any pool could ever run it; one whose namespace <code>AGK_RUNNER_NAMESPACES</code> leaves out, or whose declared <code>resources</code> would take the host past its declared capacity with what it already holds, is put back on the queue for another runner or a later pull. Only then does it write each remaining key down in its record as <code>dispatched</code> (<a href="#task-bus">Task bus</a>), so a message it put back is never found in flight when it comes round.</td><td></td></tr>
           <tr><td>2</td><td>Redeems the task's grant for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, the secret values and one upload policy. The redemption binds the task to this runner, and the <a href="#heartbeat">heartbeat</a> holds it from then on. <a href="#the-task-message">The task message</a> says what any other answer binds and what the runner does then.</td><td></td></tr>
           <tr><td>3</td><td>Acknowledges the message, now that the database says whose the task is.</td><td></td></tr>
           <tr><td>4</td><td>Reads the record again and refuses a key that has already ended, before a network, a pull or a secret is written. Then pulls the image by digest, verifying its signature where policy requires it from <a href="roadmap/#m08">v0.8.0</a> (<a href="#supply-chain">Supply chain</a>), and runs the host's <code>pre_task</code> hooks, if any (<a href="#runner-side-hooks">Runner-side hooks</a>).</td><td></td></tr>
@@ -3513,9 +3513,9 @@ concurrency:
 <pre><code><span class="p">&gt;</span> <span class="cmd">POST /api/v1/tasks/redeem</span>                   <span class="c"># runner credential</span>
 { "grant": "agkgrant_01JMZ8V1PC7K3M0_…", "task_id": "01JMZ8V1PC7K3M0",
   "idempotency_key": "01JMZ8V1P9C4/invoice/2/3/8" }
-<span class="c"># 401: grant expired or opens nothing · 403: this runner may not take it</span>
-<span class="c"># 409: another runner's task, or over · 422: never answerable, 500 until built</span>
-<span class="c"># any other 5xx: ask again</span>
+<span class="c"># 401: grant expired or opens nothing · 409: another runner's task, or over</span>
+<span class="c"># 403: this runner may not take it, not yet built</span>
+<span class="c"># 422: never answerable, 500 until built · any other 5xx: ask again</span>
 
 {
   "task_id": "01JMZ8V1PC7K3M0",
@@ -3539,7 +3539,7 @@ concurrency:
         <thead><tr><th>A redemption answers</th><th>It binds</th><th>The runner then</th></tr></thead>
         <tbody>
           <tr><td><code>200</code></td><td>the task, to this runner</td><td>Acknowledges the message, pulls the image and runs the task.</td></tr>
-          <tr><td class="wrapcell"><code>403</code>: this runner is draining or revoked, or its <code>AGK_RUNNER_NAMESPACES</code> leaves out the run's namespace</td><td>nothing</td><td>Puts the message back on the queue, for another runner of the pool.</td></tr>
+          <tr><td class="wrapcell"><code>403</code>: this runner is draining or revoked, or its <code>AGK_RUNNER_NAMESPACES</code> leaves out the run's namespace</td><td>nothing</td><td>Clears the key from its record and puts the message back on the queue, for another runner of the pool.</td></tr>
           <tr><td class="wrapcell"><code>409</code>: another runner's task, or one that is over</td><td>nothing</td><td>Acknowledges the message and starts nothing.</td></tr>
           <tr><td class="wrapcell"><code>422</code>: nothing to answer with, ever: no commit, version or tree recorded for the task, a secret the namespace does not declare or holds no value for, or a pool that does not accept the run's namespace</td><td>nothing</td><td>Reports that no container ran, then acknowledges. One that dies in between leaves the message to the next runner of the pool.</td></tr>
           <tr><td class="wrapcell">no answer at all, a <code>401</code> or any other <code>5xx</code>: the grant expired or opens nothing, the runner's own credential was refused, or a failure that may pass, such as an input or a secret its store could not read this time</td><td>perhaps: the answer may be lost after the binding</td><td>Keeps the key, names it in its heartbeat and redeems again, acknowledging nothing. Once the <code>deadline</code> the message carries has passed, no answer can come, since the grant expires with it: it reports the task <code>timed_out</code> with no container ran, then acknowledges.</td></tr>
@@ -3710,7 +3710,11 @@ concurrency:
         </tbody>
       </table>
     </div>
-    <p>The grace ends at the revocation plus <code>revocation_grace</code>, an installation setting defaulting to the task ceiling, one hour, since no task legitimately runs longer.</p>
+    <p>The grace ends at the revocation plus <code>revocation_grace</code>, an installation setting defaulting to the task ceiling, one hour. That covers every step that writes no <code>timeout</code>, but not one that writes a longer one: a task still running when the grace ends has its result refused and is declared <code>lost</code>, coming back only as <a href="#task-states">Back to pending</a> says. An installation whose steps run longer raises the grace.</p>
+    <div class="decision">
+      <span class="note-label">Open question</span>
+      <p>Whether <code>revocation_grace</code> should instead default to the latest deadline among the tasks the runner holds when it is revoked, so that no task a revoked runner already holds loses its result. The one-hour default stands until that is decided.</p>
+    </div>
   </div>
 </section>
 
@@ -4215,7 +4219,7 @@ steps:
           <tr><td>metrics</td><td>Queue depth per runner label, task duration per brick and version, retry rate, loss rate, runner occupancy, end-to-end latency per workflow, quota consumption per namespace.</td></tr>
           <tr><td>logs</td><td>Structured JSON, indexed by run, step, attempt and shard, streamed live over SSE and archived in the object store. Reading them needs <code>run:read</code>; the payload viewer needs <code>run:read_data</code>.</td></tr>
           <tr><td>envelopes</td><td>Every step keeps its input and output envelopes, readable as they are in the console, so an incident is reproducible without extra instrumentation.</td></tr>
-          <tr><td>audit log</td><td>Separate and append-only. Sign-in success and failure, credential enrolment and removal, recovery codes issued and used, authentication policy changes, token creation and revocation, device registration, grant and deny changes, namespace and quota changes, manual trigger, approval, cancellation, secret write, runner policy change, and any administrator action that widened their own access.</td></tr>
+          <tr><td>audit log</td><td>Separate and append-only. Sign-in success and failure, credential enrolment and removal, recovery codes issued and used, authentication policy changes, token creation and revocation, device registration, grant and deny changes, namespace and quota changes, manual trigger, approval, cancellation, secret write, runner policy change, runner drain and revocation, and any administrator action that widened their own access.</td></tr>
         </tbody>
       </table>
     </div>
@@ -4397,7 +4401,7 @@ Authorization: Bearer &lt;api token&gt;
     </div>
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>Joining is a verb of <code>agk-runner</code>, not of <code>agk</code>: join writes what serve reads, so a runner host needs one binary, and <code>agk</code> links the API and through it the database and the controller, which the agent's boundary test keeps out. The API and the controller are two programs rather than one because only the API may link the secret store.</p>
+      <p>Joining is a verb of <code>agk-runner</code>, not of <code>agk</code>: join writes what serve reads, so a runner host needs one binary, and <code>agk</code> links the API and through it the database and the controller, which the agent must keep out and a boundary test of its own will hold, as <code>driver</code> and <code>graph</code> have theirs. The API and the controller are two programs rather than one because only the API may link the secret store.</p>
     </div>
 
     <div class="decision">
@@ -6196,10 +6200,10 @@ post_task = [
     <p>An installation that attaches no object store carries every object through the API as well, since the API is then its <a href="#the-task-message">object store</a>.</p>
 
     <h3 id="configuration">Configuration</h3>
-    <p>Every program reads <code>AGK_*</code> environment variables. A secret is never a value: it sits in a file an <code>AGK_*_FILE</code> variable names, since an environment is readable by children and ends up in diagnostic dumps. A required setting that is missing, or a file that cannot be read, refuses the start and names the variable. Durations are written <code>1h</code>, <code>720h</code>.</p>
+    <p>Every program reads <code>AGK_*</code> environment variables. A server program's secret is never a value: it sits in a file an <code>AGK_*_FILE</code> variable names, since an environment is readable by children and ends up in diagnostic dumps. The runner keeps its secrets out of the environment another way, in files that join and rotation write for it, listed last below. A required setting that is missing, or a file that cannot be read, refuses the start and names the variable. Durations are written <code>1h</code>, <code>720h</code>.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Variable</th><th>Read by</th><th>Default</th><th>Why</th></tr></thead>
+        <thead><tr><th>Setting</th><th>Read by</th><th>Default</th><th>Why</th></tr></thead>
         <tbody>
           <tr><th colspan="4">The server programs</th></tr>
           <tr><td class="wrapcell">AGK_LISTEN</td><td>api</td><td><code>:8080</code></td><td>An unprivileged port: TLS is terminated in front (<a href="#what-every-profile-must-provide">What every profile must provide</a>).</td></tr>
@@ -6211,22 +6215,26 @@ post_task = [
           <tr><td class="wrapcell">AGK_BUS_ACCOUNT_SEED_FILE</td><td>api</td><td>required</td><td>What the API mints runners' short-lived bus credentials with.</td></tr>
           <tr><td class="wrapcell">AGK_OBJECTS_DIR</td><td>api, controller</td><td>required</td><td>The built-in object store, one directory both share until MinIO and S3 (<a href="roadmap/#m09">v0.9.0</a>).</td></tr>
           <tr><td class="wrapcell">AGK_PRESIGN_KEY_FILE</td><td>api</td><td>required</td><td>Signs presigned URLs and upload policies.</td></tr>
-          <tr><td class="wrapcell">AGK_MASTER_KEY_FILE</td><td>api</td><td>none: no built-in secret store, and a value's <code>PUT</code> answers <code>503</code></td><td>The key that opens the store stays outside the database (<a href="#secrets">Secrets</a>).</td></tr>
+          <tr><td class="wrapcell">AGK_MASTER_KEY_FILE</td><td>api</td><td>none: no built-in secret store, and a value's <code>PUT</code> answers <code>503</code>. Required from <a href="roadmap/#m09">v0.9.0</a>, the release somebody else installs, with the host keyring as the alternative.</td><td>The key that opens the store stays outside the database (<a href="#secrets">Secrets</a>).</td></tr>
           <tr><td class="wrapcell">AGK_OPERATOR_TOKEN_HASH_FILE</td><td>api</td><td>required, until v0.3.0</td><td>The interim operator (<a href="#first-run">First run</a>).</td></tr>
           <tr><td class="wrapcell">AGK_MAX_REQUEUES</td><td>controller</td><td><code>3</code></td><td><code>max_requeues</code>, the installation's bound on losses (<a href="#task-states">Task states</a>).</td></tr>
           <tr><td class="wrapcell">AGK_TASK_CEILING</td><td>api, controller</td><td><code>1h</code></td><td>The deadline of a step that writes none (<a href="#yaml">Workflow language</a>, Deadlines).</td></tr>
           <tr><td class="wrapcell">AGK_JOIN_ROTATION</td><td>api</td><td><code>720h</code></td><td>How far each rotation moves <code>rotate_by</code>: a machine dark for a month should be reconsidered.</td></tr>
-          <tr><td class="wrapcell">AGK_REVOCATION_GRACE</td><td>api</td><td>the task ceiling</td><td><code>revocation_grace</code>: no task legitimately runs longer.</td></tr>
+          <tr><td class="wrapcell">AGK_REVOCATION_GRACE</td><td>api</td><td>the task ceiling</td><td><code>revocation_grace</code>: how long a revoked runner's results are still taken. A task running past it is declared lost, so an installation whose steps write a longer <code>timeout</code> raises it (<a href="#registering-a-runner">Registering a runner</a>).</td></tr>
           <tr><th colspan="4">The runner</th></tr>
           <tr><td class="wrapcell">AGK_API</td><td>agk-runner</td><td>required; join writes it</td><td>The one address a runner is given; the API hands out the rest.</td></tr>
           <tr><td class="wrapcell">AGK_RUNNER_LABELS</td><td>agk-runner</td><td>required</td><td>Claimed at join, within what the token permits.</td></tr>
           <tr><td class="wrapcell">AGK_RUNNER_CONCURRENCY</td><td>agk-runner</td><td>one task per vCPU</td><td>Where <a href="#sizing">Sizing</a> says to start.</td></tr>
           <tr><td class="wrapcell">AGK_RUNNER_WORKDIR</td><td>agk-runner</td><td><code>/var/lib/agentiik/work</code></td><td>Task directories and the record of keys, on the fast disk and writable under <code>ProtectSystem=strict</code>.</td></tr>
           <tr><td class="wrapcell">AGK_RUNNER_NAMESPACES</td><td>agk-runner</td><td>empty: every namespace the pool accepts</td><td>Narrows one host, sent at join (<a href="#runner">Runner</a>).</td></tr>
+          <tr><th colspan="4">The runner's files, which join and rotation write</th></tr>
+          <tr><td class="wrapcell">/var/lib/agentiik/runner.key</td><td>agk-runner</td><td>written by join, mode 0600</td><td>The host's Ed25519 key, which signs each rotation and never leaves the machine (<a href="#registering-a-runner">Registering a runner</a>).</td></tr>
+          <tr><td class="wrapcell">/etc/agentiik/runner.env</td><td>agk-runner</td><td>written by join, mode 0600</td><td>The credential join returned, beside <code>AGK_API</code>, read by <code>serve</code> itself rather than loaded into its environment. Also where the settings above may be written, in either runner form.</td></tr>
+          <tr><td class="wrapcell">/var/lib/agentiik/credential</td><td>agk-runner</td><td>written by the first rotation</td><td>The rotated credential, preferred to <code>runner.env</code>, since the unit's <code>ProtectSystem=strict</code> leaves <code>/etc/agentiik</code> read-only to the agent.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The runner reads its settings from the environment and <code>/etc/agentiik/runner.env</code>, in both forms. Its secrets are files join and rotation write: the key at <code>/var/lib/agentiik/runner.key</code> and the credential in <code>runner.env</code>, or <code>/var/lib/agentiik/credential</code> once a rotation has written one. The host's own settings are in <code>/etc/agentiik/runner.toml</code> (<a href="#runner">Runner</a>).</p>
+    <p>The host's own settings are in <code>/etc/agentiik/runner.toml</code> (<a href="#runner">Runner</a>).</p>
 
     <h3 id="first-run">First run</h3>
     <ol class="steps">
