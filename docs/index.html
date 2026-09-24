@@ -3700,9 +3700,9 @@ concurrency:
     <p>Registration proves which pool an unknown machine belongs to, and gives it credentials worth having only on that machine.</p>
     <ol class="steps">
       <li>An administrator creates a runner pool with its labels, its accepted namespaces and its resource ceilings, then issues a <strong>join token</strong>: single use, short lived (one hour by default), bound both to that pool and to the exact set of labels a runner may claim with it.</li>
-      <li>On the host: <code>agk-runner join --api https://agentiik.example.com --token agkjoin_…</code>. It generates an Ed25519 keypair, writes the private key to <code>/var/lib/agentiik/runner.key</code> (mode 0600, owned by the agent's account), and sends the public key, the labels it claims, its <code>AGK_RUNNER_NAMESPACES</code>, its capacity in vCPU, memory and disk, its architecture and its agent version. The private key never leaves the machine.</li>
+      <li>On the host, as root: <code>agk-runner join --api https://agentiik.example.com --token agkjoin_… --labels zone=dmz,arch=amd64</code>. It generates an Ed25519 keypair for the private key at <code>/var/lib/agentiik/runner.key</code> (mode 0600, owned by the agent's account, <code>agentiik</code> unless <code>--user</code> names another), and sends the public key, the labels it claims (<code>--labels</code> or <code>AGK_RUNNER_LABELS</code>), its <code>AGK_RUNNER_NAMESPACES</code>, its capacity as measured on the host (vCPU, <code>MemTotal</code>, and the disk available under <code>AGK_RUNNER_WORKDIR</code>), its architecture, its agent version and its containment as the daemon reports it. Nothing is written until the API answers, so a refused token leaves nothing behind, key included. The private key never leaves the machine.</li>
       <li>The API verifies the token, checks that the claimed labels are a subset of what the token permits and that any namespaces the host narrows itself to are ones its pool accepts, refuses anything else, creates the runner record and returns a runner identifier, the pool, and a credential shown once and valid until its <code>rotate_by</code>. The identifier is minted as a lowercase ULID, the grammar results, bus subjects and URLs read it in.</li>
-      <li>The credential goes to <code>/etc/agentiik/runner.env</code>, mode 0600, owned by the agent's account, which <code>agk-runner serve</code> reads. The join token is spent.</li>
+      <li>The credential goes to <code>/etc/agentiik/runner.env</code>, mode 0600, owned by the agent's account, beside <code>AGK_API</code>, <code>AGK_RUNNER_ID</code>, <code>AGK_RUNNER_POOL</code>, <code>AGK_RUNNER_LABELS</code> and <code>AGK_RUNNER_NAMESPACES</code>, which <code>agk-runner serve</code> reads. The join token is spent. A host that has joined joins again only with <code>--replace</code>, as a new runner with a new key; the old one stays registered until an administrator revokes it.</li>
       <li>Every API call then carries that credential. The runner asks the API for a <strong>short-lived bus token</strong> whenever the previous one nears expiry. Bus credentials are therefore never at rest on a runner host, which is what lets a runner sit in a zone where a stolen disk must not yield a working queue consumer.</li>
       <li>The runner announces its labels and capacity, starts heartbeating, and pulls from the queues its labels match.</li>
     </ol>
@@ -3713,7 +3713,7 @@ concurrency:
         <thead><tr><th>Event</th><th>What happens</th><th>Why</th></tr></thead>
         <tbody>
           <tr><td>restart</td><td>Identity is the keypair on disk.</td><td>Nothing to re-register: the private key never left the machine, so the runner that comes back is provably the one that joined.</td></tr>
-          <tr><td>reimaged host</td><td>A new runner, which joins again, as is any host whose key is gone. The old record stays for the audit log.</td><td>Never silently reused.</td></tr>
+          <tr><td>reimaged host</td><td>A new runner, which joins again, as is any host whose key is gone; one whose <code>runner.env</code> remains joins with <code>--replace</code>. The old record stays for the audit log.</td><td>Never silently reused.</td></tr>
           <tr><td>rotation</td><td>Automatic, as below. A credential past its <code>rotate_by</code> is refused everywhere, and that host joins again.</td><td>A machine dark for a month should be reconsidered, not readmitted.</td></tr>
           <tr><td>drain, revocation</td><td>Effective at the next heartbeat, as below.</td><td>Revoking a credential never destroys work already done.</td></tr>
           <tr><td>labels</td><td>A runner claims only labels its join token allowed, and a token permits only labels its pool carries.</td><td>The chain ends at an administrator, so a machine cannot add <code>zone=lan</code> to itself and start receiving the steps that were kept off the internet.</td></tr>
@@ -4450,7 +4450,7 @@ Authorization: Bearer &lt;api token&gt;
       <table>
         <thead><tr><th>Program</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td>agk-runner join</td><td>Trades a join token for a runner's identity: writes the key and <code>/etc/agentiik/runner.env</code> (<a href="#registering-a-runner">Registering a runner</a>).</td></tr>
+          <tr><td>agk-runner join</td><td>Trades a join token for a runner's identity: <code>--api</code>, <code>--token</code> and <code>--labels</code>, or <code>AGK_API</code> and <code>AGK_RUNNER_LABELS</code>. Run as root, it writes the key and <code>/etc/agentiik/runner.env</code> and gives both to <code>--user</code>, <code>agentiik</code> by default. <code>--replace</code> makes a host that has joined a new runner (<a href="#registering-a-runner">Registering a runner</a>).</td></tr>
           <tr><td>agk-runner serve</td><td>The agent: heartbeats, pulls, runs, publishes. What the systemd unit and the container run.</td></tr>
           <tr><td>agk-runner version</td><td>Prints the agent version join sends.</td></tr>
           <tr><td>agentiik-api serve</td><td>Serves every route, the built-in object store and the secret providers. At SIGTERM it finishes the requests being answered for up to 30 s, and a second signal ends it. Without a verb the program exits 2.</td></tr>
@@ -6125,10 +6125,9 @@ Type=notify
 User=agentiik
 <span class="c"># member of the group that owns the daemon socket, never root</span>
 SupplementaryGroups=docker
-Environment=AGK_API=https://agentiik.example.com
-Environment=AGK_RUNNER_LABELS=zone=dmz,arch=amd64,gpu=true
+<span class="c"># AGK_API, AGK_RUNNER_LABELS and AGK_RUNNER_NAMESPACES are in runner.env, which join wrote;</span>
+<span class="c"># repeated here, each must be byte for byte the same or serve refuses to start</span>
 Environment=AGK_RUNNER_CONCURRENCY=8
-Environment=AGK_RUNNER_WORKDIR=/var/lib/agentiik/work
 <span class="c"># reads /etc/agentiik/runner.env itself, so the credential stays out of the environment</span>
 ExecStart=/usr/local/bin/agk-runner serve
 Restart=always
@@ -6163,7 +6162,7 @@ secrets_dir = "/run/agentiik/secrets"</code></pre>
     <h4>Registration</h4>
     <ol class="steps">
       <li>An administrator issues a join token: single use, short lived, scoped to a pool and the labels it may claim.</li>
-      <li><code>agk-runner join --api https://agentiik.example.com --token &lt;token&gt;</code> trades it for a credential in <code>/etc/agentiik/runner.env</code>, mode 0600, and a key in <code>/var/lib/agentiik/runner.key</code>.</li>
+      <li><code>agk-runner join --api https://agentiik.example.com --token &lt;token&gt; --labels zone=dmz,arch=amd64,gpu=true</code>, as root, trades it for a credential in <code>/etc/agentiik/runner.env</code>, mode 0600, and a key in <code>/var/lib/agentiik/runner.key</code>, both owned by <code>agentiik</code>. A work root other than the default is best written as <code>AGK_RUNNER_WORKDIR</code> in <code>runner.env</code> before joining, which join keeps, so the disk it declares is the work root's.</li>
       <li><code>agk-runner serve</code> announces the runner's labels, capacity and accepted namespaces, and pulls from the queues its labels match. Draining or revoking it stops it taking work at its next heartbeat.</li>
     </ol>
     <p>No inbound port is ever opened on a runner host; every connection is outbound, to the API, the bus, the object store and the registry. Full exchange: <a href="#registering-a-runner">Registering a runner</a>.</p>
@@ -6306,14 +6305,14 @@ post_task = [
           <tr><td class="wrapcell">AGK_REVOCATION_GRACE</td><td>api</td><td>AGK_TASK_CEILING</td><td><code>revocation_grace</code>: how long a revoked runner's results are still taken. A task running past it is declared lost, so an installation whose steps write a longer <code>timeout</code> raises it (<a href="#registering-a-runner">Registering a runner</a>).</td></tr>
           <tr><th colspan="4">The runner</th></tr>
           <tr><td class="wrapcell">AGK_API</td><td>agk-runner</td><td>required; join writes it</td><td>The one address a runner is given; the API hands out the rest. <code>https</code>, or <code>http</code> to a loopback address alone, with no user, query or fragment: every call carries the runner's credential.</td></tr>
-          <tr><td class="wrapcell">AGK_RUNNER_LABELS</td><td>agk-runner</td><td>required</td><td>Claimed at join, within what the token permits.</td></tr>
+          <tr><td class="wrapcell">AGK_RUNNER_LABELS</td><td>agk-runner</td><td>required; join writes it</td><td>Claimed at join, within what the token permits.</td></tr>
           <tr><td class="wrapcell">AGK_RUNNER_CONCURRENCY</td><td>agk-runner</td><td>one task per vCPU</td><td>Where <a href="#sizing">Sizing</a> says to start. At most 4096, the most keys a heartbeat may name.</td></tr>
-          <tr><td class="wrapcell">AGK_RUNNER_WORKDIR</td><td>agk-runner</td><td><code>/var/lib/agentiik/work</code></td><td>An absolute path: task directories and the record of keys, on the fast disk and writable under <code>ProtectSystem=strict</code>.</td></tr>
-          <tr><td class="wrapcell">AGK_RUNNER_NAMESPACES</td><td>agk-runner</td><td>empty: every namespace the pool accepts</td><td>Narrows one host, sent at join (<a href="#runner">Runner</a>).</td></tr>
+          <tr><td class="wrapcell">AGK_RUNNER_WORKDIR</td><td>agk-runner</td><td><code>/var/lib/agentiik/work</code></td><td>An absolute path: task directories and the record of keys, on the fast disk and writable under <code>ProtectSystem=strict</code>. Join declares the disk available on its filesystem.</td></tr>
+          <tr><td class="wrapcell">AGK_RUNNER_NAMESPACES</td><td>agk-runner</td><td>empty: every namespace the pool accepts</td><td>Narrows one host, sent at join and written to <code>runner.env</code> by it (<a href="#runner">Runner</a>).</td></tr>
           <tr><td class="wrapcell">DOCKER_HOST</td><td>agk-runner</td><td>the local daemon's socket</td><td>The daemon the runner drives, as Docker's own clients read it.</td></tr>
           <tr><th colspan="4">The runner's files, which join and rotation write</th></tr>
           <tr><td class="wrapcell">/var/lib/agentiik/runner.key</td><td>agk-runner</td><td>written by join, mode 0600</td><td>The host's Ed25519 key, which signs each rotation and never leaves the machine (<a href="#registering-a-runner">Registering a runner</a>).</td></tr>
-          <tr><td class="wrapcell">/etc/agentiik/runner.env</td><td>agk-runner</td><td>written by join, mode 0600</td><td>The credential join returned, beside <code>AGK_API</code>, read by <code>serve</code> itself rather than loaded into its environment. Also where the settings above may be written, in either runner form; one set in both places with two values refuses the start. Read as <code>KEY=VALUE</code> exactly: no quotes, escapes, <code>$</code>, backquotes, <code>export</code> or trailing comments, since a systemd <code>EnvironmentFile=</code> or a Compose <code>env_file</code> would read them differently. Refused as a symbolic link, owned by another account, or readable by its group or others.</td></tr>
+          <tr><td class="wrapcell">/etc/agentiik/runner.env</td><td>agk-runner</td><td>written by join, mode 0600</td><td>What join wrote, owned by the agent's account: the credential join returned, beside <code>AGK_API</code>, read by <code>serve</code> itself rather than loaded into its environment. Also where the settings above may be written, in either runner form, and join keeps them; one set in both places with two values refuses the start. Read as <code>KEY=VALUE</code> exactly: no quotes, escapes, <code>$</code>, backquotes, <code>export</code> or trailing comments, since a systemd <code>EnvironmentFile=</code> or a Compose <code>env_file</code> would read them differently. Refused as a symbolic link, owned by another account, or readable by its group or others.</td></tr>
           <tr><td class="wrapcell">AGK_RUNNER_ID, AGK_RUNNER_POOL, AGK_RUNNER_CREDENTIAL</td><td>agk-runner</td><td>written by join into <code>runner.env</code></td><td>The identifier and the pool the join answered, and the credential. Refused in the environment: the identity is read from the file alone, and a credential in the environment is inherited by every process the agent starts.</td></tr>
           <tr><td class="wrapcell">/var/lib/agentiik/credential</td><td>agk-runner</td><td>written by the first rotation</td><td>The rotated credential, preferred to <code>runner.env</code>, since the unit's <code>ProtectSystem=strict</code> leaves <code>/etc/agentiik</code> read-only to the agent.</td></tr>
         </tbody>

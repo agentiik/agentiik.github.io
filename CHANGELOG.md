@@ -8,7 +8,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
-**What the runner batch built, as built.** `agentiik-api serve`, `bus-init` and `bus-credential`, the bus identity and its three files, and a first run with the interim operator token; the join, heartbeat and bus token routes; a stop's shape and its four reasons; exit code 121 for any broken output contract, measured before the first upload; the secrets tmpfs, its `fstab` line and `ReadWritePaths`; what `runner.env` accepts; and a controller that ends rather than retrying once it loses the database, the bus or its lock.
+**What the runner batch built, as built.** `agentiik-api serve`, `bus-init` and `bus-credential`, the bus identity and its three files, and a first run with the interim operator token; the join, heartbeat and bus token routes; a stop's shape and its four reasons; exit code 121 for any broken output contract, measured before the first upload; the secrets tmpfs, its `fstab` line and `ReadWritePaths`; what `runner.env` accepts; a controller that ends rather than retrying once it loses the database, the bus or its lock; and `agk-runner join` as built, with `--labels`, `--user` and `--replace`, writing the settings the unit no longer repeats.
 
 **Install with Homebrew.** Get started and the command line table now install `agk` with `brew install agentiik/tap/agk`, and the server programs with `brew install --HEAD agentiik/tap/agentiik`, from the new `homebrew-tap` repository, the thirteenth, which the repositories table and the roadmap marker now list.
 
