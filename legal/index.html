@@ -110,6 +110,21 @@ body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
+<!-- Matomo -->
+<script>
+  var _paq = window._paq = window._paq || [];
+  /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  (function() {
+    var u="//mamoto.rslt.fr/";
+    _paq.push(['setTrackerUrl', u+'matomo.php']);
+    _paq.push(['setSiteId', '3']);
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+  })();
+</script>
+<!-- End Matomo Code -->
 </head>
 <body>
 
@@ -128,7 +143,7 @@ img{max-width:100%}
 </a>
 
 <h1>Legal notice</h1>
-<p class="updated">Last updated 11 September 2026</p>
+<p class="updated">Last updated 24 September 2026</p>
 
 <h2>Publisher</h2>
 <p>This site is published by François Rousselet, acting as an individual and not on behalf of a company. He is also the director of publication. He can be reached through <a href="https://github.com/agentiik">github.com/agentiik</a>.</p>
@@ -140,7 +155,14 @@ img{max-width:100%}
 <p>The documents on this site, their text, their diagrams and the Agentiik mark are © 2026 François Rousselet. The software they describe is licensed in its own repositories under <a href="https://github.com/agentiik">github.com/agentiik</a>, and those licences, not this notice, govern what may be done with it.</p>
 
 <h2>Cookies and measurement</h2>
-<p>This site sets no cookies, runs no analytics and contains no tracker. Nothing here identifies a reader or follows one from page to page.</p>
+<p>This site measures its audience with Matomo, hosted by the publisher at <code>mamoto.rslt.fr</code>. Each page asks the reader's browser to load <code>matomo.js</code> from there and to report the visit, which discloses the reader's IP address, the page, the referrer and the browser's details to that server. The figures serve only to know which pages are read; they are not sold or passed to anyone else.</p>
+<p>Matomo sets these first-party cookies:</p>
+<ul>
+<li><code>_pk_id</code>: a random visitor identifier, so a return visit is counted once; kept 13 months.</li>
+<li><code>_pk_ses</code>: that a visit is under way; kept 30 minutes.</li>
+<li><code>_pk_ref</code>: the site the visit came from; kept 6 months.</li>
+</ul>
+<p>A reader can refuse or delete them in the browser's settings, or block <code>mamoto.rslt.fr</code>; the site works the same without them.</p>
 
 <h2>Data seen while serving a page</h2>
 <p>Serving a page involves the reader's IP address. GitHub, as host, records technical data of that kind; what it does with it is set out in the <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a>.</p>
