@@ -8,6 +8,8 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**Task progress, results, log shipping and pools, as built.** `running` and `publishing` reach the tasks table as `$defs/taskProgress`, with the rules it is written by; a result is kept under `.results` until the bus takes it, and its key stays in the heartbeat; `POST /api/v1/tasks/logs` with its body cap, refusals, caps, storage and `task_logs` tables; a log addressed by the idempotency key; a stopped task's `137` or `143`; the redemption's `403` and `422` in the order they are checked, and a pool's ceiling given to a step asking for none; a step sent to the one pool whose labels include its `runs_on`, or to `default`, and `125` for none or several; a run's `inputs` left out without `run:read_data`, and a selector that relocates nothing.
+
 **Matomo Tag Manager.** Every page also loads the Tag Manager container `container_zGSBp6k5` from `mamoto.rslt.fr`, so events can be set up in Matomo without changing the site, and the legal notice says so.
 
 **Audience measurement with Matomo.** Every page loads the Matomo tracker from `mamoto.rslt.fr`, site 3, and the legal notice now says what it collects and which cookies it sets, where it used to say the site ran no analytics.
