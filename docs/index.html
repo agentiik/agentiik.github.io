@@ -3364,7 +3364,7 @@ concurrency:
           <tr><td class="wrapcell">API</td><td>secret store</td><td>HTTPS or mTLS</td><td>application role</td><td>secret values. The API is the only component that reads one.</td></tr>
           <tr><td class="wrapcell">controller</td><td>PostgreSQL</td><td>TCP with TLS</td><td>password or client certificate</td><td>run and task state, the election lock, <code>LISTEN</code></td></tr>
           <tr><td class="wrapcell">controller</td><td>bus</td><td>TLS, or HTTPS for a managed queue</td><td>user JWT or instance role</td><td>ready tasks</td></tr>
-          <tr><td class="wrapcell">runner</td><td>bus</td><td>TLS or HTTPS</td><td>short-lived token minted by the API</td><td>pulls tasks, publishes results</td></tr>
+          <tr><td class="wrapcell">runner</td><td>bus</td><td>TLS or HTTPS</td><td>short-lived token minted by the API</td><td>pulls tasks, publishes results, hears stops on <code>agentiik.stops</code></td></tr>
           <tr><td class="wrapcell">runner</td><td>API</td><td>HTTPS</td><td>runner credential, then a per-task grant</td><td>registration, heartbeat, grant redemption, log shipping</td></tr>
           <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS</td><td>presigned URL or signed POST policy, no standing credential</td><td>the workflow tree, input and output artifacts</td></tr>
           <tr><td class="wrapcell">runner</td><td>registry</td><td>HTTPS</td><td>the pool's pull credentials</td><td>brick images, by digest</td></tr>
@@ -4231,7 +4231,7 @@ Authorization: Bearer &lt;api token&gt;
         <tbody>
           <tr><td>the request</td><td>The API writes the moment on the run, keeping the first if asked again, and notifies the controller. It stops nothing itself: the two share the database and nothing else.</td></tr>
           <tr><td class="wrapcell">the controller's next pass</td><td>Before admission, so a <code>queued</code> run is never let in to be called off. The run ends <code>cancelled</code>; one that never left the queue has no <code>started_at</code>.</td></tr>
-          <tr><td>its tasks</td><td>Every task not over is written <code>cancelled</code> in that pass, so a message still on the queue redeems nothing and the run's share of <code>max_concurrent_tasks</code> comes back at once. The runners holding redeemed ones are asked to stop them. A lost dispatch keeps its loss.</td></tr>
+          <tr><td>its tasks</td><td>Every task not over is written <code>cancelled</code> in that pass, so a message still on the queue redeems nothing and the run's share of <code>max_concurrent_tasks</code> comes back at once. The runners holding redeemed ones are asked to stop them on the bus subject <code>agentiik.stops</code>, which every runner subscribes to over its own connection, so a stop arrives at once and nothing connects to a runner. It is not kept: a runner not connected when it goes out misses it, and that container runs to its deadline. A lost dispatch keeps its loss.</td></tr>
           <tr><td>the audit log</td><td>Records the request once it exists, a <a href="roadmap/#m02">v0.2.0</a> task not yet built.</td></tr>
         </tbody>
       </table>
