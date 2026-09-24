@@ -8,6 +8,8 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**Use cases.** A new chapter after Get started with six workflows: home automation, DevOps, finance, cybersecurity, a data pipeline, and an AI agent calling a workflow over MCP. Each is a complete `agentiik.yaml` that validates against the workflow schema, with a table linking what it uses to the section that specifies it and the release it runs from, per the roadmap. Only the data pipeline runs today; the others reach the network and wait for the egress proxy in v0.9.0. The wait brick has no manifest yet, so the finance example passes it no parameters and assumes its `out` port.
+
 **What the runner batch built, as built.** `agentiik-api serve`, `bus-init` and `bus-credential`, the bus identity and its three files, and a first run with the interim operator token; the join, heartbeat and bus token routes; a stop's shape and its four reasons; exit code 121 for any broken output contract, measured before the first upload; the secrets tmpfs, its `fstab` line and `ReadWritePaths`; what `runner.env` accepts; a controller that ends rather than retrying once it loses the database, the bus or its lock; and `agk-runner join` as built, with `--labels`, `--user` and `--replace`, writing the settings the unit no longer repeats.
 
 **Install with Homebrew.** Get started and the command line table now install `agk` with `brew install agentiik/tap/agk`, and the server programs with `brew install --HEAD agentiik/tap/agentiik`, from the new `homebrew-tap` repository, the thirteenth, which the repositories table and the roadmap marker now list.

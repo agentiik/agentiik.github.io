@@ -591,6 +591,16 @@ img{max-width:100%}
             <li><a href="#not-yet">What does not work yet</a></li>
           </ul>
         </li>
+        <li><a href="#use-cases">Use cases</a>
+          <ul class="subs">
+            <li><a href="#use-case-home-automation">Home automation</a></li>
+            <li><a href="#use-case-devops">DevOps</a></li>
+            <li><a href="#use-case-finance">Finance</a></li>
+            <li><a href="#use-case-cybersecurity">Cybersecurity</a></li>
+            <li><a href="#use-case-data">Data pipelines</a></li>
+            <li><a href="#use-case-ai-agent">AI agent over MCP</a></li>
+          </ul>
+        </li>
       </ul>
     </details>
     <details class="part" open>
@@ -1090,6 +1100,536 @@ flowchart LR
         </tbody>
       </table>
     </div>
+  </div>
+</section>
+
+<!-- ============ USE CASES ============ -->
+<section id="use-cases">
+  <div class="sec-head"><span class="mark">§</span><h2>Use cases</h2></div>
+  <div class="prose">
+    <p>Six workflows, each small enough to read in one sitting and complete enough to push. The services they talk to, Home Assistant, Kubernetes, a bank, appear only at the far end of a <a href="#running-a-script-instead-of-a-brick">script step</a>: Agentiik ships no integration with any of them, and needs none. The scripts a step names sit beside <code>agentiik.yaml</code> in the <a href="#the-workflow-repository">repository</a> and are not shown.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Use case</th><th>Starts on</th><th>What it shows</th><th>Runs from</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#use-case-home-automation">Home automation</a></td><td><code>schedule</code></td><td>A runner inside the house, one host per step.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
+          <tr><td><a href="#use-case-devops">DevOps</a></td><td><code>webhook</code></td><td>A rollout one region at a time, one rollout at a time.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
+          <tr><td><a href="#use-case-finance">Finance</a></td><td><code>schedule</code></td><td>A join, a human approval, a step never run twice.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
+          <tr><td><a href="#use-case-cybersecurity">Cybersecurity</a></td><td><code>webhook</code></td><td>Routing by port, one secret and one host per step.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
+          <tr><td><a href="#use-case-data">Data pipelines</a></td><td><code>agk run --local</code></td><td>Catalog bricks, bad rows on a port of their own.</td><td><a href="roadmap/#m01">v0.1.0</a>, today</td></tr>
+          <tr><td><a href="#use-case-ai-agent">AI agent over MCP</a></td><td><code>tools/call</code></td><td>A workflow published as a tool.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Most of them reach the network, and that decides the last column: <code>network: egress</code> is refused, not opened, until the proxy enforcing <code>egress.allow</code> lands in <a href="roadmap/#m09">v0.9.0</a> (<a href="#not-yet">What does not work yet</a>). A filtered network that is not actually filtered would be worse than waiting.</p>
+
+    <h3 id="use-case-home-automation">Home automation</h3>
+    <p>At 22:30, find the windows left open and the doors left unlocked, and send one notification if there are any. Home Assistant is only reachable from inside the house, so the steps run there, on a runner the server never has to reach.</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">agentiik.yaml, at the root of home/night-check</div>
+<pre><code>apiVersion: agentiik.dev/v1
+kind: Workflow
+
+metadata:
+  name: night-check
+  namespace: home
+
+on:
+  schedule:
+    - cron: "30 22 * * *"
+      timezone: Europe/Paris
+
+outputs:
+  left-open:
+    from: { step: find-open, port: open }
+
+secrets: [home-assistant, ntfy]
+
+defaults:
+  runs_on: [site=home]              <span class="c"># the runner in the house: it dials out, nothing dials in</span>
+  network: egress
+  timeout: 2m
+
+steps:
+  find-open:
+    image: python:3.13-slim
+    secrets: [home-assistant]       <span class="c"># a long-lived access token</span>
+    egress:
+      allow: ["homeassistant.local:8123"]
+    retry: { max: 2, on: [failed] }
+    script:
+      - python /agk/repo/scripts/open_entities.py &gt; /tmp/open.json
+      - /agk/bin/agk emit open --from /tmp/open.json --id entity_id
+    outputs: [open]
+
+  notify:
+    image: curlimages/curl:8.11.1
+    needs:
+      - { step: find-open, port: open, as: in }
+    if: ${{ inputs.in.count &gt; 0 }}  <span class="c"># nothing open, nothing sent</span>
+    secrets: [ntfy]
+    egress:
+      allow: ["ntfy.sh:443"]
+    script:
+      - 'curl -sSf -H "Authorization: Bearer $(cat /agk/secrets/ntfy)" -d "$(/agk/bin/agk items | wc -l) left open" https://ntfy.sh/house'
+    outputs: [out]</code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What it uses</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#triggers">schedule</a></td><td>Every evening in the house's own timezone, with nobody at a keyboard.</td></tr>
+          <tr><td><a href="#registering-a-runner">runs_on</a></td><td>Sends both steps to the pool labelled <code>site=home</code>, the only machines that can see <code>homeassistant.local</code>. A runner opens <a href="#what-has-to-be-open">no inbound port</a>, so the house exposes nothing.</td></tr>
+          <tr><td><a href="#secrets">secrets</a></td><td>Each step mounts its own token as a file under <code>/agk/secrets/</code>, never the other one's.</td></tr>
+          <tr><td><a href="#settings-applied-to-every-container">egress</a></td><td>One host per step: the reader cannot post, the notifier cannot read the house.</td></tr>
+          <tr><td><a href="#running-a-script-instead-of-a-brick">agk emit</a></td><td>One item per open entity on the port <code>open</code>, its identity taken from <code>entity_id</code>.</td></tr>
+          <tr><td><a href="#exposed-context">if</a></td><td><code>inputs.in.count</code> is port metadata: the controller skips the notification without reading a single item.</td></tr>
+          <tr><td><a href="#step-keywords">retry</a></td><td>Reading states is safe to repeat, and a Wi-Fi hiccup should not cost a night's check.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>Available</b> from <a href="roadmap/#m09">v0.9.0</a>. The schedule arrives in <a href="roadmap/#m05">v0.5.0</a>, and both steps need the egress proxy.</p>
+
+    <h3 id="use-case-devops">DevOps</h3>
+    <p>Once CI has pushed an image, roll the tag out to three Kubernetes regions, one after another, and say in the team channel how it went. Two tags pushed a minute apart must never interleave.</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">agentiik.yaml, at the root of platform/deploy-api</div>
+<pre><code>apiVersion: agentiik.dev/v1
+kind: Workflow
+
+metadata:
+  name: deploy-api
+  namespace: platform
+
+inputs:
+  tag:
+    schema: { type: string, pattern: "^v[0-9]+\\.[0-9]+\\.[0-9]+$" }
+    required: true
+
+on:
+  webhook:
+    - path: /deploy-api        <span class="c"># served at /hooks/platform/deploy-api</span>
+      method: POST
+      auth: bearer
+      response: async
+      map:
+        tag: ${{ trigger.body.tag }}
+
+concurrency:
+  group: deploy-api            <span class="c"># a second tag waits for the first rollout</span>
+  cancel_in_progress: false
+
+secrets: [kubeconfig, chat-webhook]
+
+timeout: 1h
+
+steps:
+  rollout:
+    image: bitnami/kubectl:1.31
+    strategy:
+      fan_out: matrix
+      matrix:
+        region: [eu-west, eu-central, us-east]
+      max_parallel: 1          <span class="c"># one region at a time</span>
+      fail_fast: true          <span class="c"># a failed region stops the rest</span>
+    params:
+      tag: ${{ workflow.inputs.tag }}
+    secrets: [kubeconfig]
+    network: egress
+    egress:
+      allow:
+        - k8s.eu-west.example.com:6443
+        - k8s.eu-central.example.com:6443
+        - k8s.us-east.example.com:6443
+    timeout: 15m
+    script:
+      - export KUBECONFIG=/agk/secrets/kubeconfig
+      - kubectl --context "$AGK_PARAM_REGION" -n api set image deployment/api api="registry.example.com/api:$AGK_PARAM_TAG"
+      - kubectl --context "$AGK_PARAM_REGION" -n api rollout status deployment/api --timeout=10m
+    outputs: [out]
+
+  announce:
+    image: curlimages/curl:8.11.1
+    needs: [rollout]
+    when: [succeeded, failed]  <span class="c"># say so either way</span>
+    params:
+      tag: ${{ workflow.inputs.tag }}
+      outcome: ${{ steps.rollout.status }}
+    secrets: [chat-webhook]
+    network: egress
+    egress:
+      allow: ["chat.example.com:443"]
+    script:
+      - curl -sSf --json "{\"text\":\"api $AGK_PARAM_TAG $AGK_PARAM_OUTCOME\"}" "$(cat /agk/secrets/chat-webhook)"
+    outputs: [out]</code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What it uses</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#triggers">webhook</a></td><td>The last job of the CI pipeline calls it with a bearer token. <code>map</code> turns the body into the <code>tag</code> input, held to its pattern before the run exists.</td></tr>
+          <tr><td><a href="#triggers">concurrency</a></td><td>A second tag queues behind the rollout in progress rather than racing it.</td></tr>
+          <tr><td><a href="#fan-out">matrix</a></td><td>One shard per region. <code>max_parallel: 1</code> makes it a staged rollout, <code>fail_fast</code> stops it at the first broken region.</td></tr>
+          <tr><td><a href="#running-a-script-instead-of-a-brick">params</a></td><td>The region and the tag reach the script as <code>AGK_PARAM_REGION</code> and <code>AGK_PARAM_TAG</code>.</td></tr>
+          <tr><td><a href="#step-keywords">when</a></td><td>The announcement runs on success and on failure; <a href="#exposed-context"><code>steps.rollout.status</code></a> says which.</td></tr>
+          <tr><td><a href="#yaml">timeout</a></td><td>An hour for the whole run and fifteen minutes per region, so a stuck rollout never holds the concurrency group for long.</td></tr>
+          <tr><td><a href="#secrets">secrets</a></td><td>The kubeconfig is a file for the rollout alone; the chat URL is a secret too, since it is all it takes to post.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>Available</b> from <a href="roadmap/#m09">v0.9.0</a>. The webhook arrives in <a href="roadmap/#m05">v0.5.0</a>, and kubectl reaches the clusters through the egress proxy.</p>
+
+    <h3 id="use-case-finance">Finance</h3>
+    <p>On the 25th, pay the suppliers whose invoices are due: match each invoice with the supplier's bank details, build one SEPA file, and send it to the bank only once a person has approved it.</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">agentiik.yaml, at the root of finance/supplier-payments</div>
+<pre><code>apiVersion: agentiik.dev/v1
+kind: Workflow
+
+metadata:
+  name: supplier-payments
+  namespace: finance
+
+on:
+  schedule:
+    - cron: "0 7 25 * *"
+      timezone: Europe/Paris
+
+outputs:
+  batch:
+    from: { step: build-batch, port: out }
+    retain: 365d
+  unmatched:
+    from: { step: build-batch, port: unmatched }
+
+secrets: [accounting, bank]
+
+timeout: 3d                               <span class="c"># three days unapproved: timed_out, never paid late</span>
+
+.accounting:
+  image: python:3.13-slim
+  secrets: [accounting]
+  network: egress
+  egress:
+    allow: ["accounting.example.com:443"]
+  outputs: [out]
+
+steps:
+  invoices:
+    extends: .accounting
+    script:
+      - python /agk/repo/scripts/fetch.py invoices &gt; /tmp/invoices.json
+      - /agk/bin/agk emit out --from /tmp/invoices.json --id invoice_id
+
+  suppliers:
+    extends: .accounting
+    script:
+      - python /agk/repo/scripts/fetch.py suppliers &gt; /tmp/suppliers.json
+      - /agk/bin/agk emit out --from /tmp/suppliers.json --id supplier_id
+
+  build-batch:
+    image: python:3.13-slim
+    needs:
+      - { step: invoices, port: out, as: in }
+      - { step: suppliers, port: out, as: in }
+    merge:
+      join: { on: "$.data.supplier_id" }  <span class="c"># no bank details: leaves by unmatched</span>
+    script:
+      - python /agk/repo/scripts/sepa.py /agk/out/files/payments.xml
+    outputs: [out, unmatched]
+
+  approve:
+    image: ghcr.io/agentiik/wait          <span class="c"># the run is waiting until someone approves</span>
+    needs: [build-batch]
+    outputs: [out]
+
+  pay:
+    image: python:3.13-slim
+    needs:
+      - { step: build-batch, port: out, as: in }
+      - { step: approve, port: out, as: approval }
+    secrets: [bank]
+    network: egress
+    egress:
+      allow: ["ebics.bank.example.com:443"]
+    idempotent: false                     <span class="c"># never sent twice, even after a lost runner</span>
+    script:
+      - python /agk/repo/scripts/upload.py /agk/in/in/payments.xml
+    outputs: [out]</code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What it uses</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#merge-strategies">merge: join</a></td><td>Pairs each invoice with its supplier on <code>supplier_id</code>. An invoice with no bank details leaves by <code>unmatched</code>, a workflow output, instead of failing the batch.</td></tr>
+          <tr><td><a href="#includes-and-inheritance">extends</a></td><td>The two reads from the accounting system share one hidden block.</td></tr>
+          <tr><td><a href="#envelope-structure">files</a></td><td>The SEPA file travels as an artifact with its <code>sha256</code>, and <a href="#artifact-expiry"><code>retain: 365d</code></a> keeps the batch readable for a year.</td></tr>
+          <tr><td><a href="#catalog">wait</a></td><td>The run stops in <a href="#run-states"><code>waiting</code></a> until someone holding <a href="#permissions"><code>workflow:run</code></a> approves it, from the console, the API or a <a href="#mobile">phone</a>; a rejection ends it <code>cancelled</code>. The wait brick's manifest is v0.8.0 work, so the step passes it no parameters yet and its <code>out</code> port is assumed rather than specified.</td></tr>
+          <tr><td><a href="#step-keywords">idempotent: false</a></td><td>A <a href="#task-states">lost</a> task is never requeued: a payment that may have left is handed to a person, not sent again.</td></tr>
+          <tr><td><a href="#yaml">timeout</a></td><td>Three days without an approval end the run <code>timed_out</code>, rather than paying a week late.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>Available</b> from <a href="roadmap/#m09">v0.9.0</a>. The schedule arrives in <a href="roadmap/#m05">v0.5.0</a>, the wait step and its approval in <a href="roadmap/#m08">v0.8.0</a>, and the accounting system and the bank are reached through the egress proxy.</p>
+
+    <h3 id="use-case-cybersecurity">Cybersecurity</h3>
+    <p>When the SIEM raises an alert, score its source address against a threat-intelligence service and block it at the firewall if it is hostile. The alert is written by the attacker as much as by the SIEM, so each step gets as little as it can work with.</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">agentiik.yaml, at the root of soc/ip-triage</div>
+<pre><code>apiVersion: agentiik.dev/v1
+kind: Workflow
+
+metadata:
+  name: ip-triage
+  namespace: soc
+
+inputs:
+  alert:
+    schema:
+      type: object
+      required: [rule, src_ip]
+      properties:
+        rule: { type: string }
+        src_ip: { type: string, format: ipv4 }
+    required: true
+
+on:
+  webhook:
+    - path: /siem-alert
+      method: POST
+      auth: hmac
+      response: async
+      map:
+        alert: ${{ trigger.body }}
+
+outputs:
+  blocked:
+    from: { step: block, port: out }
+    retain: 30d
+  dismissed:
+    from: { step: score, port: benign }
+
+secrets: [abuseipdb, firewall]
+
+steps:
+  score:
+    image: python:3.13-slim
+    inputs:
+      in: ${{ workflow.inputs.alert }}
+    secrets: [abuseipdb]                <span class="c"># this step's one secret</span>
+    network: egress
+    egress:
+      allow: ["api.abuseipdb.com:443"]  <span class="c"># and its one host</span>
+    retry: { max: 3, on: [transient] }  <span class="c"># score.py exits 100 on a 429 or a 5xx</span>
+    script:
+      - python /agk/repo/scripts/score.py &gt; /tmp/verdict.json
+      - /agk/bin/agk emit hostile --from /tmp/verdict.json --filter '.hostile'
+      - /agk/bin/agk emit benign --from /tmp/verdict.json --filter '.hostile | not'
+    outputs: [hostile, benign]
+
+  block:
+    image: python:3.13-slim
+    needs:
+      - { step: score, port: hostile, as: in }
+    if: ${{ inputs.in.count &gt; 0 }}
+    secrets: [firewall]
+    network: egress
+    egress:
+      allow: ["firewall.soc.example.com:443"]
+    script:
+      - python /agk/repo/scripts/block.py
+    outputs: [out]</code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What it uses</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#webhooks">auth: hmac</a></td><td>The SIEM signs each alert, and a body that does not verify starts nothing.</td></tr>
+          <tr><td><a href="#yaml">inputs</a></td><td>The alert is held to its schema before a run exists: one without <code>src_ip</code> never reaches a container.</td></tr>
+          <tr><td><a href="#graph">ports</a></td><td><code>score</code> decides by publishing on <code>hostile</code> or <code>benign</code>, and the graph routes by port. No expression reads the alert (<a href="#exposed-context">why</a>).</td></tr>
+          <tr><td><a href="#secrets">secrets</a> and <a href="#settings-applied-to-every-container">egress</a></td><td>One secret and one host per step. A parsing bug in <code>score</code> gives away a threat-intelligence key, not the firewall.</td></tr>
+          <tr><td><a href="#exit-codes">retry on transient</a></td><td>A rate limit is exit code 100 and is retried; a malformed answer exits 1 and is not.</td></tr>
+          <tr><td><a href="#artifact-expiry">retain</a></td><td>What was blocked stays readable for thirty days, long enough to write the incident up.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>Available</b> from <a href="roadmap/#m09">v0.9.0</a>. The webhook and its signature check arrive in <a href="roadmap/#m05">v0.5.0</a>, and both calls go through the egress proxy.</p>
+
+    <h3 id="use-case-data">Data pipelines</h3>
+    <p>Each month, three shops drop a CSV export into the repository. Turn them into rows, hold every row to a schema, total the good ones per shop, and hand back a table, without one malformed line sinking the month.</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">agentiik.yaml, at the root of data/monthly-sales</div>
+<pre><code>apiVersion: agentiik.dev/v1
+kind: Workflow
+
+metadata:
+  name: monthly-sales
+  namespace: data
+
+outputs:
+  totals:
+    from: { step: report, port: out }
+  rejected:
+    from: { step: check, port: invalid }
+
+steps:
+  exports:
+    image: alpine:3.21
+    strategy:
+      fan_out: matrix
+      matrix:
+        shop: [paris, lyon, lille]  <span class="c"># one shard per shop</span>
+    script:
+      - cp "/agk/repo/exports/$AGK_PARAM_SHOP.csv" /agk/out/files/
+    outputs: [out]
+
+  rows:
+    image: ghcr.io/agentiik/csv:0.1.0
+    needs: [exports]
+    params: { direction: to_items }
+    outputs: [out]
+
+  check:
+    image: ghcr.io/agentiik/schema-validate:0.1.0
+    needs: [rows]
+    params: { schema_path: schemas/sale.json }
+    outputs: [ok, invalid]          <span class="c"># a bad row leaves by invalid</span>
+
+  totals:
+    image: python:3.13-slim
+    needs:
+      - { step: check, port: ok, as: in }
+    script:
+      - python /agk/repo/scripts/totals.py &gt; /tmp/totals.json
+      - /agk/bin/agk emit out --from /tmp/totals.json --id shop
+    outputs: [out]
+
+  report:
+    image: ghcr.io/agentiik/csv:0.1.0
+    needs: [totals]
+    params: { direction: to_table, table_name: totals.csv }
+    outputs: [out]</code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What it uses</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#fan-out">matrix</a></td><td>One shard per shop, each copying its own export.</td></tr>
+          <tr><td><a href="#running-a-script-instead-of-a-brick">a file in /agk/out/files/</a></td><td>A script that writes no port publishes one item, with the file attached: no helper needed.</td></tr>
+          <tr><td><a href="#catalog">csv, schema-validate</a></td><td>Parsing and validation are deterministic tools from the catalog, not code to write.</td></tr>
+          <tr><td><a href="#graph">ports</a></td><td>A bad row leaves by <code>invalid</code> with its violations, straight to the workflow output <code>rejected</code>, and the month still totals.</td></tr>
+          <tr><td><a href="#size-rules">artifacts</a></td><td>A table larger than <code>inline_max_bytes</code> travels as an artifact rather than inline.</td></tr>
+          <tr><td><a href="#settings-applied-to-every-container">network: none</a></td><td>The default, and nothing here needs more: no step can leave the machine.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>Available</b> from <a href="roadmap/#m01">v0.1.0</a>, with <code>agk run --local</code>, since no step reaches the network. The two bricks are built from <code>agentiik/bricks</code> until the catalog is published to <code>ghcr.io/agentiik</code> in <a href="roadmap/#m08">v0.8.0</a>. On a server: <a href="roadmap/#m02">v0.2.0</a>, in progress.</p>
+
+    <h3 id="use-case-ai-agent">AI agent over MCP</h3>
+    <p>A support assistant needs to answer "where is my order?" without holding the orders service's credentials or being able to reach it. The workflow is the boundary: the model calls one tool, and the step behind it holds the key.</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">agentiik.yaml, at the root of support/order-status</div>
+<pre><code>apiVersion: agentiik.dev/v1
+kind: Workflow
+
+metadata:
+  name: order-status
+  namespace: support
+
+inputs:
+  query:
+    schema:
+      type: object
+      required: [order_id]
+      additionalProperties: false
+      properties:
+        order_id: { type: string, pattern: "^ORD-[0-9]{6}$" }
+    required: true
+
+outputs:
+  status:
+    from: { step: lookup, port: out }
+    schema:
+      type: object
+      required: [order_id, state]
+      properties:
+        order_id: { type: string }
+        state: { enum: [paid, shipped, delivered, refunded] }
+        tracking_url: { type: string }
+
+mcp:
+  name: orders
+  description: Customer orders, read-only.
+  tools:
+    - name: order_status
+      title: Order status
+      description: Return the state of one order and, once shipped, its tracking link. Takes an order number such as ORD-004211 and nothing else.
+      input: { from: { input: query } }
+      output: { from: { output: status } }
+      mode: sync
+      timeout: 30s
+      annotations:
+        readOnlyHint: true
+        idempotentHint: true
+
+secrets: [orders-api]
+
+steps:
+  lookup:
+    image: python:3.13-slim
+    inputs:
+      in: ${{ workflow.inputs.query }}
+    secrets: [orders-api]  <span class="c"># the model never holds it</span>
+    network: egress
+    egress:
+      allow: ["orders.internal.example.com:443"]
+    timeout: 20s
+    script:
+      - python /agk/repo/scripts/lookup.py &gt; /tmp/status.json
+      - /agk/bin/agk emit out --from /tmp/status.json --id order_id
+    outputs: [out]</code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What it uses</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#publishing-tools">mcp</a></td><td>One tool, <code>order_status</code>, whose <code>inputSchema</code> is the <code>query</code> input's schema as it stands and whose result is the <code>status</code> output.</td></tr>
+          <tr><td><a href="#a-workflow-as-an-mcp-server">/mcp/support/order-status</a></td><td>The workflow is an MCP server of its own, listed and called with <code>workflow:run</code> alone, which reaches no step, no file and no endpoint behind it.</td></tr>
+          <tr><td><a href="#roles">operator</a></td><td>The role to grant the assistant's <a href="#principals">service account</a>: it runs the tool and reads nothing else.</td></tr>
+          <tr><td><a href="#errors-and-obligations">input validation</a></td><td>An argument that does not match <code>^ORD-[0-9]{6}$</code> is refused as a protocol error before any run is created.</td></tr>
+          <tr><td><a href="#publishing-tools">mode: sync</a></td><td>The answer comes back in the call, within the tool's 30 seconds.</td></tr>
+          <tr><td><a href="#publishing-tools">annotations</a></td><td><code>readOnlyHint</code> lets a client call without asking first. It is a hint to the client, never a permission.</td></tr>
+          <tr><td><a href="#scope">no model in the engine</a></td><td>The model lives in the client, beyond the protocol boundary; the engine only runs the workflow it is asked to.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>Available</b> from <a href="roadmap/#m09">v0.9.0</a>. Publishing a workflow as a tool arrives in <a href="roadmap/#m07">v0.7.0</a>, and a workflow whose steps need no network is callable from then; this one reaches the orders service through the egress proxy.</p>
   </div>
 </section>
 
