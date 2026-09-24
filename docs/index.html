@@ -3230,7 +3230,8 @@ concurrency:
           <tr><td class="wrapcell">the redemption of <a href="#runner">step 2</a> is refused, or gets no answer</td><td>The runner acknowledges the message only once an answer says whose the task is, or once it has reported that no container ran: <a href="#the-task-message">The task message</a> says which answer leads where.</td></tr>
           <tr><td class="wrapcell">the requeue of a lost task reaches the host that already ended its key</td><td>Nothing is redeemed. The host reports the ending it recorded under the requeue's <code>task_id</code>, then acknowledges. The controller takes that ending from a runner that redeemed an earlier dispatch of the key, and the brick does not run twice.</td></tr>
           <tr><td class="wrapcell">the requeue reaches the host still running its key</td><td>Nothing is redeemed and nothing acknowledged: the message comes round until the key has ended there, and is then answered from the record. A host only cut off costs its key one requeue, not two.</td></tr>
-          <tr><td class="wrapcell">a task waits on a full pool's queue, or behind a slow pull</td><td>Nothing: it is never lost for the wait.</td></tr>
+          <tr><td class="wrapcell">a task waits on a full pool's queue, or behind a slow pull</td><td>It is never lost for the wait, but the wait counts against its deadline (<a href="#task-states">Task states</a>).</td></tr>
+          <tr><td class="wrapcell">its deadline passes before anyone redeems it</td><td>Every redemption answers <code>401</code>, the grant having expired with the deadline. The runner holding the message reports the task <code>timed_out</code> with no container ran, which ends the dispatch and binds that runner, then acknowledges, and the step's <code>retry</code> reads it as a timeout. A message no runner ever takes ends only with the run's own <code>timeout</code>, and a run without one waits.</td></tr>
         </tbody>
       </table>
     </div>
@@ -3612,7 +3613,7 @@ concurrency:
         <thead><tr><th>A task in flight</th><th>Lost</th></tr></thead>
         <tbody>
           <tr><td>redeemed</td><td>30 seconds after its runner's last heartbeat naming it, or after its redemption until one does</td></tr>
-          <tr><td class="wrapcell">not redeemed: on the queue, or taken and not yet redeemed</td><td>never: the bus still holds its message, since a runner acknowledges only once it has redeemed (see <a href="#task-bus">Task bus</a>)</td></tr>
+          <tr><td class="wrapcell">not redeemed: on the queue, or taken and not yet redeemed</td><td>never: the bus still holds its message, since a runner acknowledges only once it has redeemed, and its deadline is what ends it (see <a href="#task-bus">Task bus</a>)</td></tr>
         </tbody>
       </table>
     </div>
@@ -3737,7 +3738,7 @@ concurrency:
         <thead><tr><th>State</th><th>Meaning</th></tr></thead>
         <tbody>
           <tr><td>pending</td><td>Decided and not yet handed to a runner.</td></tr>
-          <tr><td>dispatched</td><td>Handed out: on its pool's queue, or taken by a runner that may be redeeming it, pulling the image or running <code>pre_task</code>. The deadline starts only when the container is created, so a slow pull or hook costs the runner's time and never the step's (see <a href="#runner-side-hooks">Runner-side hooks</a>). The grant does not wait: it expires at the <code>deadline</code> the message carries, and so do the URLs and the upload policy its redemption answered.</td></tr>
+          <tr><td>dispatched</td><td>Handed out: on its pool's queue, or taken by a runner that may be redeeming it, pulling the image or running <code>pre_task</code>. Its deadline is the <code>deadline</code> the message carries, fixed when the controller dispatched it, so the wait on the queue, the redemption, the pull and <code>pre_task</code> all count against it. The grant expires at that deadline, and so do the URLs and the upload policy its redemption answered; a task nobody has redeemed by then is ended as <a href="#task-bus">Task bus</a> says.</td></tr>
           <tr><td>running</td><td>The container is running.</td></tr>
           <tr><td>publishing</td><td>The container is finished; its outputs are being collected and uploaded. A state of its own because the result is not yet safe, and losing a runner here is not losing one mid-run.</td></tr>
           <tr><td>succeeded</td><td>The container exited 0 and its envelopes were published.</td></tr>
@@ -3747,6 +3748,11 @@ concurrency:
           <tr><td>cancelled</td><td>Stopped because the run was cancelled by a principal, by a concurrency group or by a <code>merge: first</code>. Not <code>failed</code> for the same reason, and not <code>timed_out</code> because somebody changed their mind rather than a limit firing.</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A task has one deadline, fixed when it is dispatched, rather than one that starts when its container is created. The grant, its URLs and the upload policy expire with it, and a deadline that started later would leave a container running past the credential it posts its outputs with. The cost: a full queue, a slow pull or a slow hook spends the step's time, so a <code>timeout</code> has to cover them.</p>
     </div>
 
     <h4>Back to pending</h4>
@@ -5950,7 +5956,7 @@ WantedBy=multi-user.target</code></pre>
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 880 300" role="img" aria-label="Two lanes, the host above and the container below. On the host, the image is resolved and then pre_task runs, using the runner's time; a non-zero exit fails the task as an infrastructure failure charged to the runner, not the brick. When pre_task has succeeded, the step's container is created and the task deadline starts. After the container is destroyed, post_task runs on the host whatever the verdict. The hooks receive only AGK_TASK_ID, AGK_NAMESPACE, AGK_WORKFLOW, AGK_STEP, AGK_IMAGE and AGK_WORKDIR, and hook and step share only the workspace directory the runner mounts.">
+      <svg viewBox="0 0 880 300" role="img" aria-label="Two lanes, the host above and the container below. On the host, the image is resolved and then pre_task runs, within the deadline the task was dispatched with; a non-zero exit fails the task as an infrastructure failure charged to the runner, not the brick. When pre_task has succeeded, the step's container is created, and it is stopped at that same deadline. After the container is destroyed, post_task runs on the host whatever the verdict. The hooks receive only AGK_TASK_ID, AGK_NAMESPACE, AGK_WORKFLOW, AGK_STEP, AGK_IMAGE and AGK_WORKDIR, and hook and step share only the workspace directory the runner mounts.">
         <defs><marker id="deployment-hook-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
 
         <rect x="150" y="10" width="250" height="44" rx="4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 3"/>
@@ -5975,9 +5981,9 @@ WantedBy=multi-user.target</code></pre>
         <text x="525" y="233" text-anchor="middle" font-family="Archivo, sans-serif" font-size="12" font-weight="600" fill="currentColor">the step's container</text>
         <g font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".65" text-anchor="middle">
           <text x="95" y="137">by digest</text>
-          <text x="275" y="137">the runner's time</text>
+          <text x="275" y="137">within the deadline</text>
           <text x="775" y="137">whatever the verdict</text>
-          <text x="525" y="249">task deadline starts here</text>
+          <text x="525" y="249">stopped at the task's deadline</text>
           <text x="525" y="278">hook and step share only the workspace directory the runner mounts</text>
         </g>
         <text x="525" y="112" text-anchor="middle" font-family="Archivo, sans-serif" font-size="10.5" fill="currentColor" opacity=".6">hooks receive only</text>
@@ -5999,7 +6005,7 @@ WantedBy=multi-user.target</code></pre>
         </g>
       </svg>
     </div>
-    <figcaption><b>Hooks on the host, the step in a container.</b> The task's deadline starts once <code>pre_task</code> has succeeded, so a slow hook eats the runner's time and never the step's. <code>post_task</code> runs whatever the verdict, which makes it the place to release a licence seat or wipe a scratch directory.</figcaption>
+    <figcaption><b>Hooks on the host, the step in a container.</b> The task's deadline is fixed when it is dispatched, so a slow hook spends the step's time as a slow pull does, each hook held to the <code>timeout</code> of <code>[hooks]</code>. <code>post_task</code> runs whatever the verdict, which makes it the place to release a licence seat or wipe a scratch directory.</figcaption>
   </figure>
 
   <div class="block">
