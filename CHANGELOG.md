@@ -8,6 +8,8 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**Matomo Tag Manager.** Every page also loads the Tag Manager container `container_zGSBp6k5` from `mamoto.rslt.fr`, so events can be set up in Matomo without changing the site, and the legal notice says so.
+
 **Audience measurement with Matomo.** Every page loads the Matomo tracker from `mamoto.rslt.fr`, site 3, and the legal notice now says what it collects and which cookies it sets, where it used to say the site ran no analytics.
 
 **The runner image, run reads, drain and revocation, and usage, as built.** The runner image holds the static helper at `/usr/local/lib/agentiik/agk-helper`, bound read-only at `/agk/bin/agk` for a script step only, with the `helper` setting in `runner.toml` and why `cap_add` is needed; `GET /api/v1/runs` across namespaces and `GET /api/v1/runs/{id}` by identifier alone, an output's `404` and `410`, and an artifact fetch's `409` and rules; drain and revocation with their body, answers and who ordered them, a redemption refused only for a task not held, and bus credentials bounded by `rotate_by` and `revocation_grace`; `usage` sampled from the daemon's statistics. The words the API's first path segment routes on are reserved as namespace and login names, and a run's `inputs` need `run:read_data`.
