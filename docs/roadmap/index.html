@@ -1341,7 +1341,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.4.0 ============ -->
 <section id="m04">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.4.0: The workflow is a repository</h2><span class="tally">0 of 54 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.4.0: The workflow is a repository</h2><span class="tally">0 of 56 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a workflow is a git repository Agentiik serves, pushed to with any git client, and a run resolves a commit.</p>
 
@@ -1415,6 +1415,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Describe the resolved graph a version records, as the one shape the hook, the API and the console read. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#api">api</a></li>
           <li>Describe the repository objects the API returns: repository, ref with protection, version with commit. <a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a></li>
           <li>Add conformance fixtures for the resolution order and for every pre-receive refusal. <a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li>Write every name's bound into the workflow and brick schemas as maxLength, 255 for an identifier and 250 for a port or a workflow output, so the language reference states it. <a class="ref" href="../#yaml">yaml</a><a class="ref" href="../#brick-manifest">brick-manifest</a></li>
           <li>Cut the schemas release v0.4.0 depends on before the engine reads it. <a class="ref" href="../#versioning">versioning</a></li>
         </ul>
       </div>
@@ -1451,6 +1452,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Validate with the code agk validate uses, so the hook and the command line never disagree. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#the-workflow-repository">the-workflow-repository</a></li>
           <li>Resolve includes and inheritance inside the pushed commit before validating it. <a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a></li>
           <li>Check declared ports against the referenced bricks' manifests, and reject a cycle before registration. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#scheduling-semantics">scheduling-semantics</a></li>
+          <li>Refuse a port or a workflow output past 250 characters in agk validate, the manifest reader and the push, since each is written as the file &lt;name&gt;.json. <a class="ref" href="../#yaml">yaml</a><a class="ref" href="../#brick-manifest">brick-manifest</a></li>
           <li>Reject a step referencing a secret the owning namespace does not declare. <a class="ref" href="../#secrets">secrets</a></li>
           <li>Refuse a push on the git error stream, naming the file, the location and the rule. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
           <li>Write one workflow_versions row per accepted commit: commit, parent, resolved graph, author, timestamp. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#concepts">concepts</a></li>

@@ -2105,19 +2105,19 @@ steps:
       <table>
         <thead><tr><th>Grammar</th><th>Pattern</th><th>Applies to</th></tr></thead>
         <tbody>
-          <tr><td>identifier</td><td><code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>: letters, digits, hyphens and underscores, beginning with a letter or a digit, at most 255 characters, and a port at most 250</td><td>A workflow name and namespace, each half of <code>&lt;namespace&gt;/&lt;name&gt;</code>, a step, an input, an output, a port, a variable, a secret, a published tool name.</td></tr>
+          <tr><td>identifier</td><td><code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>: letters, digits, hyphens and underscores, beginning with a letter or a digit, at most 255 characters, and a port or a workflow output at most 250</td><td>A workflow name and namespace, each half of <code>&lt;namespace&gt;/&lt;name&gt;</code>, a step, an input, an output, a port, a variable, a secret, a published tool name.</td></tr>
           <tr><td>parameter name</td><td><code>^[A-Za-z_][A-Za-z0-9_]*$</code>, no hyphen</td><td>A step's <code>params</code> and the <a href="#brick-manifest">manifest</a> that declares them.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>One grammar, so that one name survives a URL, a directory and a tool list unchanged, and 255 characters because no filesystem holds a longer name: a step becomes a directory, a secret a file, and a port the file <code>&lt;port&gt;.json</code>, hence 250. A parameter is exported to a <a href="#running-a-script-instead-of-a-brick">script</a> as <code>AGK_PARAM_&lt;NAME&gt;</code>, so <code>api-key</code> is refused.</p>
+    <p>One grammar, so that one name survives a URL, a directory and a tool list unchanged, and 255 characters because no filesystem holds a longer name: a step becomes a directory, a secret a file, and a port or a workflow output the file <code>&lt;name&gt;.json</code>, hence 250. A parameter is exported to a <a href="#running-a-script-instead-of-a-brick">script</a> as <code>AGK_PARAM_&lt;NAME&gt;</code>, so <code>api-key</code> is refused.</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>A name too long</th><th>Is refused by</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell">past 255, in a workflow</td><td><code>agk validate</code>, <code>agk run --local</code>, and a push before any of its tree is stored: 400 for the workflow's own name, 422 for one its files write</td></tr>
-          <tr><td class="wrapcell">past 255, in the database</td><td>the <code>identifier</code> domain every column storing a name is typed with</td></tr>
-          <tr><td class="wrapcell">a port of 251 to 255</td><td>nothing yet: it is accepted, and every run of a step publishing on it fails</td></tr>
+          <tr><td class="wrapcell">past 255, in the database</td><td>the <code>identifier</code> domain every column storing a workflow, step, port or secret name is typed with</td></tr>
+          <tr><td class="wrapcell">a port or a workflow output of 251 to 255</td><td>nothing yet, a <a href="roadmap/#m04">v0.4.0</a> task: it is accepted, every run of a step publishing on such a port fails, and so does every <code>agk run --local</code> of a workflow declaring such an output, once it writes the output down</td></tr>
         </tbody>
       </table>
     </div>
