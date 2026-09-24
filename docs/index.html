@@ -834,7 +834,7 @@ img{max-width:100%}
         <thead><tr><th>Tool</th><th>Why</th></tr></thead>
         <tbody>
           <tr><td>Docker daemon</td><td>Runs the bricks, which are containers. Docker Desktop on macOS or Windows, Docker on Linux.</td></tr>
-          <tr><td>Go 1.27</td><td>No binaries are published yet: <code>go install</code> is the only way in.</td></tr>
+          <tr><td>Homebrew, or Go 1.27</td><td>Homebrew builds <code>agk</code> from the tagged source; <code>go install</code> does the same without it.</td></tr>
           <tr><td>git</td><td>A workflow is a git repository. A local one, with no remote, is enough.</td></tr>
         </tbody>
       </table>
@@ -844,10 +844,12 @@ img{max-width:100%}
 
     <div class="block">
       <div class="note-label">install</div>
-<pre><code><span class="p">$</span> <span class="cmd">go install github.com/agentiik/agentiik/cmd/agk@v0.1.1</span>
+<pre><code><span class="p">$</span> <span class="cmd">brew install agentiik/tap/agk</span>
 <span class="p">$</span> <span class="cmd">agk --version</span>
-agk v0.1.1, go1.27.1</code></pre>
+agk v0.1.2, 0c751e1469b6d679228fa038ce34f8d4c5b6ff20, go1.27.1</code></pre>
     </div>
+
+    <p>Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.1.2</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>). <code>v0.1.2</code> is <code>v0.1.1</code>'s engine unchanged, so the outputs below still hold.</p>
 
     <p><code>agk</code> alone prints its verbs, the table in <a href="#command-line">Command line</a>.</p>
 
@@ -4368,6 +4370,16 @@ Authorization: Bearer &lt;api token&gt;
     <h3 id="command-line">Command line</h3>
     <div class="tablewrap">
       <table>
+        <thead><tr><th>Install</th><th>Gives</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell"><code>brew install agentiik/tap/agk</code></td><td><code>agk</code>, built from the tagged source, with the static helper embedded for linux/amd64 and linux/arm64.</td></tr>
+          <tr><td class="wrapcell"><code>brew install --HEAD agentiik/tap/agentiik</code></td><td><code>agentiik-api</code>, <code>agentiik-controller</code> and <code>agk-runner</code>, with <code>agk</code>. From <code>main</code> until <code>v0.2.0</code> is tagged. PostgreSQL and NATS are not pulled in: the formula's caveats say how to run both on one host.</td></tr>
+          <tr><td class="wrapcell"><code>go install github.com/agentiik/agentiik/cmd/agk@&lt;tag&gt;</code></td><td><code>agk</code> without the embedded helper; <code>--helper</code> or <code>$AGK_HELPER</code> supplies one.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap">
+      <table>
         <thead><tr><th>Command</th><th>Effect</th></tr></thead>
         <tbody>
           <tr><td>agk login</td><td>Signs in against an installation and stores an API token in the local profile.</td></tr>
@@ -6264,7 +6276,7 @@ post_task = [
 <section id="repos">
   <div class="sec-head"><span class="mark">§</span><h2>Repositories</h2></div>
   <div class="prose">
-    <p>Twelve repositories in the <code>agentiik</code> organisation, split by what has to be released together, not by language.</p>
+    <p>Thirteen repositories in the <code>agentiik</code> organisation, split by what has to be released together, not by language.</p>
   </div>
 
   <figure>
@@ -6336,6 +6348,7 @@ post_task = [
           <tr><td>agentiik/android</td><td>Android application.</td><td>Kotlin</td></tr>
           <tr><td class="wrapcell">agentiik/agentiik.github.io</td><td>The site and the documentation; later the generated language and API references and the catalog pages. Named for where it is served: GitHub Pages resolves an organisation site from that name alone.</td><td>static</td></tr>
           <tr><td>agentiik/deploy</td><td>Compose stacks, installer, upgrade and migration notes, later a Helm chart. No product code.</td><td>YAML, shell</td></tr>
+          <tr><td>agentiik/homebrew-tap</td><td>The Homebrew formulae: <code>agk</code> alone, and the server programs with it, each built from the source of a tag. Bumped once the engine's tag exists, since a formula pins the commit it builds.</td><td>Ruby</td></tr>
           <tr><td class="wrapcell">agentiik/terraform-provider-agentiik</td><td>The Terraform provider for namespaces, workflow repositories, grants, groups, service accounts, tokens, secret declarations and runs: an API client with no authority of its own, named as the registry requires.</td><td>Go</td></tr>
           <tr><td>agentiik/.github</td><td>Organisation profile, shared CI workflows, issue and pull request templates, security policy, code of conduct, contribution guide, and the licensing and trademark notes every repository points at.</td><td>YAML</td></tr>
         </tbody>

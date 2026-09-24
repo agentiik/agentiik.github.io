@@ -8,6 +8,8 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**Install with Homebrew.** Get started and the command line table now install `agk` with `brew install agentiik/tap/agk`, and the server programs with `brew install --HEAD agentiik/tap/agentiik`, from the new `homebrew-tap` repository, the thirteenth, which the repositories table and the roadmap marker now list.
+
 **The runner and the server programs, settled.** `agk-runner` with `join`, `serve` and `version`; the host key, rotation, drain and revocation with `revocation_grace`; stops on both channels; where runner policy lives; three capabilities for the agent; digest-only pulls, tags resolved at push; exit code 121; a failed shard's empty ports; the interim operator token; and a new Configuration section listing every `AGK_*` setting. The roadmap gains eleven v0.2.0 tasks, among them the pool's policy at dispatch and at redemption and the heartbeat's `cancel`, moves the tree cache to v0.4.0 and the egress proxy to v0.9.0, folds v0.9.0's runner binary tasks into v0.2.0, and folds v0.4.0's tree fetch and mount into v0.2.0's fetch task. Whether `revocation_grace` should follow the deadlines a revoked runner holds is left open.
 
 **One list of what a runner does with a task.** Task bus and Runner each numbered the same sequence their own way; Runner keeps it, with both checks of the record and the ending written after the outputs, and Task bus points at its steps.
