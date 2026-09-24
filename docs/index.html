@@ -792,6 +792,7 @@ img{max-width:100%}
             <li><a href="#installing-a-runner">Installing a runner</a></li>
             <li><a href="#runner-side-hooks">Runner-side hooks</a></li>
             <li><a href="#sizing">Sizing</a></li>
+            <li><a href="#configuration">Configuration</a></li>
             <li><a href="#first-run">First run</a></li>
             <li><a href="#push-notification-delivery">Push notification delivery</a></li>
           </ul>
@@ -1082,7 +1083,7 @@ flowchart LR
         <thead><tr><th>What</th><th>Today</th><th>Why</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell">agk login<br>agk whoami<br>agk push<br>agk share<br>agk grants<br>agk logs<br>agk brick init</td><td>Refused, naming what is missing.</td><td>There is no server yet. <a href="roadmap/">The roadmap</a> says which release brings each.</td></tr>
-          <tr><td>network: egress</td><td>Refused, not opened. <code>network: none</code> and <code>network: internal</code> run.</td><td>The proxy enforcing <code>egress.allow</code> does not exist yet, and an open network called filtered is worse than a refusal.</td></tr>
+          <tr><td>network: egress</td><td>Refused, not opened. <code>network: none</code> and <code>network: internal</code> run.</td><td>The proxy enforcing <code>egress.allow</code> is <a href="roadmap/#m09">v0.9.0</a> work, once it is designed, and an open network called filtered is worse than a refusal.</td></tr>
           <tr><td class="wrapcell">secrets without a tmpfs (macOS)</td><td>Written into the task's working directory, removed with the container, announced before the run starts.</td><td>A secret needs a tmpfs the runner can reach, and macOS has none.</td></tr>
         </tbody>
       </table>
@@ -1346,12 +1347,13 @@ flowchart LR
         <thead><tr><th>Setting</th><th>Default</th><th>Effect</th></tr></thead>
         <tbody>
           <tr><td>inline_max_bytes</td><td class="num">262 144</td><td>Above this, a binary or textual value must be written as an artifact and referenced in <code>files[]</code>. The runner rejects the envelope otherwise.</td></tr>
-          <tr><td>envelope_max_bytes</td><td class="num">4 194 304</td><td>Maximum size of a serialised envelope. Exceeding it is an application failure of the emitting step.</td></tr>
+          <tr><td>envelope_max_bytes</td><td class="num">4 194 304</td><td>Maximum size of a serialised envelope.</td></tr>
           <tr><td>max_items</td><td class="num">100 000</td><td>Maximum items per envelope. Beyond it, paginate across several outputs or produce a JSON Lines artifact.</td></tr>
           <tr><td>artifact_max_bytes</td><td class="num">5 368 709 120</td><td>Maximum size of a single artifact.</td></tr>
         </tbody>
       </table>
     </div>
+    <p>A container that exits 0 with an envelope breaking <code>inline_max_bytes</code>, <code>envelope_max_bytes</code> or <code>max_items</code> is reported <code>failed</code> with exit code 121 (<a href="#exit-codes">Exit codes</a>), before anything is uploaded.</p>
 
     <div class="decision">
       <span class="note-label">Decision</span>
@@ -1591,6 +1593,7 @@ defaults:
       <li>A step becomes runnable once every declared input port is satisfied. This is a barrier, not a continuous stream.</li>
       <li>A port produces exactly one envelope, once, when the emitting step ends. A step split into shards has its shard envelopes concatenated port by port before publication.</li>
       <li>An output port declared but never written by the container publishes an empty envelope. That is not an error.</li>
+      <li>A failed shard publishes nothing of its own: its ports are the empty envelopes its step publishes, whatever the container wrote.</li>
       <li>A step whose <code>if</code> condition is false moves to <em>skipped</em> and publishes empty envelopes on all its ports. Downstream steps decide their own fate through <code>when</code>.</li>
       <li>Cycles are rejected at validation, before registration. Looping is done by calling a sub-workflow, with a configurable maximum depth.</li>
     </ul>
@@ -1807,12 +1810,17 @@ defaults:
           <tr><td>1 to 99</td><td>Application failure</td><td>Step failed. No retry unless <code>retry.on</code> says so explicitly.</td></tr>
           <tr><td>100 to 119</td><td>Transient failure</td><td>Retried according to the step policy.</td></tr>
           <tr><td>120</td><td>Invalid input</td><td>Permanent failure. Never retried, whatever <code>retry</code> says.</td></tr>
-          <tr><td>121 to 124</td><td>Reserved</td><td>Reserved for the runner. A brick exiting with one has failed the contract, whatever its manifest says.</td></tr>
+          <tr><td>121</td><td>Output contract broken</td><td>Set by the runner: the container exited 0, but an envelope broke a <a href="#size-rules">size rule</a>. Charged to the brick, never retried, and the log names the rule.</td></tr>
+          <tr><td>122 to 124</td><td>Reserved</td><td>Reserved for the runner.</td></tr>
           <tr><td>125 and above</td><td>Reserved for the runtime</td><td>Read as an infrastructure failure, charged to the runner and not to the brick.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The band is read off the exit code alone, since the manifest declares no exit codes: leaving 121 to 124 free is a convention, not a check.</p>
+    <p>The band is read off the exit code alone, since the manifest declares no exit codes: a brick exiting 121 to 124 itself has failed the contract, whatever its manifest says, and leaving them free is a convention, not a check. A <code>timed_out</code> or <code>cancelled</code> task carries an exit code wherever a container ran.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A broken size rule is a <code>failed</code> task with a code of its own, not an error with none: no exit code reads as "no container ran", which sends the operator to the wrong machine.</p>
+    </div>
 
     <h3 id="environment-variables">Environment variables</h3>
     <div class="tablewrap">
@@ -2153,7 +2161,7 @@ steps:
       <table>
         <thead><tr><th>Key</th><th>Role</th></tr></thead>
         <tbody>
-          <tr><td>image</td><td>OCI reference. A digest is required in production; a mutable tag is accepted in development and resolved once for the whole run.</td></tr>
+          <tr><td>image</td><td>OCI reference. A tag is resolved once when the version is pushed, to the registry digest, and a server runs only <code>name@sha256</code>; <code>agk run --local</code> takes a tag as it is. See <a href="#supply-chain">Supply chain</a>.</td></tr>
           <tr><td>workflow</td><td>Calls a sub-workflow, local or published, instead:<code>&lt;namespace&gt;/&lt;name&gt;</code>, <code>@&lt;ref&gt;</code> to pin a tag or a commit, or <code>{ workflow, ref }</code>. Never beside <code>image</code>, <code>script</code>, <code>before_script</code>, <code>after_script</code> or <code>shell</code>: a call runs no container of its own.</td></tr>
           <tr><td>script</td><td>Commands run in <code>image</code>: the image is treated as a base image and nothing about its ports is inferred, so <code>outputs</code> must be declared. See <a href="#running-a-script-instead-of-a-brick">below</a>.</td></tr>
           <tr><td>needs</td><td>Inbound edges: <code>{ step, port, as }</code>, or the short form <code>step-name</code> equivalent to <code>{ step: name, port: out, as: in }</code>.</td></tr>
@@ -3254,7 +3262,7 @@ concurrency:
           <tr><td>1</td><td>Pulls a batch from its pool's consumer (the pool's subject is the filter) and writes each key down in its record as <code>dispatched</code> (<a href="#task-bus">Task bus</a>). A key this host already ended is answered from the record, and one it still has in flight is left on the queue; neither is redeemed.</td><td></td></tr>
           <tr><td>2</td><td>Redeems the task's grant for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, the secret values and one upload policy. The redemption binds the task to this runner, and the <a href="#heartbeat">heartbeat</a> holds it from then on. <a href="#the-task-message">The task message</a> says what any other answer binds and what the runner does then.</td><td></td></tr>
           <tr><td>3</td><td>Acknowledges the message, now that the database says whose the task is.</td><td></td></tr>
-          <tr><td>4</td><td>Reads the record again and refuses a key that has already ended, before a network, a pull or a secret is written. Then resolves and downloads the image by digest, verifying its signature where policy requires it, and runs the host's <code>pre_task</code> hooks, if any (<a href="#runner-side-hooks">Runner-side hooks</a>).</td><td></td></tr>
+          <tr><td>4</td><td>Reads the record again and refuses a key that has already ended, before a network, a pull or a secret is written. Then pulls the image by digest, verifying its signature where policy requires it from <a href="roadmap/#m08">v0.8.0</a> (<a href="#supply-chain">Supply chain</a>), and runs the host's <code>pre_task</code> hooks, if any (<a href="#runner-side-hooks">Runner-side hooks</a>).</td><td></td></tr>
           <tr><td>5</td><td>Downloads the tree and the inputs into a local working directory and prepares the mounts. Creates one container, starts it, attaches to it, waits for it to exit and collects its logs.</td><td><code>ContainerCreate</code> (<code>POST /containers/create</code>), <code>ContainerStart</code> (<code>POST /containers/{id}/start</code>), <code>ContainerAttach</code>, <code>ContainerWait</code>, <code>ContainerLogs</code></td></tr>
           <tr><td>6</td><td>Collects the output envelopes, artifacts, log and exit code, and posts the outputs under the upload policy. Only then writes the key's ending (temporary file, sync, rename), so every envelope the ending names is already in the store.</td><td></td></tr>
           <tr><td>7</td><td>Destroys the container and its working directory, and publishes the result on its own results subject.</td><td><code>ContainerRemove</code></td></tr>
@@ -3263,8 +3271,19 @@ concurrency:
         </tbody>
       </table>
     </div>
-    <p>A runner policy can restrict a host to a list of namespaces, which is how a namespace gets dedicated capacity without a separate installation.</p>
-    <p>The agent is one program, shipped as a container and as a single static binary run as an unprivileged system service (see <a href="#deployment">Deployment profiles</a>). It opens no inbound port in either form: every connection is outbound, to the API, the bus, the object store and the registry.</p>
+    <p>A runner's policy is written in three places, each for what only it knows. Restricting a pool or a host to a list of namespaces is how a namespace gets dedicated capacity without a separate installation.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Where</th><th>Holds</th><th>Enforced by</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">the pool, set through the <a href="#api">API</a></td><td>accepted namespaces; ceilings on <code>cpu</code>, <code>memory</code> and <code>pids</code></td><td>The controller, at dispatch: a step whose pool does not accept the run's namespace, or names no pool that exists, is not published and fails on the infrastructure's account, naming the pool; resources over a ceiling are capped on the task message. The API checks the namespaces again at the redemption: <code>422</code>.</td></tr>
+          <tr><td class="wrapcell"><code>/etc/agentiik/runner.toml</code></td><td>the host's own settings: the <code>require_userns_remap</code> floor, the secrets tmpfs, the stop grace, security profiles, allowed capabilities, ulimits and host caps</td><td>The runner.</td></tr>
+          <tr><td class="wrapcell"><code>AGK_RUNNER_NAMESPACES</code></td><td>a narrower list for one host, sent at join</td><td>The runner, which puts the message back on the queue before redeeming, and the API, which answers <code>403</code>, so another runner of the pool takes the task.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A task above the host's declared capacity is put back on the queue (<a href="#sizing">Sizing</a>); one above a pool's ceiling is capped. There is no disk ceiling, because nothing can enforce one.</p>
+    <p>The agent is <code>agk-runner</code>, one program shipped as a container and as a single static binary run as a system service (see <a href="#installing-a-runner">Installing a runner</a>), holding three capabilities and no other privilege. It opens no inbound port in either form: every connection is outbound, to the API, the bus, the object store and the registry.</p>
   </div>
 </section>
 
@@ -3312,7 +3331,7 @@ concurrency:
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor">
           <text x="175" y="91" text-anchor="middle">join: token, public key, labels, capacity</text>
-          <text x="181" y="119" text-anchor="middle" opacity=".7">runner id + long-lived credential</text>
+          <text x="181" y="119" text-anchor="middle" opacity=".7">runner id + credential, rotated</text>
           <text x="175" y="147" text-anchor="middle">request bus token</text>
           <text x="181" y="175" text-anchor="middle" opacity=".7">short-lived bus token</text>
         </g>
@@ -3365,9 +3384,9 @@ concurrency:
           <tr><td class="wrapcell">controller</td><td>PostgreSQL</td><td>TCP with TLS</td><td>password or client certificate</td><td>run and task state, the election lock, <code>LISTEN</code></td></tr>
           <tr><td class="wrapcell">controller</td><td>bus</td><td>TLS, or HTTPS for a managed queue</td><td>user JWT or instance role</td><td>ready tasks</td></tr>
           <tr><td class="wrapcell">runner</td><td>bus</td><td>TLS or HTTPS</td><td>short-lived token minted by the API</td><td>pulls tasks, publishes results, hears stops on <code>agentiik.stops</code></td></tr>
-          <tr><td class="wrapcell">runner</td><td>API</td><td>HTTPS</td><td>runner credential, then a per-task grant</td><td>registration, heartbeat, grant redemption, log shipping</td></tr>
+          <tr><td class="wrapcell">runner</td><td>API</td><td>HTTPS</td><td>runner credential, then a per-task grant</td><td>registration, rotation, heartbeat (whose answer repeats the stops), grant redemption, log shipping</td></tr>
           <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS</td><td>presigned URL or signed POST policy, no standing credential</td><td>the workflow tree, input and output artifacts</td></tr>
-          <tr><td class="wrapcell">runner</td><td>registry</td><td>HTTPS</td><td>the pool's pull credentials</td><td>brick images, by digest</td></tr>
+          <tr><td class="wrapcell">runner</td><td>registry</td><td>HTTPS</td><td>none in v0.2.0; namespace secrets from <a href="roadmap/#m08">v0.8.0</a></td><td>brick images, by digest</td></tr>
           <tr><td class="wrapcell">runner</td><td>Docker daemon</td><td>local unix socket</td><td>file permission on the socket</td><td>container lifecycle, daemon event stream</td></tr>
           <tr><td class="wrapcell">brick container</td><td>nothing, or the egress proxy</td><td>HTTPS through the proxy</td><td>none; the proxy enforces the step's allow list</td><td>only under <code>network: egress</code></td></tr>
           <tr><td class="wrapcell">API</td><td>APNs, FCM</td><td>HTTPS</td><td>the installation's own credentials</td><td>push notifications: an identifier and a state</td></tr>
@@ -3494,8 +3513,9 @@ concurrency:
 <pre><code><span class="p">&gt;</span> <span class="cmd">POST /api/v1/tasks/redeem</span>                   <span class="c"># runner credential</span>
 { "grant": "agkgrant_01JMZ8V1PC7K3M0_…", "task_id": "01JMZ8V1PC7K3M0",
   "idempotency_key": "01JMZ8V1P9C4/invoice/2/3/8" }
-<span class="c"># 401: grant expired or opens nothing · 409: another runner's task, or over</span>
-<span class="c"># 422: never answerable, 500 until built · any other 5xx: ask again</span>
+<span class="c"># 401: grant expired or opens nothing · 403: this runner may not take it</span>
+<span class="c"># 409: another runner's task, or over · 422: never answerable, 500 until built</span>
+<span class="c"># any other 5xx: ask again</span>
 
 {
   "task_id": "01JMZ8V1PC7K3M0",
@@ -3519,8 +3539,9 @@ concurrency:
         <thead><tr><th>A redemption answers</th><th>It binds</th><th>The runner then</th></tr></thead>
         <tbody>
           <tr><td><code>200</code></td><td>the task, to this runner</td><td>Acknowledges the message, pulls the image and runs the task.</td></tr>
+          <tr><td class="wrapcell"><code>403</code>: this runner is draining or revoked, or its <code>AGK_RUNNER_NAMESPACES</code> leaves out the run's namespace</td><td>nothing</td><td>Puts the message back on the queue, for another runner of the pool.</td></tr>
           <tr><td class="wrapcell"><code>409</code>: another runner's task, or one that is over</td><td>nothing</td><td>Acknowledges the message and starts nothing.</td></tr>
-          <tr><td class="wrapcell"><code>422</code>: nothing to answer with, ever: no commit, version or tree recorded for the task, or a secret the namespace does not declare or holds no value for</td><td>nothing</td><td>Reports that no container ran, then acknowledges. One that dies in between leaves the message to the next runner of the pool.</td></tr>
+          <tr><td class="wrapcell"><code>422</code>: nothing to answer with, ever: no commit, version or tree recorded for the task, a secret the namespace does not declare or holds no value for, or a pool that does not accept the run's namespace</td><td>nothing</td><td>Reports that no container ran, then acknowledges. One that dies in between leaves the message to the next runner of the pool.</td></tr>
           <tr><td class="wrapcell">no answer at all, a <code>401</code> or any other <code>5xx</code>: the grant expired or opens nothing, the runner's own credential was refused, or a failure that may pass, such as an input or a secret its store could not read this time</td><td>perhaps: the answer may be lost after the binding</td><td>Keeps the key, names it in its heartbeat and redeems again, acknowledging nothing. Once the <code>deadline</code> the message carries has passed, no answer can come, since the grant expires with it: it reports the task <code>timed_out</code> with no container ran, then acknowledges.</td></tr>
         </tbody>
       </table>
@@ -3569,11 +3590,8 @@ concurrency:
   "exit_code": 108,
   "started_at":  "2026-09-10T06:41:09.104Z",
   "finished_at": "2026-09-10T06:42:32.117Z",
-  "outputs": [
-    { "port": "out",   "digest": "sha256:a10b...4c8e", "items": 0 },
-    { "port": "error", "digest": "sha256:7c2e...9f11", "items": 3 }
-  ],
-  "artifacts": [ { "sha256": "c1f4a9...d02b", "bytes": 1284 } ],
+  <span class="c">// a failed task publishes no port: its step publishes empty envelopes</span>
+  "outputs": [], "artifacts": [],
   "log": { "uri": "agk://log/01JMZ8V1P9C4/01JMZ8V1PC7K3M0", "lines": 412, "truncated": false },
   "usage": { "cpu_seconds": 12.4, "max_rss_bytes": 198443008, "image_pull_ms": 0 }
 }</code></pre>
@@ -3605,8 +3623,22 @@ concurrency:
     <ul class="plain">
       <li>A runner posts one heartbeat every 10 seconds to the API, listing the idempotency keys it currently holds. One request covers every in-flight task on that host. It keeps alive only the dispatches of those keys bound to that runner, since after a requeue one key can also name a dispatch on another host.</li>
       <li>Liveness therefore lives in the database beside the task state, rather than as traffic on a work queue that exists to distribute work.</li>
-      <li>The heartbeat is also how a revoked credential takes effect and how the console knows a runner is present: there is no separate liveness channel to keep in sync.</li>
+      <li>The heartbeat is also how a drain or a revocation takes effect and how the console knows a runner is present: there is no separate liveness channel to keep in sync.</li>
     </ul>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>The answer carries</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>drain: true</code></td><td>Take nothing new; finish what is held. Set by a drain and by a revocation (<a href="#registering-a-runner">Registering a runner</a>).</td></tr>
+          <tr><td><code>results_accepted_until</code></td><td>The end of a revocation's grace.</td></tr>
+          <tr><td><code>cancel</code></td><td>Each key the request named whose dispatch, bound to this runner, the controller has ended as <code>cancelled</code> or <code>timed_out</code>. Never a <code>lost</code> dispatch: a host only cut off finishes its key (<a href="#task-bus">Task bus</a>).</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A stop travels on both channels with one meaning. <code>agentiik.stops</code> is the fast path and keeps nothing; the heartbeat's <code>cancel</code> is the backstop, so a runner disconnected when a stop went out hears it within one interval rather than running the container to its deadline.</p>
+    </div>
     <p>Three missed intervals, 30 seconds, move a redeemed task to <em>lost</em>. The controller's <a href="#how-the-api-and-the-controller-stay-in-step">sweep</a> moves them before it decides anything, so the runs a loss wakes are decided on the same pass (see <a href="#lifecycle">Lifecycle and replay</a>).</p>
     <div class="tablewrap">
       <table>
@@ -3622,9 +3654,9 @@ concurrency:
     <p>Registration proves which pool an unknown machine belongs to, and gives it credentials worth having only on that machine.</p>
     <ol class="steps">
       <li>An administrator creates a runner pool with its labels, its accepted namespaces and its resource ceilings, then issues a <strong>join token</strong>: single use, short lived (one hour by default), bound both to that pool and to the exact set of labels a runner may claim with it.</li>
-      <li>On the host: <code>agk runner join --api https://agentiik.example.com --token agkjoin_…</code>. The runner generates a keypair and sends the public key, the labels it claims, its capacity in vCPU, memory and disk, its architecture and its agent version. The private key never leaves the machine.</li>
-      <li>The API verifies the token, checks that the claimed labels are a subset of what the token permits, refuses anything else, creates the runner record and returns a runner identifier and a long-lived credential.</li>
-      <li>The credential goes to <code>/etc/agentiik/runner.env</code>, mode 0600, owned by the agent's unprivileged account. The join token is spent.</li>
+      <li>On the host: <code>agk-runner join --api https://agentiik.example.com --token agkjoin_…</code>. It generates an Ed25519 keypair, writes the private key to <code>/var/lib/agentiik/runner.key</code> (mode 0600, owned by the agent's account), and sends the public key, the labels it claims, its <code>AGK_RUNNER_NAMESPACES</code>, its capacity in vCPU, memory and disk, its architecture and its agent version. The private key never leaves the machine.</li>
+      <li>The API verifies the token, checks that the claimed labels are a subset of what the token permits, refuses anything else, creates the runner record and returns a runner identifier and a credential valid until its <code>rotate_by</code>.</li>
+      <li>The credential goes to <code>/etc/agentiik/runner.env</code>, mode 0600, owned by the agent's account, which <code>agk-runner serve</code> reads. The join token is spent.</li>
       <li>Every API call then carries that credential. The runner asks the API for a <strong>short-lived bus token</strong> whenever the previous one nears expiry. Bus credentials are therefore never at rest on a runner host, which is what lets a runner sit in a zone where a stolen disk must not yield a working queue consumer.</li>
       <li>The runner announces its labels and capacity, starts heartbeating, and pulls from the queues its labels match.</li>
     </ol>
@@ -3635,13 +3667,50 @@ concurrency:
         <thead><tr><th>Event</th><th>What happens</th><th>Why</th></tr></thead>
         <tbody>
           <tr><td>restart</td><td>Identity is the keypair on disk.</td><td>Nothing to re-register: the private key never left the machine, so the runner that comes back is provably the one that joined.</td></tr>
-          <tr><td>reimaged host</td><td>A new runner, which joins again. The old record stays for the audit log.</td><td>Never silently reused.</td></tr>
-          <tr><td>rotation</td><td>Automatic, on a schedule. A runner offline past the rotation window must re-join.</td><td>A machine dark for a month should be reconsidered, not readmitted.</td></tr>
-          <tr><td>revocation</td><td>From the console, effective at the next heartbeat. The runner stops accepting tasks and drains; its results are accepted for a grace period.</td><td>Revoking a credential never destroys work already done.</td></tr>
+          <tr><td>reimaged host</td><td>A new runner, which joins again, as is any host whose key is gone. The old record stays for the audit log.</td><td>Never silently reused.</td></tr>
+          <tr><td>rotation</td><td>Automatic, as below. A credential past its <code>rotate_by</code> is refused everywhere, and that host joins again.</td><td>A machine dark for a month should be reconsidered, not readmitted.</td></tr>
+          <tr><td>drain, revocation</td><td>Effective at the next heartbeat, as below.</td><td>Revoking a credential never destroys work already done.</td></tr>
           <tr><td>labels</td><td>A runner claims only labels its join token allowed, and a token permits only labels its pool carries.</td><td>The chain ends at an administrator, so a machine cannot add <code>zone=lan</code> to itself and start receiving the steps that were kept off the internet.</td></tr>
         </tbody>
       </table>
     </div>
+
+    <h4>Rotation</h4>
+    <p>The key proves the machine: a stolen credential without it cannot be renewed.</p>
+    <div class="block">
+      <div class="note-label">at two thirds of the window</div>
+<pre><code><span class="p">&gt;</span> <span class="cmd">POST /api/v1/runners/rotate</span>                  <span class="c"># the current credential</span>
+{ "runner": "runner-dmz-02", "at": "2026-10-20T06:00:00Z",
+  "signature": "…" }       <span class="c"># Ed25519, over the runner and the time</span>
+
+{ "credential": "agkrunner_…", "rotate_by": "2026-11-19T06:00:00Z" }</code></pre>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Rule</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell"><code>rotate_by</code> moves to now plus the join rotation, 30 days by default (<a href="#configuration">Configuration</a>)</td><td>The window is <code>rotate_by</code> itself: nothing else to keep in step.</td></tr>
+          <tr><td class="wrapcell">the old credential works until the new one is first used</td><td>A lost answer locks nobody out.</td></tr>
+          <tr><td class="wrapcell">the new one is written to <code>/var/lib/agentiik/credential</code>, which <code>serve</code> prefers to <code>runner.env</code></td><td>The unit's <code>ProtectSystem=strict</code> leaves <code>/etc/agentiik</code> read-only to the agent.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Drain and revocation</h4>
+    <p><code>POST /api/v1/runners/{runner}/drain</code> and <code>/revoke</code> take a <code>reason</code> and require <code>grant:manage</code> at installation scope; the audit log records both once it exists, a <a href="roadmap/#m02">v0.2.0</a> task.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th></th><th>Drained</th><th>Revoked, in its grace</th><th>Revoked, after it</th></tr></thead>
+        <tbody>
+          <tr><td>state</td><td><code>draining</code></td><td><code>revoked</code></td><td><code>revoked</code></td></tr>
+          <tr><td>heartbeat answers</td><td><code>drain: true</code></td><td><code>drain: true</code>, <code>results_accepted_until</code></td><td><code>401</code>, as every call</td></tr>
+          <tr><td>results</td><td>accepted</td><td>accepted and recorded</td><td>refused; the sweep declares lost what is still held</td></tr>
+          <tr><td>bus credential</td><td>unchanged</td><td>narrowed to publishing results and hearing stops, no pull</td><td>none</td></tr>
+          <tr><td>a redemption</td><td><code>403</code>, binds nothing</td><td><code>403</code>, binds nothing</td><td><code>401</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The grace ends at the revocation plus <code>revocation_grace</code>, an installation setting defaulting to the task ceiling, one hour, since no task legitimately runs longer.</p>
   </div>
 </section>
 
@@ -3755,6 +3824,11 @@ concurrency:
       <p>A task has one deadline, fixed when it is dispatched, rather than one that starts when its container is created. The grant, its URLs and the upload policy expire with it, and a deadline that started later would leave a container running past the credential it posts its outputs with. The cost: a full queue, a slow pull or a slow hook spends the step's time, so a <code>timeout</code> has to cover them.</p>
     </div>
 
+    <div class="decision">
+      <span class="note-label">Open question</span>
+      <p>How <code>running</code> and <code>publishing</code> reach the tasks table. Today a step reads <code>dispatched</code> until it ends. The proposal: a progress message on the runner's own results subject, taken only from the runner the dispatch is bound to, and never after an ending.</p>
+    </div>
+
     <h4>Back to pending</h4>
     <div class="tablewrap">
       <table>
@@ -3769,7 +3843,7 @@ concurrency:
       <table>
         <thead><tr><th>max_requeues</th><th>Is</th></tr></thead>
         <tbody>
-          <tr><td>set by</td><td>The installation, on its controller: <code>MaxRequeues</code> in <code>controller.Options</code> until the server reads a configuration of its own, a <a href="roadmap/#m02">v0.2.0</a> task. Never the workflow file.</td></tr>
+          <tr><td>set by</td><td>The installation, as <code>AGK_MAX_REQUEUES</code> (<a href="#configuration">Configuration</a>), once the controller reads it, a <a href="roadmap/#m02">v0.2.0</a> task; <code>MaxRequeues</code> in <code>controller.Options</code> until then. Never the workflow file.</td></tr>
           <tr><td>values</td><td>3 where the installation sets nothing; <code>0</code> requeues nothing; a negative number is refused.</td></tr>
           <tr><td>counted</td><td>Per key, one for each loss, which is a runner the control plane stopped hearing from. A message handed to another runner after AckWait, or a task waiting on a full pool's queue, spends none. A further attempt is a new key and starts again at none.</td></tr>
           <tr><td>past it</td><td>The loss stands. The task stays <code>lost</code>, no <code>retry.max</code> attempt is spent, and the step fails on the infrastructure's account, its reason naming <code>max_requeues</code>.</td></tr>
@@ -3860,8 +3934,19 @@ concurrency:
 
     <h3 id="supply-chain">Supply chain</h3>
     <ul class="plain">
-      <li>Images by digest in production: a tag is a mutable pointer, and a commit must determine what ran.</li>
+      <li>Images by digest on a server: a tag is a mutable pointer, and a version must determine what ran. <code>agk push</code> resolves each reference to the registry digest the pushing daemon holds for it, the version records <code>name@sha256</code>, and every run of it runs the same bytes. A reference with no registry digest, built locally and never pushed, is refused at push, and a runner refuses a message whose image is not a digest.</li>
       <li>Signatures checked against a per-namespace policy naming who may sign, by the runner before the container is created, not by the registry.</li>
+    </ul>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Pulling</th><th>v0.2.0</th><th>From <a href="roadmap/#m08">v0.8.0</a></th></tr></thead>
+        <tbody>
+          <tr><td>credentials</td><td>none: registries every runner can reach. A <code>401</code> fails the task on the platform's account and names v0.8.0.</td><td>namespace secrets, redeemed for the pull</td></tr>
+          <tr><td>signatures</td><td>not verified: there is no policy to verify against</td><td>the per-namespace policy, in the runner</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plain">
       <li>The standard catalog publishes build provenance and targets SLSA Build Level 3: runs that cannot influence one another, and secrets out of reach of build steps, as this documentation demands of a run.</li>
       <li>Each catalog image publishes an SBOM as an OCI referrer, so "are we affected" means reading an attestation, not unpacking a filesystem.</li>
       <li>Catalog images are rebuilt on a schedule and on base-image advisories, and the catalog shows their age: an image not rebuilt is stale, not stable.</li>
@@ -3888,7 +3973,7 @@ concurrency:
 
     <h3 id="two-questions-that-come-up">Two questions that come up</h3>
     <ul class="plain">
-      <li><strong>The image cache is shared between namespaces, and that is fine.</strong> Layers are cached by digest, and a digest is not a secret. The runner checks that the namespace may use the reference before starting anything, and private registry credentials are namespace secrets, so no namespace can cause a pull it is not entitled to.</li>
+      <li><strong>The image cache is shared between namespaces, and that is fine.</strong> Layers are cached by digest, and a digest is not a secret. The runner checks that the namespace may use the reference before starting anything, and private registry credentials are namespace secrets, so no namespace can cause a pull it is not entitled to. The credentials arrive in <a href="roadmap/#m08">v0.8.0</a> and the check in <a href="roadmap/#m10">v1.0.0</a>; until then every registry is one every runner can reach.</li>
       <li><strong>The audit log is append-only and chained.</strong> Each entry carries the hash of the previous one, so an edit or a deletion leaves a break, not a silence. It is exported continuously outside the installation, since the incident's own host may be unreadable.</li>
     </ul>
 
@@ -3903,7 +3988,7 @@ concurrency:
           <tr><td>transport</td><td>TLS 1.3 where both ends allow it, TLS 1.2 as the floor, no plaintext path anywhere, including between the control plane and the bus.</td></tr>
           <tr><td class="wrapcell">artifacts, trees, images</td><td>SHA-256, which also makes them addressable.</td></tr>
           <tr><td class="wrapcell">the built-in secret store</td><td>Envelope encryption with AES-256-GCM data keys, wrapped by a master key held outside the database.</td></tr>
-          <tr><td>runner identity</td><td>A keypair generated on the host at registration; the private half never leaves it.</td></tr>
+          <tr><td>runner identity</td><td>An Ed25519 keypair generated on the host at join; the private half never leaves it, and signs each <a href="#registering-a-runner">rotation</a>.</td></tr>
         </tbody>
       </table>
     </div>
@@ -3942,26 +4027,31 @@ concurrency:
       <table>
         <thead><tr><th>Field</th><th>Applied value</th></tr></thead>
         <tbody>
-          <tr><td>NetworkMode</td><td><code>none</code> by default. <code>egress</code> attaches a dedicated network whose outbound traffic goes through a runner proxy enforcing <code>egress.allow</code>. <code>internal</code> attaches a network with no outbound route, for steps that only talk to a sidecar service. Every task gets its own network, so two containers on the same host never see each other.</td></tr>
+          <tr><td>NetworkMode</td><td><code>none</code> by default. <code>egress</code> is to attach a dedicated network whose outbound traffic goes through a runner proxy enforcing <code>egress.allow</code>, and is refused until that proxy exists. <code>internal</code> attaches a network with no outbound route, for steps that only talk to a sidecar service. Every task gets its own network, so two containers on the same host never see each other.</td></tr>
           <tr><td>ReadonlyRootfs</td><td><code>true</code>. The only writable paths are <code>/agk/out</code> and <code>/tmp</code>, as sized tmpfs.</td></tr>
-          <tr><td>CapDrop</td><td><code>ALL</code>. <code>CapAdd</code> is refused unless the runner policy allows it explicitly.</td></tr>
+          <tr><td>CapDrop</td><td><code>ALL</code>. <code>CapAdd</code> is refused unless <code>runner.toml</code> allows it explicitly.</td></tr>
           <tr><td>SecurityOpt</td><td><code>no-new-privileges</code>, the default seccomp profile, and an AppArmor profile or SELinux label depending on the host.</td></tr>
           <tr><td class="wrapcell">daemon: userns-remap</td><td>On every runner: root in a container is an unprivileged high-numbered host account. A daemon setting, not a container field, and the runner refuses to start without it (<a href="#three-tiers-of-containment">Three tiers of containment</a>).</td></tr>
-          <tr><td>Memory</td><td>From <code>resources.memory</code>, capped by the runner policy and the namespace quota.</td></tr>
-          <tr><td>NanoCPUs</td><td>From <code>resources.cpu</code>.</td></tr>
-          <tr><td>PidsLimit</td><td>From <code>resources.pids</code>, default 256.</td></tr>
+          <tr><td>Memory</td><td>From <code>resources.memory</code>, capped by the pool's ceiling and the namespace quota.</td></tr>
+          <tr><td>NanoCPUs</td><td>From <code>resources.cpu</code>, capped by the pool's ceiling.</td></tr>
+          <tr><td>PidsLimit</td><td>From <code>resources.pids</code>, default 256, capped by the pool's ceiling.</td></tr>
           <tr><td>Tmpfs</td><td><code>/tmp</code> and the secret mount points, with <code>noexec,nosuid,nodev</code>.</td></tr>
-          <tr><td>Ulimits</td><td><code>nofile</code> and <code>nproc</code> set by the runner policy.</td></tr>
+          <tr><td>Ulimits</td><td><code>nofile</code> and <code>nproc</code> set in <code>runner.toml</code>.</td></tr>
           <tr><td>AutoRemove</td><td><code>false</code>. The runner removes the container once logs and exit code are collected, so nothing is lost on a fast exit.</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Open question</span>
+      <p>The egress proxy is <a href="roadmap/#m09">v0.9.0</a> work, after a design section that settles: explicit or transparent, where it listens in each runner form, forbidden destinations, the grammar of a host, optional or mandatory, chaining to an upstream proxy, local runs, and how a refusal reaches the log. It must also keep a runner free of any inbound port.</p>
     </div>
 
     <h3 id="further-rules">Further rules</h3>
     <ul class="plain">
       <li>The daemon socket is never mounted inside a brick. A brick that builds an image goes through an unprivileged builder, run like any other brick.</li>
       <li>The container user is non-root, required by the manifest and checked at publication.</li>
-      <li>Images by digest in production, signatures verified by the runner before start: see <a href="#supply-chain">Supply chain</a>.</li>
+      <li>Images by digest on a server, signatures verified by the runner before start from <a href="roadmap/#m08">v0.8.0</a>: see <a href="#supply-chain">Supply chain</a>.</li>
       <li>The working directory of a task is created fresh, owned by an unprivileged account, and removed with the container, so no residue of one namespace survives into the next task on that host.</li>
     </ul>
 
@@ -4156,6 +4246,8 @@ steps:
           <tr><td class="wrapcell">POST /api/v1/users, /groups</td><td>Users, groups and group membership.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/service-accounts</td><td>A non-human principal in a namespace the caller owns. Tokens via <code>/api/v1/auth/tokens</code>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runners</td><td>Runner inventory: labels, capacity, last heartbeat. Administrator only.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/runners/{runner}/drain<br>POST /api/v1/runners/{runner}/revoke</td><td>Drains or revokes one runner, with a <code>reason</code>. Requires <code>grant:manage</code> at installation scope. See <a href="#registering-a-runner">Registering a runner</a>.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/runners/rotate</td><td>A runner's new credential, for its current one and a signature by its key. Runner credential only.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runner-pools</td><td>Pools and their labels, to write a namespace's allowed pools against. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools</td><td>A pool with its labels, accepted namespaces and resource ceilings. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools/{pool}/join-tokens</td><td>A join token: single use, short lived, only for labels the pool carries, shown once. Administrator only.</td></tr>
@@ -4231,7 +4323,7 @@ Authorization: Bearer &lt;api token&gt;
         <tbody>
           <tr><td>the request</td><td>The API writes the moment on the run, keeping the first if asked again, and notifies the controller. It stops nothing itself: the two share the database and nothing else.</td></tr>
           <tr><td class="wrapcell">the controller's next pass</td><td>Before admission, so a <code>queued</code> run is never let in to be called off. The run ends <code>cancelled</code>; one that never left the queue has no <code>started_at</code>.</td></tr>
-          <tr><td>its tasks</td><td>Every task not over is written <code>cancelled</code> in that pass, so a message still on the queue redeems nothing and the run's share of <code>max_concurrent_tasks</code> comes back at once. The runners holding redeemed ones are asked to stop them on the bus subject <code>agentiik.stops</code>, which every runner subscribes to over its own connection, so a stop arrives at once and nothing connects to a runner. It is not kept: a runner not connected when it goes out misses it, and that container runs to its deadline. A lost dispatch keeps its loss.</td></tr>
+          <tr><td>its tasks</td><td>Every task not over is written <code>cancelled</code> in that pass, so a message still on the queue redeems nothing and the run's share of <code>max_concurrent_tasks</code> comes back at once. The runners holding redeemed ones are asked to stop them on the bus subject <code>agentiik.stops</code>, which every runner subscribes to over its own connection, so a stop arrives at once and nothing connects to a runner. It is not kept, so the <a href="#heartbeat">heartbeat</a>'s answer repeats it as <code>cancel</code> to a runner that missed it. A lost dispatch keeps its loss.</td></tr>
           <tr><td>the audit log</td><td>Records the request once it exists, a <a href="roadmap/#m02">v0.2.0</a> task not yet built.</td></tr>
         </tbody>
       </table>
@@ -4279,7 +4371,7 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td>agk validate</td><td>Validates the YAML, resolves includes and inheritance, detects cycles, checks ports against the manifests of the referenced images.</td></tr>
           <tr><td>agk graph</td><td>Writes the resolved graph as DOT or Mermaid, for review inside a merge request.</td></tr>
           <tr><td>agk run --local</td><td>Runs the whole workflow against the local Docker daemon, with no controller, no bus and no database. Artifacts land in a working directory.</td></tr>
-          <tr><td>agk push</td><td>Registers the workflow in a namespace on a server. Until git hosting, it carries the committed tree itself, <a href="#until-the-repository-is-hosted">as set out here</a>.</td></tr>
+          <tr><td>agk push</td><td>Registers the workflow in a namespace on a server, each image resolved to its registry digest (<a href="#supply-chain">Supply chain</a>). Until git hosting, it carries the committed tree itself, <a href="#until-the-repository-is-hosted">as set out here</a>.</td></tr>
           <tr><td>agk share</td><td>Grants or revokes access: <code>agk share finance/monthly-invoicing --group team-ops --role operator</code>.</td></tr>
           <tr><td>agk grants</td><td>Shows who can do what on a workflow, and which scope each permission comes from.</td></tr>
           <tr><td>agk logs</td><td>Follows the logs of a run.</td></tr>
@@ -4287,6 +4379,25 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td>agk brick test</td><td>Runs the brick against a set of sample envelopes and compares against expected outputs.</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <p>The programs of an installation are not <code>agk</code>. Each reads its settings as <a href="#configuration">Configuration</a> lists them.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Program</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td>agk-runner join</td><td>Trades a join token for a runner's identity: writes the key and <code>/etc/agentiik/runner.env</code> (<a href="#registering-a-runner">Registering a runner</a>).</td></tr>
+          <tr><td>agk-runner serve</td><td>The agent: heartbeats, pulls, runs, publishes. What the systemd unit and the container run.</td></tr>
+          <tr><td>agk-runner version</td><td>Prints the agent version join sends.</td></tr>
+          <tr><td>agentiik-api</td><td>Serves every route, the built-in object store and the secret providers.</td></tr>
+          <tr><td>agentiik-api migrate</td><td>Applies the migrations as a privileged role, and creates the <code>NOSUPERUSER NOBYPASSRLS</code> role the API and the controller connect as.</td></tr>
+          <tr><td>agentiik-controller</td><td>Leads by advisory lock, sweeps, consumes results and publishes tasks.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>Joining is a verb of <code>agk-runner</code>, not of <code>agk</code>: join writes what serve reads, so a runner host needs one binary, and <code>agk</code> links the API and through it the database and the controller, which the agent's boundary test keeps out. The API and the controller are two programs rather than one because only the API may link the secret store.</p>
     </div>
 
     <div class="decision">
@@ -5681,14 +5792,25 @@ resource "agentiik_workflow" "search" {
 
   runner:
     image: ghcr.io/agentiik/runner:1.0.0
+    command: ["serve"]
+    user: agentiik
+    group_add: ["${DOCKER_GID}"]      <span class="c"># the group that owns the socket</span>
+    userns_mode: host
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
     environment:
       AGK_RUNNER_LABELS: "zone=lan,arch=amd64"
       AGK_RUNNER_CONCURRENCY: "4"
-      <span class="c"># empty means every namespace may use this runner</span>
+      AGK_RUNNER_WORKDIR: /var/lib/agentiik/work
+      <span class="c"># empty means every namespace the pool accepts</span>
       AGK_RUNNER_NAMESPACES: ""
     volumes:
       <span class="c"># only the runner sees the daemon, never the bricks</span>
-      - /var/run/docker.sock:/var/run/docker.sock:ro</code></pre>
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      <span class="c"># the daemon resolves bind sources on the host: same paths on both sides</span>
+      - /var/lib/agentiik:/var/lib/agentiik
+      - /run/agentiik/secrets:/run/agentiik/secrets   <span class="c"># a tmpfs, noexec,nosuid,nodev</span>
+      - /etc/agentiik:/etc/agentiik</code></pre>
   </div>
 
   <div class="prose">
@@ -5900,14 +6022,28 @@ resource "agentiik_workflow" "search" {
       <table>
         <thead><tr><th>Form</th><th>When</th><th>What it needs</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">container</td><td>Alongside the rest of a Compose or orchestrated installation. This is the single-host profile.</td><td>The daemon socket mounted read-only, and nothing else.</td></tr>
-          <tr><td class="wrapcell">bare metal</td><td>A physical host chosen for what it has: GPUs, a large local NVMe scratch, a specific kernel or driver, a licensed toolchain, or a position in a network zone.</td><td>A single static binary run by a systemd unit, as an unprivileged user in the group that owns the daemon socket, plus a working directory on the fast disk.</td></tr>
+          <tr><td class="wrapcell">container</td><td>Alongside the rest of a Compose or orchestrated installation. This is the single-host profile.</td><td>The daemon socket, through its group; the work root and a secrets tmpfs mounted at the same paths as on the host; a non-root user in the host's user namespace, holding the three capabilities below and no other.</td></tr>
+          <tr><td class="wrapcell">bare metal</td><td>A physical host chosen for what it has: GPUs, a large local NVMe scratch, a specific kernel or driver, a licensed toolchain, or a position in a network zone.</td><td>A single static binary run by a systemd unit, as a user in the group that owns the daemon socket holding the three capabilities below and no other, plus a working directory on the fast disk.</td></tr>
         </tbody>
       </table>
     </div>
     <p>Bare metal describes the agent, not the work: bricks are still containers, resolved by digest and started through the Docker Engine API. Only the agent is a process, so it survives a restart of the container platform it drives and can use host resources directly.</p>
 
     <p>One runner setting is a floor, not a preference: <code>require_userns_remap</code> defaults to true, and a runner that finds a daemon without user-namespace remapping refuses to take work rather than start containers whose root maps to the host's. An operator who sets it to false has decided that this machine does not need the floor, which is a reasonable thing to decide about a laptop and a serious thing to decide about a fleet. It is a line in <code>/etc/agentiik/runner.toml</code> and not a command line flag, so the decision survives in something reviewable rather than in somebody's shell history. <a href="#three-tiers-of-containment">Three tiers of containment</a> says what the remapping buys.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Capability</th><th>Lets the agent</th></tr></thead>
+        <tbody>
+          <tr><td>CAP_CHOWN</td><td>Give a task's directory to the base of the remapped range, before the container exists.</td></tr>
+          <tr><td>CAP_FOWNER</td><td>Change the mode of files it no longer owns.</td></tr>
+          <tr><td>CAP_DAC_OVERRIDE</td><td>Re-enter and remove those directories when the task ends.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>Three capabilities and no other. Membership of the group that owns the daemon socket is already root-equivalent, so they give an attacker nothing the socket does not, and without them the agent could not own a task's directory inside the remapped range. A server runner also requires its secrets directory to be a tmpfs mounted <code>noexec,nosuid,nodev</code>, flags a bind mount then carries into the container form.</p>
+    </div>
   </div>
 
   <div class="block">
@@ -5926,12 +6062,14 @@ Environment=AGK_API=https://agentiik.example.com
 Environment=AGK_RUNNER_LABELS=zone=dmz,arch=amd64,gpu=true
 Environment=AGK_RUNNER_CONCURRENCY=8
 Environment=AGK_RUNNER_WORKDIR=/var/lib/agentiik/work
-EnvironmentFile=/etc/agentiik/runner.env
+<span class="c"># reads /etc/agentiik/runner.env itself, so the credential stays out of the environment</span>
 ExecStart=/usr/local/bin/agk-runner serve
 Restart=always
 RestartSec=5
 
-<span class="c"># the agent needs no privilege of its own</span>
+<span class="c"># three capabilities, to own a task's directory, and no other privilege</span>
+AmbientCapabilities=CAP_CHOWN CAP_FOWNER CAP_DAC_OVERRIDE
+CapabilityBoundingSet=CAP_CHOWN CAP_FOWNER CAP_DAC_OVERRIDE
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
@@ -5946,8 +6084,8 @@ WantedBy=multi-user.target</code></pre>
     <h4>Registration</h4>
     <ol class="steps">
       <li>An administrator issues a join token: single use, short lived, scoped to a pool and the labels it may claim.</li>
-      <li><code>agk runner join --api https://agentiik.example.com --token &lt;token&gt;</code> trades it for a long-lived credential in <code>/etc/agentiik/runner.env</code>, mode 0600.</li>
-      <li>The runner announces its labels, capacity and accepted namespaces, and pulls from the queues its labels match. Revoking its credential in the console stops it at its next heartbeat.</li>
+      <li><code>agk-runner join --api https://agentiik.example.com --token &lt;token&gt;</code> trades it for a credential in <code>/etc/agentiik/runner.env</code>, mode 0600, and a key in <code>/var/lib/agentiik/runner.key</code>.</li>
+      <li><code>agk-runner serve</code> announces the runner's labels, capacity and accepted namespaces, and pulls from the queues its labels match. Draining or revoking it stops it taking work at its next heartbeat.</li>
     </ol>
     <p>No inbound port is ever opened on a runner host; every connection is outbound, to the API, the bus, the object store and the registry. Full exchange: <a href="#registering-a-runner">Registering a runner</a>.</p>
 
@@ -6043,7 +6181,7 @@ post_task = [
       <table>
         <thead><tr><th>What</th><th>Sized by</th></tr></thead>
         <tbody>
-          <tr><td>runner concurrency</td><td>One task per vCPU to start, raised until memory or disk queue binds rather than CPU. A runner refuses a task whose declared <code>resources</code> would exceed its own declared capacity, so oversubscription is a choice, not an accident.</td></tr>
+          <tr><td>runner concurrency</td><td>One task per vCPU to start, raised until memory or disk queue binds rather than CPU. A runner puts back on the queue a task whose declared <code>resources</code> would exceed its own declared capacity, so oversubscription is a choice, not an accident.</td></tr>
           <tr><td>control plane</td><td>Run creation rate and open log streams, never the data volume of workflows: it holds state, not payloads. Its bandwidth follows the rate at which steps publish, not the size of what they publish.</td></tr>
           <tr><td>database</td><td>Run and task history, bounded by retention.</td></tr>
           <tr><td>object store</td><td>Artifacts, which only a retention policy bounds.</td></tr>
@@ -6057,12 +6195,49 @@ post_task = [
     </ul>
     <p>An installation that attaches no object store carries every object through the API as well, since the API is then its <a href="#the-task-message">object store</a>.</p>
 
+    <h3 id="configuration">Configuration</h3>
+    <p>Every program reads <code>AGK_*</code> environment variables. A secret is never a value: it sits in a file an <code>AGK_*_FILE</code> variable names, since an environment is readable by children and ends up in diagnostic dumps. A required setting that is missing, or a file that cannot be read, refuses the start and names the variable. Durations are written <code>1h</code>, <code>720h</code>.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Variable</th><th>Read by</th><th>Default</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><th colspan="4">The server programs</th></tr>
+          <tr><td class="wrapcell">AGK_LISTEN</td><td>api</td><td><code>:8080</code></td><td>An unprivileged port: TLS is terminated in front (<a href="#what-every-profile-must-provide">What every profile must provide</a>).</td></tr>
+          <tr><td class="wrapcell">AGK_PUBLIC_URL</td><td>api</td><td>required</td><td>The base every presigned URL and the built-in store are named under, never a request's <code>Host</code>.</td></tr>
+          <tr><td class="wrapcell">AGK_DATABASE_URL_FILE</td><td>api, controller</td><td>required</td><td>The application role's URL, which carries its password.</td></tr>
+          <tr><td class="wrapcell">AGK_MIGRATION_URL_FILE</td><td>api migrate</td><td>required there</td><td>A privileged role, used only to migrate and to create the application role.</td></tr>
+          <tr><td class="wrapcell">AGK_BUS_URL</td><td>api, controller</td><td>required</td><td>No default: a bus is never guessed.</td></tr>
+          <tr><td class="wrapcell">AGK_BUS_CREDENTIALS_FILE</td><td>api, controller</td><td>required</td><td>Each program's own credential under the installation's NATS account.</td></tr>
+          <tr><td class="wrapcell">AGK_BUS_ACCOUNT_SEED_FILE</td><td>api</td><td>required</td><td>What the API mints runners' short-lived bus credentials with.</td></tr>
+          <tr><td class="wrapcell">AGK_OBJECTS_DIR</td><td>api, controller</td><td>required</td><td>The built-in object store, one directory both share until MinIO and S3 (<a href="roadmap/#m09">v0.9.0</a>).</td></tr>
+          <tr><td class="wrapcell">AGK_PRESIGN_KEY_FILE</td><td>api</td><td>required</td><td>Signs presigned URLs and upload policies.</td></tr>
+          <tr><td class="wrapcell">AGK_MASTER_KEY_FILE</td><td>api</td><td>none: no built-in secret store, and a value's <code>PUT</code> answers <code>503</code></td><td>The key that opens the store stays outside the database (<a href="#secrets">Secrets</a>).</td></tr>
+          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN_HASH_FILE</td><td>api</td><td>required, until v0.3.0</td><td>The interim operator (<a href="#first-run">First run</a>).</td></tr>
+          <tr><td class="wrapcell">AGK_MAX_REQUEUES</td><td>controller</td><td><code>3</code></td><td><code>max_requeues</code>, the installation's bound on losses (<a href="#task-states">Task states</a>).</td></tr>
+          <tr><td class="wrapcell">AGK_TASK_CEILING</td><td>api, controller</td><td><code>1h</code></td><td>The deadline of a step that writes none (<a href="#yaml">Workflow language</a>, Deadlines).</td></tr>
+          <tr><td class="wrapcell">AGK_JOIN_ROTATION</td><td>api</td><td><code>720h</code></td><td>How far each rotation moves <code>rotate_by</code>: a machine dark for a month should be reconsidered.</td></tr>
+          <tr><td class="wrapcell">AGK_REVOCATION_GRACE</td><td>api</td><td>the task ceiling</td><td><code>revocation_grace</code>: no task legitimately runs longer.</td></tr>
+          <tr><th colspan="4">The runner</th></tr>
+          <tr><td class="wrapcell">AGK_API</td><td>agk-runner</td><td>required; join writes it</td><td>The one address a runner is given; the API hands out the rest.</td></tr>
+          <tr><td class="wrapcell">AGK_RUNNER_LABELS</td><td>agk-runner</td><td>required</td><td>Claimed at join, within what the token permits.</td></tr>
+          <tr><td class="wrapcell">AGK_RUNNER_CONCURRENCY</td><td>agk-runner</td><td>one task per vCPU</td><td>Where <a href="#sizing">Sizing</a> says to start.</td></tr>
+          <tr><td class="wrapcell">AGK_RUNNER_WORKDIR</td><td>agk-runner</td><td><code>/var/lib/agentiik/work</code></td><td>Task directories and the record of keys, on the fast disk and writable under <code>ProtectSystem=strict</code>.</td></tr>
+          <tr><td class="wrapcell">AGK_RUNNER_NAMESPACES</td><td>agk-runner</td><td>empty: every namespace the pool accepts</td><td>Narrows one host, sent at join (<a href="#runner">Runner</a>).</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The runner reads its settings from the environment and <code>/etc/agentiik/runner.env</code>, in both forms. Its secrets are files join and rotation write: the key at <code>/var/lib/agentiik/runner.key</code> and the credential in <code>runner.env</code>, or <code>/var/lib/agentiik/credential</code> once a rotation has written one. The host's own settings are in <code>/etc/agentiik/runner.toml</code> (<a href="#runner">Runner</a>).</p>
+
     <h3 id="first-run">First run</h3>
     <ol class="steps">
       <li>The installer prints a one-time bootstrap token, valid for a single use and a short window.</li>
       <li>That token creates the first administrator, then is invalidated.</li>
       <li>The administrator creates namespaces, groups and users. Every user gets a personal namespace on first sign-in.</li>
     </ol>
+    <div class="decision">
+      <span class="note-label">Interim, until v0.3.0</span>
+      <p>A v0.2.0 installation has no principals, so it has one operator: a token whose hash sits in the file <code>AGK_OPERATOR_TOKEN_HASH_FILE</code> names. <code>agentiik-api</code> identifies it as one principal allowed every permission at every scope, and everyone else stays denied. Both halves live in the API's main package, so <a href="roadmap/#m03">v0.3.0</a>'s bootstrap token deletes them in one place.</p>
+    </div>
 
     <h3 id="push-notification-delivery">Push notification delivery</h3>
     <p>For mobile alerts, an installation gives the API its own APNs key and Firebase service account. Both are optional: without them there is no push, and the applications poll in the foreground.</p>
