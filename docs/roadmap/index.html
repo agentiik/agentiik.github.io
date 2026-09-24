@@ -967,7 +967,7 @@ img{max-width:100%}
 
 <!-- ============ v0.2.0 ============ -->
 <section id="m02">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">51 of 91 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">51 of 92 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> the same workflow, sent to a server, executed by a runner somewhere else, and watched while it happens.</p>
 
@@ -1185,6 +1185,7 @@ img{max-width:100%}
           <li class="done">Register a workflow and a version on a server with agk push, recording the resolved graph against the version a run will pin. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
           <li class="done">Serve POST /api/v1/{ns}/workflows/{name}/runs: a manual run carrying the workflow inputs, written with its trigger_kind and triggering principal, committed, and then notified to the controller. <a class="ref" href="../#api">api</a><a class="ref" href="../#from-trigger-to-result">from-trigger-to-result</a><a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
           <li class="done">Serve GET /api/v1/runs with filters on namespace, workflow, state and time, and GET /api/v1/runs/{id} returning run state, per-step state and envelope digests. <a class="ref" href="../#api">api</a> <span class="tick">done</span></li>
+          <li>Serve GET /api/v1/runs across every namespace the caller can read, and GET /api/v1/runs/{id} by the identifier alone as a push notification carries it, beside the per-namespace routes served now. <a class="ref" href="../#api">api</a><a class="ref" href="../#push-notification-delivery">push-notification-delivery</a></li>
           <li>Serve POST /api/v1/runs/{id}/cancel, recorded in the audit log once the audit log exists. <a class="ref" href="../#api">api</a><a class="ref" href="../#run-states">run-states</a></li>
           <li>Serve GET /api/v1/runs/{id}/steps/{step}/logs as an SSE stream, history then live. <a class="ref" href="../#api">api</a><a class="ref" href="../#observability">observability</a></li>
           <li>Serve GET /api/v1/runs/{id}/outputs/{name} for one workflow output envelope, and GET /api/v1/artifacts/{uri} as a 302 to a short-lived presigned URL. <a class="ref" href="../#api">api</a></li>

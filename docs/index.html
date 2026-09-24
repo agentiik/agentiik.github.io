@@ -4178,8 +4178,8 @@ steps:
 
           <tr><th colspan="2">Runs and their data</th></tr>
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/runs</td><td>Manual trigger: the workflow inputs and, optionally, a ref other than the default branch. Example below.</td></tr>
-          <tr><td class="wrapcell">GET /api/v1/runs</td><td>Runs, filtered by namespace, workflow, state and time. Where a mobile app opens.</td></tr>
-          <tr><td class="wrapcell">GET /api/v1/runs/{id}</td><td>Run state, per-step state, envelope digests.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/runs</td><td>Runs, filtered by namespace, workflow, state and time. Where a mobile app opens. Served so far within one namespace only, as <code>GET /api/v1/{ns}/runs</code> filtered by workflow and state; across namespaces it is a <a href="roadmap/#m02">v0.2.0</a> task.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/runs/{id}</td><td>Run state, per-step state, envelope digests. Served so far as <code>GET /api/v1/{ns}/runs/{id}</code>, the path a <code>Location</code> names a run by; by the identifier alone, which is all a push notification carries, it is a <a href="roadmap/#m02">v0.2.0</a> task.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runs/{id}/cancel</td><td>Asks for the run to be cancelled, and the controller carries it out: <code>202</code>, example below. Requires <code>workflow:run</code> on the run's workflow.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runs/{id}/approve</td><td>Clears a waiting run. Optional comment, audited. With the wait step, in <a href="roadmap/#m08">v0.8.0</a>.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runs/{id}/reject</td><td>Ends a waiting run as cancelled, with a reason. With the wait step, in <a href="roadmap/#m08">v0.8.0</a>.</td></tr>
@@ -4218,7 +4218,7 @@ Authorization: Bearer &lt;api token&gt;
       <table>
         <thead><tr><th>A cancellation answers</th><th>When</th></tr></thead>
         <tbody>
-          <tr><td><code>202</code></td><td>The request is written: <code>{"run": …}</code>, and <code>Location</code> pointing at the run. The same whether the run is going or has ended, since how it stands is for <code>run:read</code> to show, which <code>operator</code> does not hold.</td></tr>
+          <tr><td><code>202</code></td><td>The request is written: <code>{"run": …}</code>, and <code>Location: /api/v1/{ns}/runs/{id}</code>, where the run is read. The same whether the run is going or has ended, since how it stands is for <code>run:read</code> to show, which <code>operator</code> does not hold.</td></tr>
           <tr><td><code>400</code></td><td>A body with a field in it, or one that is not a JSON object.</td></tr>
           <tr><td><code>404</code></td><td>No such run, or a run whose workflow the caller holds no <code>workflow:run</code> on.</td></tr>
           <tr><td><code>413</code></td><td>A body past 64 KiB.</td></tr>
