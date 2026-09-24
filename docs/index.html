@@ -3209,20 +3209,7 @@ concurrency:
 
     <h3 id="task-bus">Task bus</h3>
     <p>NATS JetStream with WorkQueue retention: a message leaves the stream once it is acknowledged. The control plane creates one durable pull consumer per runner pool, and every runner of the pool takes from it and creates none. A runner asks for a batch only when it has room, so distribution follows each host's real capacity without the controller modelling load.</p>
-    <p>Delivery is at least once, so a task can arrive twice. Its idempotency key, <code>run_id/step/attempt/shard</code>, the redemption that binds it to one runner, and a record each host keeps of the keys it took make that harmless. A runner handles each message in this order:</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Order</th><th>The runner</th></tr></thead>
-        <tbody>
-          <tr><td>1. take</td><td>Takes the message from its pool's consumer.</td></tr>
-          <tr><td>2. record</td><td>Writes the key down as <code>dispatched</code>. A key this host already ended is answered from the record, and one it still has in flight is left on the queue (below); neither is redeemed.</td></tr>
-          <tr><td>3. redeem</td><td>Redeems the grant, which binds the task to this runner. A <code>409</code>, another runner's task or one that is over, is acknowledged and nothing starts.</td></tr>
-          <tr><td>4. acknowledge</td><td>Takes the message off the queue, now that the database says whose the task is.</td></tr>
-          <tr><td>5. pull</td><td>Reads the record again and refuses a key that has already ended, before a network, a pull or a secret; then pulls the image. The <a href="#heartbeat">heartbeat</a> holds the task from the redemption on.</td></tr>
-          <tr><td>6. run</td><td>Runs the container. At the end it writes each port's envelope to the object store, then the ending (temporary file, sync, rename), then removes the container and the task's directory.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p>Delivery is at least once, so a task can arrive twice. Its idempotency key, <code>run_id/step/attempt/shard</code>, the redemption that binds it to one runner, and a record each host keeps of the keys it took make that harmless. A runner handles each message in the order <a href="#runner">Runner</a> sets out: it writes the key down, redeems the grant, and only then acknowledges the message, before it pulls or starts anything.</p>
     <p>The record is one file per key, <code>&lt;work root&gt;/.keys/&lt;run&gt;/&lt;step&gt;/&lt;attempt&gt;[/&lt;index&gt;-&lt;of&gt;].json</code> under <code>AGK_RUNNER_WORKDIR</code>, outside every task directory since those go with their containers. It is pruned 7 days after its last write, the longest a message waits on the stream.</p>
     <div class="tablewrap">
       <table>
@@ -3237,9 +3224,9 @@ concurrency:
       <table>
         <thead><tr><th>What goes wrong</th><th>What follows</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">the host dies before redeeming</td><td>It acknowledged nothing, so the pool consumer's AckWait, one minute, passes and the bus hands the message to another runner of the pool.</td></tr>
+          <tr><td class="wrapcell">the host dies before redeeming, <a href="#runner">step 2</a></td><td>It acknowledged nothing, so the pool consumer's AckWait, one minute, passes and the bus hands the message to another runner of the pool.</td></tr>
           <tr><td class="wrapcell">the host dies after redeeming</td><td>Its heartbeat stops, the task becomes <code>lost</code> and comes back only as <a href="#task-states">Back to pending</a> says. The message, if never acknowledged, comes round and is refused with <code>409</code>.</td></tr>
-          <tr><td class="wrapcell">the acknowledgement never reaches the bus</td><td>The message comes round after AckWait. Every other runner is refused it at the redemption; the holder finds the key in flight or ended on its host. Nothing runs twice.</td></tr>
+          <tr><td class="wrapcell">the acknowledgement of <a href="#runner">step 3</a> never reaches the bus</td><td>The message comes round after AckWait. Every other runner is refused it at the redemption; the holder finds the key in flight or ended on its host. Nothing runs twice.</td></tr>
           <tr><td class="wrapcell">a redemption gets no answer</td><td>It may have bound the task, so the runner keeps the key, names it in its heartbeat and redeems again until an answer says whose the task is, acknowledging nothing meanwhile.</td></tr>
           <tr><td class="wrapcell">a redemption the installation cannot answer: no tree, an input it cannot read, a secret it cannot give</td><td>It binds nothing. The runner reports that no container ran, then acknowledges; one that dies in between leaves the message to the next runner of the pool.</td></tr>
           <tr><td class="wrapcell">the requeue of a lost task reaches the host that already ended its key</td><td>Nothing is redeemed. The host reports the ending it recorded under the requeue's <code>task_id</code>, then acknowledges. The controller takes that ending from a runner that redeemed an earlier dispatch of the key, and the brick does not run twice.</td></tr>
@@ -3264,12 +3251,12 @@ concurrency:
       <table>
         <thead><tr><th>Step</th><th>The runner</th><th>Docker Engine API v1.56</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>Pulls a batch from its pool's consumer (the pool's subject is the filter) and records each key (<a href="#task-bus">Task bus</a>).</td><td></td></tr>
-          <tr><td>2</td><td>Redeems the task's grant, once, for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, the secret values and one upload policy. The redemption binds the task to this runner.</td><td></td></tr>
-          <tr><td>3</td><td>Acknowledges the message.</td><td></td></tr>
-          <tr><td>4</td><td>Resolves and downloads the image by digest, verifying its signature where policy requires it.</td><td></td></tr>
+          <tr><td>1</td><td>Pulls a batch from its pool's consumer (the pool's subject is the filter) and writes each key down in its record as <code>dispatched</code> (<a href="#task-bus">Task bus</a>). A key this host already ended is answered from the record, and one it still has in flight is left on the queue; neither is redeemed.</td><td></td></tr>
+          <tr><td>2</td><td>Redeems the task's grant for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, the secret values and one upload policy. The redemption binds the task to this runner, and the <a href="#heartbeat">heartbeat</a> holds it from then on. <a href="#the-task-message">The task message</a> says what any other answer binds and what the runner does then.</td><td></td></tr>
+          <tr><td>3</td><td>Acknowledges the message, now that the database says whose the task is.</td><td></td></tr>
+          <tr><td>4</td><td>Reads the record again and refuses a key that has already ended, before a network, a pull or a secret is written. Then resolves and downloads the image by digest, verifying its signature where policy requires it, and runs the host's <code>pre_task</code> hooks, if any (<a href="#runner-side-hooks">Runner-side hooks</a>).</td><td></td></tr>
           <tr><td>5</td><td>Downloads the tree and the inputs into a local working directory and prepares the mounts. Creates one container, starts it, attaches to it, waits for it to exit and collects its logs.</td><td><code>ContainerCreate</code> (<code>POST /containers/create</code>), <code>ContainerStart</code> (<code>POST /containers/{id}/start</code>), <code>ContainerAttach</code>, <code>ContainerWait</code>, <code>ContainerLogs</code></td></tr>
-          <tr><td>6</td><td>Collects the output envelopes, artifacts, log and exit code, posts the outputs under the upload policy, and records the key's ending.</td><td></td></tr>
+          <tr><td>6</td><td>Collects the output envelopes, artifacts, log and exit code, and posts the outputs under the upload policy. Only then writes the key's ending (temporary file, sync, rename), so every envelope the ending names is already in the store.</td><td></td></tr>
           <tr><td>7</td><td>Destroys the container and its working directory, and publishes the result on its own results subject.</td><td><code>ContainerRemove</code></td></tr>
           <tr><td>throughout</td><td>Emits a <a href="#heartbeat">heartbeat</a>. A prolonged absence moves the task to <em>lost</em>.</td><td></td></tr>
           <tr><td>throughout</td><td>Follows the daemon event stream to catch container exits it did not cause, an out-of-memory kill for instance.</td><td><code>GET /events</code></td></tr>
