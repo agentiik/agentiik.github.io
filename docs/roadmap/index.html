@@ -967,7 +967,7 @@ img{max-width:100%}
 
 <!-- ============ v0.2.0 ============ -->
 <section id="m02">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">51 of 90 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">51 of 94 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> the same workflow, sent to a server, executed by a runner somewhere else, and watched while it happens.</p>
 
@@ -1132,10 +1132,13 @@ img{max-width:100%}
           <li class="done">Mint short-lived bus tokens at the API and have the runner ask for the next one as the current nears expiry, so no bus credential is ever at rest on a runner host. <a class="ref" href="../#registering-a-runner">registering-a-runner</a><a class="ref" href="../#channels">channels</a> <span class="tick">done</span></li>
           <li class="done">Issue one grant per task, scoped to that run alone and expiring with the task, covering exactly the inputs, secrets and outputs the task names. <a class="ref" href="../#the-task-message">the-task-message</a><a class="ref" href="../#architecture">architecture</a> <span class="tick">done</span></li>
           <li class="done">Redeem a grant at the API for input URLs, secret values and upload URLs, refusing anything the task does not name. <a class="ref" href="../#the-task-message">the-task-message</a><a class="ref" href="../#secrets">secrets</a> <span class="tick">done</span></li>
+          <li>Bound how often a lost task is requeued. Per key, by the installation's max_requeues, 3 by default, a loss past it failing the step on the infrastructure's account. <a class="ref" href="../#task-states">task-states</a><a class="ref" href="../#task-bus">task-bus</a></li>
+          <li>Read max_requeues from the installation's configuration rather than from controller.Options alone, 3 where it sets nothing and never from a workflow file. <a class="ref" href="../#task-states">task-states</a></li>
+          <li>Answer a redemption the installation can never answer, for want of a commit, a version, a tree or a declared secret, with 422 rather than the 500 of a failure that may pass. <a class="ref" href="../#the-task-message">the-task-message</a></li>
           <li class="done">Mint presigned GET and PUT URLs scoped to one run, so the runner holds no standing object-store credential. <a class="ref" href="../#channels">channels</a><a class="ref" href="../#architecture">architecture</a> <span class="tick">done</span></li>
           <li class="done">Serve the workflow tree to the runner as content-addressed objects redeemed through the task's grant, exactly as it fetches an artifact, so the runner never speaks git and holds no repository credential. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><a class="ref" href="../#architecture">architecture</a> <span class="tick">done</span></li>
           <li class="done">Build the built-in secret store on envelope encryption: per-secret AES-256-GCM data keys wrapped by a master key held outside the database, so a database dump alone yields nothing. <a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#cryptography-in-use">cryptography-in-use</a> <span class="tick">done</span></li>
-          <li>Make the API the only component that reads a secret value, retrieved at the last moment on grant redemption, with the controller naming which secret a task may have and never seeing it. <a class="ref" href="../#secrets">secrets</a></li>
+          <li>Make the API the only component that reads a secret value, retrieved on grant redemption before the image is pulled, with the controller naming which secret a task may have and never seeing it. <a class="ref" href="../#secrets">secrets</a></li>
           <li class="done">Serve the namespace's secret declarations (which provider holds each value and at what path) with no route that reads a value back, so rotation is a write and never a read-then-write. <a class="ref" href="../#api">api</a><a class="ref" href="../#secrets">secrets</a> <span class="tick">done</span></li>
           <li class="done">Support the built-in encrypted store and API environment variables for development use, as secret providers behind one interface. <a class="ref" href="../#secrets">secrets</a> <span class="tick">done</span></li>
           <li class="done">Generate grants, join tokens and bus tokens with 256 bits of entropy, store them hashed, show the clear value once at creation, and give each an expiry. <a class="ref" href="../#cryptography-in-use">cryptography-in-use</a> <span class="tick">done</span></li>
@@ -1164,7 +1167,7 @@ img{max-width:100%}
           <li>Give each task its own network: none by default, internal with no outbound route, or egress through a runner proxy enforcing the step's egress.allow list of host:port entries. <a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a><a class="ref" href="../#secrets-honestly">secrets-honestly</a></li>
           <li>Drive containers with the v0.1.0 container driver library on Docker Engine API v1.56: ContainerCreate, ContainerStart, ContainerAttach, ContainerWait, ContainerLogs and ContainerRemove. <a class="ref" href="../#runner">runner</a></li>
           <li>Follow the daemon event stream at GET /events to catch exits the runner did not cause, out-of-memory kills included. <a class="ref" href="../#runner">runner</a></li>
-          <li>Stop a container with SIGTERM, then SIGKILL after grace, at its deadline or on a cancellation in the heartbeat response, since nothing is ever pushed to a runner. <a class="ref" href="../#step-keywords">step-keywords</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li>Stop a container with SIGTERM, then SIGKILL after grace, at its deadline or on a stop heard on agentiik.stops, the bus subject the runner subscribes to over its own connection. <a class="ref" href="../#step-keywords">step-keywords</a><a class="ref" href="../#channels">channels</a></li>
           <li>Collect the result: one envelope per port, the artifacts, the exit code read against the exit-code table, the log with line count and truncation flag, and usage in cpu_seconds, max_rss_bytes and image_pull_ms. <a class="ref" href="../#the-task-message">the-task-message</a><a class="ref" href="../#exit-codes">exit-codes</a></li>
           <li>Reject an envelope breaking inline_max_bytes, envelope_max_bytes or max_items at the runner, before any upload. <a class="ref" href="../#size-rules">size-rules</a></li>
           <li>Mask secret values in collected logs by literal match against the task's values, before anything reaches the store. <a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#secrets-honestly">secrets-honestly</a></li>
@@ -1184,7 +1187,8 @@ img{max-width:100%}
           <li class="done">Register a workflow and a version on a server with agk push, recording the resolved graph against the version a run will pin. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
           <li class="done">Serve POST /api/v1/{ns}/workflows/{name}/runs: a manual run carrying the workflow inputs, written with its trigger_kind and triggering principal, committed, and then notified to the controller. <a class="ref" href="../#api">api</a><a class="ref" href="../#from-trigger-to-result">from-trigger-to-result</a><a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
           <li class="done">Serve GET /api/v1/runs with filters on namespace, workflow, state and time, and GET /api/v1/runs/{id} returning run state, per-step state and envelope digests. <a class="ref" href="../#api">api</a> <span class="tick">done</span></li>
-          <li>Serve POST /api/v1/runs/{id}/cancel, /approve and /reject, each recorded in the audit log with its optional comment or reason. <a class="ref" href="../#api">api</a><a class="ref" href="../#run-states">run-states</a></li>
+          <li>Serve GET /api/v1/runs across every namespace the caller can read, and GET /api/v1/runs/{id} by the identifier alone as a push notification carries it, beside the per-namespace routes served now. <a class="ref" href="../#api">api</a><a class="ref" href="../#push-notification-delivery">push-notification-delivery</a></li>
+          <li>Serve POST /api/v1/runs/{id}/cancel, recorded in the audit log once the audit log exists. <a class="ref" href="../#api">api</a><a class="ref" href="../#run-states">run-states</a></li>
           <li>Serve GET /api/v1/runs/{id}/steps/{step}/logs as an SSE stream, history then live. <a class="ref" href="../#api">api</a><a class="ref" href="../#observability">observability</a></li>
           <li>Serve GET /api/v1/runs/{id}/outputs/{name} for one workflow output envelope, and GET /api/v1/artifacts/{uri} as a 302 to a short-lived presigned URL. <a class="ref" href="../#api">api</a></li>
           <li class="done">Serve GET /api/v1/runners and GET /api/v1/runner-pools: the inventory with labels, capacity and last heartbeat, and the pools with the labels they carry. <a class="ref" href="../#api">api</a> <span class="tick">done</span></li>
@@ -1339,7 +1343,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.4.0 ============ -->
 <section id="m04">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.4.0: The workflow is a repository</h2><span class="tally">0 of 54 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.4.0: The workflow is a repository</h2><span class="tally">0 of 56 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a workflow is a git repository Agentiik serves, pushed to with any git client, and a run resolves a commit.</p>
 
@@ -1413,6 +1417,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Describe the resolved graph a version records, as the one shape the hook, the API and the console read. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#api">api</a></li>
           <li>Describe the repository objects the API returns: repository, ref with protection, version with commit. <a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a></li>
           <li>Add conformance fixtures for the resolution order and for every pre-receive refusal. <a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li>Write every name's bound into the workflow and brick schemas as maxLength, 255 for an identifier and 250 for a port or a workflow output, so the language reference states it. <a class="ref" href="../#yaml">yaml</a><a class="ref" href="../#brick-manifest">brick-manifest</a></li>
           <li>Cut the schemas release v0.4.0 depends on before the engine reads it. <a class="ref" href="../#versioning">versioning</a></li>
         </ul>
       </div>
@@ -1449,6 +1454,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Validate with the code agk validate uses, so the hook and the command line never disagree. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#the-workflow-repository">the-workflow-repository</a></li>
           <li>Resolve includes and inheritance inside the pushed commit before validating it. <a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a></li>
           <li>Check declared ports against the referenced bricks' manifests, and reject a cycle before registration. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#scheduling-semantics">scheduling-semantics</a></li>
+          <li>Refuse a port or a workflow output past 250 characters in agk validate, the manifest reader and the push, since each is written as the file &lt;name&gt;.json. <a class="ref" href="../#yaml">yaml</a><a class="ref" href="../#brick-manifest">brick-manifest</a></li>
           <li>Reject a step referencing a secret the owning namespace does not declare. <a class="ref" href="../#secrets">secrets</a></li>
           <li>Refuse a push on the git error stream, naming the file, the location and the rule. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
           <li>Write one workflow_versions row per accepted commit: commit, parent, resolved graph, author, timestamp. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#concepts">concepts</a></li>
@@ -1768,7 +1774,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
         </div>
         <ul>
           <li>Build the run list on GET /api/v1/runs: state, id, workflow, trigger, Steps strip, times and principal, identifiers and durations in JetBrains Mono. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#api">api</a><a class="ref" href="../#typography">typography</a></li>
-          <li>Lift failures and pending approvals into a band above the table, since they are why the page is opened. <a class="ref" href="../#ui">ui</a></li>
+          <li>Lift failures into a band above the table, since they are why the page is opened. <a class="ref" href="../#ui">ui</a></li>
           <li>Filter the list by namespace, workflow, state and time with round chips, and page it with Load 25 more. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#api">api</a><a class="ref" href="../#voice">voice</a></li>
           <li>Draw the Steps strip as one duration-weighted segment per step, so position and width carry state besides colour. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#colour-rules">colour-rules</a></li>
           <li>Show what started each run (manual, schedule, webhook, event, mcp, terraform or workflow), its principal and its pinned commit. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#the-workflow-repository">the-workflow-repository</a></li>
@@ -1780,7 +1786,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Stream the log tail over SSE, history then live, indexed by run, step, attempt and shard, with secrets already masked. <a class="ref" href="../#observability">observability</a><a class="ref" href="../#secrets">secrets</a></li>
           <li>List a step's artifacts (name, media type, size, digest), fetch one via GET /api/v1/artifacts/{uri}, and show a 410 Gone as collected, not missing. <a class="ref" href="../#artifact-expiry">artifact-expiry</a><a class="ref" href="../#api">api</a><a class="ref" href="../#envelope-structure">envelope-structure</a></li>
           <li>Show the run's workflow outputs with their retain and collected state, fetched via GET /api/v1/runs/{id}/outputs/{name} under run:read_data. <a class="ref" href="../#api">api</a><a class="ref" href="../#artifact-expiry">artifact-expiry</a><a class="ref" href="../#permissions">permissions</a></li>
-          <li>Offer cancel, replay from a step, and approve or reject with a comment under workflow:run, saying a run replays only from the start where the step would otherwise be offered. <a class="ref" href="../#api">api</a><a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#artifact-expiry">artifact-expiry</a></li>
+          <li>Offer cancel and replay from a step under workflow:run, saying a run replays only from the start where the step would otherwise be offered. <a class="ref" href="../#api">api</a><a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#artifact-expiry">artifact-expiry</a></li>
           <li>Diff two runs of the same commit, to read a failed run against a good one. <a class="ref" href="../#ui">ui</a></li>
         </ul>
       </div>
@@ -1914,7 +1920,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
         <ul>
           <li>Implement workflow.list, workflow.get, workflow.create, workflow.commit and workflow.run over their API routes, under workflow:read, namespace owner, workflow:write and workflow:run. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#api">api</a></li>
           <li>Implement run.list, run.get and run.logs under run:read, with the log tail masked, and run.output under run:read_data. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
-          <li>Implement run.cancel, run.replay, run.approve and run.reject under workflow:run, on a run in flight or waiting. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#run-states">run-states</a></li>
+          <li>Implement run.cancel and run.replay under workflow:run. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#run-states">run-states</a></li>
           <li>Implement brick.list and brick.get (manifest and parameter schema) for any authenticated principal, and runner.list for an administrator. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
           <li>Filter tools/list by effective permissions on every request, so an unusable tool is absent rather than refused. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
           <li>Mark workflow.language, workflow.schema, workflow.validate and every other read-only tool with readOnlyHint. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a></li>
@@ -1968,7 +1974,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Apply the log masking unchanged to every MCP result, so no secret appears in one. <a class="ref" href="../#errors-and-obligations">errors-and-obligations</a><a class="ref" href="../#secrets">secrets</a></li>
           <li>Return an artifact reference, not the artifact, once a result passes the size ceiling, which envelope_max_bytes and inline_max_bytes already set, inventing no second one. <a class="ref" href="../#errors-and-obligations">errors-and-obligations</a><a class="ref" href="../#size-rules">size-rules</a></li>
           <li>Rate limit tool calls with max_runs_per_hour, max_concurrent_tasks and the concurrency group, answering a looping client as a webhook is answered. <a class="ref" href="../#errors-and-obligations">errors-and-obligations</a><a class="ref" href="../#quotas-per-namespace">quotas-per-namespace</a></li>
-          <li>Record MCP commits, run creations, approvals and cancellations in the audit log beside API ones, naming principal and tool. <a class="ref" href="../#observability">observability</a><a class="ref" href="../#the-platform-server">the-platform-server</a></li>
+          <li>Record MCP commits, run creations and cancellations in the audit log beside API ones, naming principal and tool. <a class="ref" href="../#observability">observability</a><a class="ref" href="../#the-platform-server">the-platform-server</a></li>
           <li>Test the four obligations (inputs validated, access controlled, invocations rate limited, outputs sanitised) on both servers. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
       </div>
@@ -2123,7 +2129,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <div class="work-group">
         <div class="work-head">
           <h4>What the engine owes a brick author</h4>
-          <span class="work-repo">agentiik</span>
+          <span class="work-repo">agentiik · console</span>
         </div>
         <ul>
           <li>Implement agk brick init: scaffold a brick in Go, Python or TypeScript with its manifest, example envelopes and test harness. <a class="ref" href="../#command-line">command-line</a></li>
@@ -2133,7 +2139,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Let an installation point its catalog at its own registry, with no fork of the API or the site. <a class="ref" href="../#registry">registry</a></li>
           <li>Let a namespace declare private registry credentials as namespace secrets, redeemed for the pull, never carried into a workflow shared with another team. <a class="ref" href="../#registry">registry</a><a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
           <li>Enforce the per-namespace signature verification policy (which identities may sign) in the runner, before the container is created, never trusting the registry. <a class="ref" href="../#supply-chain">supply-chain</a><a class="ref" href="../#further-rules">further-rules</a><a class="ref" href="../#runner">runner</a></li>
-          <li>Suspend a run in waiting on a wait step, for a duration, an external signal or a human approval, without a task occupying a runner: cleared by POST /api/v1/runs/{id}/approve or /reject, the signal or the duration expiring, the decision recorded in approvals. <a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a></li>
+          <li>Suspend a run in waiting on a wait step, for a duration, an external signal or a human approval, without a task occupying a runner: cleared by the signal, the duration expiring, or POST /api/v1/runs/{id}/approve or /reject under workflow:run, also run.approve and run.reject over MCP and in the console, which lifts pending approvals into the band above its run table, the decision recorded in approvals and the audit log with its comment or reason. <a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a><a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#ui">ui</a></li>
         </ul>
       </div>
       <div class="work-group">
@@ -2210,7 +2216,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Run the pre_task and post_task command lists from /etc/agentiik/runner.toml under their timeout, the file readable by the agent account alone. <a class="ref" href="../#runner-side-hooks">runner-side-hooks</a></li>
           <li>Give the hooks AGK_TASK_ID, AGK_NAMESPACE, AGK_WORKFLOW, AGK_STEP, AGK_IMAGE and AGK_WORKDIR and nothing else: no secret, envelope or parameter. <a class="ref" href="../#runner-side-hooks">runner-side-hooks</a></li>
           <li>Fail a task whose pre_task exits non-zero as an infrastructure failure charged to the runner, not the brick, and mark the runner unhealthy after a few consecutive failures. <a class="ref" href="../#runner-side-hooks">runner-side-hooks</a></li>
-          <li>Start the task's deadline only once pre_task succeeds, and run post_task whatever the verdict, after the container is destroyed. <a class="ref" href="../#runner-side-hooks">runner-side-hooks</a></li>
+          <li>Count pre_task against the deadline the task was dispatched with, and run post_task whatever the verdict, after the container is destroyed. <a class="ref" href="../#runner-side-hooks">runner-side-hooks</a></li>
           <li>Keep hook and step script out of a shared shell (hook on the host, script in a container created afterwards, only the workspace shared), and hooks unsettable, unreadable and undiscoverable from any workflow. <a class="ref" href="../#runner-side-hooks">runner-side-hooks</a></li>
           <li>Refuse a task whose declared resources would take the runner past its declared capacity, and document concurrency starting at one task per vCPU, raised until memory or disk queue binds, not CPU. <a class="ref" href="../#sizing">sizing</a></li>
         </ul>

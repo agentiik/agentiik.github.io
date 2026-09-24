@@ -8,6 +8,30 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**One list of what a runner does with a task.** Task bus and Runner each numbered the same sequence their own way; Runner keeps it, with both checks of the record and the ending written after the outputs, and Task bus points at its steps.
+
+**What each answer to a redemption leads to.** A table beside the example: a `200` binds, a `409` is acknowledged, a `422` the installation can never answer is reported as no container ran, and no answer, a `401` or another `5xx` is asked again until the deadline, then reported `timed_out`. The `422` is a new v0.2.0 task, since the API answers `500` to both kinds today.
+
+**A task's deadline is fixed when it is dispatched.** The page said it started when the container was created, while the controller fixes it at dispatch and the grant expires with it; the queue, the pull and `pre_task` now count against it, and a task whose deadline passes before anyone redeems it is reported `timed_out` with no container ran.
+
+**A requeue left on the queue can run elsewhere.** The host still running a key leaves its requeue unacknowledged, and the page now says that another runner of the pool may take it after AckWait and run it beside the first container.
+
+**What masking misses after a rotation.** A runner that restarts and adopts its container redeems again and masks the rotated value, while the container still writes the old one in clear; the limit is written beside the masking rule, and whether a grant should keep its first values is left open.
+
+**A secret is read before the pull, on the roadmap too.** The v0.2.0 task still said a value was retrieved at the last moment; it now says at the redemption, before the image is pulled, as the page decides.
+
+**Approvals wait for the wait step everywhere.** The v0.6.0 console band and the v0.7.0 MCP audit task no longer count approvals, which the v0.8.0 task now carries, and the MCP tools table gives `run.approve` and `run.reject` the same v0.8.0 note as the API.
+
+**Where a run is read, as served.** A run is read at `/api/v1/{ns}/runs/{id}`, which is the `Location` a cancellation answers with; the route table says so, and serving the two routes without a namespace, which a phone needs, is a new v0.2.0 task.
+
+**How a stop reaches a runner.** On the bus subject `agentiik.stops`, which a runner subscribes to over its own connection, as the engine does: the Channels table and the cancellation say so, with what a runner that was not connected misses, and the roadmap task no longer looks for stops in the heartbeat's answer.
+
+**A name of 251 to 255 characters, placed on the roadmap.** A workflow output is held to 250 like a port, since `agk run --local` writes it as `<name>.json`, and two v0.4.0 tasks enforce both and write every bound into the schemas; the database row names the columns the domain types.
+
+**`max_requeues` on the roadmap.** Two v0.2.0 tasks: bounding requeues per key, titled as its issue #194 so the roadmap marks it, and reading the bound from the installation's configuration, which the page's "set by" row now links.
+
+**Redeem before acknowledging, requeues bounded, a run cancelled, as built.** A runner now takes a message, records the key, redeems, acknowledges, then pulls and runs, so nothing sweeps a task nobody redeemed and one waiting on a full queue or a slow pull is never lost; secret values are read before the pull. A host answers a requeue of a key it already ended from its record, by reference. `max_requeues`, 3 by default, bounds requeues per key. `POST /api/v1/runs/{id}/cancel` and each route's body cap are listed, and an identifier is at most 255 characters. On the roadmap, cancel stays in v0.2.0 and approve and reject join the wait step in v0.8.0.
+
 **Uploads, acknowledgements and requeues, as built.** A task redeems its grant once, after the image pull, for one signed POST policy; the built-in store holds each object to its digest, and a MinIO or S3 presigner joins v0.9.0. A runner records a key and acknowledges on take, and a result is heard only from the runner its dispatch is bound to. A lost task is requeued under its key with a new `task_id`, only where `retry.on` names `lost`, spending no retry. The gaps left are named: a host dying between acknowledgement and redemption, a requeue coming back to the host that already ended its key, requeues nothing bounds, and overwrites on MinIO or S3.
 
 **Secrets declared on the namespace.** A namespace declares each secret through `/api/v1/{ns}/secrets/{name}` under a ninth permission, `secret:write`: `builtin` with a write-only value, or `env` for development; `vault` waits for v0.9.0. A workflow only names them, `secrets: [billing]`, and a mount may carry a dot. Auditing a secret write and refusing an undeclared name at push are marked as not built yet. On the roadmap, suspending a waiting run joins the wait step in v0.8.0.
