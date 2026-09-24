@@ -8,6 +8,8 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**The runner and the server programs, settled.** `agk-runner` with `join`, `serve` and `version`; the host key, rotation, drain and revocation with `revocation_grace`; stops on both channels; where runner policy lives; three capabilities for the agent; digest-only pulls, tags resolved at push; exit code 121; a failed shard's empty ports; the interim operator token; and a new Configuration section listing every `AGK_*` setting. The roadmap gains eight v0.2.0 tasks, moves the tree cache to v0.4.0 and the egress proxy to v0.9.0, and folds v0.9.0's runner binary tasks into v0.2.0.
+
 **One list of what a runner does with a task.** Task bus and Runner each numbered the same sequence their own way; Runner keeps it, with both checks of the record and the ending written after the outputs, and Task bus points at its steps.
 
 **What each answer to a redemption leads to.** A table beside the example: a `200` binds, a `409` is acknowledged, a `422` the installation can never answer is reported as no container ran, and no answer, a `401` or another `5xx` is asked again until the deadline, then reported `timed_out`. The `422` is a new v0.2.0 task, since the API answers `500` to both kinds today.
