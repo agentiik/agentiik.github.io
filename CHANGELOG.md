@@ -8,6 +8,8 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ## Unreleased
 
+**What the runner batch built, as built.** `agentiik-api serve`, `bus-init` and `bus-credential`, the bus identity and its three files, and a first run with the interim operator token; the join, heartbeat and bus token routes; a stop's shape and its four reasons; exit code 121 for any broken output contract, measured before the first upload; the secrets tmpfs, its `fstab` line and `ReadWritePaths`; what `runner.env` accepts; and a controller that ends rather than retrying once it loses the database, the bus or its lock.
+
 **Install with Homebrew.** Get started and the command line table now install `agk` with `brew install agentiik/tap/agk`, and the server programs with `brew install --HEAD agentiik/tap/agentiik`, from the new `homebrew-tap` repository, the thirteenth, which the repositories table and the roadmap marker now list.
 
 **The runner and the server programs, settled.** `agk-runner` with `join`, `serve` and `version`; the host key, rotation, drain and revocation with `revocation_grace`; stops on both channels; where runner policy lives; three capabilities for the agent; digest-only pulls, tags resolved at push; exit code 121; a failed shard's empty ports; the interim operator token; and a new Configuration section listing every `AGK_*` setting. The roadmap gains eleven v0.2.0 tasks, among them the pool's policy at dispatch and at redemption and the heartbeat's `cancel`, moves the tree cache to v0.4.0 and the egress proxy to v0.9.0, folds v0.9.0's runner binary tasks into v0.2.0, and folds v0.4.0's tree fetch and mount into v0.2.0's fetch task. Whether `revocation_grace` should follow the deadlines a revoked runner holds is left open.
