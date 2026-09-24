@@ -4509,7 +4509,8 @@ flowchart LR
           <tr><td>run.list, run.get</td><td>Run history and state.</td><td><code>run:read</code></td></tr>
           <tr><td>run.logs</td><td>A step's log tail, secrets masked.</td><td><code>run:read</code></td></tr>
           <tr><td>run.output</td><td>A named output of a finished run.</td><td><code>run:read_data</code></td></tr>
-          <tr><td class="wrapcell">run.cancel, run.replay, run.approve, run.reject</td><td>Act on a run in flight or waiting.</td><td><code>workflow:run</code></td></tr>
+          <tr><td class="wrapcell">run.cancel, run.replay</td><td>Act on a run in flight.</td><td><code>workflow:run</code></td></tr>
+          <tr><td class="wrapcell">run.approve, run.reject</td><td>Act on a waiting run. With the wait step, in <a href="roadmap/#m08">v0.8.0</a>.</td><td><code>workflow:run</code></td></tr>
           <tr><td>brick.list, brick.get</td><td>The catalog; a manifest with its parameter schema.</td><td>any authenticated principal</td></tr>
           <tr><td>runner.list</td><td>Runner inventory.</td><td>administrator</td></tr>
         </tbody>
