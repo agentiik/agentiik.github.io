@@ -967,7 +967,7 @@ img{max-width:100%}
 
 <!-- ============ v0.2.0 ============ -->
 <section id="m02">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">51 of 90 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">51 of 91 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> the same workflow, sent to a server, executed by a runner somewhere else, and watched while it happens.</p>
 
@@ -1132,6 +1132,7 @@ img{max-width:100%}
           <li class="done">Mint short-lived bus tokens at the API and have the runner ask for the next one as the current nears expiry, so no bus credential is ever at rest on a runner host. <a class="ref" href="../#registering-a-runner">registering-a-runner</a><a class="ref" href="../#channels">channels</a> <span class="tick">done</span></li>
           <li class="done">Issue one grant per task, scoped to that run alone and expiring with the task, covering exactly the inputs, secrets and outputs the task names. <a class="ref" href="../#the-task-message">the-task-message</a><a class="ref" href="../#architecture">architecture</a> <span class="tick">done</span></li>
           <li class="done">Redeem a grant at the API for input URLs, secret values and upload URLs, refusing anything the task does not name. <a class="ref" href="../#the-task-message">the-task-message</a><a class="ref" href="../#secrets">secrets</a> <span class="tick">done</span></li>
+          <li>Answer a redemption the installation can never answer, for want of a commit, a version, a tree or a declared secret, with 422 rather than the 500 of a failure that may pass. <a class="ref" href="../#the-task-message">the-task-message</a></li>
           <li class="done">Mint presigned GET and PUT URLs scoped to one run, so the runner holds no standing object-store credential. <a class="ref" href="../#channels">channels</a><a class="ref" href="../#architecture">architecture</a> <span class="tick">done</span></li>
           <li class="done">Serve the workflow tree to the runner as content-addressed objects redeemed through the task's grant, exactly as it fetches an artifact, so the runner never speaks git and holds no repository credential. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><a class="ref" href="../#architecture">architecture</a> <span class="tick">done</span></li>
           <li class="done">Build the built-in secret store on envelope encryption: per-secret AES-256-GCM data keys wrapped by a master key held outside the database, so a database dump alone yields nothing. <a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#cryptography-in-use">cryptography-in-use</a> <span class="tick">done</span></li>
