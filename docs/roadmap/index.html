@@ -3,68 +3,113 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){var r=document.documentElement;r.className+=" js";try{var t=localStorage.getItem("agentiik-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t)}catch(e){}})()</script>
 <title>Roadmap · Agentiik</title>
 <link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
 <style>
+/* The design system's tokens, as the Design system chapter lists them: bg for the page,
+   surface for panels and rails, sunken for code, raised for controls. The older names the
+   pages were written with (paper, ink) stay as aliases so nothing else has to change. */
 :root{
-  --paper:#F1F3EE;
-  --surface:#FBFCF8;
+  --bg:#EFF2ED;
+  --surface:#FBFCF9;
   --sunken:#E7EBE3;
-  --ink:#17201C;
-  --muted:#5C6A62;
-  --faint:#7C887F;
-  --line:#D3D9CF;
-  --line-strong:#B9C2B5;
+  --raised:#FFFFFF;
+  --ink:#16201B;
+  --muted:#5A6961;
+  --faint:#7E8C84;
+  --line:#DCE2D7;
+  --line-strong:#C0CABB;
   --accent:#0E6A5F;
-  --accent-soft:#DCE9E4;
-  --signal:#A8481B;
-  --shadow:0 1px 2px rgba(23,32,28,.05);
-  --header-h:58px;
-  --nav-w:270px;
+  --accent-soft:#DBE9E4;
+  --on-accent:#FFFFFF;
+  --signal:#B23C1E;
+  --paper:var(--bg);
+  /* The edge of something that scrolls sideways. Not elevation, which the system draws
+     with a ground and a hairline; a cue that the content goes on past the edge. */
+  --cue:rgba(22,32,27,.28);
+  --scrim:rgba(14,19,16,.42);
+  --shadow:none;
+
+  --header-h:56px;
+  --nav-w:272px;
+  --rail-w:236px;
+  --gutter:clamp(16px,3vw,32px);
+  /* Prose keeps a measure of about seventy characters however wide the screen is. What is
+     laid out in columns (tables, figures, code) may use the width the screen has. */
+  --measure:44rem;
+  --measure-wide:58rem;
+  --wide:1440px;
+  --radius:6px;
+  --control:5px;
+  --sans:Archivo,"Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#111614;
-    --surface:#181E1B;
-    --sunken:#0C110F;
-    --ink:#E5EAE3;
-    --muted:#9AA79E;
-    --faint:#7E8B83;
-    --line:#2A332E;
-    --line-strong:#3B463F;
-    --accent:#54C1AD;
-    --accent-soft:#12302B;
-    --signal:#E29063;
-    --shadow:none;
+    --bg:#0E1310;
+    --surface:#151C18;
+    --sunken:#0A0F0C;
+    --raised:#1B2420;
+    --ink:#E4EAE3;
+    --muted:#94A29A;
+    --faint:#6D7B73;
+    --line:#26312B;
+    --line-strong:#35423A;
+    --accent:#4FBFAC;
+    --accent-soft:#12302A;
+    --on-accent:#0E1310;
+    --signal:#E0705A;
+    --cue:rgba(0,0,0,.55);
+    --scrim:rgba(0,0,0,.6);
   }
 }
 :root[data-theme="dark"]{
-  --paper:#111614;
-  --surface:#181E1B;
-  --sunken:#0C110F;
-  --ink:#E5EAE3;
-  --muted:#9AA79E;
-  --faint:#7E8B83;
-  --line:#2A332E;
-  --line-strong:#3B463F;
-  --accent:#54C1AD;
-  --accent-soft:#12302B;
-  --signal:#E29063;
-  --shadow:none;
+  --bg:#0E1310;
+  --surface:#151C18;
+  --sunken:#0A0F0C;
+  --raised:#1B2420;
+  --ink:#E4EAE3;
+  --muted:#94A29A;
+  --faint:#6D7B73;
+  --line:#26312B;
+  --line-strong:#35423A;
+  --accent:#4FBFAC;
+  --accent-soft:#12302A;
+  --on-accent:#0E1310;
+  --signal:#E0705A;
+  --cue:rgba(0,0,0,.55);
+  --scrim:rgba(0,0,0,.6);
 }
+:root[data-theme="light"]{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
 
 *{box-sizing:border-box}
-html{scrollbar-gutter:stable}
-body{
-  background:var(--paper);
-  color:var(--ink);
-  font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
-  font-size:18px;
-  line-height:1.7;
-  -webkit-font-smoothing:antialiased;
+html{
+  scrollbar-gutter:stable;
+  scroll-behavior:smooth;
+  /* Every anchor lands below the fixed bar rather than under it. */
+  scroll-padding-top:calc(var(--header-h) + 18px);
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
 }
-html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  /* Two faces, no third: Archivo for what is read, JetBrains Mono for what is typed. */
+  font-family:var(--sans);
+  font-size:17px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  /* A safety net, not the layout: nothing is meant to be wider than the page, and a
+     slip must cost a clipped pixel rather than a page that slides sideways on a phone. */
+  overflow-x:clip;
+}
+
+/* ---------- Top bar ---------- */
 .topbar{
   position:fixed;
   top:0;left:0;right:0;
@@ -73,67 +118,30 @@ html{scroll-behavior:smooth}
   display:flex;
   align-items:center;
   gap:14px;
-  padding-inline:clamp(16px,3vw,28px);
+  padding-inline:var(--gutter);
   background:var(--surface);
-  border-bottom:1px solid var(--line-strong);
+  border-bottom:1px solid var(--line);
 }
-/* The version this documentation describes. Static text until the script has
-   the list, which it cannot get from a file:// clone, where a single version
-   is the honest thing to show anyway. */
-.version{
-  margin-left:auto;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
-  font-size:.7rem;
-  color:var(--muted);
-}
-.version-tag{
-  text-transform:uppercase;
-  letter-spacing:.14em;
-  font-weight:600;
-  color:var(--faint);
-}
-.version-current{
-  font-family:"JetBrains Mono",ui-monospace,monospace;
-  font-size:.76rem;
-  font-weight:500;
-  color:var(--ink);
-  padding:3px 8px;
-  border:1px solid var(--line);
-  background:var(--paper);
-}
-.version select{
-  font-family:"JetBrains Mono",ui-monospace,monospace;
-  font-size:.76rem;
-  font-weight:500;
-  color:var(--ink);
-  background:var(--paper);
-  border:1px solid var(--line);
-  padding:3px 6px;
-  cursor:pointer;
-}
-.version select:hover{border-color:var(--line-strong)}
-.version select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media (max-width:700px){
-  .version-tag{display:none}
-}
-
 .brand{
   display:flex;
   align-items:center;
   gap:9px;
   color:var(--ink);
   text-decoration:none;
+  min-width:0;
 }
 .logo{fill:var(--accent)}
-.brand .logo{
-  flex:none;
-  width:16px;
-  height:14px;
+.brand .logo{flex:none;width:16px;height:14px}
+h1{
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.1;
+  letter-spacing:-.02em;
+  font-weight:700;
+  margin:0;
 }
 .topbar-sub{
+  font-family:var(--sans);
   font-size:.7rem;
   text-transform:uppercase;
   letter-spacing:.16em;
@@ -143,39 +151,90 @@ html{scroll-behavior:smooth}
   padding-left:14px;
   white-space:nowrap;
 }
+.version{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:var(--sans);
+  font-size:.7rem;
+  color:var(--muted);
+}
+.version-tag{
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  font-weight:600;
+  color:var(--faint);
+}
+.version-current,.version select{
+  font-family:var(--mono);
+  font-size:.76rem;
+  font-weight:500;
+  color:var(--ink);
+  background:var(--raised);
+  border:1px solid var(--line);
+  border-radius:var(--control);
+  padding:4px 8px;
+}
+.version select{cursor:pointer;max-width:42vw}
+.version select:hover{border-color:var(--line-strong)}
+
+/* Buttons the script adds to the bar: the menu on a narrow screen, and the theme. */
+.icon-btn{
+  flex:none;
+  display:inline-grid;
+  place-items:center;
+  width:34px;height:34px;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:var(--control);
+  background:var(--raised);
+  color:var(--muted);
+  cursor:pointer;
+}
+.icon-btn:hover{color:var(--ink);border-color:var(--line-strong)}
+.icon-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.menu-btn{display:none}
+.theme-btn .sun{display:none}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .theme-btn .sun{display:block}
+  :root:not([data-theme="light"]) .theme-btn .moon{display:none}
+}
+:root[data-theme="dark"] .theme-btn .sun{display:block}
+:root[data-theme="dark"] .theme-btn .moon{display:none}
+
+@media (max-width:700px){
+  .version-tag,.topbar-sub{display:none}
+}
+
+/* ---------- Shell ---------- */
 .shell{
   display:grid;
-  grid-template-columns:var(--nav-w) minmax(0,1fr);
-  gap:clamp(22px,3.5vw,52px);
-  max-width:1400px;
-  margin:0 auto;
+  grid-template-columns:var(--nav-w) minmax(0,var(--wide));
+  justify-content:center;
+  column-gap:clamp(28px,3.2vw,60px);
   padding-top:var(--header-h);
-  padding-inline:clamp(16px,3vw,28px);
+  padding-inline:var(--gutter);
+}
+/* On a wide screen the sections of the chapter being read get a rail of their own in the
+   right margin, which would otherwise be empty. */
+@media (min-width:1600px){
+  .shell.has-rail{grid-template-columns:var(--nav-w) minmax(0,var(--wide)) var(--rail-w)}
 }
 main{
   min-width:0;
-  padding-block:clamp(30px,4vw,52px) 96px;
+  padding-block:clamp(28px,4vw,52px) 96px;
 }
 .opening{
-  min-height:98px;
   border-bottom:2px solid var(--ink);
   padding-bottom:clamp(20px,3vw,30px);
   margin-bottom:clamp(28px,4vw,44px);
 }
 .prose{max-width:none}
 
-h1,h2,h3,h4,.eyebrow,.chip,th,.tag,figcaption,.side a,.side summary,.topbar-sub,.note-label{
-  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
-}
-h1{
-  font-size:1.04rem;
-  line-height:1.1;
-  letter-spacing:-.01em;
-  font-weight:600;
-  margin:0;
-}
+h2,h3,h4,.eyebrow,.chip,th,.tag,figcaption,.side a,.side summary,.note-label{font-family:var(--sans)}
 h2{
-  font-size:clamp(1.42rem,3.4vw,1.78rem);
+  font-size:clamp(1.45rem,2.6vw,1.9rem);
   line-height:1.15;
   letter-spacing:-.02em;
   font-weight:600;
@@ -183,14 +242,15 @@ h2{
   text-wrap:balance;
 }
 h3{
-  font-size:1.06rem;
-  letter-spacing:-.005em;
+  font-size:1.14rem;
+  line-height:1.3;
+  letter-spacing:-.01em;
   font-weight:600;
-  margin:2.4em 0 .6em;
+  margin:2.3em 0 .6em;
   text-wrap:balance;
 }
 h4{
-  font-size:.78rem;
+  font-size:.76rem;
   text-transform:uppercase;
   letter-spacing:.13em;
   font-weight:600;
@@ -198,8 +258,13 @@ h4{
   margin:2em 0 .5em;
 }
 p{margin:0 0 1.05em}
+b,strong{font-weight:600}
 a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
-a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+a:hover{text-decoration-thickness:2px}
+
+/* Focus is always visible, and drawn the same way everywhere: the system's 2.5px ring. */
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px;border-radius:2px}
+.tablewrap:focus-visible,.block pre:focus-visible,.figbody:focus-visible{outline-offset:-2.5px}
 
 .eyebrow{
   font-size:.72rem;
@@ -209,30 +274,31 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
   color:var(--accent);
 }
 .lede{
-  font-size:1.2rem;
+  font-size:clamp(1.12rem,1.6vw,1.3rem);
   line-height:1.5;
   color:var(--muted);
   margin:0;
+  max-width:var(--measure);
 }
 
+/* What reads as text keeps the measure; tables, figures and code take the width. */
+main :where(section, .prose) > :where(p, ul, ol, dl, h3, h4, .decision, .gate, .makes, .where, blockquote){
+  max-width:var(--measure);
+}
 
+/* ---------- Sidebar ---------- */
 .side{
   position:sticky;
   top:var(--header-h);
   align-self:start;
   height:calc(100vh - var(--header-h));
+  height:calc(100dvh - var(--header-h));
   overflow-y:auto;
   overscroll-behavior:contain;
-  scrollbar-gutter:stable;
+  scrollbar-width:thin;
   padding:22px 14px 48px 0;
   border-right:1px solid var(--line);
 }
-
-/* Which document you are in, before which part of it. */
-/* One document per line, aligned on the chapters below. Side by side, each
-   tab sized itself to its own label (DOCUMENTATION is wider than ROADMAP),
-   so both moved every time the open document changed. Stacked, there is no
-   width to negotiate, and a third and fourth document will fit the same way. */
 .side-docs{
   display:flex;
   flex-direction:column;
@@ -250,18 +316,15 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
   color:var(--faint);
   text-decoration:none;
   border-left:2px solid transparent;
+  border-radius:0 var(--control) var(--control) 0;
 }
 .side-docs a:hover{color:var(--ink);background:var(--sunken)}
 .side-docs a[aria-current="page"]{
   color:var(--ink);
-  background:var(--sunken);
+  background:var(--raised);
   border-left-color:var(--ink);
 }
-
-.side details.part{
-  margin:0;
-  border-bottom:1px solid var(--line);
-}
+.side details.part{margin:0;border-bottom:1px solid var(--line)}
 .side details.part:last-child{border-bottom:0}
 .side summary{
   list-style:none;
@@ -289,31 +352,25 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
 }
 .side details[open] > summary::before{transform:rotate(45deg)}
 .side details.part[open] > summary{color:var(--muted)}
-.side-toc ul{
-  list-style:none;
-  margin:0 0 10px;
-  padding:0;
-}
+.side-toc ul{list-style:none;margin:0 0 10px;padding:0}
 .side-toc a{
   display:block;
-  font-size:.85rem;
+  font-size:.86rem;
   line-height:1.3;
-  padding:5px 10px 5px 13px;
+  padding:6px 10px 6px 13px;
   color:var(--muted);
   text-decoration:none;
   border-left:2px solid transparent;
+  border-radius:0 var(--control) var(--control) 0;
+  transition:background-color .12s ease,color .12s ease;
 }
 .side-toc a:hover{color:var(--ink);background:var(--sunken)}
 .side-toc a[aria-current="true"]{
   color:var(--accent);
-  font-weight:600;
+  font-weight:500;
   border-left-color:var(--accent);
   background:var(--accent-soft);
 }
-
-/* A chapter's sections appear only while you are in that chapter, so the
-   sidebar stays a list of 26 lines and becomes a list of 30 only where the
-   detail is what you are reading. */
 .side-toc .subs{
   display:none;
   margin:2px 0 6px 13px;
@@ -321,29 +378,78 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
 }
 .side-toc li[data-open] > .subs{display:block}
 .side-toc .subs a{
-  font-size:.79rem;
+  font-size:.8rem;
   padding:4px 10px 4px 12px;
   color:var(--faint);
-  border-left:2px solid transparent;
   margin-left:-1px;
+  border-radius:0;
 }
 .side-toc .subs a:hover{color:var(--ink)}
-.side-toc .subs a[aria-current="true"]{
-  color:var(--accent);
-  font-weight:500;
-  background:transparent;
-  border-left-color:var(--accent);
+.side-toc .subs a[aria-current="true"]{color:var(--accent);background:transparent;border-left-color:var(--accent)}
+/* The rail says the same thing better where there is room for it. */
+@media (min-width:1600px){
+  .shell.has-rail .side-toc li[data-open] > .subs{display:none}
 }
+
+/* ---------- Rail: the sections of the chapter in view ---------- */
+.rail{display:none}
+@media (min-width:1600px){
+  .shell.has-rail .rail{
+    display:block;
+    position:sticky;
+    top:var(--header-h);
+    align-self:start;
+    max-height:calc(100vh - var(--header-h));
+    overflow-y:auto;
+    scrollbar-width:thin;
+    padding:clamp(28px,4vw,52px) 0 48px 18px;
+    border-left:1px solid var(--line);
+  }
+}
+.rail-title{
+  font-family:var(--sans);
+  font-size:.68rem;
+  text-transform:uppercase;
+  letter-spacing:.15em;
+  font-weight:600;
+  color:var(--faint);
+  margin:0 0 10px;
+}
+.rail-chapter{
+  display:block;
+  font-family:var(--sans);
+  font-size:.92rem;
+  font-weight:600;
+  line-height:1.3;
+  color:var(--ink);
+  text-decoration:none;
+  margin-bottom:10px;
+}
+.rail ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.rail li a{
+  display:block;
+  font-family:var(--sans);
+  font-size:.8rem;
+  line-height:1.35;
+  padding:5px 8px 5px 12px;
+  margin-left:-1px;
+  color:var(--faint);
+  text-decoration:none;
+  border-left:2px solid transparent;
+}
+.rail li.h4 a{padding-left:24px;font-size:.76rem}
+.rail li a:hover{color:var(--ink)}
+.rail li a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent)}
 
 @media (prefers-reduced-motion:reduce){
   .side summary::before{transition:none}
 }
 
+/* ---------- Sections and headings ---------- */
 section{
   padding-top:clamp(36px,5vw,60px);
   border-top:1px solid var(--line);
   margin-top:clamp(36px,5vw,60px);
-  scroll-margin-top:calc(var(--header-h) + 20px);
 }
 section:first-of-type{border-top:0;margin-top:0;padding-top:0}
 .sec-head{
@@ -352,139 +458,366 @@ section:first-of-type{border-top:0;margin-top:0;padding-top:0}
   gap:16px;
   align-items:baseline;
   margin-bottom:1.4em;
+  max-width:var(--measure-wide);
 }
 .sec-head .mark{
-  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-family:var(--mono);
   font-size:.72rem;
   color:var(--faint);
   letter-spacing:.06em;
   padding-top:.35em;
 }
+/* A link to the heading, added by the script beside every heading that has an address. */
+.anchor{
+  margin-left:.4em;
+  padding:0 .2em;
+  font-family:var(--mono);
+  font-size:.8em;
+  font-weight:400;
+  color:var(--faint);
+  text-decoration:none;
+  opacity:0;
+  transition:opacity .12s ease;
+}
+:is(h2,h3,h4):hover .anchor,.anchor:focus-visible{opacity:1}
+.anchor:hover{color:var(--accent)}
+@media (hover:none){.anchor{opacity:.55}}
 
 ul.plain{list-style:none;margin:0 0 1.2em;padding:0}
-ul.plain > li{
-  position:relative;
-  padding-left:20px;
-  margin-bottom:.5em;
-}
+ul.plain > li{position:relative;padding-left:20px;margin-bottom:.5em}
 ul.plain > li::before{
   content:"";
   position:absolute;
-  left:0;top:.72em;
+  left:0;top:.8em;
   width:7px;height:1px;
   background:var(--line-strong);
 }
 ol.steps{padding-left:1.2em;margin:0 0 1.2em}
 ol.steps li{margin-bottom:.5em}
 
-dl.defs{
-  margin:0 0 1.4em;
-  border-top:1px solid var(--line);
-}
+dl.defs{margin:0 0 1.4em;border-top:1px solid var(--line)}
 dl.defs > div{
   display:grid;
-  grid-template-columns:minmax(140px,190px) 1fr;
+  grid-template-columns:minmax(140px,190px) minmax(0,1fr);
   gap:4px 22px;
   padding:12px 0;
   border-bottom:1px solid var(--line);
 }
 dl.defs dt{
-  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-family:var(--mono);
   font-size:.82rem;
   font-weight:500;
   color:var(--accent);
   padding-top:.16em;
-  word-break:break-word;
+  overflow-wrap:anywhere;
 }
 dl.defs dd{margin:0;font-size:.96rem}
 @media (max-width:560px){
-  dl.defs > div{grid-template-columns:1fr;gap:2px}
+  dl.defs > div{grid-template-columns:minmax(0,1fr);gap:2px}
 }
 
+/* ---------- Code ---------- */
 code{
-  font-family:"JetBrains Mono",ui-monospace,monospace;
-  font-size:.86em;
+  font-family:var(--mono);
+  font-size:.84em;
   background:var(--sunken);
   padding:1px 5px;
-  border-radius:3px;
+  border-radius:4px;
+  overflow-wrap:anywhere;
 }
 .block{
+  position:relative;
   margin:1.4em 0 1.8em;
+  max-width:min(100%,72rem);
   border:1px solid var(--line);
+  border-radius:var(--radius);
   background:var(--sunken);
-  box-shadow:var(--shadow);
+  overflow:hidden;
 }
 .block .note-label{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:38px;
   font-size:.68rem;
   text-transform:uppercase;
   letter-spacing:.14em;
   font-weight:600;
   color:var(--muted);
-  padding:8px 14px;
+  padding:6px 8px 6px 14px;
   border-bottom:1px solid var(--line);
   background:var(--surface);
 }
+.block .note-label .label-text{flex:1;min-width:0;overflow-wrap:anywhere}
 .block pre{
   margin:0;
   padding:16px 14px;
   overflow-x:auto;
-  font-family:"JetBrains Mono",ui-monospace,monospace;
-  font-size:.79rem;
+  font-family:var(--mono);
+  font-size:.8rem;
   line-height:1.7;
   tab-size:2;
 }
-.block pre code{background:none;padding:0;font-size:inherit}
+.block pre code{background:none;padding:0;font-size:inherit;border-radius:0;overflow-wrap:normal}
 .c{color:var(--faint);font-style:italic}
+.block pre .p{color:var(--accent);user-select:none}
+.block pre .cmd{color:var(--ink);font-weight:500}
+/* A block with no label carries its copy button in its top corner. */
+.block > .copy-btn{position:absolute;top:8px;right:8px;z-index:1}
 
-.tablewrap{overflow-x:auto;margin:1.4em 0 1.8em;border:1px solid var(--line);background:var(--surface)}
-table{border-collapse:collapse;width:100%;min-width:520px;font-size:.88rem}
+.copy-btn{
+  flex:none;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  height:26px;
+  padding:0 9px 0 8px;
+  font-family:var(--sans);
+  font-size:.7rem;
+  font-weight:500;
+  letter-spacing:.02em;
+  text-transform:none;
+  color:var(--muted);
+  background:var(--raised);
+  border:1px solid var(--line);
+  border-radius:var(--control);
+  cursor:pointer;
+}
+.copy-btn:hover{color:var(--ink);border-color:var(--line-strong)}
+.copy-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.copy-btn[data-state="done"]{color:var(--accent);border-color:var(--accent)}
+
+/* ---------- Things that scroll sideways ---------- */
+/* The edge that has more beyond it darkens; the one at its end does not. Pure CSS, so it
+   works with no script: two covers that scroll with the content hide two cues that do not. */
+.tablewrap,.block pre,.figbody{
+  --cue-bg:var(--surface);
+  background:
+    linear-gradient(to right,var(--cue-bg) 30%,transparent) left center / 44px 100% no-repeat local,
+    linear-gradient(to left,var(--cue-bg) 30%,transparent) right center / 44px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%,var(--cue),transparent) left center / 14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%,var(--cue),transparent) right center / 14px 100% no-repeat scroll,
+    var(--cue-bg);
+  scrollbar-width:thin;
+  scrollbar-color:var(--line-strong) transparent;
+}
+.block pre{--cue-bg:var(--sunken)}
+
+/* ---------- Tables ---------- */
+/* Every table sits in its own scroller. A table of two or three columns keeps near the
+   measure of the text around it; one of four or more may take the whole width. */
+.tablewrap{
+  overflow-x:auto;
+  margin:1.4em 0 1.8em;
+  max-width:var(--measure-wide);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+}
+.tablewrap:has(tr > :nth-child(4)){max-width:100%}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.88rem;line-height:1.55}
 th{
   text-align:left;
-  font-size:.7rem;
+  font-size:.68rem;
   text-transform:uppercase;
-  letter-spacing:.11em;
+  letter-spacing:.09em;
   font-weight:600;
   color:var(--muted);
   padding:11px 14px;
   border-bottom:1px solid var(--line-strong);
   white-space:nowrap;
+  vertical-align:bottom;
 }
 td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
 tr:last-child td{border-bottom:0}
+tbody tr{transition:background-color .1s ease}
+tbody tr:hover{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
+/* The first column names things. A name never breaks inside itself, but a cell of several
+   words wraps, so one long cell cannot take the width of the whole table. */
 td:first-child{
-  font-family:"JetBrains Mono",ui-monospace,monospace;
-  font-size:.79rem;
+  font-family:var(--mono);
+  font-size:.8rem;
   color:var(--accent);
-  white-space:nowrap;
+  min-width:9ch;
 }
 td.wrapcell:first-child{white-space:normal}
+td code{overflow-wrap:normal}
 .num{font-variant-numeric:tabular-nums}
 .no{color:var(--signal)}
+@media (max-width:560px){
+  table{min-width:460px;font-size:.84rem}
+  th,td{padding:10px 11px}
+}
 
+/* ---------- Figures ---------- */
 figure{
+  position:relative;
   margin:2em 0 2.4em;
+  max-width:min(100%,76rem);
   border:1px solid var(--line);
+  border-radius:var(--radius);
   background:var(--surface);
-  box-shadow:var(--shadow);
+  overflow:hidden;
 }
 figure .figbody{padding:20px 0 8px;overflow-x:auto}
-figure svg{display:block;max-width:100%;height:auto;min-width:520px;margin:0 auto;color:var(--ink)}
+/* The drawings are vector and scale with the column. Below 560 px they would shrink their
+   lettering past reading, so they keep that width and scroll, and enlarge on a tap. */
+figure svg{display:block;width:100%;max-width:100%;height:auto;min-width:560px;margin:0 auto;color:var(--ink);text-rendering:geometricPrecision}
 figcaption{
-  font-size:.8rem;
-  line-height:1.5;
+  font-size:.82rem;
+  line-height:1.55;
   color:var(--muted);
   padding:12px 18px 16px;
   border-top:1px solid var(--line);
   margin-top:8px;
 }
 figcaption b{color:var(--ink);font-weight:600}
+figure img{display:block;width:100%;height:auto}
+figure img + figcaption,figure img + img + figcaption{margin-top:0}
+.shot-dark{display:none}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .shot-dark{display:block}
+  :root:not([data-theme="light"]) .shot-light{display:none}
+}
+:root[data-theme="dark"] .shot-dark{display:block}
+:root[data-theme="dark"] .shot-light{display:none}
 
+/* The console mockups: drawn at 1440 by 900, as wide as the column allows. */
+figure.console{max-width:100%}
+figure.console .mock{min-width:0}
+figure.console figcaption{margin-top:0}
+
+/* The button that enlarges a figure. Shown on hover and focus, always on a touch screen. */
+.zoom-btn{
+  position:absolute;
+  top:8px;right:8px;
+  z-index:2;
+  display:inline-grid;
+  place-items:center;
+  width:32px;height:32px;
+  padding:0;
+  color:var(--muted);
+  background:var(--raised);
+  border:1px solid var(--line);
+  border-radius:var(--control);
+  cursor:zoom-in;
+  opacity:0;
+  transition:opacity .12s ease;
+}
+figure:hover .zoom-btn,.zoom-btn:focus-visible{opacity:1}
+@media (hover:none){.zoom-btn{opacity:1}}
+.zoom-btn:hover{color:var(--ink);border-color:var(--line-strong)}
+.zoom-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cursor:zoom-in}
+
+/* ---------- Lightbox ---------- */
+.lightbox{
+  width:100vw;height:100vh;
+  width:100dvw;height:100dvh;
+  max-width:none;max-height:none;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--ink);
+  overflow:hidden;
+}
+.lightbox::backdrop{background:var(--scrim)}
+.lightbox-frame{
+  position:absolute;
+  inset:clamp(8px,3vw,40px);
+  display:flex;
+  flex-direction:column;
+  background:var(--surface);
+  border:1px solid var(--line-strong);
+  border-radius:7px;
+  overflow:hidden;
+}
+.lightbox-bar{
+  flex:none;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:8px 8px 8px 16px;
+  border-bottom:1px solid var(--line);
+  font-family:var(--sans);
+  font-size:.82rem;
+  color:var(--muted);
+}
+.lightbox-bar .lightbox-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lightbox-bar .lightbox-title b{color:var(--ink);font-weight:600}
+.lightbox-body{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  display:grid;
+  place-items:center;
+  padding:clamp(8px,2vw,28px);
+  cursor:zoom-out;
+}
+.lightbox-body > *{
+  display:block;
+  width:100%;
+  max-width:1800px;
+  min-width:900px;
+  height:auto;
+  max-height:none;
+  color:var(--ink);
+}
+.lightbox-body > .is-mock{min-width:1200px}
+@media (min-width:980px){
+  .lightbox-body > *{min-width:0}
+  .lightbox-body > .is-mock{min-width:0}
+}
+
+/* ---------- Tabs ---------- */
+/* Files that are alternatives to one another. With no script they are simply one after
+   the other; with it, one at a time behind a row of tabs. */
+.tabset{margin:1.4em 0 1.8em;max-width:min(100%,72rem)}
+.tabset.is-tabbed .block{margin:0;border-top-left-radius:0;border-top-right-radius:0}
+.tabset.is-tabbed .block + .block{margin-top:14px;border-radius:var(--radius)}
+.tablist{
+  display:flex;
+  gap:2px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  border:1px solid var(--line);
+  border-bottom:0;
+  border-radius:var(--radius) var(--radius) 0 0;
+  background:var(--sunken);
+  padding:4px 4px 0;
+}
+.tablist [role="tab"]{
+  flex:none;
+  font-family:var(--sans);
+  font-size:.8rem;
+  font-weight:500;
+  color:var(--muted);
+  background:transparent;
+  border:1px solid transparent;
+  border-bottom:0;
+  border-radius:var(--control) var(--control) 0 0;
+  padding:7px 14px 8px;
+  cursor:pointer;
+}
+.tablist [role="tab"]:hover{color:var(--ink)}
+.tablist [role="tab"][aria-selected="true"]{
+  color:var(--ink);
+  font-weight:600;
+  background:var(--surface);
+  border-color:var(--line);
+  box-shadow:inset 0 2px 0 var(--accent);
+}
+.tabpanel[hidden]{display:none!important}
+.tabpanel > .block:first-child{margin-top:0}
+
+/* ---------- Callouts and the end ---------- */
 .decision{
   border-left:3px solid var(--accent);
   background:var(--accent-soft);
+  border-radius:0 var(--radius) var(--radius) 0;
   padding:14px 18px;
   margin:1.5em 0;
-  font-size:.95rem;
+  font-size:.96rem;
 }
 .decision .note-label{
   display:block;
@@ -496,23 +829,15 @@ figcaption b{color:var(--ink);font-weight:600}
   margin-bottom:4px;
 }
 .decision p:last-child{margin-bottom:0}
+.endrule{margin-top:72px;border-top:2px solid var(--ink);padding-top:16px;font-size:.8rem;color:var(--faint);font-family:var(--sans);max-width:var(--measure-wide)}
 
-.endrule{margin-top:72px;border-top:2px solid var(--ink);padding-top:16px;font-size:.8rem;color:var(--faint);font-family:Archivo,sans-serif}
+/* ---------- Narrow screens ---------- */
+@media (max-width:1023px){
+  .shell{grid-template-columns:minmax(0,1fr);column-gap:0}
+  main{padding-block:clamp(22px,4vw,34px) 72px}
 
-
-figure img{display:block;width:100%;height:auto}
-figure img + figcaption, figure img + img + figcaption{margin-top:0}
-.shot-dark{display:none}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .shot-dark{display:block}
-  :root:not([data-theme="light"]) .shot-light{display:none}
-}
-:root[data-theme="dark"] .shot-dark{display:block}
-:root[data-theme="dark"] .shot-light{display:none}
-
-@media (max-width:980px){
-  .shell{grid-template-columns:minmax(0,1fr);gap:0}
-  .side{
+  /* With no script the contents sit above the document, folded into a grid of parts. */
+  html:not(.js) .side{
     position:static;
     height:auto;
     overflow:visible;
@@ -520,23 +845,68 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
     border-bottom:1px solid var(--line);
     padding:16px 0 8px;
   }
-  /* The nine parts sit as a grid of closed headings, so the document starts
-     within a screen of the top rather than below a list of 26 chapters. */
-  .side-toc{
+  html:not(.js) .side-toc{
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(168px,1fr));
     gap:0 22px;
     align-items:start;
   }
-  .side details.part{border-bottom:0}
-  .side summary{padding:9px 0}
-  main{padding-block:clamp(22px,4vw,34px) 72px}
+  html:not(.js) .side details.part{border-bottom:0}
+
+  /* With one, they are a drawer behind the menu button. */
+  html.js .menu-btn{display:inline-grid}
+  html.js .side{
+    position:fixed;
+    z-index:40;
+    top:var(--header-h);
+    left:0;
+    bottom:0;
+    width:min(86vw,340px);
+    height:auto;
+    /* A fixed grid item is still aligned by the grid: stretch it between its insets. */
+    align-self:stretch;
+    padding:18px 16px 48px;
+    background:var(--surface);
+    border-right:1px solid var(--line-strong);
+    transform:translateX(-102%);
+    visibility:hidden;
+    transition:transform .22s cubic-bezier(.22,.61,.24,1),visibility 0s linear .22s;
+  }
+  html.js.nav-open .side{
+    transform:none;
+    visibility:visible;
+    transition:transform .22s cubic-bezier(.22,.61,.24,1),visibility 0s;
+  }
+  .scrim{
+    position:fixed;
+    inset:var(--header-h) 0 0 0;
+    z-index:35;
+    background:var(--scrim);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .22s ease;
+  }
+  html.nav-open .scrim{opacity:1;pointer-events:auto}
+  html.nav-open body{overflow:hidden}
 }
-@media (max-width:700px){
-  .topbar-sub{display:none}
+@media (min-width:1024px){.scrim{display:none}}
+@media (max-width:480px){
+  body{font-size:16px}
+  .topbar{gap:10px}
+  .block pre{font-size:.76rem;padding:14px 12px}
+  figcaption{padding:10px 14px 14px}
+  .decision{padding:12px 14px}
 }
 
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+@media print{
+  .topbar,.side,.rail,.copy-btn,.zoom-btn,.anchor,.tablist{display:none!important}
+  .shell{display:block;padding:0}
+  .tabpanel[hidden]{display:block!important}
+}
 </style>
 <style>
 /* Roadmap only. A milestone reads as three fixed beats: what it makes
@@ -614,7 +984,7 @@ figure img + figcaption, figure img + img + figcaption{margin-top:0}
   font-size:.7rem;
   color:var(--faint);
   text-decoration:none;
-  white-space:nowrap;
+  overflow-wrap:anywhere;
   padding-left:4px;
 }
 .work .ref:hover{color:var(--accent)}
@@ -2530,112 +2900,487 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <script>
 (function(){
-  var nav = document.querySelector('.side');
-  if(!nav) return;
-  var parts = Array.prototype.slice.call(nav.querySelectorAll('details.part'));
-  var links = Array.prototype.slice.call(nav.querySelectorAll('.side-toc a[href^="#"]'));
-  var narrow = window.matchMedia('(max-width:980px)');
-
-  // Every navigable target, in document order: chapters and their sections alike.
-  var targets = [], map = {};
-  links.forEach(function(a){
-    var el = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
-    if(!el) return;
-    targets.push(el);
-    map[el.id] = a;
-  });
-  targets.sort(function(x, y){
-    return (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
-  });
-
-  // A chapter's own line, for the chapter a section belongs to.
-  function chapterItem(a){
-    var li = a.parentNode;
-    while(li && !(li.tagName === 'LI' && li.parentNode && !li.parentNode.classList.contains('subs'))){
-      li = li.parentNode;
-    }
-    return li;
+  var doc = document, root = doc.documentElement;
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)');
+  var narrow = window.matchMedia('(max-width:1023px)');
+  var wide = window.matchMedia('(min-width:1600px)');
+  function $all(sel, el){ return Array.prototype.slice.call((el || doc).querySelectorAll(sel)); }
+  function icon(paths){
+    return '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' + paths + '</svg>';
   }
-  function partOf(a){
-    var d = a.parentNode;
-    while(d && d.tagName !== 'DETAILS'){ d = d.parentNode; }
-    return d;
+  var ICON = {
+    menu: icon('<path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>'),
+    close: icon('<path d="M4 4l8 8M12 4l-8 8"/>'),
+    moon: '<svg class="moon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/></svg>',
+    sun: '<svg class="sun" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.8"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>',
+    copy: icon('<rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V3.9c0-.8-.6-1.4-1.4-1.4H3.9c-.8 0-1.4.6-1.4 1.4v5.2c0 .8.6 1.4 1.4 1.4h1.6"/>'),
+    check: icon('<path d="M3 8.5l3.2 3L13 4.5"/>'),
+    zoom: icon('<path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5L9 7M2.5 13.5L7 9"/>')
+  };
+
+  var bar = doc.querySelector('.topbar') || doc.querySelector('.page-tools');
+  var nav = doc.querySelector('.side');
+  var shell = doc.querySelector('.shell');
+
+  // ---------- Theme ----------
+  // The page follows the system until somebody chooses; the choice is remembered on this
+  // device only, and the script in the head applies it before the first paint.
+  function currentTheme(){
+    var t = root.getAttribute('data-theme');
+    if(t) return t;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-
-  var current = null, openItem = null;
-
-  // Parts stay as the reader left them. The only thing reopened is the part
-  // being read, and only if it was folded away, so that scrolling never hides
-  // a part somebody deliberately opened.
-  function reveal(a){
-    var part = partOf(a);
-    if(part && !part.open) part.open = true;
-    var item = chapterItem(a);
-    if(item !== openItem){
-      if(openItem) openItem.removeAttribute('data-open');
-      if(item) item.setAttribute('data-open', '');
-      openItem = item;
+  if(bar){
+    var themeBtn = doc.createElement('button');
+    themeBtn.type = 'button';
+    themeBtn.className = 'icon-btn theme-btn';
+    themeBtn.innerHTML = ICON.moon + ICON.sun;
+    function labelTheme(){
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
+      themeBtn.setAttribute('aria-label', 'Switch to the ' + next + ' theme');
+      themeBtn.title = 'Switch to the ' + next + ' theme';
     }
-  }
-
-  function scrollIntoNav(a){
-    if(narrow.matches || nav.scrollHeight <= nav.clientHeight) return;
-    var r = a.getBoundingClientRect(), nr = nav.getBoundingClientRect();
-    if(r.top < nr.top + 12 || r.bottom > nr.bottom - 12){
-      nav.scrollTop += (r.top - nr.top) - (nav.clientHeight / 2) + (r.height / 2);
-    }
+    labelTheme();
+    themeBtn.addEventListener('click', function(){
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('agentiik-theme', next); } catch(e) {}
+      labelTheme();
+    });
+    bar.appendChild(themeBtn);
   }
 
-  function sync(){
-    if(!targets.length) return;
-    var bar = document.querySelector('.topbar');
-    var line = (bar ? bar.offsetHeight : 58) + 26;
-    var active = targets[0];
-    for(var i = 0; i < targets.length; i++){
-      if(targets[i].getBoundingClientRect().top <= line){ active = targets[i]; } else { break; }
+  // ---------- Contents: a drawer on a narrow screen ----------
+  var menuBtn = null, scrim = null;
+  function setNav(open, focus){
+    if(!menuBtn) return;
+    root.classList.toggle('nav-open', open);
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    menuBtn.innerHTML = open ? ICON.close : ICON.menu;
+    menuBtn.setAttribute('aria-label', open ? 'Close the contents' : 'Open the contents');
+    if(open && focus){
+      var here = nav.querySelector('[aria-current="true"]') || nav.querySelector('a');
+      if(here){
+        here.focus({preventScroll: true});
+        // Scrolled within the drawer alone: scrollIntoView would move every scrolling
+        // ancestor, the page included.
+        var r = here.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+        nav.scrollTop += (r.top - nr.top) - nav.clientHeight / 2;
+      }
     }
-    if(window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 4){
-      active = targets[targets.length - 1];
-    }
-    if(active === current) return;
-    if(current && map[current.id]) map[current.id].removeAttribute('aria-current');
-    current = active;
-    var a = map[current.id];
-    if(!a) return;
-    a.setAttribute('aria-current', 'true');
-    reveal(a);
-    scrollIntoNav(a);
+    if(!open && focus) menuBtn.focus();
+  }
+  if(bar && nav){
+    if(!nav.id) nav.id = 'contents';
+    menuBtn = doc.createElement('button');
+    menuBtn.type = 'button';
+    menuBtn.className = 'icon-btn menu-btn';
+    menuBtn.setAttribute('aria-controls', nav.id);
+    bar.insertBefore(menuBtn, bar.firstChild);
+    scrim = doc.createElement('div');
+    scrim.className = 'scrim';
+    doc.body.appendChild(scrim);
+    setNav(false);
+    menuBtn.addEventListener('click', function(){ setNav(!root.classList.contains('nav-open'), true); });
+    scrim.addEventListener('click', function(){ setNav(false, true); });
+    doc.addEventListener('keydown', function(e){
+      if(e.key === 'Escape' && root.classList.contains('nav-open')) setNav(false, true);
+    });
+    narrow.addEventListener('change', function(){ if(!narrow.matches) setNav(false); });
   }
 
-  // On a phone the sidebar sits above the document, so a chosen chapter folds
-  // it away again rather than pushing the text off the screen.
-  nav.addEventListener('click', function(e){
-    var t = e.target;
-    while(t && t !== nav && t.tagName !== 'A'){ t = t.parentNode; }
-    if(t && t.tagName === 'A' && narrow.matches){
-      var d = partOf(t);
-      if(d) setTimeout(function(){ d.open = false; }, 0);
-    }
-  });
+  // ---------- Contents: the chapter and section being read ----------
+  var rail = null, railList = null, railHead = null;
+  if(nav){
+    var links = $all('.side-toc a[href^="#"]', nav);
+    var targets = [], map = {};
+    links.forEach(function(a){
+      var el = doc.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+      if(!el) return;
+      targets.push(el);
+      map[el.id] = a;
+    });
+    targets.sort(function(x, y){
+      return (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
+    });
 
-  if(narrow.matches) parts.forEach(function(d){ d.open = false; });
-  // Open everywhere on a wide screen, folded on a phone where the sidebar sits
-  // above the document rather than beside it.
-  narrow.addEventListener('change', function(){
-    current = null;
-    parts.forEach(function(d){ d.open = !narrow.matches; });
+    function chapterItem(a){
+      var li = a.parentNode;
+      while(li && !(li.tagName === 'LI' && li.parentNode && !li.parentNode.classList.contains('subs'))){
+        li = li.parentNode;
+      }
+      return li;
+    }
+    function partOf(a){
+      var d = a.parentNode;
+      while(d && d.tagName !== 'DETAILS'){ d = d.parentNode; }
+      return d;
+    }
+    function sectionOf(el){
+      while(el && el.tagName !== 'SECTION'){ el = el.parentNode; }
+      return el;
+    }
+
+    // The rail: every addressed heading of the chapter in view, in the right margin of a
+    // wide screen. Built from the document, so it cannot disagree with it.
+    if(shell && doc.querySelector('main section')){
+      rail = doc.createElement('aside');
+      rail.className = 'rail';
+      rail.setAttribute('aria-label', 'In this chapter');
+      rail.innerHTML = '<p class="rail-title">In this chapter</p><a class="rail-chapter" href="#"></a><ul></ul>';
+      railHead = rail.querySelector('.rail-chapter');
+      railList = rail.querySelector('ul');
+      shell.appendChild(rail);
+      shell.classList.add('has-rail');
+    }
+    var railSection = null, railTargets = [], railMap = {}, railCurrent = null;
+    function buildRail(section){
+      if(!rail || section === railSection) return;
+      railSection = section;
+      railTargets = []; railMap = {}; railCurrent = null;
+      railList.innerHTML = '';
+      if(!section){ rail.hidden = true; return; }
+      var h2 = section.querySelector('h2');
+      railHead.textContent = h2 ? h2.textContent.replace(/#$/, '') : '';
+      railHead.setAttribute('href', '#' + section.id);
+      $all('h3[id], h4[id]', section).forEach(function(h){
+        var li = doc.createElement('li');
+        if(h.tagName === 'H4') li.className = 'h4';
+        var a = doc.createElement('a');
+        a.href = '#' + h.id;
+        a.textContent = h.textContent.replace(/#$/, '');
+        li.appendChild(a);
+        railList.appendChild(li);
+        railTargets.push(h);
+        railMap[h.id] = a;
+      });
+      rail.hidden = !railTargets.length;
+    }
+
+    var current = null, openItem = null;
+    function reveal(a){
+      var part = partOf(a);
+      if(part && !part.open) part.open = true;
+      var item = chapterItem(a);
+      if(item !== openItem){
+        if(openItem) openItem.removeAttribute('data-open');
+        if(item) item.setAttribute('data-open', '');
+        openItem = item;
+      }
+    }
+    function scrollIntoNav(a){
+      if(narrow.matches || nav.scrollHeight <= nav.clientHeight) return;
+      var r = a.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+      if(r.top < nr.top + 12 || r.bottom > nr.bottom - 12){
+        nav.scrollTop += (r.top - nr.top) - (nav.clientHeight / 2) + (r.height / 2);
+      }
+    }
+    function lineY(){ return (bar ? bar.offsetHeight : 56) + 28; }
+    function sync(){
+      if(!targets.length) return;
+      var line = lineY();
+      var active = targets[0];
+      for(var i = 0; i < targets.length; i++){
+        if(targets[i].getBoundingClientRect().top <= line){ active = targets[i]; } else { break; }
+      }
+      var atEnd = window.innerHeight + window.pageYOffset >= doc.documentElement.scrollHeight - 4;
+      if(atEnd) active = targets[targets.length - 1];
+      if(active !== current){
+        if(current && map[current.id]) map[current.id].removeAttribute('aria-current');
+        current = active;
+        var a = map[current.id];
+        if(a){
+          a.setAttribute('aria-current', 'true');
+          reveal(a);
+          scrollIntoNav(a);
+        }
+      }
+      if(rail && wide.matches){
+        buildRail(sectionOf(current));
+        var ra = null;
+        for(var j = 0; j < railTargets.length; j++){
+          if(railTargets[j].getBoundingClientRect().top <= line){ ra = railTargets[j]; } else { break; }
+        }
+        if(atEnd && railTargets.length) ra = railTargets[railTargets.length - 1];
+        if(ra !== railCurrent){
+          if(railCurrent && railMap[railCurrent.id]) railMap[railCurrent.id].removeAttribute('aria-current');
+          railCurrent = ra;
+          if(ra && railMap[ra.id]) railMap[ra.id].setAttribute('aria-current', 'true');
+        }
+      }
+    }
+
+    // A chosen chapter closes the drawer, so the reader lands on the text.
+    nav.addEventListener('click', function(e){
+      var t = e.target;
+      while(t && t !== nav && t.tagName !== 'A'){ t = t.parentNode; }
+      if(t && t.tagName === 'A' && narrow.matches) setNav(false);
+    });
+
+    var queued = false;
+    function onScroll(){
+      if(queued) return;
+      queued = true;
+      window.requestAnimationFrame(function(){ queued = false; sync(); });
+    }
+    window.addEventListener('scroll', onScroll, {passive: true});
+    window.addEventListener('resize', onScroll);
+    wide.addEventListener('change', function(){ railSection = null; sync(); });
     sync();
+  }
+
+  // ---------- Headings: a link to each one that has an address ----------
+  $all('main section[id] > .sec-head h2, main h3[id], main h4[id]').forEach(function(h){
+    var id = h.id || h.closest('section').id;
+    if(!id || h.querySelector('.anchor')) return;
+    var a = doc.createElement('a');
+    a.className = 'anchor';
+    a.href = '#' + id;
+    a.textContent = '#';
+    a.setAttribute('aria-label', 'Link to ' + h.textContent);
+    h.appendChild(a);
   });
 
-  var queued = false;
-  function onScroll(){
-    if(queued) return;
-    queued = true;
-    window.requestAnimationFrame(function(){ queued = false; sync(); });
+  // ---------- Tables: each in its own scroller ----------
+  $all('main table').forEach(function(t){
+    var wrap = t.parentNode;
+    if(!wrap.classList || !wrap.classList.contains('tablewrap')){
+      wrap = doc.createElement('div');
+      wrap.className = 'tablewrap';
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    }
+  });
+  // A scroller whose content is wider than it can be scrolled with the keyboard too.
+  function scrollers(){
+    $all('.tablewrap, .block pre, .figbody').forEach(function(el){
+      var over = el.scrollWidth > el.clientWidth + 1;
+      if(over && !el.hasAttribute('tabindex')){
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('data-kbd', '');
+        if(!el.hasAttribute('role')){
+          el.setAttribute('role', 'region');
+          var what = el.classList.contains('tablewrap') ? 'Table' : el.tagName === 'PRE' ? 'Code' : 'Figure';
+          el.setAttribute('aria-label', what + ', scrolls sideways');
+        }
+      } else if(!over && el.hasAttribute('data-kbd')){
+        el.removeAttribute('tabindex'); el.removeAttribute('data-kbd');
+        el.removeAttribute('role'); el.removeAttribute('aria-label');
+      }
+    });
   }
-  window.addEventListener('scroll', onScroll, {passive:true});
-  window.addEventListener('resize', onScroll);
-  sync();
+  scrollers();
+  var rq = null;
+  window.addEventListener('resize', function(){ clearTimeout(rq); rq = setTimeout(scrollers, 150); });
+  window.addEventListener('load', scrollers);
+
+  // ---------- Code: a copy button on every block ----------
+  // What is copied is what a reader would type: the commands without their prompt, and a
+  // here-document's body with them, but not the output a terminal answered. A block with no
+  // prompt at all is a file, and is copied whole.
+  function copyText(pre){
+    var clone = pre.cloneNode(true);
+    var prompts = clone.querySelectorAll('.p');
+    if(!prompts.length) return pre.textContent.replace(/\n$/, '');
+    Array.prototype.forEach.call(prompts, function(p){ p.textContent = '\u0001'; });
+    var lines = clone.textContent.split('\n'), out = [], heredoc = null;
+    lines.forEach(function(l){
+      if(heredoc !== null){
+        out.push(l);
+        if(l.trim() === heredoc) heredoc = null;
+        return;
+      }
+      if(l.charAt(0) === '\u0001'){
+        var cmd = l.slice(1).replace(/^ /, '');
+        out.push(cmd);
+        var m = cmd.match(/<<-?\s*['"]?([A-Za-z_][A-Za-z0-9_]*)['"]?/);
+        if(m) heredoc = m[1];
+      }
+    });
+    return out.join('\n');
+  }
+  function writeClipboard(text){
+    if(navigator.clipboard && window.isSecureContext){
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function(resolve, reject){
+      var ta = doc.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0'; ta.style.top = '0';
+      doc.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = doc.execCommand('copy'); } catch(e) {}
+      doc.body.removeChild(ta);
+      ok ? resolve() : reject();
+    });
+  }
+  $all('.block').forEach(function(block){
+    var pre = block.querySelector('pre');
+    if(!pre || block.querySelector('.copy-btn')) return;
+    var btn = doc.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.innerHTML = ICON.copy + '<span>Copy</span>';
+    var label = block.querySelector('.note-label');
+    btn.setAttribute('aria-label', 'Copy' + (label ? ' ' + label.textContent.trim() : ' this block'));
+    var status = btn.querySelector('span');
+    var timer = null;
+    btn.addEventListener('click', function(){
+      writeClipboard(copyText(pre)).then(function(){
+        btn.setAttribute('data-state', 'done');
+        btn.innerHTML = ICON.check + '<span>Copied</span>';
+      }, function(){
+        btn.innerHTML = ICON.copy + '<span>Select and copy</span>';
+      }).then(function(){
+        clearTimeout(timer);
+        timer = setTimeout(function(){
+          btn.removeAttribute('data-state');
+          btn.innerHTML = ICON.copy + '<span>Copy</span>';
+        }, 1800);
+      });
+    });
+    if(label){
+      var text = doc.createElement('span');
+      text.className = 'label-text';
+      while(label.firstChild) text.appendChild(label.firstChild);
+      label.appendChild(text);
+      label.appendChild(btn);
+    } else {
+      block.appendChild(btn);
+    }
+  });
+
+  // ---------- Tabs: files that are alternatives to one another ----------
+  $all('.tabset').forEach(function(set, n){
+    var panels = [], byName = {};
+    $all(':scope > [data-tab]', set).forEach(function(el){
+      var name = el.getAttribute('data-tab');
+      if(!byName[name]){
+        var panel = doc.createElement('div');
+        panel.className = 'tabpanel';
+        panel.setAttribute('role', 'tabpanel');
+        byName[name] = panel;
+        panels.push({name: name, panel: panel});
+        set.insertBefore(panel, el);
+      }
+      byName[name].appendChild(el);
+    });
+    if(panels.length < 2) return;
+    var list = doc.createElement('div');
+    list.className = 'tablist';
+    list.setAttribute('role', 'tablist');
+    if(set.getAttribute('aria-label')) list.setAttribute('aria-label', set.getAttribute('aria-label'));
+    var tabs = panels.map(function(p, i){
+      var id = 'tab-' + n + '-' + i;
+      var t = doc.createElement('button');
+      t.type = 'button';
+      t.id = id;
+      t.setAttribute('role', 'tab');
+      t.textContent = p.name;
+      p.panel.id = id + '-panel';
+      p.panel.setAttribute('aria-labelledby', id);
+      t.setAttribute('aria-controls', p.panel.id);
+      list.appendChild(t);
+      return t;
+    });
+    function select(i, focus){
+      tabs.forEach(function(t, j){
+        var on = i === j;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+        panels[j].panel.hidden = !on;
+      });
+      if(focus) tabs[i].focus();
+      scrollers();
+    }
+    tabs.forEach(function(t, i){
+      t.addEventListener('click', function(){ select(i); });
+      t.addEventListener('keydown', function(e){
+        var k = e.key, j = null;
+        if(k === 'ArrowRight') j = (i + 1) % tabs.length;
+        else if(k === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+        else if(k === 'Home') j = 0;
+        else if(k === 'End') j = tabs.length - 1;
+        if(j !== null){ e.preventDefault(); select(j, true); }
+      });
+    });
+    set.insertBefore(list, set.firstChild);
+    set.classList.add('is-tabbed');
+    select(0);
+  });
+
+  // ---------- Figures: enlarge on click, close with Escape ----------
+  var box = null, boxBody = null, boxTitle = null, lastFocus = null;
+  function lightbox(){
+    if(box) return box;
+    box = doc.createElement('dialog');
+    box.className = 'lightbox';
+    box.setAttribute('aria-label', 'Enlarged figure');
+    box.innerHTML = '<div class="lightbox-frame"><div class="lightbox-bar"><span class="lightbox-title"></span>' +
+      '<button type="button" class="icon-btn" aria-label="Close the enlarged figure">' + ICON.close + '</button></div>' +
+      '<div class="lightbox-body"></div></div>';
+    boxBody = box.querySelector('.lightbox-body');
+    boxTitle = box.querySelector('.lightbox-title');
+    box.querySelector('.icon-btn').addEventListener('click', function(){ box.close(); });
+    boxBody.addEventListener('click', function(e){
+      // A click on the drawing closes it, but a drag to pan it does not.
+      if(!window.getSelection || String(window.getSelection()) === '') box.close();
+    });
+    box.addEventListener('click', function(e){ if(e.target === box) box.close(); });
+    box.addEventListener('close', function(){
+      boxBody.innerHTML = '';
+      root.classList.remove('lightbox-open');
+      if(lastFocus) lastFocus.focus({preventScroll: true});
+    });
+    doc.body.appendChild(box);
+    return box;
+  }
+  function visibleArt(fig){
+    var candidates = $all('.figbody > svg, :scope > svg, :scope > img', fig);
+    for(var i = 0; i < candidates.length; i++){
+      if(candidates[i].getClientRects().length) return candidates[i];
+    }
+    return candidates[0];
+  }
+  function enlarge(fig, from){
+    var art = visibleArt(fig);
+    if(!art || typeof HTMLDialogElement !== 'function') return;
+    lightbox();
+    lastFocus = from || null;
+    var copy = art.cloneNode(true);
+    copy.removeAttribute('id');
+    $all('[id]', copy).forEach(function(el){ el.removeAttribute('id'); });
+    if(art.classList.contains('mock')) copy.classList.add('is-mock');
+    copy.style.minWidth = '';
+    boxBody.appendChild(copy);
+    var cap = fig.querySelector('figcaption b');
+    boxTitle.innerHTML = cap ? '<b></b>' : '';
+    if(cap) boxTitle.firstChild.textContent = cap.textContent;
+    root.classList.add('lightbox-open');
+    box.showModal();
+    box.querySelector('.icon-btn').focus({preventScroll: true});
+  }
+  $all('main figure, .shot').forEach(function(fig){
+    if(fig.classList.contains('cast') || !visibleArt(fig)) return;
+    fig.setAttribute('data-zoom', '');
+    var btn = doc.createElement('button');
+    btn.type = 'button';
+    btn.className = 'zoom-btn';
+    btn.innerHTML = ICON.zoom;
+    var cap = fig.querySelector('figcaption b');
+    btn.setAttribute('aria-label', 'Enlarge the figure' + (cap ? ': ' + cap.textContent : ''));
+    btn.title = 'Enlarge';
+    btn.addEventListener('click', function(e){ e.stopPropagation(); enlarge(fig, btn); });
+    fig.appendChild(btn);
+    fig.addEventListener('click', function(e){
+      if(e.target.closest('a, button, figcaption')) return;
+      // A horizontal drag to scroll a wide figure on a phone is not a request to enlarge it.
+      if(String(window.getSelection ? window.getSelection() : '') !== '') return;
+      enlarge(fig, btn);
+    });
+  });
 })();
 </script>
 <script>
