@@ -6,7 +6,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
-## Unreleased
+## v0.2.4, 2026-09-26
 
 ### Site
 
@@ -14,6 +14,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Documentation
 
+- Every version, output and image tag on the page is v0.2.4's, and both recordings are made again with it.
 - The API renews the bus credential in a `bus` volume; an upgrade replaces `compose.yaml`; a `setup` installation is installed anew.
 - `agentiik-api health` and the API's health check in the Compose file; a renewed bus credential is taken with no restart.
 - Get started and Install a server lead with the one `compose.yaml`, in full, then `docker compose up -d --wait` and `docker compose logs init`, then the optional `.env`; `setup`, `add-runner`, `AGENTIIK_DATA`, `DOCKER_GID` and the generated env files are gone.
