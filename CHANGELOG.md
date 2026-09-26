@@ -6,6 +6,12 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+### Documentation
+
+- Install a server shows the `.env` the Compose installation reads, verbatim and checked like `compose.yaml`, and a Behind a reverse proxy section: who holds the certificate, the `.env` line, the Caddy, nginx and Traefik configurations from `agentiik/deploy`, the bus port that is not proxied, and what a remote runner copies and trusts.
+
 ## v0.2.1, 2026-09-26
 
 ### Documentation
