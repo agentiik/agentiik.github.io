@@ -5304,37 +5304,39 @@ Authorization: Bearer &lt;api token&gt;
     </div>
 
     <h4>A local run, from the file to the envelopes</h4>
-    <p>A recording, not a hand-written transcript: a fan-out over three orders, a merge waiting for both its edges, a script step reading items through the helper. Six containers, under a second. <a href="../assets/agk-local-run.cast"><code>agk-local-run.cast</code></a> replays it with <code>asciinema play</code>.</p>
+    <p>A recording, not a hand-written transcript: a fan-out over three orders, a merge waiting for both its edges, a script step reading items through the helper. Six containers, 2.2 seconds. <a href="../assets/agk-local-run.cast"><code>agk-local-run.cast</code></a> replays it with <code>asciinema play</code>.</p>
 
     <div class="block">
       <div class="note-label">finance/monthly-invoicing, on a laptop</div>
 <pre><code><span class="p">$</span> <span class="cmd">agk validate</span>
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
 ghcr.io/acme/agk-charge:0.1.0: charge-order 0.1.0, reads in, writes ok rejected
 ghcr.io/acme/agk-split:0.1.0: split-orders 0.1.0, reads orders, writes ok
 ghcr.io/acme/agk-total:0.1.0: total-charges 0.1.0, reads charges, writes ok
 finance/monthly-invoicing is valid: 4 steps, 4 edges, 2 declared inputs, 4 declared outputs
 4 steps held to the manifests of 3 referenced images
 <span class="p">$</span> <span class="cmd">agk run --local --inputs inputs.json --secret-file billing_api=billing.key</span>
-the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.55 and runs linux/aarch64
+the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.56 and runs linux/aarch64
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
     0.0s  split    running
 charge is given a secret and this platform has no tmpfs for the runner to write secret values on, so the value is written into the task's working directory on disk, where it is removed with the container rather than never having been written at all. An operator with a tmpfs names it in /etc/agentiik/runner.toml.
-    0.2s  split    succeeded, ok 3
-    0.2s  charge   running
-    0.6s  charge   succeeded, ok 2, rejected 1
-    0.6s  total    running
-    0.7s  total    succeeded, ok 1
-    0.7s  archive  running
-    0.9s  archive  succeeded, out 1
-finance/monthly-invoicing succeeded in 0.9s: 4 steps, 6 containers
-archived: 1 item in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/archived.json
-charged: 2 items in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/charged.json
-invoiced: 1 item in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/invoiced.json
-rejected: 1 item in .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/rejected.json
-run 01M2BQCB3DSYQ66AJ42ZN2JEWP: .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP
-<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M2BQCB3DSYQ66AJ42ZN2JEWP/outputs/invoiced.json</span>
-{"id":"invoice-2026-01","data":{"charged_count":2,"charged_total":4600,"cycle":"2026-01","receipts_seen":3,"rejected_count":1},"files":[{"name":"summary.txt","uri":"agk://run/01M2BQCB3DSYQ66AJ42ZN2JEWP/total/ok/summary.txt","media_type":"text/plain","size":57,"sha256":"a7e1875aa928e8a32bed8728639b06e8f8e2e297df096da697c85caffd34075a"}]}
+    0.5s  split    succeeded, ok 3
+    0.5s  charge   running
+    1.2s  charge   succeeded, ok 2, rejected 1
+    1.2s  total    running
+    1.7s  total    succeeded, ok 1
+    1.7s  archive  running
+    2.2s  archive  succeeded, out 1
+finance/monthly-invoicing succeeded in 2.2s: 4 steps, 6 containers
+archived: 1 item in .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8/outputs/archived.json
+charged: 2 items in .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8/outputs/charged.json
+invoiced: 1 item in .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8/outputs/invoiced.json
+rejected: 1 item in .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8/outputs/rejected.json
+run 01M3ECD7JJJDRAYPV90S24KQP8: .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8
+<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8/outputs/invoiced.json</span>
+{"id":"invoice-2026-01","data":{"charged_count":2,"charged_total":4600,"cycle":"2026-01","receipts_seen":3,"rejected_count":1},"files":[{"name":"summary.txt","uri":"agk://run/01M3ECD7JJJDRAYPV90S24KQP8/total/ok/summary.txt","media_type":"text/plain","size":57,"sha256":"a7e1875aa928e8a32bed8728639b06e8f8e2e297df096da697c85caffd34075a"}]}
 </code></pre>
     </div>
 
