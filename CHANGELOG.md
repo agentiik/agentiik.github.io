@@ -10,7 +10,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Documentation
 
-- The v0.2.5 operator token becomes v0.3.0's bootstrap token, working until `agk user create LOGIN --admin` creates the first administrator.
+- The v0.2.5 operator token becomes v0.3.0's bootstrap token, working until the first administrator, made with `agk user create LOGIN --admin`, has enrolled a passkey; enrolment links last an hour.
 - Upgrades change `compose.yaml` and `.env` and nothing else, as CI checks.
 - The authentication policy's defaults and routes, the API's sign-in page, `agk login`'s loopback exchange, and passkeys unavailable on an IP address.
 - Passkeys verified with the standard library and no attestation.
@@ -20,6 +20,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - An administrator widening their own access notifies the owners in `GET /api/v1/me`.
 - A run refused at creation ends `cancelled`, naming the lapsed grant.
 - The v0.3.0 routes for users, groups, service accounts, namespaces, namespace grants, tokens and the policy.
+- The identity and access audit actions of v0.3.0.
+- A deny names one permission; a grant's scope is `NS` or `NS/workflow`; a token's scope is `{permissions, within}`.
+- Quotas are optional, `allowed_runner_pools` sits inside them and refuses an empty list; the Terraform example follows.
+- The roadmap's installer writes the bootstrap token to `.env` and prints none.
 
 ## v0.2.5, 2026-09-26
 
