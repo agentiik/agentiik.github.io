@@ -992,7 +992,7 @@ img{max-width:100%}
 
 <!-- ============ v0.2.0 ============ -->
 <section id="m02">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">101 of 103 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.2.0: A server runs it instead</h2><span class="tally">102 of 103 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> the same workflow, sent to a server, executed by a runner somewhere else, and watched while it happens.</p>
 
@@ -1172,7 +1172,7 @@ img{max-width:100%}
           <li class="done">Create the installation's NATS operator, application account and system account: write the resolver configuration the bus server loads, give the API the account seed it mints runner credentials with and the controller its control-plane credential, so a credential from bus.Issuer is one a real bus accepts. <a class="ref" href="../#task-bus">task-bus</a><a class="ref" href="../#channels">channels</a><a class="ref" href="../#configuration">configuration</a> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The runner, and the containers it destroys</h4>
           <span class="work-repo">agentiik</span>
@@ -1202,7 +1202,7 @@ img{max-width:100%}
           <li class="done">Mask secret values in collected logs by literal match against the task's values, before anything reaches the store. <a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#secrets-honestly">secrets-honestly</a> <span class="tick">done</span></li>
           <li class="done">Upload artifacts and envelopes under the task's signed POST policy, record the key's ending, destroy the container and the working directory, then publish the result on the runner's own results subject. <a class="ref" href="../#runner">runner</a><a class="ref" href="../#the-task-message">the-task-message</a> <span class="tick">done</span></li>
           <li class="done">Carry a task's running and publishing transitions from the runner that holds it to the tasks table, so the API shows a step running while its container runs; the channel is undecided, and the proposal is a progress message on the runner's own results subject, taken only from the runner the dispatch is bound to and never after an ending. <a class="ref" href="../#task-states">task-states</a><a class="ref" href="../#channels">channels</a> <span class="tick">done</span></li>
-          <li>Enforce the runner policy on every task: accepted namespaces, resource ceilings over what it asks for, as the host's AGK_RUNNER_NAMESPACES and runner.toml set them, allowed capabilities, and the nofile and nproc ulimits; the pool's namespaces and ceilings are enforced by the controller at dispatch and the API at redemption. <a class="ref" href="../#runner">runner</a><a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a></li>
+          <li class="done">Enforce the runner policy on every task: accepted namespaces, resource ceilings over what it asks for, as the host's AGK_RUNNER_NAMESPACES and runner.toml set them, allowed capabilities, and the nofile and nproc ulimits; the pool's namespaces and ceilings are enforced by the controller at dispatch and the API at redemption. <a class="ref" href="../#runner">runner</a><a class="ref" href="../#settings-applied-to-every-container">settings-applied-to-every-container</a> <span class="tick">done</span></li>
         </ul>
       </div>
       <div class="work-group">
