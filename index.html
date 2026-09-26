@@ -803,20 +803,19 @@ the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.56 and runs l
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
 this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
     0.0s  split    running
-charge is given a secret and this platform has no tmpfs for the runner to write secret values on, so the value is written into the task's working directory on disk, where it is removed with the container rather than never having been written at all. An operator with a tmpfs names it in /etc/agentiik/runner.toml.
-    0.5s  split    succeeded, ok 3
-    0.5s  charge   running
-    1.2s  charge   succeeded, ok 2, rejected 1
-    1.2s  total    running
-    1.6s  total    succeeded, ok 1
-    1.6s  archive  running
-    2.2s  archive  succeeded, out 1
-finance/monthly-invoicing succeeded in 2.2s: 4 steps, 6 containers
-archived: 1 item in .agk/runs/01M3ECCKNJ3CK7FHNKK8XV78K5/outputs/archived.json
-charged: 2 items in .agk/runs/01M3ECCKNJ3CK7FHNKK8XV78K5/outputs/charged.json
-invoiced: 1 item in .agk/runs/01M3ECCKNJ3CK7FHNKK8XV78K5/outputs/invoiced.json
-rejected: 1 item in .agk/runs/01M3ECCKNJ3CK7FHNKK8XV78K5/outputs/rejected.json
-run 01M3ECCKNJ3CK7FHNKK8XV78K5: .agk/runs/01M3ECCKNJ3CK7FHNKK8XV78K5
+    0.3s  split    succeeded, ok 3
+    0.3s  charge   running
+    1.6s  charge   succeeded, ok 2, rejected 1
+    1.6s  total    running
+    2.1s  total    succeeded, ok 1
+    2.1s  archive  running
+    2.6s  archive  succeeded, out 1
+finance/monthly-invoicing succeeded in 2.6s: 4 steps, 6 containers
+archived: 1 item in .agk/runs/01M3FQ157ZKNB508R2WWJETZFR/outputs/archived.json
+charged: 2 items in .agk/runs/01M3FQ157ZKNB508R2WWJETZFR/outputs/charged.json
+invoiced: 1 item in .agk/runs/01M3FQ157ZKNB508R2WWJETZFR/outputs/invoiced.json
+rejected: 1 item in .agk/runs/01M3FQ157ZKNB508R2WWJETZFR/outputs/rejected.json
+run 01M3FQ157ZKNB508R2WWJETZFR: .agk/runs/01M3FQ157ZKNB508R2WWJETZFR
 </code></pre>
     <div class="cast-player" id="cast-player" hidden></div>
     <button class="cast-play" id="cast-play" type="button" aria-controls="cast-player">

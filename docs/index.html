@@ -1274,7 +1274,7 @@ img{max-width:100%}
 <section id="get-started">
   <div class="sec-head"><span class="mark">§</span><h2>Get started</h2></div>
   <div class="prose">
-    <p>A workflow runs on your machine with <code>agk run --local</code>, and on a server with <code>agk push</code> and <code>agk run --namespace</code>. This chapter does both: a first workflow on your machine, then <a href="#run-on-a-server">the same workflow on a server</a> started with Docker Compose. Every output below is what a terminal answered at <code>v0.2.3</code>, not what the rest of this documentation promises.</p>
+    <p>A workflow runs on your machine with <code>agk run --local</code>, and on a server with <code>agk push</code> and <code>agk run --namespace</code>. This chapter does both: a first workflow on your machine, then <a href="#run-on-a-server">the same workflow on a server</a> started with Docker Compose. Every output below is what a terminal answered at <code>v0.2.4</code>, not what the rest of this documentation promises.</p>
 
     <h3 id="what-you-need">What you need</h3>
     <div class="tablewrap">
@@ -1296,10 +1296,10 @@ img{max-width:100%}
 <pre><code><span class="p">$</span> <span class="cmd">brew trust agentiik/tap</span>
 <span class="p">$</span> <span class="cmd">brew install agentiik/tap/agk</span>
 <span class="p">$</span> <span class="cmd">agk --version</span>
-agk v0.2.3, dbe64b4f9f31b7b2d9602ae13f0fe5afac2e3912, go1.27.1</code></pre>
+agk v0.2.4, e3c9e325090e2a75b58feb62cb669f2573179755, go1.27.1</code></pre>
     </div>
 
-    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.2.3</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
+    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.2.4</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
 
     <p><code>agk</code> alone prints its verbs, the table in <a href="#command-line">Command line</a>.</p>
 
@@ -1747,7 +1747,7 @@ init-1  |   agk_op_...</code></pre>
 # .env beside it and uncomment what you change, then docker compose up -d: every service that reads
 # a changed setting is recreated, and init brings the installation in line with it.
 
-# The version of Agentiik, one for every image. Change it to upgrade: init migrates the database.
+# The version of Agentiik, one for every image; compose.yaml names its own release. To upgrade, download the new release's compose.yaml rather than changing this alone, since a release may change the services too.
 #AGENTIIK_VERSION=v0.2.4
 
 # The name agk and every runner reach the installation at: a DNS name or an IPv4 address, which the
@@ -1897,7 +1897,7 @@ a file from greet</code></pre>
 <section id="install-a-server">
   <div class="sec-head"><span class="mark">§</span><h2>Install a server</h2></div>
   <div class="prose">
-    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.2.3</code>:</p>
+    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.2.4</code>:</p>
 
     <div class="tablewrap">
       <table>
@@ -2155,7 +2155,7 @@ init-1  |   agk_op_...</code></pre>
 # .env beside it and uncomment what you change, then docker compose up -d: every service that reads
 # a changed setting is recreated, and init brings the installation in line with it.
 
-# The version of Agentiik, one for every image. Change it to upgrade: init migrates the database.
+# The version of Agentiik, one for every image; compose.yaml names its own release. To upgrade, download the new release's compose.yaml rather than changing this alone, since a release may change the services too.
 #AGENTIIK_VERSION=v0.2.4
 
 # The name agk and every runner reach the installation at: a DNS name or an IPv4 address, which the
@@ -2224,12 +2224,12 @@ init-1  |   agk_op_...</code></pre>
       <div class="note-label">docker compose ps --all</div>
 <pre><code><span class="p">$</span> <span class="cmd">docker compose ps --all</span>
 NAME                    IMAGE                                COMMAND                  SERVICE      STATUS
-agentiik-api-1          ghcr.io/agentiik/api:v0.2.3          "/agentiik-api serve"    api          Up
-agentiik-controller-1   ghcr.io/agentiik/controller:v0.2.3   "/agentiik-controller"   controller   Up
-agentiik-init-1         ghcr.io/agentiik/api:v0.2.3          "/agentiik-api init"     init         Exited (0)
+agentiik-api-1          ghcr.io/agentiik/api:v0.2.4          "/agentiik-api serve"    api          Up
+agentiik-controller-1   ghcr.io/agentiik/controller:v0.2.4   "/agentiik-controller"   controller   Up
+agentiik-init-1         ghcr.io/agentiik/api:v0.2.4          "/agentiik-api init"     init         Exited (0)
 agentiik-nats-1         nats:2-alpine                        "docker-entrypoint.s…"   nats         Up (healthy)
 agentiik-postgres-1     postgres:17-alpine                   "docker-entrypoint.s…"   postgres     Up (healthy)
-agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.3       "/usr/local/bin/agk-…"   runner       Up</code></pre>
+agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.4       "/usr/local/bin/agk-…"   runner       Up</code></pre>
     </div>
 
     <p><code>init</code> has done its work when it has <code>Exited (0)</code>. A service that is not <code>Up</code> says why in <code>docker compose logs</code> and its name. Everything the installation keeps is in Docker volumes named <code>agentiik_*</code>, and the one path it uses on the host is <code>/var/lib/agentiik/work</code>, where the runner lays out each step's files for the daemon to bind. Then point <code>agk</code> at it and run a workflow, as <a href="#run-on-the-server">Get started</a> does.</p>
@@ -6929,21 +6929,21 @@ the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.56 and runs l
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
 this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
     0.0s  split    running
-    0.5s  split    succeeded, ok 3
-    0.5s  charge   running
-    1.2s  charge   succeeded, ok 2, rejected 1
-    1.2s  total    running
-    1.7s  total    succeeded, ok 1
-    1.7s  archive  running
-    2.2s  archive  succeeded, out 1
-finance/monthly-invoicing succeeded in 2.2s: 4 steps, 6 containers
-archived: 1 item in .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8/outputs/archived.json
-charged: 2 items in .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8/outputs/charged.json
-invoiced: 1 item in .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8/outputs/invoiced.json
-rejected: 1 item in .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8/outputs/rejected.json
-run 01M3ECD7JJJDRAYPV90S24KQP8: .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8
-<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M3ECD7JJJDRAYPV90S24KQP8/outputs/invoiced.json</span>
-{"id":"invoice-2026-01","data":{"charged_count":2,"charged_total":4600,"cycle":"2026-01","receipts_seen":3,"rejected_count":1},"files":[{"name":"summary.txt","uri":"agk://run/01M3ECD7JJJDRAYPV90S24KQP8/total/ok/summary.txt","media_type":"text/plain","size":57,"sha256":"a7e1875aa928e8a32bed8728639b06e8f8e2e297df096da697c85caffd34075a"}]}
+    0.6s  split    succeeded, ok 3
+    0.6s  charge   running
+    2.1s  charge   succeeded, ok 2, rejected 1
+    2.1s  total    running
+    2.5s  total    succeeded, ok 1
+    2.5s  archive  running
+    3.1s  archive  succeeded, out 1
+finance/monthly-invoicing succeeded in 3.1s: 4 steps, 6 containers
+archived: 1 item in .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA/outputs/archived.json
+charged: 2 items in .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA/outputs/charged.json
+invoiced: 1 item in .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA/outputs/invoiced.json
+rejected: 1 item in .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA/outputs/rejected.json
+run 01M3FQ0RJV72MAVRR10JPYYZAA: .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA
+<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA/outputs/invoiced.json</span>
+{"id":"invoice-2026-01","data":{"charged_count":2,"charged_total":4600,"cycle":"2026-01","receipts_seen":3,"rejected_count":1},"files":[{"name":"summary.txt","uri":"agk://run/01M3FQ0RJV72MAVRR10JPYYZAA/total/ok/summary.txt","media_type":"text/plain","size":57,"sha256":"a7e1875aa928e8a32bed8728639b06e8f8e2e297df096da697c85caffd34075a"}]}
 </code></pre>
     </div>
 
@@ -8894,7 +8894,7 @@ resource "agentiik_workflow" "search" {
   </figure>
 
   <div class="prose">
-    <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: its <code>compose.yaml</code> is in <a href="#run-on-a-server">Get started</a>, and <a href="#install-with-compose">Install a server</a> installs, operates, backs up and removes it. At <code>v0.2.3</code> it runs PostgreSQL, NATS, the API, the controller and one runner, prepared by <code>agentiik-api init</code> at every start: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet.</p>
+    <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: its <code>compose.yaml</code> is in <a href="#run-on-a-server">Get started</a>, and <a href="#install-with-compose">Install a server</a> installs, operates, backs up and removes it. At <code>v0.2.4</code> it runs PostgreSQL, NATS, the API, the controller and one runner, prepared by <code>agentiik-api init</code> at every start: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet.</p>
     <p>The reverse proxy of the figure is optional: <a href="#behind-a-reverse-proxy">behind one</a>, <code>AGENTIIK_PROXY_URL</code> sets <code>AGK_PROXY_URL</code> to the proxy's <code>https</code> URL and the API serves plain HTTP on the loopback, while the bus keeps its own TLS on 4222.</p>
     <p>The images are published on <code>ghcr.io</code> from <code>v0.2.1</code>, for linux/amd64 and linux/arm64: <code>ghcr.io/agentiik/api</code>, <code>controller</code> and <code>runner</code>, tagged with the version (<code>0.2.1</code> and <code>v0.2.1</code>) and <code>latest</code> at a release, and <code>dev</code> for every commit to <code>main</code>.</p>
     <ul class="plain">
