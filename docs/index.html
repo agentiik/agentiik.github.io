@@ -1884,6 +1884,7 @@ agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.5       "/usr/local/bin/agk
       <div class="note-label">macOS: agk trusts what the keychain trusts</div>
 <pre><code><span class="p">$</span> <span class="cmd">sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain agentiik.pem</span></code></pre>
     </div>
+    <p>From <a href="roadmap/#m03">v0.3.0</a>, a browser signing in with a passkey has to trust the certificate the same way, since it runs no passkey ceremony on a page clicked past a warning (<a href="#sign-in-page">The sign-in page</a>); a <a href="#behind-a-reverse-proxy">reverse proxy</a> with a certificate from a public authority spares the step.</p>
 
     <h4 id="compose-first-workflow">Run a first workflow</h4>
     <p>A workflow is a git repository with an <code>agentiik.yaml</code> at its root, with one line on standard error for <code>agk logs</code> to show and one file for <code>curl</code> to fetch:</p>
@@ -2047,6 +2048,8 @@ AGENTIIK_OPERATOR_TOKEN=
 
     <ul class="plain">
       <li><code>init</code> migrates the database before the API and the controller start again on the new images. <code>agk</code> is upgraded the way it was installed.</li>
+      <li>From <code>v0.2.5</code>, a release starts on the state the one before it left, with <code>compose.yaml</code> and <code>.env</code> changed and nothing else: <code>init</code> applies every change at <code>docker compose up</code> (migrations, file layout, credentials), and a setting keeps its name or is still read under its old one. A check on every change of agentiik/deploy installs the latest release, runs a workflow, upgrades, and finds the old run and token still working and a new run succeeding; the same from <code>latest</code> to <code>dev</code>.</li>
+      <li>Upgrading to <a href="roadmap/#m03">v0.3.0</a> keeps <code>AGENTIIK_OPERATOR_TOKEN</code> working, as the bootstrap token, until the first administrator has enrolled a passkey (<a href="#first-run">First run</a>). It then stops, the line stays in <code>.env</code> and <code>init</code> says at every run that it is ignored, and a script moves to a service account's token.</li>
       <li>An installation of <code>v0.2.4</code> kept its state in Docker volumes rather than <code>data/</code>, and one made with <code>setup</code>, up to <code>v0.2.3</code>, in <code>/srv/agentiik</code>: neither is upgraded in place. Remove it as its own guide said, then start anew.</li>
       <li>The bus credential of the API and the controller lasts 90 days. The API renews it itself from 14 days before its end, in <code>data/bus</code>, which it shares with the controller, and both take the new one with no restart; it warns daily only where it cannot. <code>init</code> renews it too at any <code>docker compose up</code> in that time.</li>
     </ul>
@@ -2506,7 +2509,7 @@ EOF
       <table>
         <thead><tr><th>What</th><th>Today</th><th>When</th></tr></thead>
         <tbody>
-          <tr><td>Users, groups, sign-in</td><td>One operator token may do everything. Only its hash is kept; a new <code>AGENTIIK_OPERATOR_TOKEN</code> in <code>.env</code> replaces a lost one.</td><td><a href="roadmap/#m03">v0.3.0</a> brings principals and a bootstrap token.</td></tr>
+          <tr><td>Users, groups, sign-in</td><td>One operator token may do everything. Only its hash is kept; a new <code>AGENTIIK_OPERATOR_TOKEN</code> in <code>.env</code> replaces a lost one.</td><td><a href="roadmap/#m03">v0.3.0</a> brings principals, and the operator token becomes the bootstrap token that creates the first administrator (<a href="#first-run">First run</a>).</td></tr>
           <tr><td>The console</td><td>Not part of either installation. <code>agk</code> is the client.</td><td>Its own releases.</td></tr>
           <tr><td>Creating a namespace through the API</td><td><code>AGENTIIK_NAMESPACE</code>, or <code>docker compose run --rm --no-deps api namespace create team</code> on the installation's host, or <code>agentiik-setup --namespace team</code> on a Mac.</td><td><a href="roadmap/#m03">v0.3.0</a>, with the access model.</td></tr>
           <tr><td>Runners on macOS or Windows</td><td>Refused: the runner hands the Docker daemon paths on the host to bind, which the virtual machine of Docker Desktop cannot see.</td><td></td></tr>
@@ -4775,29 +4778,57 @@ concurrency:
         <thead><tr><th>Kind</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>user</td><td>Local account: a login, a display name and one or more credentials. A passkey is the intended one; a password is a fallback the installation can forbid (see <a href="#auth">Authentication</a>).</td></tr>
-          <tr><td>group</td><td>Named set of users; a user may belong to any number. Grants target groups, so membership changes without touching grants.</td></tr>
-          <tr><td class="wrapcell">service account</td><td>Non-human, holds API tokens, cannot sign in to a client. Each namespace has a built-in one, to which scheduled, webhook and event runs are attributed.</td></tr>
-          <tr><td>api token</td><td>Bearer credential with an expiry and an optional scope that can only narrow its principal's rights. Stored hashed, shown once.</td></tr>
+          <tr><td>group</td><td>Named set of users; a user may belong to any number. Grants target groups, so membership changes without touching grants. Its members are logins only, never a group, because a group inside a group would turn effective permissions into a graph walk.</td></tr>
+          <tr><td class="wrapcell">service_account</td><td>Non-human, holds API tokens, cannot sign in to a client. Each namespace has a built-in one, <code>NS/agentiik</code>, to which scheduled, webhook and event runs are attributed.</td></tr>
+          <tr><td>api token</td><td>Bearer credential with an expiry (<a href="#sessions-and-tokens">90 days by default, a year at most</a>) and an optional scope that can only narrow its principal's rights. Stored hashed, shown once.</td></tr>
         </tbody>
       </table>
     </div>
+    <p>A principal's kind is written <code>user</code>, <code>group</code> or <code>service_account</code>; an api token is a credential a principal holds, not a principal of its own. From <a href="roadmap/#m03">v0.3.0</a>, a principal is written the same way in a grant, the API, <code>agk</code> and the audit log:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Written</th><th>Names</th></tr></thead>
+        <tbody>
+          <tr><td><code>alice</code></td><td>The user whose login is <code>alice</code>.</td></tr>
+          <tr><td><code>group:team-finance</code></td><td>The group <code>team-finance</code>.</td></tr>
+          <tr><td><code>finance/nightly-sync</code></td><td>The service account <code>nightly-sync</code> of the namespace <code>finance</code>.</td></tr>
+          <tr><td><code>finance/agentiik</code></td><td>The built-in identity of <code>finance</code>.</td></tr>
+          <tr><td><code>operator</code></td><td>The v0.2 operator, on rows written before v0.3.0 and on no new one.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plain">
+      <li>Logins and namespace names share one name space: a login is refused where a namespace of that name exists, and a namespace where a login does. A user's personal namespace is named after their login, and a namespace created first would take it from them.</li>
+      <li><code>operator</code> and the <a href="#scopes-and-resolution">reserved words</a> are refused as logins. <code>operator</code> names the v0.2 operator on old rows, and a user of that name would read as their author.</li>
+      <li>A service account is written with its namespace, so one name in two namespaces is two principals, and the slash, which no login holds, keeps the forms apart. <code>agentiik</code> is the built-in identity's name in every namespace and no other service account's.</li>
+      <li>A namespace's built-in identity, <code>NS/agentiik</code>, holds no grant until an owner gives it one: what a namespace's unattended runs may do is then a decision someone made, visible in the grant list, never a default nobody reviewed.</li>
+    </ul>
 
     <h3 id="auth">Authentication</h3>
     <p>A user authenticates with a passkey (Web Authentication Level 3, a W3C Recommendation since 25 August 2026). A password is a fallback an installation can remove.</p>
 
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Setting</th><th>Values</th><th>Effect</th></tr></thead>
+        <thead><tr><th>Setting</th><th>Values</th><th>Default</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td>password</td><td><code>allowed</code>, <code>forbidden</code></td><td><code>forbidden</code> deletes the stored hash and the endpoint refuses passwords. Hiding a form is not a policy.</td></tr>
-          <tr><td>passkey</td><td><code>optional</code>, <code>required</code></td><td><code>required</code>: nothing is reachable until one credential is enrolled.</td></tr>
-          <tr><td>user_verification</td><td><code>required</code>, <code>preferred</code></td><td><code>required</code> by default, on registration and every assertion, which makes a passkey two factors: the authenticator and whatever unlocks it.</td></tr>
-          <tr><td>device_bound_only</td><td><code>true</code>, <code>false</code></td><td>Refuses a credential whose Backup Eligibility flag is set, that is, a synced passkey.</td></tr>
-          <tr><td>min_passkeys</td><td>integer, default 2</td><td>Credentials required before the password may be removed. Two, so that losing a device is an inconvenience rather than an incident.</td></tr>
+          <tr><td>password</td><td><code>allowed</code>, <code>forbidden</code></td><td><code>allowed</code></td><td><code>forbidden</code> deletes the stored hash and the endpoint refuses passwords. Hiding a form is not a policy. Allowed by default as the fallback that gets a person to their first passkey.</td></tr>
+          <tr><td>passkey</td><td><code>optional</code>, <code>required</code></td><td><code>required</code></td><td><code>required</code>: nothing is reachable until one credential is enrolled.</td></tr>
+          <tr><td>user_verification</td><td><code>required</code>, <code>preferred</code></td><td><code>required</code></td><td>On registration and every assertion, which makes a passkey two factors: the authenticator and whatever unlocks it.</td></tr>
+          <tr><td>device_bound_only</td><td><code>true</code>, <code>false</code></td><td><code>false</code></td><td>Refuses a credential whose Backup Eligibility flag is set, that is, a synced passkey. Off by default, since most people's passkeys are synced.</td></tr>
+          <tr><td>min_passkeys</td><td>integer, at least 1</td><td><code>2</code></td><td>Credentials required before the password may be removed. Two, so that losing a device is an inconvenience rather than an incident.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The policy is set per installation. A namespace may tighten it, never loosen it, for instance by requiring device-bound passkeys of everyone holding a grant in it.</p>
+    <p>An administrator sets the installation's policy with <code>PUT /api/v1/auth/policy</code> or <code>agk auth policy</code>, and a namespace's with <code>PUT /api/v1/{ns}/auth/policy</code>, from <a href="roadmap/#m03">v0.3.0</a>; the audit log records every change. A namespace may tighten the installation's policy, never loosen it, for instance by requiring device-bound passkeys of everyone holding a grant in it, and a namespace policy that would loosen it is refused naming the setting. A namespace's policy has the installation's shape, and a key it leaves out inherits the installation's value. What applies is the stricter of the two, setting by setting, so an installation that loosens later loosens no namespace that asked for more.</p>
+
+    <div class="block">
+      <div class="note-label">the installation's policy, from v0.3.0</div>
+<pre><code><span class="p">&gt;</span> <span class="cmd">PUT /api/v1/auth/policy</span>
+Authorization: Bearer &lt;an administrator's token&gt;
+
+{ "password": "allowed", "passkey": "required", "user_verification": "required",
+  "device_bound_only": false, "min_passkeys": 2 }</code></pre>
+    </div>
 
     <div class="decision">
       <span class="note-label">Decision</span>
@@ -4809,12 +4840,12 @@ concurrency:
       <table>
         <thead><tr><th>Passkey</th><th>Trust moves to</th><th>Answered by</th></tr></thead>
         <tbody>
-          <tr><td>synced</td><td>the cloud account that syncs it</td><td><code>device_bound_only: true</code> where that is unacceptable</td></tr>
-          <tr><td>device-bound</td><td>one piece of hardware, which can be lost</td><td><code>min_passkeys</code>, since policy cannot prevent a loss</td></tr>
+          <tr><td><code>synced</code></td><td>the cloud account that syncs it</td><td><code>device_bound_only: true</code> where that is unacceptable</td></tr>
+          <tr><td><code>device-bound</code></td><td>one piece of hardware, which can be lost</td><td><code>min_passkeys</code>, since policy cannot prevent a loss</td></tr>
         </tbody>
       </table>
     </div>
-    <p>Each credential's kind is recorded from its Backup Eligibility and Backup State flags and shown in the console, because an administrator who cannot see it cannot reason about their exposure.</p>
+    <p>Each passkey's kind is recorded from its Backup Eligibility and Backup State flags, <code>synced</code> where Backup Eligibility is set and <code>device-bound</code> where it is not, and shown in the console, because an administrator who cannot see it cannot reason about their exposure.</p>
 
     <h4>Turning passwords off without locking anyone out</h4>
   </div>
@@ -4908,7 +4939,7 @@ concurrency:
         <thead><tr><th>Line</th><th>What it is</th><th>Rule</th></tr></thead>
         <tbody>
           <tr><td>1 · min_passkeys</td><td>two credentials on two devices</td><td>A lost phone is not an incident.</td></tr>
-          <tr><td>2 · recovery code</td><td>issued by an administrator</td><td>Single use, short lived, authorises only enrolling a new passkey. Audited with the issuing administrator and the account it was issued for.</td></tr>
+          <tr><td>2 · recovery code</td><td>issued by an administrator</td><td>Single use, good for an hour, authorises only enrolling a new passkey. Audited with the issuing administrator and the account it was issued for.</td></tr>
           <tr><td>3 · break-glass</td><td>at least one administrator account</td><td>Recovery path documented and held offline, for the day every administrator loses their authenticator.</td></tr>
           <tr><td>never</td><td class="no">a recovery link by mail</td><td>It would put the account back behind a mailbox and forfeit the passkey's phishing resistance.</td></tr>
         </tbody>
@@ -4918,6 +4949,36 @@ concurrency:
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>Forbidding passwords does not touch automation: a service account holds only API tokens, and the policy does not apply to it. At a terminal, <code>agk login</code> opens a browser, the passkey ceremony runs there against the same Relying Party, and the command line receives a token; the mobile applications use the platform's native passkey APIs. Passkeys change how people prove who they are, never how machines do.</p>
+    </div>
+
+    <h4 id="sign-in-page">The sign-in page</h4>
+    <p>A passkey ceremony runs in a browser, on a page whose origin the browser checks against the Relying Party Identifier: the host of <code>AGK_PUBLIC_URL</code>, or of <code>AGK_PROXY_URL</code> behind a proxy. The console comes in its own releases, so from <a href="roadmap/#m03">v0.3.0</a> the API serves a minimal page of its own on that origin: <code>/auth/sign-in</code> to sign in, and <code>/auth/enrol</code> to enrol a passkey from an enrolment link or a recovery code. It is embedded in <code>agentiik-api</code>, loads nothing from anywhere else, and does the two ceremonies and the password fallback where the policy allows it, nothing more.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Installation addressed by</th><th>Passkeys</th></tr></thead>
+        <tbody>
+          <tr><td>a DNS name, <code>agentiik.example.com</code></td><td>Yes, that name being the Relying Party Identifier.</td></tr>
+          <tr><td><code>localhost</code></td><td>Yes, from a browser on the same machine.</td></tr>
+          <tr><td>an IP address, <code>192.0.2.10</code></td><td>No: a Relying Party Identifier is a domain, and a browser refuses an IP address. <code>init</code> says so at every run. The policy then allows passwords, and one requiring a passkey or forbidding passwords is refused.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A browser runs the ceremony only on a page whose certificate it trusts, never one clicked past a warning: the certificate <code>init</code> issues is trusted on the machine that signs in, as <a href="#agk-from-another-machine">From another machine</a> does for <code>agk</code>, or a <a href="#behind-a-reverse-proxy">reverse proxy</a> serves one of its own.</p>
+
+    <h4>Signing in from a terminal</h4>
+    <ol class="steps">
+      <li><code>agk login</code> listens on a port of the loopback, makes a one-time verifier and opens the browser at the sign-in page, handing it the loopback address and the verifier's SHA-256.</li>
+      <li>The passkey ceremony runs in the browser, against the same Relying Party as every other sign-in.</li>
+      <li>The page redirects to the loopback address with a one-time code: single use, good for a minute.</li>
+      <li><code>agk</code> sends the code and the verifier to <code>POST /api/v1/auth/exchange</code> and is answered an API token, which it stores in the local profile.</li>
+    </ol>
+    <p>The exchange is PKCE's (RFC 7636): a code seen on the way, in the browser's history or by another process on the machine, opens nothing without the verifier, which never left <code>agk</code>. A device code, the other common way to sign in a terminal, can be phished, since anybody can send someone a code to approve for them. A machine with no browser takes a token made elsewhere, in <code>AGENTIIK_TOKEN</code>.</p>
+
+    <h4>Verifying a passkey</h4>
+    <p>From <a href="roadmap/#m03">v0.3.0</a>, the API verifies registrations and assertions with the Go standard library alone: a CBOR decoder written for it and fuzzed, which refuses indefinite lengths, duplicate map keys and trailing bytes; COSE keys ES256, EdDSA and RS256, checked with <code>crypto/ecdsa</code>, <code>crypto/ed25519</code> and <code>crypto/rsa</code>; attestation conveyance <code>none</code>, the attestation format <code>none</code> accepted.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>No WebAuthn library and no attestation. The code that decides who someone is should be read whole by whoever reviews it, and the part a library would bring, a CBOR decoder, is small enough to write and to fuzz. Attestation would certify the authenticator's make, but the synced passkeys most people hold carry none, so asking for it would refuse them or prove nothing. <code>device_bound_only</code> reads the Backup Eligibility flag in the authenticator data, which needs no attestation; it is the authenticator's own statement, which an installation that must prove its hardware cannot rest on.</p>
     </div>
 
     <h3 id="permissions">Permissions</h3>
@@ -5021,9 +5082,9 @@ concurrency:
 
   <div class="prose">
     <ul class="plain">
-      <li>A grant binds one principal, one scope (a namespace or a single workflow) and one role. An optional expiry ends it without anyone remembering to revoke it.</li>
+      <li>A grant binds one principal, one scope and either one role or a deny. The scope is written <code>NS</code> for a namespace or <code>NS/workflow</code> for a single workflow: <code>finance</code>, <code>finance/monthly-invoicing</code>. An optional expiry ends it without anyone remembering to revoke it.</li>
       <li>Effective permissions are the union of every applying grant: the principal's own and its groups', at both scopes.</li>
-      <li>A workflow-scope grant only adds. Only an explicit <code>deny</code> removes, and it wins over any allow at any scope.</li>
+      <li>A workflow-scope grant only adds. Only an explicit <code>deny</code> removes, and it wins over any allow at any scope. A deny names one permission, never a role, since the payloads kept out of reach are <code>run:read_data</code> alone and no role is that.</li>
       <li>No matching grant means refusal: the same 404 whether the workflow is absent or merely invisible, so listing cannot discover names.</li>
       <li>Every user owns a personal namespace named after their login, created on first sign-in, which they cannot delete or rename.</li>
     </ul>
@@ -5044,9 +5105,9 @@ concurrency:
 
     <h3 id="administrators">Administrators</h3>
     <ul class="plain">
-      <li>A platform administrator manages users, groups, namespaces, quotas, runners and runner policies.</li>
-      <li>An administrator holds no implicit <code>run:read_data</code>. Reading another namespace's payloads means granting themselves access first, which is audited and visible to the namespace owners.</li>
-      <li>The installer creates the first administrator with a one-time bootstrap token, invalidated on first use.</li>
+      <li>A platform administrator manages users, groups, namespaces, quotas, runners, runner policies and the <a href="#auth">authentication policy</a>.</li>
+      <li>An administrator holds no implicit <code>run:read_data</code>. Reading another namespace's payloads means granting themselves access first, which is audited and notifies every owner of the namespace: a notification in the owner's <code>GET /api/v1/me</code>, because an owner does not read the audit log, and the people whose data it is should hear of it from the installation itself.</li>
+      <li>The first administrator is created with the bootstrap token, by <code>agk user create LOGIN --admin</code>, and the token ends once that administrator has enrolled a passkey (<a href="#first-run">First run</a>).</li>
     </ul>
 
     <h3 id="what-sharing-does-not-expose">What sharing does not expose</h3>
@@ -5063,7 +5124,7 @@ concurrency:
         <thead><tr><th>Quota</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td>max_concurrent_tasks</td><td>Fleet share one namespace can hold at once, so that a fan-out of ten thousand items cannot starve everyone else.</td></tr>
-          <tr><td>max_runs_per_hour</td><td>Rate limit across every trigger kind, webhooks included.</td></tr>
+          <tr><td>max_runs_per_hour</td><td>Rate limit across every trigger kind, webhooks included: the runs created in the last 60 minutes, a sliding count. Past it the API answers <code>429</code> with <code>Retry-After</code>, the seconds until the oldest run counted leaves the window, and a scheduled or event firing starts no run and is recorded as a skipped firing, with that reason. Sliding rather than per clock hour, which would let twice the quota through across the turn of an hour.</td></tr>
           <tr><td>max_artifact_bytes</td><td>Total live artifact storage; beyond it, new writes are refused.</td></tr>
           <tr><td>max_retention_days</td><td>Upper bound on what the namespace may ask to keep.</td></tr>
           <tr><td>max_run_duration</td><td>Upper bound on a workflow's root <code>timeout</code>, so no run holds capacity longer than the operator accepts.</td></tr>
@@ -5071,6 +5132,7 @@ concurrency:
         </tbody>
       </table>
     </div>
+    <p>From <a href="roadmap/#m03">v0.3.0</a>, the six sit together under <code>quotas</code> on the namespace's record, <code>allowed_runner_pools</code> among them. Every quota is optional, and one left out sets no bound of the namespace's own. The four counts are whole numbers from 1, <code>max_run_duration</code> is written as a step's <code>timeout</code>, and <code>allowed_runner_pools</code> names at least one pool: an empty list is refused, because a pool's own empty list of namespaces means every one, and the same spelling here would be read as its opposite.</p>
 
     <h3 id="sessions-and-tokens">Sessions and tokens</h3>
     <div class="tablewrap">
@@ -5078,12 +5140,31 @@ concurrency:
         <thead><tr><th>Client</th><th>Credential</th><th>Rules</th></tr></thead>
         <tbody>
           <tr><td>web console</td><td>opaque session identifier in a cookie: <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code></td><td>Revocable server-side, idle expiry. Records the credential that opened it, so an enrolment-only session is known server-side, not by convention.</td></tr>
-          <tr><td>API, agk, mobile</td><td>bearer token</td><td>Stored hashed, shown once, revocable one by one, listed with last use and device label.</td></tr>
+          <tr><td>API, agk, mobile</td><td>bearer token</td><td>Stored hashed, shown once, revocable one by one, listed with last use and device label. Expires after 90 days unless asked otherwise, and after a year at most.</td></tr>
           <tr><td>webhook</td><td>HMAC over the raw body with a per-trigger secret, a bearer token bound to a service account, or a client certificate</td><td>Authenticates the caller, not a user.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>Authorisation is re-evaluated when a run is created, because a trigger armed months ago can fire long after the grant that armed it.</p>
+    <p>An API token's expiry is 90 days by default, so a token forgotten in a script stops on its own within a season, and a year at most, so that no token is a credential for good and every one is renewed by someone who still means it. A service account's tokens follow the same rules.</p>
+    <p>A token's optional scope is <code>{permissions, within}</code>, at least one of the two present: <code>permissions</code> the permissions it keeps, <code>within</code> the namespaces and workflows it reaches, written as a grant's scope is. On every request its rights are the principal's intersected with both, so a scope can only narrow, and naming a permission the principal lacks grants nothing.</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">a token that only starts one workflow, from v0.3.0</div>
+<pre><code>{ "scope": { "permissions": ["workflow:run"], "within": ["finance/monthly-invoicing"] } }</code></pre>
+  </div>
+
+  <div class="prose">
+    <p>Authorisation is re-evaluated when a run is created, because a trigger armed months ago can fire long after the grant that armed it. From <a href="roadmap/#m03">v0.3.0</a>, a run whose principal no longer holds <code>workflow:run</code> at that moment ends <code>cancelled</code> before any task, with a reason naming the grant that lapsed:</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">a run refused at creation, from v0.3.0</div>
+<pre><code>cancelled: finance/agentiik no longer holds workflow:run on finance/monthly-invoicing: grant 01JQ3M8T (operator on the namespace finance) expired at 2026-10-01T00:00:00Z</code></pre>
+  </div>
+
+  <div class="prose">
+    <p>The reason is on the run, where <code>GET /api/v1/runs/{id}</code> and <code>agk status</code> show it. <code>cancelled</code> rather than <code>failed</code>, because nothing in the workflow failed; and a run rather than a silence, so that whoever armed the trigger sees why it did nothing.</p>
   </div>
 </section>
 
@@ -5223,7 +5304,7 @@ concurrency:
     <ul class="plain">
       <li>Evaluates the graph on every task state change and publishes the tasks that have become ready.</li>
       <li>Holds concurrency-group locks, per-step parallelism counters and per-namespace quotas.</li>
-      <li>Re-checks authorisation when a run is created, against the principal recorded on the trigger.</li>
+      <li>Re-checks authorisation when a run is created, against the principal recorded on the trigger, and from v0.3.0 ends a run that fails it <code>cancelled</code>, naming the lapsed grant (<a href="#sessions-and-tokens">Sessions and tokens</a>).</li>
       <li>Emits the notification events that the API turns into push messages: failure, approval requested, completion of a run the recipient started.</li>
       <li>Runs as several instances with one active at a time, elected by a session-level PostgreSQL advisory lock. Failover is a state resume, never a rebuild: the state lives in the database, not in the process. See <a href="#how-the-api-and-the-controller-stay-in-step">How the API and the controller stay in step</a>.</li>
       <li>Stops, rather than retrying in place, once it can no longer reach the database, the bus or its lock, or once the control plane's bus credential expires; its supervisor starts it again as a standby. Its connections set TCP keepalives, so a controller cut off without a reset loses its session, and the lock with it, within half a minute rather than the operating system's two hours.</li>
@@ -6016,7 +6097,7 @@ concurrency:
           <tr><td>waiting</td><td>Suspended at a <a href="#catalog"><code>wait</code></a> step, for a duration, an external signal or a human approval; nothing else puts a run here. The state a mobile notification is meant to clear.</td></tr>
           <tr><td>succeeded</td><td>Every reached step finished, none failed beyond tolerance. A task not over when the run ends, which can only be one of a step a <code>merge: first</code> superseded, is written <code>cancelled</code> in the pass that ends the run, and every redeemed one is stopped with reason <code>superseded</code>, repeated in the heartbeat's <code>cancel</code>. Its runner's report later adds the exit code its container exited with, its log and its usage, and nothing else.</td></tr>
           <tr><td>failed</td><td>At least one step failed without <code>continue_on_error</code>. A task not over is ended as for <code>succeeded</code>.</td></tr>
-          <tr><td>cancelled</td><td>Cancelled by a principal holding <code>workflow:run</code>, by a concurrency group or by a <code>merge: first</code>. The one state a run can end in without having started, when it is cancelled from <code>queued</code>.</td></tr>
+          <tr><td>cancelled</td><td>Cancelled by a principal holding <code>workflow:run</code>, by a concurrency group, by a <code>merge: first</code>, or, from v0.3.0, by the controller when its principal fails the check at creation (<a href="#sessions-and-tokens">Sessions and tokens</a>). The one state a run can end in without having started, when it is cancelled from <code>queued</code>.</td></tr>
           <tr><td>timed_out</td><td>The deadline set by the root <code>timeout</code> of the entry point expired. Every task not over is written <code>timed_out</code> in the pass that ends the run, and every redeemed one is stopped with reason <code>deadline</code>, repeated in the heartbeat's <code>cancel</code>. Its runner's report later adds the exit code its container exited with, its log and its usage, and nothing else.</td></tr>
         </tbody>
       </table>
@@ -6416,7 +6497,7 @@ steps:
         <tbody>
           <tr><td>an entry</td><td><code>seq</code> (from 1, no gap), <code>at</code> (the database's clock, written <code>2026-09-25T10:00:00.123456Z</code>), <code>actor</code>, <code>action</code>, <code>namespace</code> (left out for an act on the installation), <code>target</code>, <code>result</code> (<code>done</code>, or <code>unchanged</code> for an act asked of something already so: a second cancellation, a runner drained twice), <code>detail</code>, <code>prev_hash</code> and <code>hash</code> (lowercase hexadecimal). On the wire <code>detail</code> is a JSON string holding the object's text, never a secret's value or a token: a receiver that re-encoded an object would reorder or respace the bytes that were hashed.</td></tr>
           <tr><td>the hash</td><td>SHA-256 over the bytes <code>agentiik audit 1</code>, the previous entry's 32-byte hash (32 zero bytes before the first), <code>seq</code> as eight bytes big-endian, then, in this order, <code>at</code> as written above, <code>actor</code>, <code>action</code>, <code>namespace</code> (empty where left out), <code>target</code>, <code>result</code> and <code>detail</code>, each as its UTF-8 length in four bytes big-endian followed by its UTF-8.</td></tr>
-          <tr><td>recorded</td><td><code>run.trigger</code>, <code>run.cancel</code>, <code>secret.write</code>, <code>secret.delete</code>, <code>namespace.create</code>, <code>namespace.delete</code>, <code>runner_pool.create</code>, <code>join_token.issue</code>, <code>runner.drain</code>, <code>runner.revoke</code>. Approval arrives with the wait step in v0.8.0; the identity and access events with principals in v0.3.0.</td></tr>
+          <tr><td>recorded</td><td><code>run.trigger</code>, <code>run.cancel</code>, <code>secret.write</code>, <code>secret.delete</code>, <code>namespace.create</code>, <code>namespace.delete</code>, <code>runner_pool.create</code>, <code>join_token.issue</code>, <code>runner.drain</code>, <code>runner.revoke</code>. From v0.3.0, the identity and access events: <code>user.create</code>, <code>user.delete</code>, <code>credential.enrol</code>, <code>credential.remove</code>, <code>enrolment.issue</code>, <code>enrolment.use</code>, <code>bootstrap.end</code>, <code>api_token.create</code>, <code>api_token.revoke</code>, <code>signin.succeed</code>, <code>signin.fail</code>, <code>policy.change</code>, <code>grant.create</code>, <code>grant.delete</code>, <code>namespace.update</code>. Approval arrives with the wait step in v0.8.0.</td></tr>
           <tr><td>the export</td><td>The leading controller POSTs every entry, in order, as newline-delimited JSON (<code>application/x-ndjson</code>) to the https sink <code>AGK_AUDIT_EXPORT_URL</code> names, with the bearer token in <code>AGK_AUDIT_EXPORT_TOKEN_FILE</code>, within a second of its commit. HTTPS_PROXY and NO_PROXY in the controller's environment are honoured, and a private authority is trusted through SSL_CERT_FILE. Delivery is at least once: a sink that was down is sent what it missed, and a receiver keeps one entry per <code>seq</code>. Nothing past a break is exported, and a redirect is not followed.</td></tr>
           <tr><td>verifying</td><td><code>agentiik-api audit-verify FILE</code> checks an export as its receiver wrote it, with no database, which is what the copy is for when the installation's own host is in question. The export itself checks each batch against the last entry the sink accepted, so an entry changed before it was sent stops the export there. At the start of each term the leading controller verifies the chain in the database from the last entry proved, recorded in <code>audit_verified</code>, and checks that record against the entry it names before trusting it. A break, or a record that disagrees, is a warning naming the entry, and holds the term up in nothing. Entries before the record are not read again: a change to one, as to an entry changed after it was sent, is found by comparing with the copy.</td></tr>
         </tbody>
@@ -6478,18 +6559,29 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
           <tr><th colspan="2">Sign-in and identity</th></tr>
           <tr><td class="wrapcell">POST /api/v1/auth/passkey/options</td><td>Registration or assertion options: challenge, Relying Party Identifier, the user verification the policy imposes.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/auth/passkey/verify</td><td>Verifies an attestation or assertion, records the Backup Eligibility and Backup State flags, opens a session.</td></tr>
+          <tr><td class="wrapcell">GET /auth/sign-in<br>GET /auth/enrol</td><td>The API's own sign-in and enrolment page, on the Relying Party's origin (<a href="#auth">Authentication</a>). An enrolment link carries its code after <code>#</code>, which a browser never sends, so the code reaches no access log.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/auth/exchange</td><td><code>agk login</code>'s one-time code and verifier, answered with an API token. The code is single use and good for a minute.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /api/v1/auth/policy</td><td>The installation's authentication policy. <code>PUT</code> is an administrator's, and audited.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /api/v1/{ns}/auth/policy</td><td>A namespace's tightening of it. <code>PUT</code> is an administrator's, audited, and refused where it would loosen a setting.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/auth/login</td><td>Password sign-in where the policy allows it. Refused outright when passwords are forbidden, not failed as a wrong password.</td></tr>
           <tr><td class="wrapcell">GET, DELETE /api/v1/me/credentials</td><td>Lists and removes the caller's credentials. A removal below the policy minimum is refused.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/users/{login}/recovery</td><td>A single-use recovery code authorising passkey enrolment and nothing else. Administrator only, audited with both identities.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/auth/tokens</td><td>An API token for the caller or a service account it owns, shown once.</td></tr>
-          <tr><td class="wrapcell">GET /api/v1/me</td><td>Identity, group memberships, effective permissions per namespace.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/users/{login}/enrolment</td><td>A new enrolment link for a user who holds no credential yet, single use and good for an hour, revoking any earlier one. Administrator only, and the bootstrap token's for the first administrator until one has enrolled. Audited as <code>enrolment.issue</code>.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/users/{login}/recovery</td><td>A recovery code authorising passkey enrolment and nothing else, single use and good for an hour. Administrator only, audited as <code>enrolment.issue</code> with both identities.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/auth/tokens</td><td>An API token for the caller or a service account it owns, shown once, expiring after 90 days unless the request asks otherwise, and after a year at most.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/auth/tokens<br>DELETE /api/v1/auth/tokens/{id}</td><td>The caller's tokens and those of the service accounts it owns, with expiry, last use and device label, never a value; and the revocation of one.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/me</td><td>Identity, group memberships, effective permissions per namespace, and notifications, such as an administrator having widened their own access in a namespace the caller owns.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/me/devices</td><td>A mobile device: platform, push token, label. Revoked with the API token it is bound to.</td></tr>
           <tr><td class="wrapcell">PUT /api/v1/me/notifications</td><td>Notification preferences, per namespace and per event kind.</td></tr>
 
           <tr><th colspan="2">Administration</th></tr>
-          <tr><td class="wrapcell">POST /api/v1/namespaces</td><td>A namespace with an owner and quotas. Administrator only.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/users, /groups</td><td>Users, groups and group membership.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/service-accounts</td><td>A non-human principal in a namespace the caller owns. Tokens via <code>/api/v1/auth/tokens</code>.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/namespaces</td><td>A namespace with an owner and quotas, its name refused where a login holds it. Administrator only.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/namespaces</td><td>The namespaces the caller holds a grant in, and every one for an administrator.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /api/v1/namespaces/{ns}/quotas</td><td>The namespace's <a href="#quotas-per-namespace">quotas</a> and allowed runner pools. <code>PUT</code> is an administrator's, and audited.</td></tr>
+          <tr><td class="wrapcell">GET, POST /api/v1/users</td><td>The users, and a new one: login, display name, and <code>admin</code> where it is an administrator, answered with an enrolment link shown once, single use and good for an hour. Administrator only, save the first administrator, whom the <a href="#first-run">bootstrap token</a> creates, and may create again for a fresh link until they have enrolled.</td></tr>
+          <tr><td class="wrapcell">GET, POST /api/v1/groups</td><td>The groups, and a new one. Administrator only.</td></tr>
+          <tr><td class="wrapcell">PUT, DELETE /api/v1/groups/{group}/members/{login}</td><td>Adds or removes one member, touching no grant. Administrator only.</td></tr>
+          <tr><td class="wrapcell">GET, POST /api/v1/service-accounts</td><td>The service accounts of the namespaces the caller owns, and a new one in one of them, written <code>NS/NAME</code>. Tokens via <code>/api/v1/auth/tokens</code>.</td></tr>
+          <tr><td class="wrapcell">DELETE /api/v1/service-accounts/{ns}/{name}</td><td>Removes one and revokes its tokens. The built-in <code>NS/agentiik</code> is refused.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runners</td><td>Joins a machine to the pool its join token names, with its public key, labels, capacity, architecture and agent version, and its namespaces and containment where it sends them. Answers the runner identifier, the pool, a credential shown once and its <code>rotate_by</code>. Authenticated by the join token in the body alone. See <a href="#registering-a-runner">Registering a runner</a>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runners</td><td>Runner inventory: labels, capacity, last heartbeat, the state and concurrency it last reported, who drained or revoked it and when, and the end of a revocation's grace. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runners/{runner}/drain<br>POST /api/v1/runners/{runner}/revoke</td><td>Drains or revokes one runner. The body is <code>{"reason"}</code>, one line of at most 256 characters, handed to the runner at its next heartbeat. Answers the runner as <code>GET /api/v1/runners</code> lists it, with <code>drained_by</code>, <code>drained_at</code>, <code>revoked_by</code>, <code>revoked_at</code> and <code>results_accepted_until</code>. <code>404</code> for a runner not there, <code>409</code> for draining a revoked one. An order given twice keeps the first, so revoking again adds no time. Requires <code>grant:manage</code> at installation scope. See <a href="#registering-a-runner">Registering a runner</a>.</td></tr>
@@ -6507,8 +6599,11 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
           <tr><td class="wrapcell">GET /api/v1/{ns}/secrets</td><td><code>{"secrets": [...]}</code>, each declaration with <code>name</code>, <code>provider</code>, <code>path</code> where it has one, <code>mount</code>, <code>declared_by</code> and <code>declared_at</code>, never a value. Requires <code>workflow:read</code> at namespace scope.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/secrets/{name}</td><td>One declaration, the same way.</td></tr>
           <tr><td class="wrapcell">PUT, DELETE /api/v1/{ns}/secrets/{name}</td><td>Declares, changes or deletes one secret: <code>provider</code>, <code>path</code>, and for <code>builtin</code> a <code>value</code> no answer returns. One secret per request, so two Terraform applies never drop each other's change. Requires <code>secret:write</code> at namespace scope. See <a href="#secrets">Secrets</a>.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/grants</td><td>Grants and denies on the namespace, inherited by every workflow in it.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/{ns}/grants</td><td>Shares the namespace: principal as <a href="#principals">written</a>, a role or a deny naming one permission, optional expiry. Requires <code>grant:manage</code> at namespace scope. An administrator granting themselves notifies the owners (<a href="#administrators">Administrators</a>).</td></tr>
+          <tr><td class="wrapcell">DELETE /api/v1/{ns}/grants/{id}</td><td>Revokes one grant, from the next request and the next run creation.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/grants</td><td>Grants and denies that apply, with the scope of each.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/grants</td><td>Shares the workflow: principal, role, optional expiry, optional deny. Requires <code>grant:manage</code>.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/grants</td><td>Shares the workflow: principal, a role or a deny naming one permission, optional expiry. Requires <code>grant:manage</code>.</td></tr>
           <tr><td class="wrapcell">DELETE /api/v1/{ns}/workflows/{name}/grants/{id}</td><td>Revokes one grant, from the next request and the next run creation. An open log stream asks again every 30 s, credential and <code>run:read</code>, and ends once either is gone.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows</td><td>An empty workflow repository, with default branch and protection settings.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}</td><td>Default branch head, resolved graph at that commit, commit history.</td></tr>
@@ -6572,6 +6667,7 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td><code>400</code></td><td>A body refused as Request bodies below says, or no <code>commit</code>.</td></tr>
           <tr><td><code>404</code></td><td>No such version, or a workflow the caller holds no <code>workflow:run</code> on.</td></tr>
           <tr><td><code>413</code></td><td>As below.</td></tr>
+          <tr><td><code>429</code></td><td>From v0.3.0, the namespace has created <code>max_runs_per_hour</code> runs in the last 60 minutes; <code>Retry-After</code> says when one more fits.</td></tr>
           <tr><td><code>422</code></td><td><code>{error, input, rule}</code>, <code>rule</code> being <code>required</code>, <code>schema</code> or <code>undeclared</code>; or a declaration that does not compile, which only a version pushed before pushes checked it can hold.</td></tr>
           <tr><td><code>500</code></td><td>The version or its tree could not be read.</td></tr>
           <tr><td><code>503</code></td><td>A schema names a file of the tree and the installation has no object store attached.</td></tr>
@@ -6660,8 +6756,10 @@ Authorization: Bearer &lt;api token&gt;
       <table>
         <thead><tr><th>Command</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td>agk login</td><td>Signs in against an installation and stores an API token in the local profile.</td></tr>
+          <tr><td>agk login</td><td>Signs in against an installation with a passkey in the browser, through a loopback redirect and a one-time code (<a href="#auth">Authentication</a>), and stores an API token in the local profile.</td></tr>
           <tr><td>agk whoami</td><td>Prints the current principal, its groups and its effective permissions on a given workflow.</td></tr>
+          <tr><td>agk user create</td><td>Creates a user, <code>--admin</code> for an administrator, and prints the enrolment link. The first administrator is created this way with the bootstrap token, and run again for a fresh link until they have enrolled (<a href="#first-run">First run</a>).</td></tr>
+          <tr><td>agk auth policy</td><td>Prints the authentication policy, of the installation or of <code>--namespace</code>, and with settings given, sets it (<a href="#auth">Authentication</a>).</td></tr>
           <tr><td>agk validate</td><td>Validates the YAML, resolves includes and inheritance, detects cycles, checks ports against the manifests of the referenced images.</td></tr>
           <tr><td>agk graph</td><td>Writes the resolved graph as DOT or Mermaid, for review inside a merge request.</td></tr>
           <tr><td>agk run --local</td><td>Runs the whole workflow against the local Docker daemon, with no controller, no bus and no database. Artifacts land in a working directory.</td></tr>
@@ -6787,7 +6885,7 @@ runs/&lt;run&gt;/logs/&lt;step&gt;/               <span class="c"># what each co
         <thead><tr><th>Setting</th><th>Is</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell">--server<br>AGENTIIK_SERVER</td><td>The installation: <code>https</code>, or <code>http</code> to a loopback address alone, since every request carries the token. No redirect is followed.</td></tr>
-          <tr><td class="wrapcell">AGENTIIK_TOKEN</td><td>The API token, the <a href="#configuration">interim operator's</a> until <code>v0.3.0</code>. Never a flag: an argument is in the shell history, the process list and whatever recorded the terminal.</td></tr>
+          <tr><td class="wrapcell">AGENTIIK_TOKEN</td><td>The API token: the <a href="#configuration">interim operator's</a> until <code>v0.3.0</code>, then the bootstrap token until the <a href="#first-run">first administrator</a> has enrolled, and after that a service account's for a script, where a person uses <code>agk login</code>. Never a flag: an argument is in the shell history, the process list and whatever recorded the terminal.</td></tr>
         </tbody>
       </table>
     </div>
@@ -7223,7 +7321,7 @@ flowchart LR
         <tbody>
           <tr><td>agentiik_namespace</td><td>Name, kind, owner, quotas, allowed runner pools. Administrator only, like the route behind it.</td></tr>
           <tr><td>agentiik_workflow</td><td>The repository: existence, default branch, that branch's protection. Not its contents.</td></tr>
-          <tr><td>agentiik_grant</td><td>One principal, role and scope, with optional expiry, allow or deny. What a review is actually about.</td></tr>
+          <tr><td>agentiik_grant</td><td>One principal and scope, with a role or a deny naming one permission, and optional expiry. What a review is actually about.</td></tr>
           <tr><td>agentiik_group</td><td>Definition and membership.</td></tr>
           <tr><td class="wrapcell">agentiik_service_account</td><td>A non-human principal, its label, its owning namespace.</td></tr>
           <tr><td>agentiik_api_token</td><td>A service account's token, scope and expiry. The clear value is returned once, at creation; write-only.</td></tr>
@@ -7273,9 +7371,8 @@ resource "agentiik_namespace" "finance" {
     max_runs_per_hour    = 500
     max_artifact_bytes   = 500 * 1024 * 1024 * 1024
     max_retention_days   = 180
+    allowed_runner_pools = ["default", "dmz"]
   }
-
-  allowed_runner_pools = ["default", "dmz"]
 }
 
 resource "agentiik_workflow" "invoicing" {
@@ -8472,7 +8569,7 @@ resource "agentiik_workflow" "search" {
         <thead><tr><th>Table</th><th>Contents</th></tr></thead>
         <tbody>
           <tr><td>users</td><td>Login, display name, mail, status, last sign-in. No credential material.</td></tr>
-          <tr><td>credentials</td><td>One row per credential: its kind and, for a passkey, credential id, public key, signature counter, AAGUID, Backup Eligibility and Backup State flags, the user's label and last use. A password hash, where one still exists, is a row like any other, deleted rather than blanked.</td></tr>
+          <tr><td>credentials</td><td>One row per credential: its kind and, for a passkey, credential id, public key, signature counter, AAGUID, Backup Eligibility and Backup State flags, the user's label and last use. The AAGUID is stored as received, which under attestation conveyance <code>none</code> is all zeros (<a href="#auth">Authentication</a>), so it names no authenticator model. A password hash, where one still exists, is a row like any other, deleted rather than blanked.</td></tr>
           <tr><td>groups, group_members</td><td>Group definitions and their membership.</td></tr>
           <tr><td>service_accounts</td><td>Non-human principals, including each namespace's built-in identity.</td></tr>
           <tr><td>api_tokens</td><td>Hashed token, principal, scope, expiry, last use, revocation.</td></tr>
@@ -8480,7 +8577,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>devices</td><td>Mobile registrations: platform, push token, label, bound API token, last seen.</td></tr>
           <tr><td>notification_prefs</td><td>Per principal, per namespace, per event kind.</td></tr>
           <tr><td>namespaces</td><td>Name, kind (personal or shared), quotas, allowed runner pools.</td></tr>
-          <tr><td>grants</td><td>Principal, scope (namespace or workflow), role, allow or deny, expiry, who granted it and when.</td></tr>
+          <tr><td>grants</td><td>Principal, scope (<code>NS</code> or <code>NS/workflow</code>), a role or the one permission denied, expiry, who granted it and when.</td></tr>
           <tr><td>workflows</td><td>Name, namespace, default branch, labels.</td></tr>
           <tr><td>workflow_refs</td><td>The ref database of every workflow repository: ref name, commit, protection, who moved it and when. Git objects live in the object store as packfiles.</td></tr>
           <tr><td>workflow_versions</td><td>One row per commit accepted on a branch: commit, parent, resolved graph, the manifest of its tree (<code>path</code>, <code>sha256</code>, <code>size</code> and <code>mode</code> per file, each file a counted object), author, timestamp.</td></tr>
@@ -9091,7 +9188,7 @@ post_task = [
     <p>An installation that attaches no object store carries every object through the API as well, since the API is then its <a href="#the-task-message">object store</a>.</p>
 
     <h3 id="configuration">Configuration</h3>
-    <p>Both installations in <a href="#install-a-server">Install a server</a> set these for you: in <code>compose.yaml</code>, from the <code>AGENTIIK_*</code> variables of its <code>.env</code>, where <code>AGENTIIK_OPERATOR_TOKEN</code> is the one required line, or in <code>$(brew --prefix)/etc/agentiik</code>. Every one is read at every start, so a setting changed is applied at the next one.</p>
+    <p>Both installations in <a href="#install-a-server">Install a server</a> set these for you: in <code>compose.yaml</code>, from the <code>AGENTIIK_*</code> variables of its <code>.env</code>, where <code>AGENTIIK_OPERATOR_TOKEN</code> is the one required line (from v0.3.0 the bootstrap token, ignored once the first administrator has enrolled), or in <code>$(brew --prefix)/etc/agentiik</code>. Every one is read at every start, so a setting changed is applied at the next one.</p>
     <p>Every program reads <code>AGK_*</code> environment variables. Below, <code>api</code> is <code>agentiik-api serve</code>, <code>controller</code> is <code>agentiik-controller</code> and <code>migrate</code> is <code>agentiik-api migrate</code>, and each reads its own rows and nothing else; <code>agentiik-api init</code> reads the rows naming <code>init</code>. <code>agentiik-api namespace</code> reads <code>AGK_DATABASE_URL</code> and <code>AGK_DATABASE_PASSWORD_FILE</code> alone. <code>agentiik-api bus-init</code>, <code>bus-credential</code> and <code>audit-verify</code> read no environment: each takes a directory or a file as its one argument, since a person runs it by hand. A server program's secret is never a value: it sits in a file an <code>AGK_*_FILE</code> variable names, since every process the program starts inherits its environment and anybody who can inspect it reads it. The runner keeps its secrets out of the environment another way, in files that join and rotation write for it, listed last below. A variable set to nothing is unset. Durations are written as Go writes them, <code>90m</code> or <code>720h</code>: the units stop at hours, and no time at all is refused.</p>
     <p>A required setting that is missing, or any setting that is unreadable or malformed, refuses the start and names the variable: a server that started anyway would fail on the first request needing it, and one that fell back to a default would run an installation nobody configured. Every such setting is named on the same start, and a refusal never repeats a value that may hold a secret, whether a URL or the path an <code>_FILE</code> variable holds.</p>
     <div class="tablewrap">
@@ -9119,7 +9216,7 @@ post_task = [
           <tr><td class="wrapcell">AGK_PRESIGN_KEY_FILE</td><td>api</td><td>required</td><td>A key of 32 bytes or more in base64, as <code>openssl rand -base64 32</code> writes one. It signs every presigned URL and upload policy, and every API of an installation holds the same one.</td></tr>
           <tr><td class="wrapcell">AGK_MASTER_KEY_FILE</td><td>api</td><td>required; set for the controller, it refuses the controller's start</td><td>The key the built-in secret store seals every value under. The sealed values sit in the database the controller shares, so the key, held by the API alone, is what keeps them from it (<a href="#secrets">Secrets</a>).</td></tr>
           <tr><td class="wrapcell">AGK_ENV_PREFIXES</td><td>api</td><td>none: no namespace may use <code>env</code></td><td><code>namespace=prefix</code> pairs separated by commas, such as <code>finance=AGK_DEV_FINANCE_</code>: the namespaces opted in to the development-only <code>env</code> provider (<a href="#secrets">Secrets</a>).</td></tr>
-          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN_FILE</td><td>api</td><td>required, until v0.3.0</td><td>The SHA-256 of the interim operator's token in 64 lowercase hexadecimal characters, never the token, which would be a working credential at rest (<a href="#first-run">First run</a>).</td></tr>
+          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN_FILE</td><td>api</td><td>required</td><td>The SHA-256 of the interim operator's token in 64 lowercase hexadecimal characters, never the token, which would be a working credential at rest. From v0.3.0 it is the bootstrap token's, and once the first administrator has enrolled the API refuses that token whatever the file holds (<a href="#first-run">First run</a>).</td></tr>
           <tr><td class="wrapcell">AGK_MAX_REQUEUES</td><td>controller</td><td><code>3</code></td><td><code>max_requeues</code>, a whole number where <code>0</code> requeues nothing: the installation's bound on losses (<a href="#task-states">Task states</a>).</td></tr>
           <tr><td class="wrapcell">AGK_TASK_CEILING</td><td>api, controller</td><td><code>1h</code></td><td>The deadline of a step that writes none (<a href="#yaml">Workflow language</a>, Deadlines). The API reads it as the revocation grace's default, so both programs are given the same value.</td></tr>
           <tr><td class="wrapcell">AGK_JOIN_ROTATION</td><td>api</td><td><code>720h</code></td><td>How long a runner credential is accepted for, and how far each rotation moves <code>rotate_by</code>: a machine dark for a month should be reconsidered, not readmitted.</td></tr>
@@ -9133,7 +9230,7 @@ post_task = [
           <tr><td class="wrapcell">AGK_INIT_DIR</td><td>init</td><td>required</td><td>An absolute path to a directory whose subdirectories <code>api</code>, <code>controller</code>, <code>nats</code>, <code>bus</code>, <code>runner</code> and <code>objects</code> are the directories each service mounts: each is given its own copy of what it reads, so the controller never mounts the master key and the runner nothing of the control plane's but the certificate.</td></tr>
           <tr><td class="wrapcell">AGK_INIT_HOST</td><td>init</td><td>required</td><td>A DNS name or an IPv4 address, with no scheme and no port: the name runners reach the bus at, and clients the API where no proxy is in front, which the certificate is issued to. Changed, init issues the certificate again.</td></tr>
           <tr><td class="wrapcell">AGK_INIT_NAMESPACE</td><td>init</td><td>required</td><td>The namespace init creates, where workflows are pushed and run, held to what the API holds a namespace name to. A previous one stays.</td></tr>
-          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN</td><td>init</td><td>none in init itself, which then keeps the stored hash, or makes a token and prints it once where none was stored; the <code>compose.yaml</code> of agentiik/deploy refuses to start without <code>AGENTIIK_OPERATOR_TOKEN</code></td><td>The one secret taken as a value, since a person writes it once in the file Docker Compose reads; init writes its SHA-256 alone, so the plaintext never reaches a disk init writes. 32 characters or more, of those a bearer token may hold. Every other program refuses it.</td></tr>
+          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN</td><td>init</td><td>none in init itself, which then keeps the stored hash, or, until v0.3.0, makes a token and prints it once where none was stored; the <code>compose.yaml</code> of agentiik/deploy refuses to start without <code>AGENTIIK_OPERATOR_TOKEN</code>. From v0.3.0 init prints no token.</td><td>The one secret taken as a value, since a person writes it once in the file Docker Compose reads; init writes its SHA-256 alone, so the plaintext never reaches a disk init writes. 32 characters or more, of those a bearer token may hold. Every other program refuses it. From v0.3.0 it is the bootstrap token; once the first administrator has enrolled, init writes nothing for it and says at every run that the line is ignored (<a href="#first-run">First run</a>).</td></tr>
           <tr><th colspan="4">The runner</th></tr>
           <tr><td class="wrapcell">AGK_API</td><td>agk-runner</td><td>required; join writes it</td><td>The one address a runner is given; the API hands out the rest. <code>https</code>, or <code>http</code> to a loopback address alone, with no user, query or fragment: every call carries the runner's credential.</td></tr>
           <tr><td class="wrapcell">AGK_RUNNER_LABELS</td><td>agk-runner</td><td>optional; join writes it where the runner claims labels</td><td>Claimed at join, within what the token permits; none is a runner of the pool <code>default</code>.</td></tr>
@@ -9197,14 +9294,38 @@ post_task = [
     <p>An installation that needs new accounts creates a new identity in a new directory, restarts the server on it and hands the API and the controller their new files; every runner is given a credential under the new account the next time it asks.</p>
 
     <h3 id="first-run">First run</h3>
-    <ol class="steps">
-      <li>The installer prints a one-time bootstrap token, valid for a single use and a short window.</li>
-      <li>That token creates the first administrator, then is invalidated.</li>
-      <li>The administrator creates namespaces, groups and users. Every user gets a personal namespace on first sign-in.</li>
-    </ol>
+    <p>From <a href="roadmap/#m03">v0.3.0</a>, an installation starts with no user and one bootstrap token, whose one lasting use is to create the first human administrator:</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">the first administrator, from v0.3.0</div>
+<pre><code><span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>   <span class="c"># the bootstrap token</span>
+<span class="p">$</span> <span class="cmd">agk user create alice --admin</span>
+alice is an administrator with no credential yet. Open this link once, before 10:15 UTC, to enrol a passkey:
+https://agentiik.example.com/auth/enrol#&lt;code&gt;
+the bootstrap token works until alice has enrolled; then sign in as alice with agk login</code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Step</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>the bootstrap token</td><td><code>AGENTIIK_OPERATOR_TOKEN</code> in <code>.env</code>, the v0.2 operator token under its old name. <code>init</code> keeps its SHA-256 alone, and no program prints it or writes it to a log.</td></tr>
+          <tr><td class="wrapcell"><code>agk user create LOGIN --admin</code></td><td>Run with the bootstrap token, it creates the administrator and answers an enrolment link, shown once: single use, good for an hour. Run again for the same login before it has enrolled, as <code>POST /api/v1/users/{login}/enrolment</code> is, it answers a fresh link and revokes the one before, so a link that lapsed unused locks nobody out.</td></tr>
+          <tr><td>the link</td><td>Opens the API's <a href="#sign-in-page">sign-in page</a>, which runs the passkey ceremony and records the account's first credential.</td></tr>
+          <tr><td>the token ends</td><td>The first administrator's enrolment invalidates the bootstrap token, and the audit log records <code>bootstrap.end</code>. The line stays in <code>.env</code>, which <code>compose.yaml</code> still requires; <code>init</code> says at every run that it is ignored, and that is not an error.</td></tr>
+          <tr><td>then</td><td>The administrator creates namespaces, groups, users and service accounts. Every user gets a personal namespace on first sign-in. A script holds a service account's token.</td></tr>
+        </tbody>
+      </table>
+    </div>
     <div class="decision">
-      <span class="note-label">Interim, until v0.3.0</span>
-      <p>A v0.2 installation has no principals, so it has one operator: a token whose hash sits in the file <code>AGK_OPERATOR_TOKEN_FILE</code> names. <code>agentiik-api</code> identifies it as one principal allowed every permission at every scope, and everyone else stays denied. Both halves live in the API's main package, so <a href="roadmap/#m03">v0.3.0</a>'s bootstrap token deletes them in one place.</p>
+      <span class="note-label">Until v0.3.0</span>
+      <p>A v0.2 installation has no principals, so it has one operator: a token whose hash sits in the file <code>AGK_OPERATOR_TOKEN_FILE</code> names. <code>agentiik-api</code> identifies it as one principal allowed every permission at every scope, and everyone else stays denied. From <a href="roadmap/#m03">v0.3.0</a> the same token is the bootstrap token: after an upgrade the API takes it as a bootstrap principal, an administrator owning every namespace present, so it does what it did and the runs recorded as <code>triggered_by: operator</code> stay readable, until the first administrator has enrolled.</p>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The bootstrap token is the operator token rather than a new one, because an upgrade changes <code>compose.yaml</code> and <code>.env</code> and nothing else, and a new token would have to be read from a log, which is copied, shipped and kept by more people than <code>.env</code>. It ends at the first administrator's enrolment, not at their creation, because until a person holds a passkey the token is the only way in, and a link that lapsed would otherwise leave an installation nobody can administer. It ends then because a secret that may do everything, shared by whoever reads one file, is what principals replace: a service account's token has a namespace, an expiry and a revocation of its own.</p>
     </div>
   </div>
 
