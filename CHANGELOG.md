@@ -6,6 +6,21 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+### Documentation
+
+- The v0.2.5 operator token becomes v0.3.0's bootstrap token, working until `agk user create LOGIN --admin` creates the first administrator.
+- Upgrades change `compose.yaml` and `.env` and nothing else, as CI checks.
+- The authentication policy's defaults and routes, the API's sign-in page, `agk login`'s loopback exchange, and passkeys unavailable on an IP address.
+- Passkeys verified with the standard library and no attestation.
+- How a principal is written; logins and namespaces share one name space; `NS/agentiik` holds no grant by default.
+- API tokens expire after 90 days by default, a year at most.
+- `max_runs_per_hour` counts a sliding hour and answers 429 with `Retry-After`.
+- An administrator widening their own access notifies the owners in `GET /api/v1/me`.
+- A run refused at creation ends `cancelled`, naming the lapsed grant.
+- The v0.3.0 routes for users, groups, service accounts, namespaces, namespace grants, tokens and the policy.
+
 ## v0.2.5, 2026-09-26
 
 ### Documentation
