@@ -6,6 +6,16 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+### Documentation
+
+- Get started runs a server with the README's five lines, then pushes and runs the chapter's workflow; `compose.yaml`, the services table and the `.env.example` are left to Install a server.
+- Install a server follows the deploy README: Start, On a server, Behind a reverse proxy, `compose.yaml` and `.env.example` in full, Change a setting, Upgrade, Back up, Remove, and a runner on another machine.
+- `AGENTIIK_OPERATOR_TOKEN` is required in `.env`; the minted token and `docker compose logs init` are gone.
+- The state is in `data/` beside `compose.yaml`, or `AGENTIIK_DATA`; backups, removal, Profile A and the object store say so rather than naming `agentiik_*` volumes.
+- `AGENTIIK_BUS_PORT` in the requirements and settings; port 8222 is no longer a requirement.
+
 ## v0.2.4, 2026-09-26
 
 ### Site
