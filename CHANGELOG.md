@@ -11,6 +11,7 @@ Every repository of the project carries the same version and is tagged at the sa
 ### Documentation
 
 - The server programs install with `brew install agentiik/tap/agentiik`, from `v0.2.0`, without `--HEAD`.
+- Get started replayed at `v0.2.0`, which runs a workflow on a server as well as locally, with `brew trust agentiik/tap` before either formula; the data pipeline use case runs on a server from `v0.2.0`.
 
 ## v0.2.0, 2026-09-26
 

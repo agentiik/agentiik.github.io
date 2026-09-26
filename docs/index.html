@@ -861,7 +861,7 @@ img{max-width:100%}
 <section id="get-started">
   <div class="sec-head"><span class="mark">§</span><h2>Get started</h2></div>
   <div class="prose">
-    <p>At <code>v0.1.1</code> a workflow runs on your machine and nowhere else. Every output below is what a terminal answered at that release, not what the rest of this documentation promises.</p>
+    <p>At <code>v0.2.0</code> a workflow runs on your machine with <code>agk run --local</code>, or on a server with <code>agk push</code> and <code>agk run --namespace</code> once an installation exists (<a href="#first-run">a v0.2.0 installation, the first time</a>, and <a href="#pointing-agk-at-an-installation">Pointing agk at an installation</a>). This page stays on your machine. Every output below is what a terminal answered at <code>v0.2.0</code>, not what the rest of this documentation promises.</p>
 
     <h3 id="what-you-need">What you need</h3>
     <div class="tablewrap">
@@ -879,12 +879,13 @@ img{max-width:100%}
 
     <div class="block">
       <div class="note-label">install</div>
-<pre><code><span class="p">$</span> <span class="cmd">brew install agentiik/tap/agk</span>
+<pre><code><span class="p">$</span> <span class="cmd">brew trust agentiik/tap</span>
+<span class="p">$</span> <span class="cmd">brew install agentiik/tap/agk</span>
 <span class="p">$</span> <span class="cmd">agk --version</span>
-agk v0.1.2, 0c751e1469b6d679228fa038ce34f8d4c5b6ff20, go1.27.1</code></pre>
+agk v0.2.0, 3f901fb2af236c97412e8ea5d345f05dd429a228, go1.27.1</code></pre>
     </div>
 
-    <p>Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.1.2</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>). <code>v0.1.2</code> is <code>v0.1.1</code>'s engine unchanged, so the outputs below still hold.</p>
+    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.2.0</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
 
     <p><code>agk</code> alone prints its verbs, the table in <a href="#command-line">Command line</a>.</p>
 
@@ -934,7 +935,7 @@ EOF</code></pre>
     <div class="block">
       <div class="note-label">agk validate</div>
 <pre><code><span class="p">$</span> <span class="cmd">agk validate</span>
-demo/first-run is valid: 1 step, 0 edges, 1 declared output
+demo/first-run is valid: 1 step, 0 edges, 0 declared inputs, 1 declared output
 1 step held to the manifests of 0 referenced images</code></pre>
     </div>
 
@@ -945,16 +946,17 @@ demo/first-run is valid: 1 step, 0 edges, 1 declared output
     <div class="block">
       <div class="note-label">agk run --local</div>
 <pre><code><span class="p">$</span> <span class="cmd">agk run --local</span>
-the daemon at /Users/you/.docker/run/docker.sock speaks API 1.55 and runs linux/aarch64
+the daemon at /Users/you/.docker/run/docker.sock speaks API 1.56 and runs linux/aarch64
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
     0.0s  greet  running
     0.4s  greet  succeeded, out 1
 demo/first-run succeeded in 0.4s: 1 step, 1 container
-greeting: 1 item in .agk/runs/01M2DMGM1ESABA8T001RT7XXKZ/outputs/greeting.json
-run 01M2DMGM1ESABA8T001RT7XXKZ: .agk/runs/01M2DMGM1ESABA8T001RT7XXKZ</code></pre>
+greeting: 1 item in .agk/runs/01M3EAW8C89XKN7CE9TB2ZMVMZ/outputs/greeting.json
+run 01M3EAW8C89XKN7CE9TB2ZMVMZ: .agk/runs/01M3EAW8C89XKN7CE9TB2ZMVMZ</code></pre>
     </div>
 
-    <p>The second line is what your machine gives up, because Docker Desktop does not remap user namespaces (<a href="#three-tiers-of-containment">Three tiers of containment</a>). <code>--require-userns-remap</code> holds the floor instead, and a run on a laptop then refuses to start.</p>
+    <p>The second and third lines are what your machine gives up: Docker Desktop does not remap user namespaces (<a href="#three-tiers-of-containment">Three tiers of containment</a>), and it applies neither AppArmor nor SELinux (<a href="#settings-applied-to-every-container">Settings applied to every container</a>). <code>--require-userns-remap</code> holds the first floor instead, and a run on a laptop then refuses to start.</p>
 
     <h3 id="read-the-result">Read what came out</h3>
 
@@ -964,16 +966,16 @@ run 01M2DMGM1ESABA8T001RT7XXKZ: .agk/runs/01M2DMGM1ESABA8T001RT7XXKZ</code></pre
       <div class="note-label">.agk/runs/&lt;run&gt;/outputs/greeting.json</div>
 <pre><code>{
   "meta": {
-    "run_id": "01M2DMGM1ESABA8T001RT7XXKZ",
+    "run_id": "01M3EAW8C89XKN7CE9TB2ZMVMZ",
     "step": "greet",
     "port": "out",
     "attempt": 1,
     "count": 1,
-    "produced_at": "2026-09-13T15:00:03.063427Z"
+    "produced_at": "2026-09-26T07:46:34.806684Z"
   },
   "items": [
     {
-      "id": "01M2DMGMBRYT76RK1CJJ7YH1X6",
+      "id": "01M3EAW8NQZVGGXKQFDWM8C9B4",
       "data": { "stdout": "hello from greet\n" },
       "files": []
     }
@@ -1021,12 +1023,14 @@ EOF</code></pre>
     <div class="block">
       <div class="note-label">agk run --local, again</div>
 <pre><code><span class="p">$</span> <span class="cmd">agk run --local</span>
+<span class="c"># the three lines about the daemon, as above</span>
     0.0s  greet  running
-    0.3s  greet  succeeded, out 1
-    0.3s  count  running
-    0.6s  count  succeeded, out 1
-demo/first-run succeeded in 0.6s: 2 steps, 2 containers
-counted: 1 item in .agk/runs/01M2DMJ192NQ7SMTFFBG1GXMFN/outputs/counted.json</code></pre>
+    0.2s  greet  succeeded, out 1
+    0.2s  count  running
+    0.7s  count  succeeded, out 1
+demo/first-run succeeded in 0.7s: 2 steps, 2 containers
+counted: 1 item in .agk/runs/01M3EAWF0X0BCRV0TV81K9YDQ1/outputs/counted.json
+run 01M3EAWF0X0BCRV0TV81K9YDQ1: .agk/runs/01M3EAWF0X0BCRV0TV81K9YDQ1</code></pre>
     </div>
   </div>
 
@@ -1142,7 +1146,7 @@ flowchart LR
           <tr><td><a href="#use-case-devops">DevOps</a></td><td><code>webhook</code></td><td>A rollout one region at a time, one rollout at a time.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
           <tr><td><a href="#use-case-finance">Finance</a></td><td><code>schedule</code></td><td>A join, a human approval, a step never run twice.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
           <tr><td><a href="#use-case-cybersecurity">Cybersecurity</a></td><td><code>webhook</code></td><td>Routing by port, one secret and one host per step.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
-          <tr><td><a href="#use-case-data">Data pipelines</a></td><td><code>agk run --local</code></td><td>Catalog bricks, bad rows on a port of their own.</td><td><a href="roadmap/#m01">v0.1.0</a>, today</td></tr>
+          <tr><td><a href="#use-case-data">Data pipelines</a></td><td><code>agk run</code></td><td>Catalog bricks, bad rows on a port of their own.</td><td><a href="roadmap/#m01">v0.1.0</a> on your machine, <a href="roadmap/#m02">v0.2.0</a> on a server</td></tr>
           <tr><td><a href="#use-case-ai-agent">AI agent over MCP</a></td><td><code>tools/call</code></td><td>A workflow published as a tool.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
         </tbody>
       </table>
@@ -1570,7 +1574,7 @@ steps:
         </tbody>
       </table>
     </div>
-    <p><b>Available</b> from <a href="roadmap/#m01">v0.1.0</a>, with <code>agk run --local</code>, since no step reaches the network. The two bricks are built from <code>agentiik/bricks</code> until the catalog is published to <code>ghcr.io/agentiik</code> in <a href="roadmap/#m08">v0.8.0</a>. On a server: <a href="roadmap/#m02">v0.2.0</a>, in progress.</p>
+    <p><b>Available</b> from <a href="roadmap/#m01">v0.1.0</a> with <code>agk run --local</code>, and from <a href="roadmap/#m02">v0.2.0</a> on a server with <code>agk push</code> and <code>agk run --namespace</code>, since no step reaches the network. The two bricks are built from <code>agentiik/bricks</code> until the catalog is published to <code>ghcr.io/agentiik</code> in <a href="roadmap/#m08">v0.8.0</a>.</p>
 
     <h3 id="use-case-ai-agent">AI agent over MCP</h3>
     <p>A support assistant needs to answer "where is my order?" without holding the orders service's credentials or being able to reach it. The workflow is the boundary: the model calls one tool, and the step behind it holds the key.</p>
@@ -5244,6 +5248,7 @@ Authorization: Bearer &lt;api token&gt;
       <table>
         <thead><tr><th>Install</th><th>Gives</th></tr></thead>
         <tbody>
+          <tr><td class="wrapcell"><code>brew trust agentiik/tap</code></td><td>Once, before either formula: Homebrew loads the formulae of a third-party tap only once that tap is trusted.</td></tr>
           <tr><td class="wrapcell"><code>brew install agentiik/tap/agk</code></td><td><code>agk</code>, built from the tagged source, with the static helper embedded for linux/amd64 and linux/arm64.</td></tr>
           <tr><td class="wrapcell"><code>brew install agentiik/tap/agentiik</code></td><td><code>agentiik-api</code>, <code>agentiik-controller</code> and <code>agk-runner</code>, with <code>agk</code>, built from the tagged source, or from <code>main</code> with <code>--HEAD</code>. PostgreSQL and NATS are not pulled in: the formula's caveats say how to run both on one host.</td></tr>
           <tr><td class="wrapcell"><code>go install github.com/agentiik/agentiik/cmd/agk@&lt;tag&gt;</code></td><td><code>agk</code> without the embedded helper; <code>--helper</code> or <code>$AGK_HELPER</code> supplies one.</td></tr>
