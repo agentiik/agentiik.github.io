@@ -4778,13 +4778,13 @@ concurrency:
         <thead><tr><th>Kind</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>user</td><td>Local account: a login, a display name and one or more credentials. A passkey is the intended one; a password is a fallback the installation can forbid (see <a href="#auth">Authentication</a>).</td></tr>
-          <tr><td>group</td><td>Named set of users; a user may belong to any number. Grants target groups, so membership changes without touching grants.</td></tr>
-          <tr><td class="wrapcell">service account</td><td>Non-human, holds API tokens, cannot sign in to a client. Each namespace has a built-in one, <code>NS/agentiik</code>, to which scheduled, webhook and event runs are attributed.</td></tr>
+          <tr><td>group</td><td>Named set of users; a user may belong to any number. Grants target groups, so membership changes without touching grants. Its members are logins only, never a group, because a group inside a group would turn effective permissions into a graph walk.</td></tr>
+          <tr><td class="wrapcell">service_account</td><td>Non-human, holds API tokens, cannot sign in to a client. Each namespace has a built-in one, <code>NS/agentiik</code>, to which scheduled, webhook and event runs are attributed.</td></tr>
           <tr><td>api token</td><td>Bearer credential with an expiry (<a href="#sessions-and-tokens">90 days by default, a year at most</a>) and an optional scope that can only narrow its principal's rights. Stored hashed, shown once.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>From <a href="roadmap/#m03">v0.3.0</a>, a principal is written the same way in a grant, the API, <code>agk</code> and the audit log:</p>
+    <p>A principal's kind is written <code>user</code>, <code>group</code> or <code>service_account</code>; an api token is a credential a principal holds, not a principal of its own. From <a href="roadmap/#m03">v0.3.0</a>, a principal is written the same way in a grant, the API, <code>agk</code> and the audit log:</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Written</th><th>Names</th></tr></thead>
@@ -4815,11 +4815,11 @@ concurrency:
           <tr><td>passkey</td><td><code>optional</code>, <code>required</code></td><td><code>required</code></td><td><code>required</code>: nothing is reachable until one credential is enrolled.</td></tr>
           <tr><td>user_verification</td><td><code>required</code>, <code>preferred</code></td><td><code>required</code></td><td>On registration and every assertion, which makes a passkey two factors: the authenticator and whatever unlocks it.</td></tr>
           <tr><td>device_bound_only</td><td><code>true</code>, <code>false</code></td><td><code>false</code></td><td>Refuses a credential whose Backup Eligibility flag is set, that is, a synced passkey. Off by default, since most people's passkeys are synced.</td></tr>
-          <tr><td>min_passkeys</td><td>integer</td><td><code>2</code></td><td>Credentials required before the password may be removed. Two, so that losing a device is an inconvenience rather than an incident.</td></tr>
+          <tr><td>min_passkeys</td><td>integer, at least 1</td><td><code>2</code></td><td>Credentials required before the password may be removed. Two, so that losing a device is an inconvenience rather than an incident.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>An administrator sets the installation's policy with <code>PUT /api/v1/auth/policy</code> or <code>agk auth policy</code>, and a namespace's with <code>PUT /api/v1/{ns}/auth/policy</code>, from <a href="roadmap/#m03">v0.3.0</a>; the audit log records every change. A namespace may tighten the installation's policy, never loosen it, for instance by requiring device-bound passkeys of everyone holding a grant in it, and a namespace policy that would loosen it is refused naming the setting. What applies is the stricter of the two, setting by setting, so an installation that loosens later loosens no namespace that asked for more.</p>
+    <p>An administrator sets the installation's policy with <code>PUT /api/v1/auth/policy</code> or <code>agk auth policy</code>, and a namespace's with <code>PUT /api/v1/{ns}/auth/policy</code>, from <a href="roadmap/#m03">v0.3.0</a>; the audit log records every change. A namespace may tighten the installation's policy, never loosen it, for instance by requiring device-bound passkeys of everyone holding a grant in it, and a namespace policy that would loosen it is refused naming the setting. A namespace's policy has the installation's shape, and a key it leaves out inherits the installation's value. What applies is the stricter of the two, setting by setting, so an installation that loosens later loosens no namespace that asked for more.</p>
 
     <div class="block">
       <div class="note-label">the installation's policy, from v0.3.0</div>
@@ -4840,12 +4840,12 @@ Authorization: Bearer &lt;an administrator's token&gt;
       <table>
         <thead><tr><th>Passkey</th><th>Trust moves to</th><th>Answered by</th></tr></thead>
         <tbody>
-          <tr><td>synced</td><td>the cloud account that syncs it</td><td><code>device_bound_only: true</code> where that is unacceptable</td></tr>
-          <tr><td>device-bound</td><td>one piece of hardware, which can be lost</td><td><code>min_passkeys</code>, since policy cannot prevent a loss</td></tr>
+          <tr><td><code>synced</code></td><td>the cloud account that syncs it</td><td><code>device_bound_only: true</code> where that is unacceptable</td></tr>
+          <tr><td><code>device-bound</code></td><td>one piece of hardware, which can be lost</td><td><code>min_passkeys</code>, since policy cannot prevent a loss</td></tr>
         </tbody>
       </table>
     </div>
-    <p>Each credential's kind is recorded from its Backup Eligibility and Backup State flags and shown in the console, because an administrator who cannot see it cannot reason about their exposure.</p>
+    <p>Each passkey's kind is recorded from its Backup Eligibility and Backup State flags, <code>synced</code> where Backup Eligibility is set and <code>device-bound</code> where it is not, and shown in the console, because an administrator who cannot see it cannot reason about their exposure.</p>
 
     <h4>Turning passwords off without locking anyone out</h4>
   </div>
@@ -5082,9 +5082,9 @@ Authorization: Bearer &lt;an administrator's token&gt;
 
   <div class="prose">
     <ul class="plain">
-      <li>A grant binds one principal, one scope (a namespace or a single workflow) and one role. An optional expiry ends it without anyone remembering to revoke it.</li>
+      <li>A grant binds one principal, one scope and either one role or a deny. The scope is written <code>NS</code> for a namespace or <code>NS/workflow</code> for a single workflow: <code>finance</code>, <code>finance/monthly-invoicing</code>. An optional expiry ends it without anyone remembering to revoke it.</li>
       <li>Effective permissions are the union of every applying grant: the principal's own and its groups', at both scopes.</li>
-      <li>A workflow-scope grant only adds. Only an explicit <code>deny</code> removes, and it wins over any allow at any scope.</li>
+      <li>A workflow-scope grant only adds. Only an explicit <code>deny</code> removes, and it wins over any allow at any scope. A deny names one permission, never a role, since the payloads kept out of reach are <code>run:read_data</code> alone and no role is that.</li>
       <li>No matching grant means refusal: the same 404 whether the workflow is absent or merely invisible, so listing cannot discover names.</li>
       <li>Every user owns a personal namespace named after their login, created on first sign-in, which they cannot delete or rename.</li>
     </ul>
@@ -5132,6 +5132,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
         </tbody>
       </table>
     </div>
+    <p>From <a href="roadmap/#m03">v0.3.0</a>, the six sit together under <code>quotas</code> on the namespace's record, <code>allowed_runner_pools</code> among them. Every quota is optional, and one left out sets no bound of the namespace's own. The four counts are whole numbers from 1, <code>max_run_duration</code> is written as a step's <code>timeout</code>, and <code>allowed_runner_pools</code> names at least one pool: an empty list is refused, because a pool's own empty list of namespaces means every one, and the same spelling here would be read as its opposite.</p>
 
     <h3 id="sessions-and-tokens">Sessions and tokens</h3>
     <div class="tablewrap">
@@ -5145,6 +5146,15 @@ Authorization: Bearer &lt;an administrator's token&gt;
       </table>
     </div>
     <p>An API token's expiry is 90 days by default, so a token forgotten in a script stops on its own within a season, and a year at most, so that no token is a credential for good and every one is renewed by someone who still means it. A service account's tokens follow the same rules.</p>
+    <p>A token's optional scope is <code>{permissions, within}</code>, at least one of the two present: <code>permissions</code> the permissions it keeps, <code>within</code> the namespaces and workflows it reaches, written as a grant's scope is. On every request its rights are the principal's intersected with both, so a scope can only narrow, and naming a permission the principal lacks grants nothing.</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">a token that only starts one workflow, from v0.3.0</div>
+<pre><code>{ "scope": { "permissions": ["workflow:run"], "within": ["finance/monthly-invoicing"] } }</code></pre>
+  </div>
+
+  <div class="prose">
     <p>Authorisation is re-evaluated when a run is created, because a trigger armed months ago can fire long after the grant that armed it. From <a href="roadmap/#m03">v0.3.0</a>, a run whose principal no longer holds <code>workflow:run</code> at that moment ends <code>cancelled</code> before any task, with a reason naming the grant that lapsed:</p>
   </div>
 
@@ -6590,10 +6600,10 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
           <tr><td class="wrapcell">GET /api/v1/{ns}/secrets/{name}</td><td>One declaration, the same way.</td></tr>
           <tr><td class="wrapcell">PUT, DELETE /api/v1/{ns}/secrets/{name}</td><td>Declares, changes or deletes one secret: <code>provider</code>, <code>path</code>, and for <code>builtin</code> a <code>value</code> no answer returns. One secret per request, so two Terraform applies never drop each other's change. Requires <code>secret:write</code> at namespace scope. See <a href="#secrets">Secrets</a>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/grants</td><td>Grants and denies on the namespace, inherited by every workflow in it.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/{ns}/grants</td><td>Shares the namespace: principal as <a href="#principals">written</a>, role, optional expiry, optional deny. Requires <code>grant:manage</code> at namespace scope. An administrator granting themselves notifies the owners (<a href="#administrators">Administrators</a>).</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/{ns}/grants</td><td>Shares the namespace: principal as <a href="#principals">written</a>, a role or a deny naming one permission, optional expiry. Requires <code>grant:manage</code> at namespace scope. An administrator granting themselves notifies the owners (<a href="#administrators">Administrators</a>).</td></tr>
           <tr><td class="wrapcell">DELETE /api/v1/{ns}/grants/{id}</td><td>Revokes one grant, from the next request and the next run creation.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/grants</td><td>Grants and denies that apply, with the scope of each.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/grants</td><td>Shares the workflow: principal, role, optional expiry, optional deny. Requires <code>grant:manage</code>.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/grants</td><td>Shares the workflow: principal, a role or a deny naming one permission, optional expiry. Requires <code>grant:manage</code>.</td></tr>
           <tr><td class="wrapcell">DELETE /api/v1/{ns}/workflows/{name}/grants/{id}</td><td>Revokes one grant, from the next request and the next run creation. An open log stream asks again every 30 s, credential and <code>run:read</code>, and ends once either is gone.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows</td><td>An empty workflow repository, with default branch and protection settings.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}</td><td>Default branch head, resolved graph at that commit, commit history.</td></tr>
@@ -7311,7 +7321,7 @@ flowchart LR
         <tbody>
           <tr><td>agentiik_namespace</td><td>Name, kind, owner, quotas, allowed runner pools. Administrator only, like the route behind it.</td></tr>
           <tr><td>agentiik_workflow</td><td>The repository: existence, default branch, that branch's protection. Not its contents.</td></tr>
-          <tr><td>agentiik_grant</td><td>One principal, role and scope, with optional expiry, allow or deny. What a review is actually about.</td></tr>
+          <tr><td>agentiik_grant</td><td>One principal and scope, with a role or a deny naming one permission, and optional expiry. What a review is actually about.</td></tr>
           <tr><td>agentiik_group</td><td>Definition and membership.</td></tr>
           <tr><td class="wrapcell">agentiik_service_account</td><td>A non-human principal, its label, its owning namespace.</td></tr>
           <tr><td>agentiik_api_token</td><td>A service account's token, scope and expiry. The clear value is returned once, at creation; write-only.</td></tr>
@@ -7361,9 +7371,8 @@ resource "agentiik_namespace" "finance" {
     max_runs_per_hour    = 500
     max_artifact_bytes   = 500 * 1024 * 1024 * 1024
     max_retention_days   = 180
+    allowed_runner_pools = ["default", "dmz"]
   }
-
-  allowed_runner_pools = ["default", "dmz"]
 }
 
 resource "agentiik_workflow" "invoicing" {
@@ -8568,7 +8577,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>devices</td><td>Mobile registrations: platform, push token, label, bound API token, last seen.</td></tr>
           <tr><td>notification_prefs</td><td>Per principal, per namespace, per event kind.</td></tr>
           <tr><td>namespaces</td><td>Name, kind (personal or shared), quotas, allowed runner pools.</td></tr>
-          <tr><td>grants</td><td>Principal, scope (namespace or workflow), role, allow or deny, expiry, who granted it and when.</td></tr>
+          <tr><td>grants</td><td>Principal, scope (<code>NS</code> or <code>NS/workflow</code>), a role or the one permission denied, expiry, who granted it and when.</td></tr>
           <tr><td>workflows</td><td>Name, namespace, default branch, labels.</td></tr>
           <tr><td>workflow_refs</td><td>The ref database of every workflow repository: ref name, commit, protection, who moved it and when. Git objects live in the object store as packfiles.</td></tr>
           <tr><td>workflow_versions</td><td>One row per commit accepted on a branch: commit, parent, resolved graph, the manifest of its tree (<code>path</code>, <code>sha256</code>, <code>size</code> and <code>mode</code> per file, each file a counted object), author, timestamp.</td></tr>
