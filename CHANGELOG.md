@@ -11,6 +11,11 @@ Every repository of the project carries the same version and is tagged at the sa
 ### Documentation
 
 - Guides first: Get started runs its workflow on a server started with Docker Compose, a new Install a server chapter installs, checks, stops, upgrades, backs up and removes a server with Compose on Linux or Homebrew on a Mac, adds a runner on another machine and says what v0.2.1 does not do yet, and Profile A shows the real installation and the images published on ghcr.io.
+- A runner of the pool `default` joins claiming no label, `agentiik-api namespace create` and `namespace remove` create and remove a namespace until v0.3.0, and the audit log records `namespace.create` and `namespace.delete`.
+
+### Site
+
+- A `Copies` workflow fails when a file the documentation shows verbatim, the single-host `compose.yaml` of `agentiik/deploy` first, differs from that file on its repository's main.
 
 ## v0.2.0, 2026-09-26
 
