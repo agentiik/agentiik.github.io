@@ -6,41 +6,55 @@
 <title>Agentiik</title>
 <meta name="description" content="Documentation for Agentiik, a multi-user workflow engine in which every brick is an ephemeral OCI container and every workflow is a YAML file.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<script>document.documentElement.className+=" js"</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;display=swap">
+<script>(function(){var r=document.documentElement;r.className+=" js";try{var t=localStorage.getItem("agentiik-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t)}catch(e){}})()</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
 <style>
+/* The design system's tokens, the same as the documentation's. */
 :root{
-  --paper:#F1F3EE;
-  --surface:#FBFCF8;
-  --ink:#17201C;
-  --muted:#5C6A62;
-  --faint:#7C887F;
-  --line:#D3D9CF;
+  --paper:#EFF2ED;
+  --surface:#FBFCF9;
+  --sunken:#E7EBE3;
+  --raised:#FFFFFF;
+  --ink:#16201B;
+  --muted:#5A6961;
+  --faint:#7E8C84;
+  --line:#DCE2D7;
+  --line-strong:#C0CABB;
   --accent:#0E6A5F;
-  --shadow:0 1px 2px rgba(23,32,28,.05);
+  --scrim:rgba(14,19,16,.42);
+  --shadow:none;
+  --gutter:clamp(16px,3vw,28px);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#111614;
-    --surface:#181E1B;
-    --ink:#E5EAE3;
-    --muted:#9AA79E;
-    --faint:#7E8B83;
-    --line:#2A332E;
-    --accent:#54C1AD;
-    --shadow:none;
+    --paper:#0E1310;
+    --surface:#151C18;
+    --sunken:#0A0F0C;
+    --raised:#1B2420;
+    --ink:#E4EAE3;
+    --muted:#94A29A;
+    --faint:#6D7B73;
+    --line:#26312B;
+    --line-strong:#35423A;
+    --accent:#4FBFAC;
+    --scrim:rgba(0,0,0,.6);
   }
 }
 :root[data-theme="dark"]{
-  --paper:#111614;
-  --surface:#181E1B;
-  --ink:#E5EAE3;
-  --muted:#9AA79E;
-  --faint:#7E8B83;
-  --line:#2A332E;
-  --accent:#54C1AD;
-  --shadow:none;
+  --paper:#0E1310;
+  --surface:#151C18;
+  --sunken:#0A0F0C;
+  --raised:#1B2420;
+  --ink:#E4EAE3;
+  --muted:#94A29A;
+  --faint:#6D7B73;
+  --line:#26312B;
+  --line-strong:#35423A;
+  --accent:#4FBFAC;
+  --scrim:rgba(0,0,0,.6);
 }
+:root[data-theme="light"]{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
 
 *{box-sizing:border-box}
 body{
@@ -310,6 +324,97 @@ html.js.ready [data-rise]{
   --term-color-11:#E6C87A; --term-color-12:#9AC4E8; --term-color-13:#D3B0E2;
   --term-color-14:#8AE2D3; --term-color-15:#FFFFFF;
 }
+
+/* ---------- Redesign: width, sharpness, interaction ---------- */
+body{overflow-x:clip}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:2px}
+/* The screenshot and the recording take the screen's width, up to the 1440 the console is
+   drawn at, and stop one gutter short of either edge. */
+.shot,.cast{width:min(1440px, calc(100vw - 2 * var(--gutter)))}
+.shot{border-radius:7px;overflow:hidden}
+.shot .mock{display:block;width:100%;height:auto}
+.cast-frame{border-radius:7px;overflow:hidden}
+.cast pre{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.hero .start{transition:border-color .12s ease,color .12s ease}
+.docs a{transition:color .12s ease}
+.docs a::after{transition:transform .15s ease}
+.docs a:hover::after{transform:translateX(4px)}
+
+.page-tools{position:fixed;top:12px;right:var(--gutter);z-index:30;display:flex;gap:8px}
+.icon-btn{
+  display:inline-grid;place-items:center;width:34px;height:34px;padding:0;
+  border:1px solid var(--line);border-radius:5px;background:var(--raised);color:var(--muted);cursor:pointer;
+}
+.icon-btn:hover{color:var(--ink);border-color:var(--line-strong)}
+.icon-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.menu-btn{display:none}
+.theme-btn .sun{display:none}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .theme-btn .sun{display:block}
+  :root:not([data-theme="light"]) .theme-btn .moon{display:none}
+}
+:root[data-theme="dark"] .theme-btn .sun{display:block}
+:root[data-theme="dark"] .theme-btn .moon{display:none}
+
+.zoom-btn{
+  position:absolute;top:10px;right:10px;z-index:2;display:inline-grid;place-items:center;width:32px;height:32px;padding:0;
+  color:var(--muted);background:var(--raised);border:1px solid var(--line);border-radius:5px;cursor:zoom-in;
+  opacity:0;transition:opacity .12s ease;
+}
+.shot:hover .zoom-btn,.zoom-btn:focus-visible{opacity:1}
+@media (hover:none){.zoom-btn{opacity:1}}
+.zoom-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.shot[data-zoom] .mock{cursor:zoom-in}
+
+.lightbox{width:100vw;height:100vh;width:100dvw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:var(--ink);overflow:hidden}
+.lightbox::backdrop{background:var(--scrim)}
+.lightbox-frame{position:absolute;inset:clamp(8px,3vw,40px);display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line-strong);border-radius:7px;overflow:hidden}
+.lightbox-bar{flex:none;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;border-bottom:1px solid var(--line);font-size:.82rem;color:var(--muted)}
+.lightbox-bar .lightbox-title{flex:1;min-width:0}
+.lightbox-body{flex:1;min-height:0;overflow:auto;display:grid;place-items:center;padding:clamp(8px,2vw,28px);cursor:zoom-out}
+.lightbox-body > *{display:block;width:100%;max-width:1800px;min-width:1200px;height:auto}
+@media (min-width:980px){.lightbox-body > *{min-width:0}}
+/* Console mockups: one markup, both themes, from the design system's tokens. */
+.mock{--m-bg:#EFF2ED;--m-surface:#FBFCF9;--m-pane:#F4F6F1;--m-sunken:#E7EBE3;--m-raised:#FFFFFF;--m-line:#DCE2D7;--m-line-strong:#C0CABB;--m-text:#16201B;--m-muted:#5A6961;--m-faint:#7E8C84;--m-accent:#0E6A5F;--m-accent-dim:#DBE9E4;--m-accent-line:#ABC9C2;--m-on-accent:#FFFFFF;--m-ok:#2E7D4F;--m-ok-bg:#DCEBE0;--m-ok-line:#ADCDB9;--m-wait:#96660A;--m-wait-bg:#F4EAD3;--m-wait-line:#DBC69D;--m-fail:#B23C1E;--m-fail-bg:#F6E1D9;--m-fail-line:#E3B5A7;display:block;width:100%;height:auto}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-bg:#0E1310;--m-surface:#151C18;--m-pane:#0A0F0C;--m-sunken:#0A0F0C;--m-raised:#1B2420;--m-line:#26312B;--m-line-strong:#35423A;--m-text:#E4EAE3;--m-muted:#94A29A;--m-faint:#6D7B73;--m-accent:#4FBFAC;--m-accent-dim:#12302A;--m-accent-line:#21473F;--m-on-accent:#0E1310;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}}
+:root[data-theme="dark"] .mock{--m-bg:#0E1310;--m-surface:#151C18;--m-pane:#0A0F0C;--m-sunken:#0A0F0C;--m-raised:#1B2420;--m-line:#26312B;--m-line-strong:#35423A;--m-text:#E4EAE3;--m-muted:#94A29A;--m-faint:#6D7B73;--m-accent:#4FBFAC;--m-accent-dim:#12302A;--m-accent-line:#21473F;--m-on-accent:#0E1310;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}
+.mock .t-sans{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+.mock .t-mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.mock text{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+.mock .f-none{fill:none}
+.mock .f-bg{fill:var(--m-bg)}.mock .s-bg{stroke:var(--m-bg)}
+.mock .f-surface{fill:var(--m-surface)}.mock .s-surface{stroke:var(--m-surface)}
+.mock .f-pane{fill:var(--m-pane)}.mock .s-pane{stroke:var(--m-pane)}
+.mock .f-sunken{fill:var(--m-sunken)}.mock .s-sunken{stroke:var(--m-sunken)}
+.mock .f-raised{fill:var(--m-raised)}.mock .s-raised{stroke:var(--m-raised)}
+.mock .f-line{fill:var(--m-line)}.mock .s-line{stroke:var(--m-line)}
+.mock .f-line-strong{fill:var(--m-line-strong)}.mock .s-line-strong{stroke:var(--m-line-strong)}
+.mock .f-text{fill:var(--m-text)}.mock .s-text{stroke:var(--m-text)}
+.mock .f-muted{fill:var(--m-muted)}.mock .s-muted{stroke:var(--m-muted)}
+.mock .f-faint{fill:var(--m-faint)}.mock .s-faint{stroke:var(--m-faint)}
+.mock .f-accent{fill:var(--m-accent)}.mock .s-accent{stroke:var(--m-accent)}
+.mock .f-accent-dim{fill:var(--m-accent-dim)}.mock .s-accent-dim{stroke:var(--m-accent-dim)}
+.mock .f-accent-line{fill:var(--m-accent-line)}.mock .s-accent-line{stroke:var(--m-accent-line)}
+.mock .f-on-accent{fill:var(--m-on-accent)}.mock .s-on-accent{stroke:var(--m-on-accent)}
+.mock .f-ok{fill:var(--m-ok)}.mock .s-ok{stroke:var(--m-ok)}
+.mock .f-ok-bg{fill:var(--m-ok-bg)}.mock .s-ok-bg{stroke:var(--m-ok-bg)}
+.mock .f-ok-line{fill:var(--m-ok-line)}.mock .s-ok-line{stroke:var(--m-ok-line)}
+.mock .f-wait{fill:var(--m-wait)}.mock .s-wait{stroke:var(--m-wait)}
+.mock .f-wait-bg{fill:var(--m-wait-bg)}.mock .s-wait-bg{stroke:var(--m-wait-bg)}
+.mock .f-wait-line{fill:var(--m-wait-line)}.mock .s-wait-line{stroke:var(--m-wait-line)}
+.mock .f-fail{fill:var(--m-fail)}.mock .s-fail{stroke:var(--m-fail)}
+.mock .f-fail-bg{fill:var(--m-fail-bg)}.mock .s-fail-bg{stroke:var(--m-fail-bg)}
+.mock .f-fail-line{fill:var(--m-fail-line)}.mock .s-fail-line{stroke:var(--m-fail-line)}
+/* Extra tokens for console-graph: YAML section keys and scalar values. */
+.mock{--m-graph-key:#0E6A5F;--m-graph-value:#8A6A17}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-graph-key:#7BD2C2;--m-graph-value:#C9BE7E;}}
+:root[data-theme="dark"] .mock{--m-graph-key:#7BD2C2;--m-graph-value:#C9BE7E;}
+.mock .f-graph-key{fill:var(--m-graph-key)}.mock .s-graph-key{stroke:var(--m-graph-key)}
+.mock .f-graph-value{fill:var(--m-graph-value)}.mock .s-graph-value{stroke:var(--m-graph-value)}
+.mock{--m-inspector-str:#8A6A17}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-inspector-str:#C9BE7E}}
+:root[data-theme="dark"] .mock{--m-inspector-str:#C9BE7E}
+.mock .f-inspector-str{fill:var(--m-inspector-str)}.mock .s-inspector-str{stroke:var(--m-inspector-str)}
 </style>
 <style>
 html{color-scheme:light dark}
@@ -344,6 +449,7 @@ img{max-width:100%}
 <!-- End Matomo Tag Manager -->
 </head>
 <body>
+<div class="page-tools"></div>
 
 <main>
 
@@ -366,8 +472,327 @@ img{max-width:100%}
 </div>
 
 <div class="shot" data-rise data-par="-.045" style="--delay:.16s">
-  <img class="shot-light" alt="The Agentiik run list: a namespace rail, filter chips, a band of runs needing attention, and a table of runs with state, identifier, workflow, trigger, a per-step progress strip, times and the principal who started each one." src="assets/console-runs-light.png">
-  <img class="shot-dark" alt="The Agentiik run list: a namespace rail, filter chips, a band of runs needing attention, and a table of runs with state, identifier, workflow, trigger, a per-step progress strip, times and the principal who started each one." src="assets/console-runs-dark.png">
+  <svg class="mock" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The Agentiik run list: a namespace rail, filter chips, a band of runs needing attention, and a table of runs with state, identifier, workflow, trigger, a per-step progress strip, times and the principal who started each one.">
+<rect x="0" y="0" width="1440" height="900" class="f-bg"/>
+<rect x="0" y="0" width="215" height="900" class="f-surface"/>
+<rect x="216" y="0" width="1224" height="51" class="f-surface"/>
+<g class="f-line">
+<rect x="215" y="0" width="1" height="900" class="f-line"/>
+<rect x="216" y="51" width="1224" height="1" class="f-line"/>
+<rect x="216" y="104" width="1224" height="1" class="f-line"/>
+<rect x="0" y="849" width="215" height="1" class="f-line"/>
+</g>
+<g class="f-accent">
+<rect x="17" y="18" width="16" height="5" rx="1" class="f-accent"/>
+<rect x="17" y="24" width="7.5" height="5.5" rx="1" class="f-accent" opacity=".62"/>
+<rect x="25.5" y="24" width="7.5" height="5.5" rx="1" class="f-accent" opacity=".62"/>
+<rect x="17" y="30" width="16" height="3" rx="1" class="f-accent" opacity=".3"/>
+</g>
+<text x="43" y="32" font-size="15.5" font-weight="600" class="f-text" letter-spacing="-.2">agentiik</text>
+<rect x="12.5" y="48.5" width="190" height="45" rx="7" class="f-raised s-line"/>
+<rect x="23.5" y="60.5" width="21" height="21" rx="4" class="f-accent-dim s-accent-line"/>
+<text x="33.5" y="75" font-size="12" font-weight="500" text-anchor="middle" class="t-mono f-accent">f</text>
+<text x="54" y="68" font-size="12" class="t-mono f-text">finance</text>
+<text x="54" y="82" font-size="10.5" class="f-faint">shared · 12 workflows</text>
+<path transform="translate(177 61)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="10.5" y="108.5" width="196" height="29" rx="6" class="f-raised"/>
+<rect x="8" y="115" width="2" height="16" class="f-accent"/>
+<g stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+<path transform="translate(20 114.5)" d="M2 4h12M2 8h10M2 12h7" class="f-none s-text"/>
+<path transform="translate(20 145.5)" d="M4 2.5a1.75 1.75 0 1 1 0 3.5a1.75 1.75 0 1 1 0-3.5zM12 10a1.75 1.75 0 1 1 0 3.5a1.75 1.75 0 1 1 0-3.5zM4 6v2.5a3 3 0 0 0 3 3h3.2" class="f-none s-muted"/>
+<path transform="translate(20 176.5)" d="M3.5 2.5h9a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12V4a1.5 1.5 0 0 1 1.5-1.5zM2 8h12M8 8v5.5" class="f-none s-muted"/>
+<path transform="translate(20 207.5)" d="M3.5 2.5h9a1.5 1.5 0 0 1 1.5 1.5v1.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 5.5V4a1.5 1.5 0 0 1 1.5-1.5zM3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V12a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12v-1.5A1.5 1.5 0 0 1 3.5 9z" class="f-none s-muted"/>
+<path transform="translate(20 238.5)" d="M8 2.5a2.75 2.75 0 1 1 0 5.5a2.75 2.75 0 1 1 0-5.5zM3 14a5 5 0 0 1 10 0" class="f-none s-muted"/>
+<path transform="translate(20 269.5)" d="M8 5.8a2.2 2.2 0 1 1 0 4.4a2.2 2.2 0 1 1 0-4.4zM8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" class="f-none s-muted"/>
+</g>
+<text x="46" y="127" font-size="13" class="f-text">Runs</text>
+<text x="46" y="158" font-size="13" class="f-muted">Workflows</text>
+<text x="46" y="189" font-size="13" class="f-muted">Bricks</text>
+<text x="46" y="220" font-size="13" class="f-muted">Runners</text>
+<text x="46" y="251" font-size="13" class="f-muted">Access</text>
+<text x="46" y="282" font-size="13" class="f-muted">Settings</text>
+<rect x="177.5" y="116.5" width="17" height="14" rx="3" class="f-fail-bg s-fail-line"/>
+<text x="185.5" y="127" font-size="10.5" text-anchor="middle" class="t-mono f-fail">3</text>
+<circle cx="24.5" cy="874.5" r="12.5" class="f-sunken s-line-strong"/>
+<text x="24.5" y="879" font-size="11" font-weight="600" text-anchor="middle" class="f-muted">A</text>
+<text x="47" y="873" font-size="12" class="f-text">alice</text>
+<text x="47" y="886" font-size="10" class="f-faint">4 namespaces</text>
+<path transform="translate(188 864.5)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="235" y="29.5" font-size="12.5" class="t-mono f-muted">finance</text>
+<text x="297" y="29.5" font-size="12" class="f-faint">/</text>
+<text x="310" y="29.5" font-size="13" font-weight="600" class="f-text">Runs</text>
+<rect x="1088.5" y="13.5" width="87" height="25" rx="5" class="f-accent"/>
+<text x="1120" y="30" font-size="12" class="f-on-accent">New run</text>
+<rect x="1186.5" y="12.5" width="209" height="27" rx="5" class="f-raised s-line"/>
+<text x="1218" y="30" font-size="12" class="f-faint">Search runs, workflows</text>
+<g stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+<path transform="translate(1098 17.5)" d="M5 3.5v9l7-4.5z" class="f-none s-on-accent"/>
+<path transform="translate(1196 17.5)" d="M7 2.5a4.5 4.5 0 1 1 0 9a4.5 4.5 0 1 1 0-9zM10.3 10.3 14 14" class="f-none s-faint"/>
+<path transform="translate(1406 17)" d="M4 11.5V7a4 4 0 0 1 8 0v4.5l1.2 1.5H2.8zM6.6 14.6a1.5 1.5 0 0 0 2.8 0" class="f-none s-muted"/>
+</g>
+<circle cx="1419" cy="19.5" r="2.5" class="f-fail"/>
+<rect x="234.5" y="65.5" width="60" height="25" rx="12.5" class="f-raised s-line-strong"/>
+<text x="245" y="82" font-size="12" class="f-text">All</text>
+<text x="283" y="82" font-size="10.5" text-anchor="end" class="t-mono f-faint">128</text>
+<rect x="303.5" y="65.5" width="67" height="25" rx="12.5" class="f-raised s-fail-line"/>
+<text x="314" y="82" font-size="12" class="f-fail">Failed</text>
+<text x="359" y="82" font-size="10.5" text-anchor="end" class="t-mono f-faint">3</text>
+<rect x="379.5" y="65.5" width="74" height="25" rx="12.5" class="f-raised s-wait-line"/>
+<text x="390" y="82" font-size="12" class="f-wait">Waiting</text>
+<text x="442" y="82" font-size="10.5" text-anchor="end" class="t-mono f-faint">2</text>
+<rect x="462.5" y="65.5" width="79" height="25" rx="12.5" class="f-none s-line"/>
+<text x="473" y="82" font-size="12" class="f-muted">Running</text>
+<text x="530" y="82" font-size="10.5" text-anchor="end" class="t-mono f-faint">4</text>
+<rect x="550.5" y="65.5" width="107" height="25" rx="12.5" class="f-none s-line"/>
+<text x="561" y="82" font-size="12" class="f-muted">Succeeded</text>
+<text x="646" y="82" font-size="10.5" text-anchor="end" class="t-mono f-faint">119</text>
+<rect x="683.5" y="65.5" width="102" height="25" rx="12.5" class="f-none s-line"/>
+<text x="695" y="82" font-size="12" class="f-muted">Every workflow</text>
+<rect x="794.5" y="65.5" width="94" height="25" rx="12.5" class="f-none s-line"/>
+<text x="806" y="82" font-size="12" class="f-muted">Last 24 hours</text>
+<rect x="670" y="68" width="1" height="20" class="f-line"/>
+<circle cx="1305.5" cy="77.5" r="3" class="f-accent"/>
+<text x="1316" y="82" font-size="11.5" class="f-muted">Live</text>
+<rect x="1344.5" y="65.5" width="77" height="25" rx="5" class="f-raised s-line-strong"/>
+<path transform="translate(1354 69.5)" d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M2.5 13.5h11" class="f-none s-text" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1377" y="82" font-size="12" class="f-text">Export</text>
+<rect x="234.5" y="123.5" width="1187" height="151" rx="7" class="f-surface s-line-strong"/>
+<path d="M241.5 124.5h1173a6 6 0 0 1 6 6v41h-1185v-41a6 6 0 0 1 6-6z" class="f-raised"/>
+<rect x="235" y="172" width="1186" height="1" class="f-line"/>
+<rect x="235" y="223" width="1186" height="1" class="f-line"/>
+<path transform="translate(248 140)" d="M8 2.8 13.8 13.5H2.2zM8 6.8v3.2M8 11.8v.2" class="f-none s-wait" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="273" y="151" font-size="13" font-weight="600" class="f-text">Needs attention</text>
+<text x="376" y="151" font-size="11.8" class="f-faint">2 runs waiting on you, 3 failed in the last hour</text>
+<text x="1395" y="151" font-size="12" text-anchor="end" class="f-muted">Dismiss all</text>
+<rect x="249.5" y="188.5" width="125" height="19" rx="3" class="f-wait-bg s-wait-line"/>
+<circle cx="259.5" cy="198" r="2.5" class="f-wait"/>
+<text x="268.5" y="201.5" font-size="11.3" class="f-wait">approval requested</text>
+<text x="389" y="201.5" font-size="12" font-weight="500" class="t-mono f-text">monthly-invoicing</text>
+<text x="526" y="201.5" font-size="12" class="f-muted">step</text>
+<text x="552" y="201.5" font-size="12" class="t-mono f-text">invoice</text>
+<text x="606" y="201.5" font-size="12" class="f-muted">holds 214</text>
+<text x="661" y="201.5" font-size="12" class="f-muted">invoices worth</text>
+<text x="741" y="201.5" font-size="12" class="t-mono f-text">EUR 1 284 990</text>
+<text x="849" y="201.5" font-size="11.5" class="t-mono f-faint">4m 09s ago</text>
+<rect x="1234.5" y="185.5" width="76" height="25" rx="5" class="f-surface s-fail-line"/>
+<path transform="translate(1243.5 189.5)" d="M8 2.5a5.5 5.5 0 1 1 0 11a5.5 5.5 0 1 1 0-11zM4.1 11.9l7.8-7.8" class="f-none s-fail" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1266" y="202.5" font-size="12" class="f-fail">Reject</text>
+<rect x="1319.5" y="185.5" width="87" height="25" rx="5" class="f-accent"/>
+<path transform="translate(1328 189.5)" d="M3.5 8.5 6.5 11.5 12.5 5" class="f-none s-on-accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1351" y="202.5" font-size="12" class="f-on-accent">Approve</text>
+<rect x="249.5" y="239.5" width="56" height="19" rx="3" class="f-fail-bg s-fail-line"/>
+<circle cx="259.5" cy="249" r="2.5" class="f-fail"/>
+<text x="268.5" y="252.5" font-size="11" class="f-fail">failed</text>
+<text x="320" y="252.5" font-size="12" font-weight="500" class="t-mono f-text">monthly-invoicing</text>
+<text x="457" y="252.5" font-size="12" class="f-muted">step</text>
+<text x="483" y="252.5" font-size="12" class="t-mono f-text">invoice</text>
+<text x="537" y="252.5" font-size="12" class="f-muted">exit</text>
+<text x="560" y="252.5" font-size="12" class="t-mono f-fail">108</text>
+<text x="584" y="252.5" font-size="12" class="f-muted">after 4</text>
+<text x="621" y="252.5" font-size="12" class="f-muted">attempts</text>
+<text x="671" y="252.5" font-size="12" class="f-muted">·</text>
+<text x="678" y="252.5" font-size="12" class="f-muted">billing API refused</text>
+<text x="777" y="252.5" font-size="12" class="f-muted">3 of</text>
+<text x="801" y="252.5" font-size="12" class="f-muted">214 items</text>
+<text x="867" y="252.5" font-size="11.5" class="t-mono f-faint">23m ago</text>
+<rect x="1214.5" y="236.5" width="50" height="25" rx="5" class="f-raised s-line-strong"/>
+<text x="1239" y="253.5" font-size="12" text-anchor="middle" class="f-text">Open</text>
+<rect x="1273.5" y="236.5" width="133" height="25" rx="5" class="f-raised s-line-strong"/>
+<path transform="translate(1283 240.5)" d="M2.8 8a5.2 5.2 0 1 0 1.5-3.7M2.8 2.5v3.2H6M8 5.2V8l2 1.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1305" y="253.5" font-size="12" class="f-text">Replay from step</text>
+<rect x="234.5" y="294.5" width="1187" height="602" rx="7" class="f-surface s-line"/>
+<path d="M241.5 295.5h1173a6 6 0 0 1 6 6v25.5h-1185v-25.5a6 6 0 0 1 6-6z" class="f-raised"/>
+<path d="M235 856h1186v33.5a6 6 0 0 1-6 6h-1174a6 6 0 0 1-6-6z" class="f-raised"/>
+<rect x="235" y="327" width="1186" height="1" class="f-line-strong"/>
+<g class="t-sans f-faint" font-size="10.5" font-weight="700" letter-spacing="1">
+<text x="275" y="314.5">STATE</text>
+<text x="371" y="314.5">RUN</text>
+<text x="521" y="314.5">WORKFLOW</text>
+<text x="757" y="314.5">TRIGGER</text>
+<text x="861" y="314.5">STEPS</text>
+<text x="1039" y="314.5">STARTED</text>
+<text x="1147" y="314.5">TOOK</text>
+<text x="1221" y="314.5">BY</text>
+</g>
+<g class="f-bg">
+<rect x="235" y="372" width="1186" height="43" class="f-bg"/>
+<rect x="235" y="460" width="1186" height="43" class="f-bg"/>
+<rect x="235" y="548" width="1186" height="43" class="f-bg"/>
+<rect x="235" y="636" width="1186" height="43" class="f-bg"/>
+<rect x="235" y="724" width="1186" height="43" class="f-bg"/>
+<rect x="235" y="812" width="1186" height="43" class="f-bg"/>
+</g>
+<g class="f-line">
+<rect x="235" y="371" width="1186" height="1" class="f-line"/>
+<rect x="235" y="415" width="1186" height="1" class="f-line"/>
+<rect x="235" y="459" width="1186" height="1" class="f-line"/>
+<rect x="235" y="503" width="1186" height="1" class="f-line"/>
+<rect x="235" y="547" width="1186" height="1" class="f-line"/>
+<rect x="235" y="591" width="1186" height="1" class="f-line"/>
+<rect x="235" y="635" width="1186" height="1" class="f-line"/>
+<rect x="235" y="679" width="1186" height="1" class="f-line"/>
+<rect x="235" y="723" width="1186" height="1" class="f-line"/>
+<rect x="235" y="767" width="1186" height="1" class="f-line"/>
+<rect x="235" y="811" width="1186" height="1" class="f-line"/>
+<rect x="235" y="855" width="1186" height="1" class="f-line"/>
+</g>
+<g stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="s-faint">
+<path transform="translate(248 340)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 384)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 428)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 472)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 516)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 560)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 604)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 648)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 692)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 736)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 780)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+<path transform="translate(248 824)" d="M6.5 4.5 10 8l-3.5 3.5" class="f-none s-faint"/>
+</g>
+<rect x="275.5" y="340.5" width="64" height="19" rx="3" class="f-wait-bg s-wait-line"/>
+<circle cx="285.5" cy="350" r="2.5" class="f-wait"/>
+<text x="294.5" y="353.5" font-size="11" class="f-wait">waiting</text>
+<rect x="861" y="347" width="49" height="6" class="f-ok"/>
+<rect x="912" y="347" width="66" height="6" class="f-wait"/>
+<rect x="980" y="347" width="49" height="6" class="f-faint"/>
+<rect x="275.5" y="384.5" width="56" height="19" rx="3" class="f-fail-bg s-fail-line"/>
+<circle cx="285.5" cy="394" r="2.5" class="f-fail"/>
+<text x="294.5" y="397.5" font-size="11" class="f-fail">failed</text>
+<rect x="861" y="391" width="49" height="6" class="f-ok"/>
+<rect x="912" y="391" width="66" height="6" class="f-fail"/>
+<rect x="980" y="391" width="49" height="6" class="f-faint" opacity=".35"/>
+<rect x="275.5" y="428.5" width="56" height="19" rx="3" class="f-fail-bg s-fail-line"/>
+<circle cx="285.5" cy="438" r="2.5" class="f-fail"/>
+<text x="294.5" y="441.5" font-size="11" class="f-fail">failed</text>
+<rect x="861" y="435" width="95" height="6" class="f-ok"/>
+<rect x="958" y="435" width="71" height="6" class="f-fail"/>
+<rect x="275.5" y="472.5" width="66" height="19" rx="3" class="f-accent-dim s-accent-line"/>
+<circle cx="285.5" cy="482" r="2.5" class="f-accent"/>
+<text x="294.5" y="485.5" font-size="11" class="f-accent">running</text>
+<rect x="861" y="479" width="36" height="6" class="f-ok"/>
+<rect x="899" y="479" width="55" height="6" class="f-accent"/>
+<rect x="956" y="479" width="73" height="6" class="f-faint"/>
+<rect x="275.5" y="516.5" width="66" height="19" rx="3" class="f-accent-dim s-accent-line"/>
+<circle cx="285.5" cy="526" r="2.5" class="f-accent"/>
+<text x="294.5" y="529.5" font-size="11" class="f-accent">running</text>
+<rect x="861" y="523" width="92" height="6" class="f-accent"/>
+<rect x="955" y="523" width="74" height="6" class="f-faint"/>
+<rect x="275.5" y="560.5" width="83" height="19" rx="3" class="f-ok-bg s-ok-line"/>
+<circle cx="285.5" cy="570" r="2.5" class="f-ok"/>
+<text x="294.5" y="573.5" font-size="11" class="f-ok">succeeded</text>
+<rect x="861" y="567" width="49" height="6" class="f-ok"/>
+<rect x="912" y="567" width="66" height="6" class="f-ok"/>
+<rect x="980" y="567" width="49" height="6" class="f-ok"/>
+<rect x="275.5" y="604.5" width="83" height="19" rx="3" class="f-ok-bg s-ok-line"/>
+<circle cx="285.5" cy="614" r="2.5" class="f-ok"/>
+<text x="294.5" y="617.5" font-size="11" class="f-ok">succeeded</text>
+<rect x="861" y="611" width="47" height="6" class="f-ok"/>
+<rect x="910" y="611" width="119" height="6" class="f-ok"/>
+<rect x="275.5" y="648.5" width="76" height="19" rx="3" class="f-sunken s-line-strong"/>
+<circle cx="285.5" cy="658" r="2.5" class="f-faint"/>
+<text x="294.5" y="661.5" font-size="11" class="f-faint">cancelled</text>
+<rect x="861" y="655" width="55" height="6" class="f-ok"/>
+<rect x="918" y="655" width="111" height="6" class="f-faint"/>
+<rect x="275.5" y="692.5" width="83" height="19" rx="3" class="f-ok-bg s-ok-line"/>
+<circle cx="285.5" cy="702" r="2.5" class="f-ok"/>
+<text x="294.5" y="705.5" font-size="11" class="f-ok">succeeded</text>
+<rect x="861" y="699" width="95" height="6" class="f-ok"/>
+<rect x="958" y="699" width="71" height="6" class="f-ok"/>
+<rect x="275.5" y="736.5" width="83" height="19" rx="3" class="f-ok-bg s-ok-line"/>
+<circle cx="285.5" cy="746" r="2.5" class="f-ok"/>
+<text x="294.5" y="749.5" font-size="11" class="f-ok">succeeded</text>
+<rect x="861" y="743" width="47" height="6" class="f-ok"/>
+<rect x="910" y="743" width="119" height="6" class="f-ok"/>
+<rect x="275.5" y="780.5" width="83" height="19" rx="3" class="f-ok-bg s-ok-line"/>
+<circle cx="285.5" cy="790" r="2.5" class="f-ok"/>
+<text x="294.5" y="793.5" font-size="11" class="f-ok">succeeded</text>
+<rect x="861" y="787" width="49" height="6" class="f-ok"/>
+<rect x="912" y="787" width="66" height="6" class="f-ok"/>
+<rect x="980" y="787" width="49" height="6" class="f-ok"/>
+<rect x="275.5" y="824.5" width="83" height="19" rx="3" class="f-ok-bg s-ok-line"/>
+<circle cx="285.5" cy="834" r="2.5" class="f-ok"/>
+<text x="294.5" y="837.5" font-size="11" class="f-ok">succeeded</text>
+<rect x="861" y="831" width="92" height="6" class="f-ok"/>
+<rect x="955" y="831" width="74" height="6" class="f-ok"/>
+<g>
+<text x="371" y="353.5" font-size="11.5" class="t-mono f-accent">01JMZ8W4K2R7</text>
+<text x="521" y="353.5" font-size="12" font-weight="500" class="t-mono f-text">monthly-invoicing</text>
+<text x="1039" y="353.5" font-size="11.5" class="t-mono f-muted">06:00:12</text>
+<text x="1221" y="353.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">4m 09s</text>
+<text x="1242" y="353.5" font-size="11.5" class="t-mono f-faint">svc:finance</text>
+<text x="371" y="397.5" font-size="11.5" class="t-mono f-accent">01JMZ8V1P9C4</text>
+<text x="521" y="397.5" font-size="12" font-weight="500" class="t-mono f-text">monthly-invoicing</text>
+<text x="1039" y="397.5" font-size="11.5" class="t-mono f-muted">05:41:03</text>
+<text x="1221" y="397.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">1m 52s</text>
+<text x="1242" y="397.5" font-size="11.5" class="t-mono f-faint">alice</text>
+<text x="371" y="441.5" font-size="11.5" class="t-mono f-accent">01JMZ8T7B2M0</text>
+<text x="521" y="441.5" font-size="12" font-weight="500" class="t-mono f-text">dunning-reminders</text>
+<text x="1039" y="441.5" font-size="11.5" class="t-mono f-muted">05:30:00</text>
+<text x="1221" y="441.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">22s</text>
+<text x="1242" y="441.5" font-size="11.5" class="t-mono f-faint">svc:finance</text>
+<text x="371" y="485.5" font-size="11.5" class="t-mono f-accent">01JMZ8S3H6X8</text>
+<text x="521" y="485.5" font-size="12" font-weight="500" class="t-mono f-text">ledger-export</text>
+<text x="1039" y="485.5" font-size="11.5" class="t-mono f-muted">05:28:44</text>
+<text x="1221" y="485.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">6m 31s</text>
+<text x="1242" y="485.5" font-size="11.5" class="t-mono f-faint">svc:finance</text>
+<text x="371" y="529.5" font-size="11.5" class="t-mono f-accent">01JMZ8R0D4K2</text>
+<text x="521" y="529.5" font-size="12" font-weight="500" class="t-mono f-text">vat-reconcile</text>
+<text x="1039" y="529.5" font-size="11.5" class="t-mono f-muted">05:22:10</text>
+<text x="1221" y="529.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">12m 04s</text>
+<text x="1242" y="529.5" font-size="11.5" class="t-mono f-faint">svc:finance</text>
+<text x="371" y="573.5" font-size="11.5" class="t-mono f-accent">01JMZ8Q6F1T7</text>
+<text x="521" y="573.5" font-size="12" font-weight="500" class="t-mono f-text">monthly-invoicing</text>
+<text x="1039" y="573.5" font-size="11.5" class="t-mono f-muted">04:58:31</text>
+<text x="1221" y="573.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">3m 47s</text>
+<text x="1242" y="573.5" font-size="11.5" class="t-mono f-faint">bruno</text>
+<text x="371" y="617.5" font-size="11.5" class="t-mono f-accent">01JMZ8P2N8Y5</text>
+<text x="521" y="617.5" font-size="12" font-weight="500" class="t-mono f-text">ledger-export</text>
+<text x="1039" y="617.5" font-size="11.5" class="t-mono f-muted">04:41:09</text>
+<text x="1221" y="617.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">58s</text>
+<text x="1242" y="617.5" font-size="11.5" class="t-mono f-faint">svc:finance</text>
+<text x="371" y="661.5" font-size="11.5" class="t-mono f-accent">01JMZ8N9J3W1</text>
+<text x="521" y="661.5" font-size="12" font-weight="500" class="t-mono f-text">vat-reconcile</text>
+<text x="1039" y="661.5" font-size="11.5" class="t-mono f-muted">04:12:55</text>
+<text x="1221" y="661.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">2m 16s</text>
+<text x="1242" y="661.5" font-size="11.5" class="t-mono f-faint">alice</text>
+<text x="371" y="705.5" font-size="11.5" class="t-mono f-accent">01JMZ8M5Z7Q3</text>
+<text x="521" y="705.5" font-size="12" font-weight="500" class="t-mono f-text">dunning-reminders</text>
+<text x="1039" y="705.5" font-size="11.5" class="t-mono f-muted">03:30:00</text>
+<text x="1221" y="705.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">41s</text>
+<text x="1242" y="705.5" font-size="11.5" class="t-mono f-faint">svc:finance</text>
+<text x="371" y="749.5" font-size="11.5" class="t-mono f-accent">01JMZ8K1V4R9</text>
+<text x="521" y="749.5" font-size="12" font-weight="500" class="t-mono f-text">ledger-export</text>
+<text x="1039" y="749.5" font-size="11.5" class="t-mono f-muted">02:41:12</text>
+<text x="1221" y="749.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">1m 03s</text>
+<text x="1242" y="749.5" font-size="11.5" class="t-mono f-faint">svc:finance</text>
+<text x="371" y="793.5" font-size="11.5" class="t-mono f-accent">01JMZ8H8C0L6</text>
+<text x="521" y="793.5" font-size="12" font-weight="500" class="t-mono f-text">monthly-invoicing</text>
+<text x="1039" y="793.5" font-size="11.5" class="t-mono f-muted">02:00:07</text>
+<text x="1221" y="793.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">4m 22s</text>
+<text x="1242" y="793.5" font-size="11.5" class="t-mono f-faint">svc:finance</text>
+<text x="371" y="837.5" font-size="11.5" class="t-mono f-accent">01JMZ8G4X6D2</text>
+<text x="521" y="837.5" font-size="12" font-weight="500" class="t-mono f-text">vat-reconcile</text>
+<text x="1039" y="837.5" font-size="11.5" class="t-mono f-muted">01:18:39</text>
+<text x="1221" y="837.5" font-size="11.5" text-anchor="end" class="t-mono f-muted">9m 51s</text>
+<text x="1242" y="837.5" font-size="11.5" class="t-mono f-faint">svc:finance</text>
+</g>
+<text x="757" y="353.5" font-size="12" class="f-muted">schedule</text>
+<text x="757" y="397.5" font-size="12" class="f-muted">manual</text>
+<text x="757" y="441.5" font-size="12" class="f-muted">schedule</text>
+<text x="757" y="485.5" font-size="12" class="f-muted">webhook</text>
+<text x="757" y="529.5" font-size="12" class="f-muted">event</text>
+<text x="757" y="573.5" font-size="12" class="f-muted">manual</text>
+<text x="757" y="617.5" font-size="12" class="f-muted">webhook</text>
+<text x="757" y="661.5" font-size="12" class="f-muted">manual</text>
+<text x="757" y="705.5" font-size="12" class="f-muted">schedule</text>
+<text x="757" y="749.5" font-size="12" class="f-muted">webhook</text>
+<text x="757" y="793.5" font-size="12" class="f-muted">schedule</text>
+<text x="757" y="837.5" font-size="12" class="f-muted">event</text>
+<text x="249" y="881" font-size="11.8" class="f-faint">Showing 12 of 128 runs · retention 30 days</text>
+<rect x="1311.5" y="863.5" width="95" height="25" rx="5" class="f-raised s-line-strong"/>
+<text x="1358.5" y="880" font-size="12" text-anchor="middle" class="f-text">Load 25 more</text>
+</svg>
 </div>
 
 <figure class="cast" data-rise data-par="-.03" style="--delay:.22s">
@@ -425,6 +850,491 @@ run 01M3ECCKNJ3CK7FHNKK8XV78K5: .agk/runs/01M3ECCKNJ3CK7FHNKK8XV78K5
 </footer>
 
 </main>
+<script>
+(function(){
+  var doc = document, root = doc.documentElement;
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)');
+  var narrow = window.matchMedia('(max-width:1023px)');
+  var wide = window.matchMedia('(min-width:1600px)');
+  function $all(sel, el){ return Array.prototype.slice.call((el || doc).querySelectorAll(sel)); }
+  function icon(paths){
+    return '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' + paths + '</svg>';
+  }
+  var ICON = {
+    menu: icon('<path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>'),
+    close: icon('<path d="M4 4l8 8M12 4l-8 8"/>'),
+    moon: '<svg class="moon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/></svg>',
+    sun: '<svg class="sun" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.8"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>',
+    copy: icon('<rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V3.9c0-.8-.6-1.4-1.4-1.4H3.9c-.8 0-1.4.6-1.4 1.4v5.2c0 .8.6 1.4 1.4 1.4h1.6"/>'),
+    check: icon('<path d="M3 8.5l3.2 3L13 4.5"/>'),
+    zoom: icon('<path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5L9 7M2.5 13.5L7 9"/>')
+  };
+
+  var bar = doc.querySelector('.topbar') || doc.querySelector('.page-tools');
+  var nav = doc.querySelector('.side');
+  var shell = doc.querySelector('.shell');
+
+  // ---------- Theme ----------
+  // The page follows the system until somebody chooses; the choice is remembered on this
+  // device only, and the script in the head applies it before the first paint.
+  function currentTheme(){
+    var t = root.getAttribute('data-theme');
+    if(t) return t;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  if(bar){
+    var themeBtn = doc.createElement('button');
+    themeBtn.type = 'button';
+    themeBtn.className = 'icon-btn theme-btn';
+    themeBtn.innerHTML = ICON.moon + ICON.sun;
+    function labelTheme(){
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
+      themeBtn.setAttribute('aria-label', 'Switch to the ' + next + ' theme');
+      themeBtn.title = 'Switch to the ' + next + ' theme';
+    }
+    labelTheme();
+    themeBtn.addEventListener('click', function(){
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('agentiik-theme', next); } catch(e) {}
+      labelTheme();
+    });
+    bar.appendChild(themeBtn);
+  }
+
+  // ---------- Contents: a drawer on a narrow screen ----------
+  var menuBtn = null, scrim = null;
+  function setNav(open, focus){
+    if(!menuBtn) return;
+    root.classList.toggle('nav-open', open);
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    menuBtn.innerHTML = open ? ICON.close : ICON.menu;
+    menuBtn.setAttribute('aria-label', open ? 'Close the contents' : 'Open the contents');
+    if(open && focus){
+      var here = nav.querySelector('[aria-current="true"]') || nav.querySelector('a');
+      if(here){
+        here.focus({preventScroll: true});
+        // Scrolled within the drawer alone: scrollIntoView would move every scrolling
+        // ancestor, the page included.
+        var r = here.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+        nav.scrollTop += (r.top - nr.top) - nav.clientHeight / 2;
+      }
+    }
+    if(!open && focus) menuBtn.focus();
+  }
+  if(bar && nav){
+    if(!nav.id) nav.id = 'contents';
+    menuBtn = doc.createElement('button');
+    menuBtn.type = 'button';
+    menuBtn.className = 'icon-btn menu-btn';
+    menuBtn.setAttribute('aria-controls', nav.id);
+    bar.insertBefore(menuBtn, bar.firstChild);
+    scrim = doc.createElement('div');
+    scrim.className = 'scrim';
+    doc.body.appendChild(scrim);
+    setNav(false);
+    menuBtn.addEventListener('click', function(){ setNav(!root.classList.contains('nav-open'), true); });
+    scrim.addEventListener('click', function(){ setNav(false, true); });
+    doc.addEventListener('keydown', function(e){
+      if(e.key === 'Escape' && root.classList.contains('nav-open')) setNav(false, true);
+    });
+    narrow.addEventListener('change', function(){ if(!narrow.matches) setNav(false); });
+  }
+
+  // ---------- Contents: the chapter and section being read ----------
+  var rail = null, railList = null, railHead = null;
+  if(nav){
+    var links = $all('.side-toc a[href^="#"]', nav);
+    var targets = [], map = {};
+    links.forEach(function(a){
+      var el = doc.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+      if(!el) return;
+      targets.push(el);
+      map[el.id] = a;
+    });
+    targets.sort(function(x, y){
+      return (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
+    });
+
+    function chapterItem(a){
+      var li = a.parentNode;
+      while(li && !(li.tagName === 'LI' && li.parentNode && !li.parentNode.classList.contains('subs'))){
+        li = li.parentNode;
+      }
+      return li;
+    }
+    function partOf(a){
+      var d = a.parentNode;
+      while(d && d.tagName !== 'DETAILS'){ d = d.parentNode; }
+      return d;
+    }
+    function sectionOf(el){
+      while(el && el.tagName !== 'SECTION'){ el = el.parentNode; }
+      return el;
+    }
+
+    // The rail: every addressed heading of the chapter in view, in the right margin of a
+    // wide screen. Built from the document, so it cannot disagree with it.
+    if(shell && doc.querySelector('main section')){
+      rail = doc.createElement('aside');
+      rail.className = 'rail';
+      rail.setAttribute('aria-label', 'In this chapter');
+      rail.innerHTML = '<p class="rail-title">In this chapter</p><a class="rail-chapter" href="#"></a><ul></ul>';
+      railHead = rail.querySelector('.rail-chapter');
+      railList = rail.querySelector('ul');
+      shell.appendChild(rail);
+      shell.classList.add('has-rail');
+    }
+    var railSection = null, railTargets = [], railMap = {}, railCurrent = null;
+    function buildRail(section){
+      if(!rail || section === railSection) return;
+      railSection = section;
+      railTargets = []; railMap = {}; railCurrent = null;
+      railList.innerHTML = '';
+      if(!section){ rail.hidden = true; return; }
+      var h2 = section.querySelector('h2');
+      railHead.textContent = h2 ? h2.textContent.replace(/#$/, '') : '';
+      railHead.setAttribute('href', '#' + section.id);
+      $all('h3[id], h4[id]', section).forEach(function(h){
+        var li = doc.createElement('li');
+        if(h.tagName === 'H4') li.className = 'h4';
+        var a = doc.createElement('a');
+        a.href = '#' + h.id;
+        a.textContent = h.textContent.replace(/#$/, '');
+        li.appendChild(a);
+        railList.appendChild(li);
+        railTargets.push(h);
+        railMap[h.id] = a;
+      });
+      rail.hidden = !railTargets.length;
+    }
+
+    var current = null, openItem = null;
+    function reveal(a){
+      var part = partOf(a);
+      if(part && !part.open) part.open = true;
+      var item = chapterItem(a);
+      if(item !== openItem){
+        if(openItem) openItem.removeAttribute('data-open');
+        if(item) item.setAttribute('data-open', '');
+        openItem = item;
+      }
+    }
+    function scrollIntoNav(a){
+      if(narrow.matches || nav.scrollHeight <= nav.clientHeight) return;
+      var r = a.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+      if(r.top < nr.top + 12 || r.bottom > nr.bottom - 12){
+        nav.scrollTop += (r.top - nr.top) - (nav.clientHeight / 2) + (r.height / 2);
+      }
+    }
+    function lineY(){ return (bar ? bar.offsetHeight : 56) + 28; }
+    function sync(){
+      if(!targets.length) return;
+      var line = lineY();
+      var active = targets[0];
+      for(var i = 0; i < targets.length; i++){
+        if(targets[i].getBoundingClientRect().top <= line){ active = targets[i]; } else { break; }
+      }
+      var atEnd = window.innerHeight + window.pageYOffset >= doc.documentElement.scrollHeight - 4;
+      if(atEnd) active = targets[targets.length - 1];
+      if(active !== current){
+        if(current && map[current.id]) map[current.id].removeAttribute('aria-current');
+        current = active;
+        var a = map[current.id];
+        if(a){
+          a.setAttribute('aria-current', 'true');
+          reveal(a);
+          scrollIntoNav(a);
+        }
+      }
+      if(rail && wide.matches){
+        buildRail(sectionOf(current));
+        var ra = null;
+        for(var j = 0; j < railTargets.length; j++){
+          if(railTargets[j].getBoundingClientRect().top <= line){ ra = railTargets[j]; } else { break; }
+        }
+        if(atEnd && railTargets.length) ra = railTargets[railTargets.length - 1];
+        if(ra !== railCurrent){
+          if(railCurrent && railMap[railCurrent.id]) railMap[railCurrent.id].removeAttribute('aria-current');
+          railCurrent = ra;
+          if(ra && railMap[ra.id]) railMap[ra.id].setAttribute('aria-current', 'true');
+        }
+      }
+    }
+
+    // A chosen chapter closes the drawer, so the reader lands on the text.
+    nav.addEventListener('click', function(e){
+      var t = e.target;
+      while(t && t !== nav && t.tagName !== 'A'){ t = t.parentNode; }
+      if(t && t.tagName === 'A' && narrow.matches) setNav(false);
+    });
+
+    var queued = false;
+    function onScroll(){
+      if(queued) return;
+      queued = true;
+      window.requestAnimationFrame(function(){ queued = false; sync(); });
+    }
+    window.addEventListener('scroll', onScroll, {passive: true});
+    window.addEventListener('resize', onScroll);
+    wide.addEventListener('change', function(){ railSection = null; sync(); });
+    sync();
+  }
+
+  // ---------- Headings: a link to each one that has an address ----------
+  $all('main section[id] > .sec-head h2, main h3[id], main h4[id]').forEach(function(h){
+    var id = h.id || h.closest('section').id;
+    if(!id || h.querySelector('.anchor')) return;
+    var a = doc.createElement('a');
+    a.className = 'anchor';
+    a.href = '#' + id;
+    a.textContent = '#';
+    a.setAttribute('aria-label', 'Link to ' + h.textContent);
+    h.appendChild(a);
+  });
+
+  // ---------- Tables: each in its own scroller ----------
+  $all('main table').forEach(function(t){
+    var wrap = t.parentNode;
+    if(!wrap.classList || !wrap.classList.contains('tablewrap')){
+      wrap = doc.createElement('div');
+      wrap.className = 'tablewrap';
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    }
+  });
+  // A scroller whose content is wider than it can be scrolled with the keyboard too.
+  function scrollers(){
+    $all('.tablewrap, .block pre, .figbody').forEach(function(el){
+      var over = el.scrollWidth > el.clientWidth + 1;
+      if(over && !el.hasAttribute('tabindex')){
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('data-kbd', '');
+        if(!el.hasAttribute('role')){
+          el.setAttribute('role', 'region');
+          var what = el.classList.contains('tablewrap') ? 'Table' : el.tagName === 'PRE' ? 'Code' : 'Figure';
+          el.setAttribute('aria-label', what + ', scrolls sideways');
+        }
+      } else if(!over && el.hasAttribute('data-kbd')){
+        el.removeAttribute('tabindex'); el.removeAttribute('data-kbd');
+        el.removeAttribute('role'); el.removeAttribute('aria-label');
+      }
+    });
+  }
+  scrollers();
+  var rq = null;
+  window.addEventListener('resize', function(){ clearTimeout(rq); rq = setTimeout(scrollers, 150); });
+  window.addEventListener('load', scrollers);
+
+  // ---------- Code: a copy button on every block ----------
+  // What is copied is what a reader would type: the commands without their prompt, and a
+  // here-document's body with them, but not the output a terminal answered. A block with no
+  // prompt at all is a file, and is copied whole.
+  function copyText(pre){
+    var clone = pre.cloneNode(true);
+    var prompts = clone.querySelectorAll('.p');
+    if(!prompts.length) return pre.textContent.replace(/\n$/, '');
+    Array.prototype.forEach.call(prompts, function(p){ p.textContent = '\u0001'; });
+    var lines = clone.textContent.split('\n'), out = [], heredoc = null;
+    lines.forEach(function(l){
+      if(heredoc !== null){
+        out.push(l);
+        if(l.trim() === heredoc) heredoc = null;
+        return;
+      }
+      if(l.charAt(0) === '\u0001'){
+        var cmd = l.slice(1).replace(/^ /, '');
+        out.push(cmd);
+        var m = cmd.match(/<<-?\s*['"]?([A-Za-z_][A-Za-z0-9_]*)['"]?/);
+        if(m) heredoc = m[1];
+      }
+    });
+    return out.join('\n');
+  }
+  function writeClipboard(text){
+    if(navigator.clipboard && window.isSecureContext){
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function(resolve, reject){
+      var ta = doc.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0'; ta.style.top = '0';
+      doc.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = doc.execCommand('copy'); } catch(e) {}
+      doc.body.removeChild(ta);
+      ok ? resolve() : reject();
+    });
+  }
+  $all('.block').forEach(function(block){
+    var pre = block.querySelector('pre');
+    if(!pre || block.querySelector('.copy-btn')) return;
+    var btn = doc.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.innerHTML = ICON.copy + '<span>Copy</span>';
+    var label = block.querySelector('.note-label');
+    btn.setAttribute('aria-label', 'Copy' + (label ? ' ' + label.textContent.trim() : ' this block'));
+    var status = btn.querySelector('span');
+    var timer = null;
+    btn.addEventListener('click', function(){
+      writeClipboard(copyText(pre)).then(function(){
+        btn.setAttribute('data-state', 'done');
+        btn.innerHTML = ICON.check + '<span>Copied</span>';
+      }, function(){
+        btn.innerHTML = ICON.copy + '<span>Select and copy</span>';
+      }).then(function(){
+        clearTimeout(timer);
+        timer = setTimeout(function(){
+          btn.removeAttribute('data-state');
+          btn.innerHTML = ICON.copy + '<span>Copy</span>';
+        }, 1800);
+      });
+    });
+    if(label){
+      var text = doc.createElement('span');
+      text.className = 'label-text';
+      while(label.firstChild) text.appendChild(label.firstChild);
+      label.appendChild(text);
+      label.appendChild(btn);
+    } else {
+      block.appendChild(btn);
+    }
+  });
+
+  // ---------- Tabs: files that are alternatives to one another ----------
+  $all('.tabset').forEach(function(set, n){
+    var panels = [], byName = {};
+    $all(':scope > [data-tab]', set).forEach(function(el){
+      var name = el.getAttribute('data-tab');
+      if(!byName[name]){
+        var panel = doc.createElement('div');
+        panel.className = 'tabpanel';
+        panel.setAttribute('role', 'tabpanel');
+        byName[name] = panel;
+        panels.push({name: name, panel: panel});
+        set.insertBefore(panel, el);
+      }
+      byName[name].appendChild(el);
+    });
+    if(panels.length < 2) return;
+    var list = doc.createElement('div');
+    list.className = 'tablist';
+    list.setAttribute('role', 'tablist');
+    if(set.getAttribute('aria-label')) list.setAttribute('aria-label', set.getAttribute('aria-label'));
+    var tabs = panels.map(function(p, i){
+      var id = 'tab-' + n + '-' + i;
+      var t = doc.createElement('button');
+      t.type = 'button';
+      t.id = id;
+      t.setAttribute('role', 'tab');
+      t.textContent = p.name;
+      p.panel.id = id + '-panel';
+      p.panel.setAttribute('aria-labelledby', id);
+      t.setAttribute('aria-controls', p.panel.id);
+      list.appendChild(t);
+      return t;
+    });
+    function select(i, focus){
+      tabs.forEach(function(t, j){
+        var on = i === j;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+        panels[j].panel.hidden = !on;
+      });
+      if(focus) tabs[i].focus();
+      scrollers();
+    }
+    tabs.forEach(function(t, i){
+      t.addEventListener('click', function(){ select(i); });
+      t.addEventListener('keydown', function(e){
+        var k = e.key, j = null;
+        if(k === 'ArrowRight') j = (i + 1) % tabs.length;
+        else if(k === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+        else if(k === 'Home') j = 0;
+        else if(k === 'End') j = tabs.length - 1;
+        if(j !== null){ e.preventDefault(); select(j, true); }
+      });
+    });
+    set.insertBefore(list, set.firstChild);
+    set.classList.add('is-tabbed');
+    select(0);
+  });
+
+  // ---------- Figures: enlarge on click, close with Escape ----------
+  var box = null, boxBody = null, boxTitle = null, lastFocus = null;
+  function lightbox(){
+    if(box) return box;
+    box = doc.createElement('dialog');
+    box.className = 'lightbox';
+    box.setAttribute('aria-label', 'Enlarged figure');
+    box.innerHTML = '<div class="lightbox-frame"><div class="lightbox-bar"><span class="lightbox-title"></span>' +
+      '<button type="button" class="icon-btn" aria-label="Close the enlarged figure">' + ICON.close + '</button></div>' +
+      '<div class="lightbox-body"></div></div>';
+    boxBody = box.querySelector('.lightbox-body');
+    boxTitle = box.querySelector('.lightbox-title');
+    box.querySelector('.icon-btn').addEventListener('click', function(){ box.close(); });
+    boxBody.addEventListener('click', function(e){
+      // A click on the drawing closes it, but a drag to pan it does not.
+      if(!window.getSelection || String(window.getSelection()) === '') box.close();
+    });
+    box.addEventListener('click', function(e){ if(e.target === box) box.close(); });
+    box.addEventListener('close', function(){
+      boxBody.innerHTML = '';
+      root.classList.remove('lightbox-open');
+      if(lastFocus) lastFocus.focus({preventScroll: true});
+    });
+    doc.body.appendChild(box);
+    return box;
+  }
+  function visibleArt(fig){
+    var candidates = $all('.figbody > svg, :scope > svg, :scope > img', fig);
+    for(var i = 0; i < candidates.length; i++){
+      if(candidates[i].getClientRects().length) return candidates[i];
+    }
+    return candidates[0];
+  }
+  function enlarge(fig, from){
+    var art = visibleArt(fig);
+    if(!art || typeof HTMLDialogElement !== 'function') return;
+    lightbox();
+    lastFocus = from || null;
+    var copy = art.cloneNode(true);
+    copy.removeAttribute('id');
+    $all('[id]', copy).forEach(function(el){ el.removeAttribute('id'); });
+    if(art.classList.contains('mock')) copy.classList.add('is-mock');
+    copy.style.minWidth = '';
+    boxBody.appendChild(copy);
+    var cap = fig.querySelector('figcaption b');
+    boxTitle.innerHTML = cap ? '<b></b>' : '';
+    if(cap) boxTitle.firstChild.textContent = cap.textContent;
+    root.classList.add('lightbox-open');
+    box.showModal();
+    box.querySelector('.icon-btn').focus({preventScroll: true});
+  }
+  $all('main figure, .shot').forEach(function(fig){
+    if(fig.classList.contains('cast') || !visibleArt(fig)) return;
+    fig.setAttribute('data-zoom', '');
+    var btn = doc.createElement('button');
+    btn.type = 'button';
+    btn.className = 'zoom-btn';
+    btn.innerHTML = ICON.zoom;
+    var cap = fig.querySelector('figcaption b');
+    btn.setAttribute('aria-label', 'Enlarge the figure' + (cap ? ': ' + cap.textContent : ''));
+    btn.title = 'Enlarge';
+    btn.addEventListener('click', function(e){ e.stopPropagation(); enlarge(fig, btn); });
+    fig.appendChild(btn);
+    fig.addEventListener('click', function(e){
+      if(e.target.closest('a, button, figcaption')) return;
+      // A horizontal drag to scroll a wide figure on a phone is not a request to enlarge it.
+      if(String(window.getSelection ? window.getSelection() : '') !== '') return;
+      enlarge(fig, btn);
+    });
+  });
+})();
+</script>
 <script>
 (function(){
   var root = document.documentElement;
