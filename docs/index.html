@@ -601,7 +601,7 @@ img{max-width:100%}
   </div>
   <div class="side-toc">
     <details class="part" open>
-      <summary>Get started</summary>
+      <summary>Guides</summary>
       <ul>
         <li><a href="#get-started">Get started</a>
           <ul class="subs">
@@ -612,8 +612,18 @@ img{max-width:100%}
             <li><a href="#run-it">Run it</a></li>
             <li><a href="#read-the-result">Read what came out</a></li>
             <li><a href="#second-step">Add a second step</a></li>
+            <li><a href="#run-on-a-server">Run it on a server</a></li>
+            <li><a href="#run-on-the-server">Run the workflow there</a></li>
             <li><a href="#where-next">Where to go next</a></li>
             <li><a href="#not-yet">What does not work yet</a></li>
+          </ul>
+        </li>
+        <li><a href="#install-a-server">Install a server</a>
+          <ul class="subs">
+            <li><a href="#install-with-compose">On Linux, with Docker Compose</a></li>
+            <li><a href="#install-with-homebrew">On a Mac, with Homebrew</a></li>
+            <li><a href="#add-a-runner">Add a runner on another machine</a></li>
+            <li><a href="#server-not-yet">What v0.2.1 does not do yet</a></li>
           </ul>
         </li>
         <li><a href="#use-cases">Use cases</a>
@@ -861,7 +871,7 @@ img{max-width:100%}
 <section id="get-started">
   <div class="sec-head"><span class="mark">§</span><h2>Get started</h2></div>
   <div class="prose">
-    <p>At <code>v0.2.0</code> a workflow runs on your machine with <code>agk run --local</code>, or on a server with <code>agk push</code> and <code>agk run --namespace</code> once an installation exists (<a href="#first-run">a v0.2.0 installation, the first time</a>, and <a href="#pointing-agk-at-an-installation">Pointing agk at an installation</a>). This page stays on your machine. Every output below is what a terminal answered at <code>v0.2.0</code>, not what the rest of this documentation promises.</p>
+    <p>A workflow runs on your machine with <code>agk run --local</code>, and on a server with <code>agk push</code> and <code>agk run --namespace</code>. This chapter does both: a first workflow on your machine, then <a href="#run-on-a-server">the same workflow on a server</a> started with Docker Compose. Every output below is what a terminal answered, at <code>v0.2.0</code> for the local run and at <code>v0.2.1</code> for the server, not what the rest of this documentation promises.</p>
 
     <h3 id="what-you-need">What you need</h3>
     <div class="tablewrap">
@@ -871,6 +881,7 @@ img{max-width:100%}
           <tr><td>Docker daemon</td><td>Runs the bricks, which are containers. Docker Desktop on macOS or Windows, Docker on Linux.</td></tr>
           <tr><td>Homebrew, or Go 1.27</td><td>Homebrew builds <code>agk</code> from the tagged source; <code>go install</code> does the same without it.</td></tr>
           <tr><td>git</td><td>A workflow is a git repository. A local one, with no remote, is enough.</td></tr>
+          <tr><td>For the server part, a Linux machine with Docker Engine 28 and the Compose plugin</td><td>A server runs its steps on a runner, and a runner is a Linux host (<a href="#install-a-server">Install a server</a>).</td></tr>
         </tbody>
       </table>
     </div>
@@ -1108,9 +1119,159 @@ flowchart LR
 	step_count -. "out" .-&gt; output_counted</code></pre>
     </div>
 
+    <h3 id="run-on-a-server">Run it on a server</h3>
+
+    <p>A server on one Linux machine is five containers: PostgreSQL, the NATS bus, the API, the controller and a runner. This is the whole Compose file:</p>
+
+    <!-- Verbatim copy of single-host/compose.yaml in https://github.com/agentiik/deploy, HTML-escaped: a check compares the two, so edit that file and copy it here, never the other way. -->
+    <div class="block">
+      <div class="note-label">compose.yaml, from agentiik/deploy</div>
+<pre><code># Agentiik on one Linux host. Run sudo ./setup once first: it writes every file mounted here.
+name: agentiik
+
+x-agentiik: &amp;agentiik
+  network_mode: host # so the runner reaches the API and the bus at the addresses the control plane uses
+  userns_mode: host
+  restart: unless-stopped
+  depends_on: { postgres: { condition: service_healthy }, nats: { condition: service_healthy } }
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    network_mode: none # reached through its socket alone, which only the API and the controller mount, so it asks no password
+    environment: { POSTGRES_DB: agentiik, POSTGRES_HOST_AUTH_METHOD: trust }
+    volumes: ["${AGENTIIK_DATA}/postgres:/var/lib/postgresql/data", "${AGENTIIK_DATA}/socket:/var/run/postgresql"]
+    healthcheck: { test: pg_isready -h 127.0.0.1 -U postgres, interval: 2s }
+    restart: unless-stopped
+  nats:
+    image: nats:2-alpine
+    network_mode: host # listens on 127.0.0.1:4222 alone
+    command: ["-c", "/nats/nats.conf"]
+    volumes: ["${AGENTIIK_DATA}/nats:/nats"]
+    healthcheck: { test: wget -qO /dev/null http://127.0.0.1:8222/healthz, interval: 2s }
+    restart: unless-stopped
+  api:
+    &lt;&lt;: *agentiik
+    image: ghcr.io/agentiik/api:${AGENTIIK_VERSION}
+    env_file: [control-plane.env, api.env]
+    environment: { AGK_PUBLIC_URL: "https://${AGENTIIK_HOST}:${AGENTIIK_PORT}", AGK_LISTEN: ":${AGENTIIK_PORT}" }
+    volumes: ["${AGENTIIK_DATA}/api:/agentiik", "${AGENTIIK_DATA}/objects:/objects", "${AGENTIIK_DATA}/socket:/run/postgresql"]
+  controller:
+    &lt;&lt;: *agentiik
+    image: ghcr.io/agentiik/controller:${AGENTIIK_VERSION}
+    env_file: [control-plane.env]
+    volumes: ["${AGENTIIK_DATA}/controller:/agentiik", "${AGENTIIK_DATA}/objects:/objects", "${AGENTIIK_DATA}/socket:/run/postgresql"]
+  runner:
+    &lt;&lt;: *agentiik
+    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION}
+    depends_on: [api]
+    group_add: ["${DOCKER_GID}"] # the group that owns the Docker socket
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    environment: { AGK_RUNNER_CONCURRENCY: "${AGENTIIK_RUNNER_CONCURRENCY}", SSL_CERT_DIR: /etc/agentiik/trust }
+    volumes: # the daemon resolves bind sources on the host, so each path is the same on both sides
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/agentiik:/var/lib/agentiik
+      - /run/agentiik/secrets:/run/agentiik/secrets
+      - /etc/agentiik:/etc/agentiik</code></pre>
+    </div>
+
+    <p>It mounts keys, a certificate and a runner identity that do not exist yet. <code>setup</code> makes them, once, then starts the containers:</p>
+
+    <div class="block">
+      <div class="note-label">on the Linux machine</div>
+<pre><code><span class="p">$</span> <span class="cmd">git clone https://github.com/agentiik/deploy.git</span>
+<span class="p">$</span> <span class="cmd">cd deploy/single-host</span>
+<span class="p">$</span> <span class="cmd">cp .env.example .env</span>
+<span class="p">$</span> <span class="cmd">AGENTIIK_TOKEN="$(sudo ./setup)"</span>
+<span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN</span>
+<span class="p">$</span> <span class="cmd">docker compose ps</span>
+NAME                    IMAGE                                COMMAND                  SERVICE      STATUS
+agentiik-api-1          ghcr.io/agentiik/api:v0.2.1          "/agentiik-api serve"    api          Up
+agentiik-controller-1   ghcr.io/agentiik/controller:v0.2.1   "/agentiik-controller"   controller   Up
+agentiik-nats-1         nats:2-alpine                        "docker-entrypoint.s…"   nats         Up (healthy)
+agentiik-postgres-1     postgres:17-alpine                   "docker-entrypoint.s…"   postgres     Up (healthy)
+agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.1       "/usr/local/bin/agk-…"   runner       Up</code></pre>
+    </div>
+
+    <p><code>setup</code> prints the operator token, the one credential of a <code>v0.2.1</code> server, and only its hash is written down: save it now, <code>echo "$AGENTIIK_TOKEN"</code>. <a href="#install-with-compose">Install a server</a> says what <code>.env</code> chooses and how to stop, upgrade, back up and remove the installation.</p>
+
+    <h3 id="run-on-the-server">Run the workflow there</h3>
+
+    <p>On the same machine, with <code>agk</code> <a href="#install">installed as above</a>, two variables point it at the server: its address, and the certificate <code>setup</code> made. From another machine, <a href="#agk-from-another-machine">copy that certificate and trust it</a>.</p>
+
+    <div class="block">
+      <div class="note-label">point agk at the server</div>
+<pre><code><span class="p">$</span> <span class="cmd">export AGENTIIK_SERVER=https://localhost:8443</span>
+<span class="p">$</span> <span class="cmd">export SSL_CERT_DIR=/etc/agentiik/trust</span></code></pre>
+    </div>
+
+    <p>The first workflow again, in a directory of its own, with one line on standard error for <code>agk logs</code> to show:</p>
+
+    <div class="block">
+      <div class="note-label">push, run, read</div>
+<pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/first-run &amp;&amp; cd ~/first-run &amp;&amp; git init -q</span>
+<span class="p">$</span> <span class="cmd">cat &gt; agentiik.yaml &lt;&lt;'EOF'</span>
+apiVersion: agentiik.dev/v1
+kind: Workflow
+metadata:
+  name: first-run
+  namespace: demo
+outputs:
+  greeting:
+    from: { step: greet, port: out }
+steps:
+  greet:
+    image: alpine:3.21
+    script:
+      - echo "greet runs on $(uname -m)" &gt;&amp;2
+      - echo "hello from ${AGK_STEP}"
+    outputs: [out]
+EOF
+<span class="p">$</span> <span class="cmd">git add agentiik.yaml &amp;&amp; git commit -qm "A first workflow"</span>
+<span class="p">$</span> <span class="cmd">agk push --namespace demo</span>
+<span class="p">$</span> <span class="cmd">agk run --namespace demo 2&gt;&amp;1 | tee ~/first-run.log</span>
+<span class="p">$</span> <span class="cmd">run=$(awk '/ started at / { print $2; exit }' ~/first-run.log)</span>
+<span class="p">$</span> <span class="cmd">agk status "$run"</span>
+<span class="p">$</span> <span class="cmd">agk logs "$run"</span>
+<span class="p">$</span> <span class="cmd">cd -</span></code></pre>
+    </div>
+
+    <div class="block">
+      <div class="note-label">what agk push, run, status and logs print</div>
+<pre><code>user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: ...
+alpine:3.21 resolved to alpine@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507
+demo/first-run@9d4e925 pushed to https://localhost:8443
+1 step, 1 file, 0 included files, 0 manifests, 1 tag resolved to its digest
+run 01M3EF42G80SR9XW17YWGEYTTT of demo/first-run@9d4e925 started at https://localhost:8443
+    0.6s  greet  succeeded, out 1
+first-run succeeded in 0.6s: 1 step, 1 container
+greeting: 1 item
+run 01M3EF42G80SR9XW17YWGEYTTT: https://localhost:8443/api/v1/demo/runs/01M3EF42G80SR9XW17YWGEYTTT
+run 01M3EF42G80SR9XW17YWGEYTTT: demo/first-run@9d4e925, succeeded after 0.6s
+manual by operator at 2026-09-26T09:00:44Z
+greet  succeeded, out 1 sha256:2ec2167f189f
+output greeting: 1 item
+greet | greet runs on x86_64
+greet | driver: the container exited 0: the output envelopes are published</code></pre>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Command</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td>agk push --namespace demo</td><td>Registers the committed workflow in the namespace <code>demo</code>, which <code>setup</code> created, each image tag resolved to its digest on your own Docker daemon: hence the first line.</td></tr>
+          <tr><td>agk run --namespace demo</td><td>Starts a run of <code>HEAD</code> on the server and follows it to its end. An interrupt stops the following, not the run.</td></tr>
+          <tr><td>agk status &lt;run&gt;</td><td>How the run and each step stand, and the digest of each output.</td></tr>
+          <tr><td>agk logs &lt;run&gt;</td><td>What each step wrote on standard error. What it wrote on standard output became its output.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <h3 id="where-next">Where to go next</h3>
 
     <ul class="plain">
+      <li><a href="#install-a-server">Install a server</a>: the installation above in full, the one on a Mac with Homebrew, and a runner on another machine.</li>
       <li><a href="#yaml">Workflow language</a>: every keyword the file accepts.</li>
       <li><a href="#brick">Brick contract</a>: a brick of your own, which is an image and a manifest.</li>
       <li><a href="#catalog">Brick catalog</a>: four ready-made bricks today, <code>jq</code>, <code>schema-validate</code>, <code>csv</code> and <code>http-request</code>.</li>
@@ -1126,6 +1287,290 @@ flowchart LR
           <tr><td class="wrapcell">agk login<br>agk whoami<br>agk share<br>agk grants<br>agk brick init</td><td>Refused, naming what is missing.</td><td>Principals arrive in <a href="roadmap/#m03">v0.3.0</a>, and brick templates come from <code>agentiik/bricks</code>. <a href="roadmap/">The roadmap</a> says which release brings each.</td></tr>
           <tr><td>network: egress</td><td>Refused, not opened. <code>network: none</code> and <code>network: internal</code> run.</td><td>The proxy enforcing <code>egress.allow</code> is <a href="roadmap/#m09">v0.9.0</a> work, once it is designed, and an open network called filtered is worse than a refusal.</td></tr>
           <tr><td class="wrapcell">secrets without a tmpfs (macOS)</td><td>Written into the task's working directory, removed with the container, announced before the run starts.</td><td>A secret needs a tmpfs the runner can reach, and macOS has none.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>What a server does not do yet, users and the console among them, is in <a href="#server-not-yet">Install a server</a>.</p>
+  </div>
+</section>
+
+<!-- ============ INSTALL A SERVER ============ -->
+<section id="install-a-server">
+  <div class="sec-head"><span class="mark">§</span><h2>Install a server</h2></div>
+  <div class="prose">
+    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.2.1</code>:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th></th><th><a href="#install-with-compose">Linux, Docker Compose</a></th><th><a href="#install-with-homebrew">Mac, Homebrew</a></th></tr></thead>
+        <tbody>
+          <tr><td>Runs</td><td>PostgreSQL, the bus, the API, the controller and a runner, each a container</td><td>The bus, the API and the controller as one Homebrew service; PostgreSQL from Homebrew</td></tr>
+          <tr><td>Runs workflows</td><td>Yes</td><td>No: <code>agk push</code> works, and a run waits for a runner, which is a Linux host</td></tr>
+          <tr><td>Reached from</td><td>Any machine, on port 8443</td><td>This Mac alone, at <code>https://localhost:8443</code></td></tr>
+          <tr><td>Choose it</td><td>To run workflows, for yourself or a small team</td><td>To try the API and <code>agk push</code> on a Mac</td></tr>
+          <tr><td>Source, and its CI</td><td><a href="https://github.com/agentiik/deploy/tree/main/single-host">agentiik/deploy</a>, <code>single-host/</code></td><td><a href="https://github.com/agentiik/homebrew-tap">agentiik/homebrew-tap</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Both keep one operator token that may do everything, since <code>v0.2.1</code> has no users (<a href="#server-not-yet">What v0.2.1 does not do yet</a>).</p>
+
+    <h3 id="install-with-compose">On a Linux machine, with Docker Compose</h3>
+
+    <p>Every command here is run, exactly as written, on a fresh Ubuntu machine by the CI of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>.</p>
+
+    <h4>What you need</h4>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>A Linux host, x86-64 or arm64</td><td>The runner hands the Docker daemon paths on the host to bind, which the virtual machine of Docker Desktop on macOS or Windows cannot see. <code>agk</code> runs anywhere.</td></tr>
+          <tr><td>Docker Engine 28 or later, with the Compose plugin</td><td>Every component is a container, and so is every step.</td></tr>
+          <tr><td><code>sudo</code>, <code>openssl</code>, <code>curl</code>, <code>git</code></td><td><code>setup</code> writes under <code>/etc</code>, <code>/var/lib</code>, <code>/run</code> and <code>/srv</code>, and makes the certificate and the keys.</td></tr>
+          <tr><td>Port 8443 free, and 4222 and 8222 on the loopback</td><td>The API serves HTTPS on 8443 on every interface; the bus and its health check listen on <code>127.0.0.1</code> alone.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Install and start</h4>
+    <div class="block">
+      <div class="note-label">install</div>
+<pre><code><span class="p">$</span> <span class="cmd">git clone https://github.com/agentiik/deploy.git</span>
+<span class="p">$</span> <span class="cmd">cd deploy/single-host</span>
+<span class="p">$</span> <span class="cmd">cp .env.example .env</span>
+<span class="c"># edit .env: AGENTIIK_HOST first, if other machines will reach this one</span>
+<span class="p">$</span> <span class="cmd">AGENTIIK_TOKEN="$(sudo ./setup)"</span>
+<span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN</span>
+setup: installing Agentiik v0.2.1 at https://localhost:8443, keeping its state in /srv/agentiik
+setup: the secrets tmpfs is mounted at /run/agentiik/secrets, and /etc/fstab mounts it at boot
+setup: made a certificate for DNS:localhost,IP:127.0.0.1, valid 825 days
+setup: wrote the master key, the presign key, the database password and a new operator token's hash
+setup: pulling the images
+...
+setup: the API answers at https://localhost:8443
+...
+setup: the runner is ready
+setup: Agentiik v0.2.1 is running at https://localhost:8443. Clients trust /etc/agentiik/trust/agentiik.pem.</code></pre>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>.env</th><th>Default</th><th>Chooses</th></tr></thead>
+        <tbody>
+          <tr><td>AGENTIIK_VERSION</td><td><code>v0.2.1</code></td><td>The version of every image. The one variable that picks what runs.</td></tr>
+          <tr><td>AGENTIIK_HOST</td><td><code>localhost</code></td><td>The name clients reach the API at, which the certificate is issued to: a DNS name or an IPv4 address.</td></tr>
+          <tr><td>AGENTIIK_PORT</td><td><code>8443</code></td><td>The HTTPS port, on every interface.</td></tr>
+          <tr><td>AGENTIIK_DATA</td><td><code>/srv/agentiik</code></td><td>Where the database, the bus, the objects, the keys and the certificate live.</td></tr>
+          <tr><td>AGENTIIK_NAMESPACE</td><td><code>demo</code></td><td>The namespace <code>setup</code> creates, to push workflows to.</td></tr>
+          <tr><td>AGENTIIK_RUNNER_LABELS</td><td><code>zone=local</code></td><td>The labels the runner claims.</td></tr>
+          <tr><td>AGENTIIK_RUNNER_CONCURRENCY</td><td><code>2</code></td><td>How many tasks the runner holds at once, low because it shares the host with PostgreSQL.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><code>setup</code> says what it does on standard error and prints the operator token on standard output, which the line above keeps in your shell and nowhere else. Save it in a password manager, <code>echo "$AGENTIIK_TOKEN"</code>: only its hash is written down. Lost, it is replaced by running <code>sudo ./setup</code> again, which keeps everything else.</p>
+
+    <h4>Check it is up</h4>
+    <div class="block">
+      <div class="note-label">docker compose ps</div>
+<pre><code><span class="p">$</span> <span class="cmd">docker compose ps</span>
+NAME                    IMAGE                                COMMAND                  SERVICE      STATUS
+agentiik-api-1          ghcr.io/agentiik/api:v0.2.1          "/agentiik-api serve"    api          Up
+agentiik-controller-1   ghcr.io/agentiik/controller:v0.2.1   "/agentiik-controller"   controller   Up
+agentiik-nats-1         nats:2-alpine                        "docker-entrypoint.s…"   nats         Up (healthy)
+agentiik-postgres-1     postgres:17-alpine                   "docker-entrypoint.s…"   postgres     Up (healthy)
+agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.1       "/usr/local/bin/agk-…"   runner       Up</code></pre>
+    </div>
+
+    <div class="block">
+      <div class="note-label">the API answers the operator</div>
+<pre><code><span class="p">$</span> <span class="cmd">curl --cacert /etc/agentiik/trust/agentiik.pem -H "Authorization: Bearer $AGENTIIK_TOKEN" https://localhost:8443/api/v1/runner-pools</span>
+<span class="p">$</span> <span class="cmd">docker compose logs api</span>
+<span class="c"># and controller, runner, nats, postgres</span></code></pre>
+    </div>
+
+    <p>Then point <code>agk</code> at it and run a workflow, as <a href="#run-on-the-server">Get started</a> does.</p>
+
+    <h4 id="agk-from-another-machine">Use it from another machine</h4>
+    <p><code>AGENTIIK_HOST</code> in <code>.env</code> is the name the other machine reaches this one at, set before <code>setup</code> runs, or <code>setup</code> run again after it changes. Copy <code>/etc/agentiik/trust/agentiik.pem</code> to that machine and trust it:</p>
+    <div class="block">
+      <div class="note-label">on the machine running agk</div>
+<pre><code><span class="c"># Linux: agk reads the certificates of a directory</span>
+<span class="p">$</span> <span class="cmd">export SSL_CERT_DIR=&lt;the directory holding agentiik.pem&gt;</span>
+<span class="c"># macOS: agk trusts what the keychain trusts</span>
+<span class="p">$</span> <span class="cmd">sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain agentiik.pem</span>
+
+<span class="p">$</span> <span class="cmd">export AGENTIIK_SERVER=https://&lt;AGENTIIK_HOST&gt;:8443</span>
+<span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN=&lt;the operator token&gt;</span></code></pre>
+    </div>
+
+    <h4>Stop, start, upgrade, back up, remove</h4>
+    <p>The installation starts again with the host: every container restarts unless it was stopped. All of these run in <code>deploy/single-host</code>.</p>
+    <div class="block">
+      <div class="note-label">operate</div>
+<pre><code><span class="c"># stop, and start again</span>
+<span class="p">$</span> <span class="cmd">docker compose stop</span>
+<span class="p">$</span> <span class="cmd">docker compose up --detach --wait</span>
+
+<span class="c"># upgrade: set AGENTIIK_VERSION in .env to the new version, then</span>
+<span class="p">$</span> <span class="cmd">AGENTIIK_TOKEN="$(sudo ./setup)"</span>
+<span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN</span>
+
+<span class="c"># back up: the database and the files, taken together</span>
+<span class="p">$</span> <span class="cmd">docker compose exec -T postgres pg_dump -U postgres -Fc agentiik &gt; agentiik.dump</span>
+<span class="p">$</span> <span class="cmd">sudo tar -C /srv/agentiik -czf agentiik-files.tar.gz api controller nats objects</span>
+
+<span class="c"># a namespace besides AGENTIIK_NAMESPACE</span>
+<span class="p">$</span> <span class="cmd">docker compose run --rm --no-deps api namespace create team</span>
+
+<span class="c"># renew the bus credential, every 90 days</span>
+<span class="p">$</span> <span class="cmd">docker compose run --rm --no-deps api bus-credential /agentiik/bus</span>
+<span class="p">$</span> <span class="cmd">AGENTIIK_TOKEN="$(sudo ./setup)"</span>
+<span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN</span>
+
+<span class="c"># remove every container, image, key and piece of data</span>
+<span class="p">$</span> <span class="cmd">docker compose down --rmi all --volumes</span>
+<span class="p">$</span> <span class="cmd">sudo umount /run/agentiik/secrets</span>
+<span class="p">$</span> <span class="cmd">sudo sed -i '\| /run/agentiik/secrets |d' /etc/fstab</span>
+<span class="p">$</span> <span class="cmd">sudo rm -rf /srv/agentiik /var/lib/agentiik /etc/agentiik /run/agentiik</span></code></pre>
+    </div>
+
+    <ul class="plain">
+      <li>An upgrade is <code>setup</code> again: it pulls, migrates, restarts, and prints a new operator token, since every run of it mints one.</li>
+      <li>A backup is the database and the files together, since a run restored without its objects points at artifacts that no longer exist. The archive holds the master key, which opens every secret in the dump: keep the two apart, or encrypt them.</li>
+      <li>The bus credential of the API and the controller expires after 90 days, and the API warns from 14 days before. <code>setup</code> hands the renewed one to the controller and restarts both.</li>
+      <li>A certificate from a public authority replaces <code>/srv/agentiik/api/tls/server.pem</code> and <code>server.key</code>, then <code>sudo ./setup</code> again; clients that trust that authority need no <code>agentiik.pem</code>.</li>
+    </ul>
+
+    <h3 id="install-with-homebrew">On a Mac, with Homebrew</h3>
+
+    <p>The API, the controller and the bus on this Mac, reached at <code>https://localhost:8443</code> from this Mac alone. A runner is a Linux host, so workflows are pushed here and a run waits. The install, the start, the check, <code>agk push</code>, the stop and the removal are run by the CI of <a href="https://github.com/agentiik/homebrew-tap">agentiik/homebrew-tap</a> on macOS.</p>
+
+    <h4>What you need</h4>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>macOS with Homebrew</td><td>The formula builds the programs from the tagged source.</td></tr>
+          <tr><td>PostgreSQL 17 from Homebrew</td><td>The database. The service does not run it, so any PostgreSQL answering on <code>/tmp</code> will do.</td></tr>
+          <tr><td>Your password, once</td><td><code>agentiik-setup</code> adds the certificate's authority to the System keychain: the programs, <code>agk</code> included, trust what macOS trusts.</td></tr>
+          <tr><td>Ports 8443 and 4222 free on the loopback</td><td>The API and the bus.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Install and start</h4>
+    <div class="block">
+      <div class="note-label">install</div>
+<pre><code><span class="p">$</span> <span class="cmd">brew trust agentiik/tap</span>
+<span class="p">$</span> <span class="cmd">brew install agentiik/tap/agentiik postgresql@17</span>
+<span class="p">$</span> <span class="cmd">brew services start postgresql@17</span>
+<span class="p">$</span> <span class="cmd">agentiik-setup</span>
+<span class="p">$</span> <span class="cmd">brew services start agentiik/tap/agentiik</span></code></pre>
+    </div>
+
+    <p><code>agentiik-setup</code> writes the secrets, the certificate, the database, a namespace named after you and the bus identity, then prints the two lines that point <code>agk</code> at the server, <code>export AGENTIIK_SERVER=https://localhost:8443</code> and <code>export AGENTIIK_TOKEN=</code> the operator token, shown this once. Run again, it keeps all of that and repairs what is missing. <code>brew services start</code> runs the bus, the API and the controller, and again at every login.</p>
+
+    <h4>Check it is up</h4>
+    <div class="block">
+      <div class="note-label">the API answers the operator</div>
+<pre><code><span class="p">$</span> <span class="cmd">curl --cacert "$(brew --prefix)/etc/agentiik/tls/ca.pem" -H "Authorization: Bearer $AGENTIIK_TOKEN" "$AGENTIIK_SERVER/api/v1/runner-pools"</span>
+<span class="p">$</span> <span class="cmd">brew services info agentiik/tap/agentiik</span>
+<span class="p">$</span> <span class="cmd">tail -n 100 "$(brew --prefix)"/var/log/agentiik/*.log</span>
+
+<span class="c"># from a workflow's repository</span>
+<span class="p">$</span> <span class="cmd">agk push --namespace &lt;the namespace agentiik-setup named&gt;</span></code></pre>
+    </div>
+
+    <p><code>curl</code> reads its own list of authorities rather than the keychain, hence <code>--cacert</code>.</p>
+
+    <h4>Stop, restart, upgrade, back up, remove</h4>
+    <div class="block">
+      <div class="note-label">operate</div>
+<pre><code><span class="c"># stop, and start again</span>
+<span class="p">$</span> <span class="cmd">brew services stop agentiik/tap/agentiik</span>
+<span class="p">$</span> <span class="cmd">brew services restart agentiik/tap/agentiik</span>
+
+<span class="c"># upgrade: agentiik-setup migrates the database</span>
+<span class="p">$</span> <span class="cmd">brew upgrade agentiik/tap/agentiik</span>
+<span class="p">$</span> <span class="cmd">agentiik-setup</span>
+<span class="p">$</span> <span class="cmd">brew services restart agentiik/tap/agentiik</span>
+
+<span class="c"># back up: the database and the files, taken together</span>
+<span class="p">$</span> <span class="cmd">"$(brew --prefix postgresql@17)/bin/pg_dump" -h /tmp -Fc agentiik &gt; agentiik.dump</span>
+<span class="p">$</span> <span class="cmd">tar -C "$(brew --prefix)" -czf agentiik-files.tar.gz etc/agentiik var/lib/agentiik</span>
+
+<span class="c"># another namespace</span>
+<span class="p">$</span> <span class="cmd">agentiik-setup --namespace team</span>
+
+<span class="c"># remove the database, the secrets and the keychain entry, then the programs</span>
+<span class="p">$</span> <span class="cmd">brew services stop agentiik/tap/agentiik</span>
+<span class="p">$</span> <span class="cmd">agentiik-setup remove --yes</span>
+<span class="p">$</span> <span class="cmd">brew uninstall agentiik/tap/agentiik</span>
+<span class="p">$</span> <span class="cmd">rm -rf "$(brew --prefix)/etc/agentiik" "$(brew --prefix)/var/log/agentiik"</span></code></pre>
+    </div>
+
+    <p>The settings are files in <code>$(brew --prefix)/etc/agentiik</code>, <code>api.env</code>, <code>controller.env</code> and <code>nats-server.conf</code>, which Homebrew keeps across upgrades; <a href="#configuration">Configuration</a> says what each setting is.</p>
+
+    <h3 id="add-a-runner">Add a runner on another machine</h3>
+
+    <p>A runner is a Linux host with Docker Engine 28 that pulls tasks from the server's bus. <b>Neither installation above takes one from another machine at <code>v0.2.1</code></b>: both keep the bus on the loopback, and a runner reaches the bus at the address the API hands it. An installation that does needs <code>AGK_PUBLIC_URL</code> and <code>AGK_BUS_URL</code> to name addresses the runner reaches, with a certificate naming them (<a href="#configuration">Configuration</a>). The runner's side is then the same everywhere:</p>
+
+    <div class="block">
+      <div class="note-label">on the server: a join token for the default pool, single use, valid an hour</div>
+<pre><code><span class="p">$</span> <span class="cmd">curl --cacert &lt;the server's certificate&gt; -H "Authorization: Bearer $AGENTIIK_TOKEN" -H 'Content-Type: application/json' --data '{}' "$AGENTIIK_SERVER/api/v1/runner-pools/default/join-tokens"</span>
+<span class="c"># the answer's join_token.token</span></code></pre>
+    </div>
+
+    <div class="block">
+      <div class="note-label">on the runner host</div>
+<pre><code><span class="c"># the account the runner runs as, and its directories</span>
+<span class="p">$</span> <span class="cmd">sudo useradd --system --home-dir /var/lib/agentiik --shell /usr/sbin/nologin agentiik</span>
+<span class="p">$</span> <span class="cmd">sudo install -d -m 0700 -o agentiik -g agentiik /var/lib/agentiik</span>
+<span class="p">$</span> <span class="cmd">sudo install -d -m 0755 /etc/agentiik</span>
+
+<span class="c"># the tmpfs secret values are written on, mounted again at boot</span>
+<span class="p">$</span> <span class="cmd">echo 'tmpfs /run/agentiik/secrets tmpfs noexec,nosuid,nodev,size=64m,mode=0700,uid=agentiik,gid=agentiik 0 0' | sudo tee -a /etc/fstab</span>
+<span class="p">$</span> <span class="cmd">sudo install -d -m 0700 /run/agentiik/secrets</span>
+<span class="p">$</span> <span class="cmd">sudo mount /run/agentiik/secrets</span>
+<span class="p">$</span> <span class="cmd">echo 'secrets_dir = "/run/agentiik/secrets"' | sudo tee /etc/agentiik/runner.toml</span>
+
+<span class="c"># the runner and the helper a script step is given, static, from the tagged source</span>
+<span class="p">$</span> <span class="cmd">git clone --branch v0.2.1 https://github.com/agentiik/agentiik.git &amp;&amp; cd agentiik</span>
+<span class="p">$</span> <span class="cmd">CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o agk-runner ./cmd/agk-runner</span>
+<span class="p">$</span> <span class="cmd">CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o agk-helper ./cmd/agk-helper</span>
+<span class="p">$</span> <span class="cmd">sudo install -m 0755 agk-runner /usr/local/bin/agk-runner</span>
+<span class="p">$</span> <span class="cmd">sudo install -D -m 0755 agk-helper /usr/local/lib/agentiik/agk-helper</span>
+
+<span class="c"># join, as root: writes /etc/agentiik/runner.env and /var/lib/agentiik/runner.key</span>
+<span class="p">$</span> <span class="cmd">sudo agk-runner join --api https://agentiik.example.com:8443 --token &lt;the join token&gt;</span>
+
+<span class="c"># serve, under the unit in Installing a runner</span>
+<span class="p">$</span> <span class="cmd">sudo systemctl daemon-reload</span>
+<span class="p">$</span> <span class="cmd">sudo systemctl enable --now agentiik-runner</span></code></pre>
+    </div>
+
+    <ul class="plain">
+      <li>The unit is <a href="#installing-a-runner"><code>/etc/systemd/system/agentiik-runner.service</code></a>: <code>serve</code> as <code>agentiik</code>, in the group that owns the Docker socket, with three capabilities and no other.</li>
+      <li>A runner with no label joins the default pool and takes every step that names no <code>runs_on</code>. <code>--labels</code> claims labels, within what the pool carries, for steps that ask for them.</li>
+      <li>The runner refuses a Docker daemon that does not remap user namespaces unless <code>require_userns_remap = false</code> is in <code>runner.toml</code>, which gives that floor up on this host (<a href="#three-tiers-of-containment">Three tiers of containment</a>).</li>
+      <li>The image <code>ghcr.io/agentiik/runner</code> is the same program, run as the <code>runner</code> service of the Compose file in <a href="#run-on-a-server">Get started</a> runs it.</li>
+      <li>No inbound port is opened on a runner host: every connection is outbound.</li>
+    </ul>
+
+    <h3 id="server-not-yet">What v0.2.1 does not do yet</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What</th><th>Today</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td>Users, groups, sign-in</td><td>One operator token may do everything. Only its hash is kept; running the setup again replaces a lost one.</td><td><a href="roadmap/#m03">v0.3.0</a> brings principals and a bootstrap token.</td></tr>
+          <tr><td>The console</td><td>Not part of either installation. <code>agk</code> is the client.</td><td>Its own releases.</td></tr>
+          <tr><td>Creating a namespace</td><td>From the server, <code>agentiik-api namespace create</code>, which the setup of each installation runs for you.</td><td><a href="roadmap/#m03">v0.3.0</a>, through the API.</td></tr>
+          <tr><td>Runners on macOS or Windows</td><td>Refused: the runner hands the Docker daemon paths on the host to bind, which the virtual machine of Docker Desktop cannot see.</td><td></td></tr>
+          <tr><td>A runner on another machine</td><td>Neither installation takes one: the bus listens on the loopback (<a href="#add-a-runner">Add a runner on another machine</a>).</td><td></td></tr>
+          <tr><td>An object store</td><td>On disk, beside the API, not MinIO or S3.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
+          <tr><td>network: egress</td><td>Refused rather than opened.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
         </tbody>
       </table>
     </div>
@@ -5377,6 +5822,7 @@ runs/&lt;run&gt;/logs/&lt;step&gt;/               <span class="c"># what each co
     </ul>
 
     <h4 id="pointing-agk-at-an-installation">Pointing agk at an installation</h4>
+    <p>A first run on a server, step by step: <a href="#run-on-the-server">Get started</a>. Trusting the certificate of an installation from another machine: <a href="#agk-from-another-machine">Install a server</a>.</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Setting</th><th>Is</th></tr></thead>
@@ -6707,44 +7153,12 @@ resource "agentiik_workflow" "search" {
     <figcaption><b>One box, one blast radius.</b> The runner shares the host with PostgreSQL, so its concurrency is capped: a fan-out of two hundred items would otherwise evict the database's page cache and slow its own run.</figcaption>
   </figure>
 
-  <div class="block">
-    <div class="note-label">compose.yaml, single host</div>
-<pre><code>services:
-  postgres:   { image: postgres:17-alpine }
-  nats:       { image: nats:2-alpine, command: ["-js", "-sd", "/data"] }
-  minio:      { image: minio/minio, command: ["server", "/data"] }
-
-  api:        { image: ghcr.io/agentiik/api:1.0.0 }
-  controller: { image: ghcr.io/agentiik/controller:1.0.0 }
-  console:    { image: ghcr.io/agentiik/console:1.0.0 }
-
-  runner:
-    image: ghcr.io/agentiik/runner:1.0.0
-    command: ["serve"]
-    user: agentiik
-    group_add: ["${DOCKER_GID}"]      <span class="c"># the group that owns the socket</span>
-    userns_mode: host
-    cap_drop: [ALL]
-    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
-    environment:
-      AGK_RUNNER_LABELS: "zone=lan,arch=amd64"
-      AGK_RUNNER_CONCURRENCY: "4"
-      AGK_RUNNER_WORKDIR: /var/lib/agentiik/work
-      <span class="c"># empty means every namespace the pool accepts</span>
-      AGK_RUNNER_NAMESPACES: ""
-    volumes:
-      <span class="c"># only the runner sees the daemon, never the bricks</span>
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      <span class="c"># the daemon resolves bind sources on the host: same paths on both sides</span>
-      - /var/lib/agentiik:/var/lib/agentiik
-      - /run/agentiik/secrets:/run/agentiik/secrets   <span class="c"># a tmpfs, noexec,nosuid,nodev</span>
-      - /etc/agentiik:/etc/agentiik</code></pre>
-  </div>
-
   <div class="prose">
+    <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: its <code>compose.yaml</code> is in <a href="#run-on-a-server">Get started</a>, and <a href="#install-with-compose">Install a server</a> installs, operates, backs up and removes it. At <code>v0.2.1</code> it runs PostgreSQL, NATS, the API, the controller and one runner: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet.</p>
+    <p>The images are published on <code>ghcr.io</code> from <code>v0.2.1</code>, for linux/amd64 and linux/arm64: <code>ghcr.io/agentiik/api</code>, <code>controller</code> and <code>runner</code>, tagged with the version (<code>0.2.1</code> and <code>v0.2.1</code>) and <code>latest</code> at a release, and <code>dev</code> for every commit to <code>main</code>.</p>
     <ul class="plain">
       <li>Secrets: the built-in store, with its master key read from a file the API user alone can open, or from the host keyring.</li>
-      <li>Backup: a nightly <code>pg_dump</code> plus an object-store sync to a second disk or a NAS. Restore both together, or runs point at artifacts that no longer exist.</li>
+      <li>Backup: <code>pg_dump</code> and the files under the data directory, restored together, or runs point at artifacts that no longer exist (<a href="#install-with-compose">the commands</a>).</li>
       <li>Upgrade: the whole installation stops together, which is acceptable at this size.</li>
     </ul>
   </div>
@@ -6945,7 +7359,7 @@ resource "agentiik_workflow" "search" {
 
   <div class="prose">
     <h3 id="installing-a-runner">Installing a runner</h3>
-    <p>Two forms, because the machines worth adding are not always machines anyone wants to run a container platform on.</p>
+    <p>The commands, in order, are in <a href="#add-a-runner">Add a runner on another machine</a>; this is what they rest on. Two forms, because the machines worth adding are not always machines anyone wants to run a container platform on.</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Form</th><th>When</th><th>What it needs</th></tr></thead>
@@ -7151,6 +7565,7 @@ post_task = [
     <p>An installation that attaches no object store carries every object through the API as well, since the API is then its <a href="#the-task-message">object store</a>.</p>
 
     <h3 id="configuration">Configuration</h3>
+    <p>Both installations in <a href="#install-a-server">Install a server</a> write these settings for you: in <code>control-plane.env</code> and <code>api.env</code> beside <code>compose.yaml</code>, or in <code>$(brew --prefix)/etc/agentiik</code>.</p>
     <p>Every program reads <code>AGK_*</code> environment variables. Below, <code>api</code> is <code>agentiik-api serve</code>, <code>controller</code> is <code>agentiik-controller</code> and <code>migrate</code> is <code>agentiik-api migrate</code>, and each reads its own rows and nothing else. <code>agentiik-api bus-init</code>, <code>bus-credential</code> and <code>audit-verify</code> read no environment: each takes a directory or a file as its one argument, since a person runs it by hand. A server program's secret is never a value: it sits in a file an <code>AGK_*_FILE</code> variable names, since every process the program starts inherits its environment and anybody who can inspect it reads it. The runner keeps its secrets out of the environment another way, in files that join and rotation write for it, listed last below. A variable set to nothing is unset. Durations are written as Go writes them, <code>90m</code> or <code>720h</code>: the units stop at hours, and no time at all is refused.</p>
     <p>A required setting that is missing, or any setting that is unreadable or malformed, refuses the start and names the variable: a server that started anyway would fail on the first request needing it, and one that fell back to a default would run an installation nobody configured. Every such setting is named on the same start, and a refusal never repeats a value that may hold a secret, whether a URL or the path an <code>_FILE</code> variable holds.</p>
     <div class="tablewrap">
@@ -7257,6 +7672,10 @@ post_task = [
       <span class="note-label">Interim, until v0.3.0</span>
       <p>A v0.2.0 installation has no principals, so it has one operator: a token whose hash sits in the file <code>AGK_OPERATOR_TOKEN_FILE</code> names. <code>agentiik-api</code> identifies it as one principal allowed every permission at every scope, and everyone else stays denied. Both halves live in the API's main package, so <a href="roadmap/#m03">v0.3.0</a>'s bootstrap token deletes them in one place.</p>
     </div>
+  </div>
+
+  <div class="prose">
+    <p><code>setup</code> in <a href="#install-with-compose">agentiik/deploy</a> and <code>agentiik-setup</code> in <a href="#install-with-homebrew">Homebrew</a> do all of this; below is what they do, for an installation put together by hand.</p>
   </div>
 
   <div class="block">

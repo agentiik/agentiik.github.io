@@ -6,6 +6,12 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+### Documentation
+
+- Guides first: Get started runs its workflow on a server started with Docker Compose, a new Install a server chapter installs, checks, stops, upgrades, backs up and removes a server with Compose on Linux or Homebrew on a Mac, adds a runner on another machine and says what v0.2.1 does not do yet, and Profile A shows the real installation and the images published on ghcr.io.
+
 ## v0.2.0, 2026-09-26
 
 ### Documentation
