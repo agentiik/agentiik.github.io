@@ -1281,7 +1281,7 @@ img{max-width:100%}
 <section id="get-started">
   <div class="sec-head"><span class="mark">§</span><h2>Get started</h2></div>
   <div class="prose">
-    <p>A workflow runs on your machine with <code>agk run --local</code>, and on a server with <code>agk push</code> and <code>agk run --namespace</code>. This chapter does both: a first workflow on your machine, then <a href="#run-on-a-server">the same workflow on a server</a> started with Docker Compose. Every output below is what a terminal answered at <code>v0.2.2</code>, not what the rest of this documentation promises.</p>
+    <p>A workflow runs on your machine with <code>agk run --local</code>, and on a server with <code>agk push</code> and <code>agk run --namespace</code>. This chapter does both: a first workflow on your machine, then <a href="#run-on-a-server">the same workflow on a server</a> started with Docker Compose. Every output below is what a terminal answered at <code>v0.2.3</code>, not what the rest of this documentation promises.</p>
 
     <h3 id="what-you-need">What you need</h3>
     <div class="tablewrap">
@@ -1303,10 +1303,10 @@ img{max-width:100%}
 <pre><code><span class="p">$</span> <span class="cmd">brew trust agentiik/tap</span>
 <span class="p">$</span> <span class="cmd">brew install agentiik/tap/agk</span>
 <span class="p">$</span> <span class="cmd">agk --version</span>
-agk v0.2.2, d3a58fe5b0ebca23c389821de54fc17bdcb11e6b, go1.27.1</code></pre>
+agk v0.2.3, dbe64b4f9f31b7b2d9602ae13f0fe5afac2e3912, go1.27.1</code></pre>
     </div>
 
-    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.2.2</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
+    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.2.3</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
 
     <p><code>agk</code> alone prints its verbs, the table in <a href="#command-line">Command line</a>.</p>
 
@@ -1602,7 +1602,7 @@ services:
 <pre><code># Copy to .env, which setup and docker compose both read. These are the choices one host makes.
 
 # The version of Agentiik, one for every image and every repository.
-AGENTIIK_VERSION=v0.2.2
+AGENTIIK_VERSION=v0.2.3
 
 # The name runners reach the bus at, on port 4222, and agk the API at unless a proxy is in front: a DNS name or an IPv4 address, which the certificate setup makes is issued to.
 AGENTIIK_HOST=localhost
@@ -1634,11 +1634,11 @@ AGENTIIK_RUNNER_CONCURRENCY=2
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN</span>
 <span class="p">$</span> <span class="cmd">docker compose ps</span>
 NAME                    IMAGE                                COMMAND                  SERVICE      STATUS
-agentiik-api-1          ghcr.io/agentiik/api:v0.2.2          "/agentiik-api serve"    api          Up
-agentiik-controller-1   ghcr.io/agentiik/controller:v0.2.2   "/agentiik-controller"   controller   Up
+agentiik-api-1          ghcr.io/agentiik/api:v0.2.3          "/agentiik-api serve"    api          Up
+agentiik-controller-1   ghcr.io/agentiik/controller:v0.2.3   "/agentiik-controller"   controller   Up
 agentiik-nats-1         nats:2-alpine                        "docker-entrypoint.s…"   nats         Up (healthy)
 agentiik-postgres-1     postgres:17-alpine                   "docker-entrypoint.s…"   postgres     Up (healthy)
-agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.2       "/usr/local/bin/agk-…"   runner       Up</code></pre>
+agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.3       "/usr/local/bin/agk-…"   runner       Up</code></pre>
     </div>
 
     <p><code>setup</code> prints the operator token, the one credential of a <code>v0.2</code> server, and only its hash is written down: save it now, <code>echo "$AGENTIIK_TOKEN"</code>. <a href="#install-with-compose">Install a server</a> says what <code>.env</code> chooses and how to stop, upgrade, back up and remove the installation.</p>
@@ -1752,7 +1752,7 @@ a file from greet</code></pre>
 <section id="install-a-server">
   <div class="sec-head"><span class="mark">§</span><h2>Install a server</h2></div>
   <div class="prose">
-    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.2.2</code>:</p>
+    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.2.3</code>:</p>
 
     <div class="tablewrap">
       <table>
@@ -1800,7 +1800,7 @@ a file from greet</code></pre>
 <pre><code># Copy to .env, which setup and docker compose both read. These are the choices one host makes.
 
 # The version of Agentiik, one for every image and every repository.
-AGENTIIK_VERSION=v0.2.2
+AGENTIIK_VERSION=v0.2.3
 
 # The name runners reach the bus at, on port 4222, and agk the API at unless a proxy is in front: a DNS name or an IPv4 address, which the certificate setup makes is issued to.
 AGENTIIK_HOST=localhost
@@ -1835,7 +1835,7 @@ AGENTIIK_RUNNER_CONCURRENCY=2
       <div class="note-label">start</div>
 <pre><code><span class="p">$</span> <span class="cmd">AGENTIIK_TOKEN="$(sudo ./setup)"</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN</span>
-setup: installing Agentiik v0.2.2 at https://localhost:8443, keeping its state in /srv/agentiik
+setup: installing Agentiik v0.2.3 at https://localhost:8443, keeping its state in /srv/agentiik
 setup: the secrets tmpfs is mounted at /run/agentiik/secrets, and /etc/fstab mounts it at boot
 setup: made a certificate for DNS:localhost,IP:127.0.0.1, valid 825 days
 setup: wrote the master key, the presign key, the database password and a new operator token's hash
@@ -1846,7 +1846,7 @@ setup: the API answers at https://localhost:8443
 This host joined pool default as runner 01m3ef2wy45ajc2twvwcspmj44.
 ...
 setup: the runner is ready
-setup: Agentiik v0.2.2 is running at https://localhost:8443. Clients trust /etc/agentiik/trust/agentiik.pem.</code></pre>
+setup: Agentiik v0.2.3 is running at https://localhost:8443. Clients trust /etc/agentiik/trust/agentiik.pem.</code></pre>
     </div>
 
 
@@ -1857,11 +1857,11 @@ setup: Agentiik v0.2.2 is running at https://localhost:8443. Clients trust /etc/
       <div class="note-label">docker compose ps</div>
 <pre><code><span class="p">$</span> <span class="cmd">docker compose ps</span>
 NAME                    IMAGE                                COMMAND                  SERVICE      STATUS
-agentiik-api-1          ghcr.io/agentiik/api:v0.2.2          "/agentiik-api serve"    api          Up
-agentiik-controller-1   ghcr.io/agentiik/controller:v0.2.2   "/agentiik-controller"   controller   Up
+agentiik-api-1          ghcr.io/agentiik/api:v0.2.3          "/agentiik-api serve"    api          Up
+agentiik-controller-1   ghcr.io/agentiik/controller:v0.2.3   "/agentiik-controller"   controller   Up
 agentiik-nats-1         nats:2-alpine                        "docker-entrypoint.s…"   nats         Up (healthy)
 agentiik-postgres-1     postgres:17-alpine                   "docker-entrypoint.s…"   postgres     Up (healthy)
-agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.2       "/usr/local/bin/agk-…"   runner       Up</code></pre>
+agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.3       "/usr/local/bin/agk-…"   runner       Up</code></pre>
     </div>
 
     <p>A service that is not <code>Up</code> says why in <code>docker compose logs api</code>, or <code>controller</code>, <code>runner</code>, <code>nats</code>, <code>postgres</code>. Then point <code>agk</code> at it and run a workflow, as <a href="#run-on-the-server">Get started</a> does.</p>
@@ -8412,7 +8412,7 @@ resource "agentiik_workflow" "search" {
   </figure>
 
   <div class="prose">
-    <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: its <code>compose.yaml</code> is in <a href="#run-on-a-server">Get started</a>, and <a href="#install-with-compose">Install a server</a> installs, operates, backs up and removes it. At <code>v0.2.2</code> it runs PostgreSQL, NATS, the API, the controller and one runner: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet.</p>
+    <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: its <code>compose.yaml</code> is in <a href="#run-on-a-server">Get started</a>, and <a href="#install-with-compose">Install a server</a> installs, operates, backs up and removes it. At <code>v0.2.3</code> it runs PostgreSQL, NATS, the API, the controller and one runner: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet.</p>
     <p>The reverse proxy of the figure is optional: <a href="#behind-a-reverse-proxy">behind one</a>, <code>AGK_PUBLIC_URL</code> is the proxy's <code>https</code> URL and the API serves plain HTTP on the loopback, while the bus keeps its own TLS on 4222.</p>
     <p>The images are published on <code>ghcr.io</code> from <code>v0.2.1</code>, for linux/amd64 and linux/arm64: <code>ghcr.io/agentiik/api</code>, <code>controller</code> and <code>runner</code>, tagged with the version (<code>0.2.1</code> and <code>v0.2.1</code>) and <code>latest</code> at a release, and <code>dev</code> for every commit to <code>main</code>.</p>
     <ul class="plain">
