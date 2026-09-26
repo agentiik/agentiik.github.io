@@ -5245,7 +5245,7 @@ Authorization: Bearer &lt;api token&gt;
         <thead><tr><th>Install</th><th>Gives</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell"><code>brew install agentiik/tap/agk</code></td><td><code>agk</code>, built from the tagged source, with the static helper embedded for linux/amd64 and linux/arm64.</td></tr>
-          <tr><td class="wrapcell"><code>brew install --HEAD agentiik/tap/agentiik</code></td><td><code>agentiik-api</code>, <code>agentiik-controller</code> and <code>agk-runner</code>, with <code>agk</code>. From <code>main</code> until <code>v0.2.0</code> is tagged. PostgreSQL and NATS are not pulled in: the formula's caveats say how to run both on one host.</td></tr>
+          <tr><td class="wrapcell"><code>brew install agentiik/tap/agentiik</code></td><td><code>agentiik-api</code>, <code>agentiik-controller</code> and <code>agk-runner</code>, with <code>agk</code>, built from the tagged source, or from <code>main</code> with <code>--HEAD</code>. PostgreSQL and NATS are not pulled in: the formula's caveats say how to run both on one host.</td></tr>
           <tr><td class="wrapcell"><code>go install github.com/agentiik/agentiik/cmd/agk@&lt;tag&gt;</code></td><td><code>agk</code> without the embedded helper; <code>--helper</code> or <code>$AGK_HELPER</code> supplies one.</td></tr>
         </tbody>
       </table>

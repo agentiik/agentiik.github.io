@@ -6,6 +6,12 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+### Documentation
+
+- The server programs install with `brew install agentiik/tap/agentiik`, from `v0.2.0`, without `--HEAD`.
+
 ## v0.2.0, 2026-09-26
 
 ### Documentation
