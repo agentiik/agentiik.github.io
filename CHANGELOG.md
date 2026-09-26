@@ -12,6 +12,18 @@ Every repository of the project carries the same version and is tagged at the sa
 
 - The theme follows the system's alone: the switch and the choice it remembered are gone.
 
+### Documentation
+
+- The API renews the bus credential in a `bus` volume; an upgrade replaces `compose.yaml`; a `setup` installation is installed anew.
+- `agentiik-api health` and the API's health check in the Compose file; a renewed bus credential is taken with no restart.
+- Get started and Install a server lead with the one `compose.yaml`, in full, then `docker compose up -d --wait` and `docker compose logs init`, then the optional `.env`; `setup`, `add-runner`, `AGENTIIK_DATA`, `DOCKER_GID` and the generated env files are gone.
+- Install a server says what `init` does at every start and what each `.env` setting changes at the next `docker compose up -d`.
+- Behind a reverse proxy uses `AGENTIIK_PROXY_URL` and `AGENTIIK_CA`, with the proxy files as they are now.
+- Add a runner on another machine shows `runner/compose.yaml` and its `.env.example`, checked like the other copies.
+- `agentiik-api init` in the command line and Configuration, with `AGK_PROXY_URL`, `AGK_INIT_DIR`, `AGK_INIT_HOST`, `AGK_INIT_NAMESPACE` and `AGK_OPERATOR_TOKEN`.
+- The runner container drops from root on its own, and `serve` joins with `AGK_RUNNER_JOIN_TOKEN` or `AGK_RUNNER_JOIN_TOKEN_FILE`, joining again when its address, labels or namespaces change.
+- A task's secrets are on a tmpfs volume of its own: the host tmpfs, `/etc/fstab` line and `secrets_dir` are gone, and masking of a redelivered task says what it now covers.
+
 ## v0.2.3, 2026-09-26
 
 ### Site
