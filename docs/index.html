@@ -2047,6 +2047,8 @@ AGENTIIK_OPERATOR_TOKEN=
 
     <ul class="plain">
       <li><code>init</code> migrates the database before the API and the controller start again on the new images. <code>agk</code> is upgraded the way it was installed.</li>
+      <li>From <code>v0.2.5</code>, a release starts on the state the one before it left, with <code>compose.yaml</code> and <code>.env</code> changed and nothing else: <code>init</code> applies every change at <code>docker compose up</code> (migrations, file layout, credentials), and a setting keeps its name or is still read under its old one. A check on every change of agentiik/deploy installs the latest release, runs a workflow, upgrades, and finds the old run and token still working and a new run succeeding; the same from <code>latest</code> to <code>dev</code>.</li>
+      <li>Upgrading to <a href="roadmap/#m03">v0.3.0</a> keeps <code>AGENTIIK_OPERATOR_TOKEN</code> working, as the bootstrap token, until the first administrator is created (<a href="#first-run">First run</a>). It then stops, <code>init</code> says at every run that the line is ignored, and a script moves to a service account's token.</li>
       <li>An installation of <code>v0.2.4</code> kept its state in Docker volumes rather than <code>data/</code>, and one made with <code>setup</code>, up to <code>v0.2.3</code>, in <code>/srv/agentiik</code>: neither is upgraded in place. Remove it as its own guide said, then start anew.</li>
       <li>The bus credential of the API and the controller lasts 90 days. The API renews it itself from 14 days before its end, in <code>data/bus</code>, which it shares with the controller, and both take the new one with no restart; it warns daily only where it cannot. <code>init</code> renews it too at any <code>docker compose up</code> in that time.</li>
     </ul>
@@ -2506,7 +2508,7 @@ EOF
       <table>
         <thead><tr><th>What</th><th>Today</th><th>When</th></tr></thead>
         <tbody>
-          <tr><td>Users, groups, sign-in</td><td>One operator token may do everything. Only its hash is kept; a new <code>AGENTIIK_OPERATOR_TOKEN</code> in <code>.env</code> replaces a lost one.</td><td><a href="roadmap/#m03">v0.3.0</a> brings principals and a bootstrap token.</td></tr>
+          <tr><td>Users, groups, sign-in</td><td>One operator token may do everything. Only its hash is kept; a new <code>AGENTIIK_OPERATOR_TOKEN</code> in <code>.env</code> replaces a lost one.</td><td><a href="roadmap/#m03">v0.3.0</a> brings principals, and the operator token becomes the bootstrap token that creates the first administrator (<a href="#first-run">First run</a>).</td></tr>
           <tr><td>The console</td><td>Not part of either installation. <code>agk</code> is the client.</td><td>Its own releases.</td></tr>
           <tr><td>Creating a namespace through the API</td><td><code>AGENTIIK_NAMESPACE</code>, or <code>docker compose run --rm --no-deps api namespace create team</code> on the installation's host, or <code>agentiik-setup --namespace team</code> on a Mac.</td><td><a href="roadmap/#m03">v0.3.0</a>, with the access model.</td></tr>
           <tr><td>Runners on macOS or Windows</td><td>Refused: the runner hands the Docker daemon paths on the host to bind, which the virtual machine of Docker Desktop cannot see.</td><td></td></tr>
@@ -5044,9 +5046,9 @@ concurrency:
 
     <h3 id="administrators">Administrators</h3>
     <ul class="plain">
-      <li>A platform administrator manages users, groups, namespaces, quotas, runners and runner policies.</li>
-      <li>An administrator holds no implicit <code>run:read_data</code>. Reading another namespace's payloads means granting themselves access first, which is audited and visible to the namespace owners.</li>
-      <li>The installer creates the first administrator with a one-time bootstrap token, invalidated on first use.</li>
+      <li>A platform administrator manages users, groups, namespaces, quotas, runners, runner policies and the <a href="#auth">authentication policy</a>.</li>
+      <li>An administrator holds no implicit <code>run:read_data</code>. Reading another namespace's payloads means granting themselves access first, which is audited and notifies every owner of the namespace: a notification in the owner's <code>GET /api/v1/me</code>, because an owner does not read the audit log, and the people whose data it is should hear of it from the installation itself.</li>
+      <li>The first administrator is created with the bootstrap token, by <code>agk user create LOGIN --admin</code>, which ends the token (<a href="#first-run">First run</a>).</li>
     </ul>
 
     <h3 id="what-sharing-does-not-expose">What sharing does not expose</h3>
@@ -6787,7 +6789,7 @@ runs/&lt;run&gt;/logs/&lt;step&gt;/               <span class="c"># what each co
         <thead><tr><th>Setting</th><th>Is</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell">--server<br>AGENTIIK_SERVER</td><td>The installation: <code>https</code>, or <code>http</code> to a loopback address alone, since every request carries the token. No redirect is followed.</td></tr>
-          <tr><td class="wrapcell">AGENTIIK_TOKEN</td><td>The API token, the <a href="#configuration">interim operator's</a> until <code>v0.3.0</code>. Never a flag: an argument is in the shell history, the process list and whatever recorded the terminal.</td></tr>
+          <tr><td class="wrapcell">AGENTIIK_TOKEN</td><td>The API token: the <a href="#configuration">interim operator's</a> until <code>v0.3.0</code>, then the bootstrap token until the <a href="#first-run">first administrator</a> exists, and after that a service account's for a script, where a person uses <code>agk login</code>. Never a flag: an argument is in the shell history, the process list and whatever recorded the terminal.</td></tr>
         </tbody>
       </table>
     </div>
@@ -9091,7 +9093,7 @@ post_task = [
     <p>An installation that attaches no object store carries every object through the API as well, since the API is then its <a href="#the-task-message">object store</a>.</p>
 
     <h3 id="configuration">Configuration</h3>
-    <p>Both installations in <a href="#install-a-server">Install a server</a> set these for you: in <code>compose.yaml</code>, from the <code>AGENTIIK_*</code> variables of its <code>.env</code>, where <code>AGENTIIK_OPERATOR_TOKEN</code> is the one required line, or in <code>$(brew --prefix)/etc/agentiik</code>. Every one is read at every start, so a setting changed is applied at the next one.</p>
+    <p>Both installations in <a href="#install-a-server">Install a server</a> set these for you: in <code>compose.yaml</code>, from the <code>AGENTIIK_*</code> variables of its <code>.env</code>, where <code>AGENTIIK_OPERATOR_TOKEN</code> is the one required line (from v0.3.0, until the first administrator exists), or in <code>$(brew --prefix)/etc/agentiik</code>. Every one is read at every start, so a setting changed is applied at the next one.</p>
     <p>Every program reads <code>AGK_*</code> environment variables. Below, <code>api</code> is <code>agentiik-api serve</code>, <code>controller</code> is <code>agentiik-controller</code> and <code>migrate</code> is <code>agentiik-api migrate</code>, and each reads its own rows and nothing else; <code>agentiik-api init</code> reads the rows naming <code>init</code>. <code>agentiik-api namespace</code> reads <code>AGK_DATABASE_URL</code> and <code>AGK_DATABASE_PASSWORD_FILE</code> alone. <code>agentiik-api bus-init</code>, <code>bus-credential</code> and <code>audit-verify</code> read no environment: each takes a directory or a file as its one argument, since a person runs it by hand. A server program's secret is never a value: it sits in a file an <code>AGK_*_FILE</code> variable names, since every process the program starts inherits its environment and anybody who can inspect it reads it. The runner keeps its secrets out of the environment another way, in files that join and rotation write for it, listed last below. A variable set to nothing is unset. Durations are written as Go writes them, <code>90m</code> or <code>720h</code>: the units stop at hours, and no time at all is refused.</p>
     <p>A required setting that is missing, or any setting that is unreadable or malformed, refuses the start and names the variable: a server that started anyway would fail on the first request needing it, and one that fell back to a default would run an installation nobody configured. Every such setting is named on the same start, and a refusal never repeats a value that may hold a secret, whether a URL or the path an <code>_FILE</code> variable holds.</p>
     <div class="tablewrap">
@@ -9119,7 +9121,7 @@ post_task = [
           <tr><td class="wrapcell">AGK_PRESIGN_KEY_FILE</td><td>api</td><td>required</td><td>A key of 32 bytes or more in base64, as <code>openssl rand -base64 32</code> writes one. It signs every presigned URL and upload policy, and every API of an installation holds the same one.</td></tr>
           <tr><td class="wrapcell">AGK_MASTER_KEY_FILE</td><td>api</td><td>required; set for the controller, it refuses the controller's start</td><td>The key the built-in secret store seals every value under. The sealed values sit in the database the controller shares, so the key, held by the API alone, is what keeps them from it (<a href="#secrets">Secrets</a>).</td></tr>
           <tr><td class="wrapcell">AGK_ENV_PREFIXES</td><td>api</td><td>none: no namespace may use <code>env</code></td><td><code>namespace=prefix</code> pairs separated by commas, such as <code>finance=AGK_DEV_FINANCE_</code>: the namespaces opted in to the development-only <code>env</code> provider (<a href="#secrets">Secrets</a>).</td></tr>
-          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN_FILE</td><td>api</td><td>required, until v0.3.0</td><td>The SHA-256 of the interim operator's token in 64 lowercase hexadecimal characters, never the token, which would be a working credential at rest (<a href="#first-run">First run</a>).</td></tr>
+          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN_FILE</td><td>api</td><td>required; from v0.3.0, until the first administrator exists</td><td>The SHA-256 of the interim operator's token in 64 lowercase hexadecimal characters, never the token, which would be a working credential at rest. From v0.3.0 it is the bootstrap token's, and once an administrator exists the API refuses that token whatever the file holds (<a href="#first-run">First run</a>).</td></tr>
           <tr><td class="wrapcell">AGK_MAX_REQUEUES</td><td>controller</td><td><code>3</code></td><td><code>max_requeues</code>, a whole number where <code>0</code> requeues nothing: the installation's bound on losses (<a href="#task-states">Task states</a>).</td></tr>
           <tr><td class="wrapcell">AGK_TASK_CEILING</td><td>api, controller</td><td><code>1h</code></td><td>The deadline of a step that writes none (<a href="#yaml">Workflow language</a>, Deadlines). The API reads it as the revocation grace's default, so both programs are given the same value.</td></tr>
           <tr><td class="wrapcell">AGK_JOIN_ROTATION</td><td>api</td><td><code>720h</code></td><td>How long a runner credential is accepted for, and how far each rotation moves <code>rotate_by</code>: a machine dark for a month should be reconsidered, not readmitted.</td></tr>
@@ -9133,7 +9135,7 @@ post_task = [
           <tr><td class="wrapcell">AGK_INIT_DIR</td><td>init</td><td>required</td><td>An absolute path to a directory whose subdirectories <code>api</code>, <code>controller</code>, <code>nats</code>, <code>bus</code>, <code>runner</code> and <code>objects</code> are the directories each service mounts: each is given its own copy of what it reads, so the controller never mounts the master key and the runner nothing of the control plane's but the certificate.</td></tr>
           <tr><td class="wrapcell">AGK_INIT_HOST</td><td>init</td><td>required</td><td>A DNS name or an IPv4 address, with no scheme and no port: the name runners reach the bus at, and clients the API where no proxy is in front, which the certificate is issued to. Changed, init issues the certificate again.</td></tr>
           <tr><td class="wrapcell">AGK_INIT_NAMESPACE</td><td>init</td><td>required</td><td>The namespace init creates, where workflows are pushed and run, held to what the API holds a namespace name to. A previous one stays.</td></tr>
-          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN</td><td>init</td><td>none in init itself, which then keeps the stored hash, or makes a token and prints it once where none was stored; the <code>compose.yaml</code> of agentiik/deploy refuses to start without <code>AGENTIIK_OPERATOR_TOKEN</code></td><td>The one secret taken as a value, since a person writes it once in the file Docker Compose reads; init writes its SHA-256 alone, so the plaintext never reaches a disk init writes. 32 characters or more, of those a bearer token may hold. Every other program refuses it.</td></tr>
+          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN</td><td>init</td><td>none in init itself, which then keeps the stored hash, or, until v0.3.0, makes a token and prints it once where none was stored; the <code>compose.yaml</code> of agentiik/deploy refuses to start without <code>AGENTIIK_OPERATOR_TOKEN</code> until v0.3.0. From v0.3.0 init prints no token, and refuses an installation that has neither this nor an administrator.</td><td>The one secret taken as a value, since a person writes it once in the file Docker Compose reads; init writes its SHA-256 alone, so the plaintext never reaches a disk init writes. 32 characters or more, of those a bearer token may hold. Every other program refuses it. From v0.3.0 it is the bootstrap token; once an administrator exists, init writes nothing for it and says at every run that the line is ignored (<a href="#first-run">First run</a>).</td></tr>
           <tr><th colspan="4">The runner</th></tr>
           <tr><td class="wrapcell">AGK_API</td><td>agk-runner</td><td>required; join writes it</td><td>The one address a runner is given; the API hands out the rest. <code>https</code>, or <code>http</code> to a loopback address alone, with no user, query or fragment: every call carries the runner's credential.</td></tr>
           <tr><td class="wrapcell">AGK_RUNNER_LABELS</td><td>agk-runner</td><td>optional; join writes it where the runner claims labels</td><td>Claimed at join, within what the token permits; none is a runner of the pool <code>default</code>.</td></tr>
@@ -9197,14 +9199,38 @@ post_task = [
     <p>An installation that needs new accounts creates a new identity in a new directory, restarts the server on it and hands the API and the controller their new files; every runner is given a credential under the new account the next time it asks.</p>
 
     <h3 id="first-run">First run</h3>
-    <ol class="steps">
-      <li>The installer prints a one-time bootstrap token, valid for a single use and a short window.</li>
-      <li>That token creates the first administrator, then is invalidated.</li>
-      <li>The administrator creates namespaces, groups and users. Every user gets a personal namespace on first sign-in.</li>
-    </ol>
+    <p>From <a href="roadmap/#m03">v0.3.0</a>, an installation starts with no user and one bootstrap token, whose one lasting use is to create the first human administrator:</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">the first administrator, from v0.3.0</div>
+<pre><code><span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>   <span class="c"># the bootstrap token</span>
+<span class="p">$</span> <span class="cmd">agk user create alice --admin</span>
+alice is an administrator with no credential yet. Open this link once, before 10:15 UTC, to enrol a passkey:
+https://agentiik.example.com/auth/enrol#&lt;code&gt;
+the bootstrap token no longer works: sign in as alice with agk login</code></pre>
+  </div>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Step</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>the bootstrap token</td><td><code>AGENTIIK_OPERATOR_TOKEN</code> in <code>.env</code>, the v0.2 operator token under its old name. <code>init</code> keeps its SHA-256 alone, and no program prints it or writes it to a log. An installation with neither the line nor an administrator is refused by <code>init</code>, which says to add the line.</td></tr>
+          <tr><td class="wrapcell"><code>agk user create LOGIN --admin</code></td><td>Run with the bootstrap token, it creates the administrator and answers a single-use, short-lived enrolment link, shown once.</td></tr>
+          <tr><td>the link</td><td>Opens the API's <a href="#auth">sign-in page</a>, which runs the passkey ceremony and records the account's first credential.</td></tr>
+          <tr><td>the token ends</td><td>Creating the first administrator invalidates the bootstrap token, and the audit log records it. <code>init</code> then says at every run that the line in <code>.env</code> is ignored: not an error, and removing the line is the tidy end.</td></tr>
+          <tr><td>then</td><td>The administrator creates namespaces, groups, users and service accounts. Every user gets a personal namespace on first sign-in. A script holds a service account's token.</td></tr>
+        </tbody>
+      </table>
+    </div>
     <div class="decision">
-      <span class="note-label">Interim, until v0.3.0</span>
-      <p>A v0.2 installation has no principals, so it has one operator: a token whose hash sits in the file <code>AGK_OPERATOR_TOKEN_FILE</code> names. <code>agentiik-api</code> identifies it as one principal allowed every permission at every scope, and everyone else stays denied. Both halves live in the API's main package, so <a href="roadmap/#m03">v0.3.0</a>'s bootstrap token deletes them in one place.</p>
+      <span class="note-label">Until v0.3.0</span>
+      <p>A v0.2 installation has no principals, so it has one operator: a token whose hash sits in the file <code>AGK_OPERATOR_TOKEN_FILE</code> names. <code>agentiik-api</code> identifies it as one principal allowed every permission at every scope, and everyone else stays denied. From <a href="roadmap/#m03">v0.3.0</a> the same token is the bootstrap token: after an upgrade the API takes it as a bootstrap principal, an administrator owning every namespace present, so it does what it did and the runs recorded as <code>triggered_by: operator</code> stay readable, until the first administrator is created.</p>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The bootstrap token is the operator token rather than a new one, because an upgrade changes <code>compose.yaml</code> and <code>.env</code> and nothing else, and a new token would have to be read from a log, which is copied, shipped and kept by more people than <code>.env</code>. It ends at the first administrator because a secret that may do everything, shared by whoever reads one file, is what principals replace: a service account's token has a namespace, an expiry and a revocation of its own.</p>
     </div>
   </div>
 
