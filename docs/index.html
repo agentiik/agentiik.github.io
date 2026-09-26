@@ -6548,18 +6548,29 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
           <tr><th colspan="2">Sign-in and identity</th></tr>
           <tr><td class="wrapcell">POST /api/v1/auth/passkey/options</td><td>Registration or assertion options: challenge, Relying Party Identifier, the user verification the policy imposes.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/auth/passkey/verify</td><td>Verifies an attestation or assertion, records the Backup Eligibility and Backup State flags, opens a session.</td></tr>
+          <tr><td class="wrapcell">GET /auth/sign-in<br>GET /auth/enrol</td><td>The API's own sign-in and enrolment page, on the Relying Party's origin (<a href="#auth">Authentication</a>). An enrolment link carries its code after <code>#</code>, which a browser never sends, so the code reaches no access log.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/auth/exchange</td><td><code>agk login</code>'s one-time code and verifier, answered with an API token. The code is single use and good for a minute.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /api/v1/auth/policy</td><td>The installation's authentication policy. <code>PUT</code> is an administrator's, and audited.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /api/v1/{ns}/auth/policy</td><td>A namespace's tightening of it. <code>PUT</code> is an administrator's, audited, and refused where it would loosen a setting.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/auth/login</td><td>Password sign-in where the policy allows it. Refused outright when passwords are forbidden, not failed as a wrong password.</td></tr>
           <tr><td class="wrapcell">GET, DELETE /api/v1/me/credentials</td><td>Lists and removes the caller's credentials. A removal below the policy minimum is refused.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/users/{login}/enrolment</td><td>A new single-use, short-lived enrolment link for a user who holds no credential yet, replacing any earlier one. Administrator only, audited.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/users/{login}/recovery</td><td>A single-use recovery code authorising passkey enrolment and nothing else. Administrator only, audited with both identities.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/auth/tokens</td><td>An API token for the caller or a service account it owns, shown once.</td></tr>
-          <tr><td class="wrapcell">GET /api/v1/me</td><td>Identity, group memberships, effective permissions per namespace.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/auth/tokens</td><td>An API token for the caller or a service account it owns, shown once, expiring after 90 days unless the request asks otherwise, and after a year at most.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/auth/tokens<br>DELETE /api/v1/auth/tokens/{id}</td><td>The caller's tokens and those of the service accounts it owns, with expiry, last use and device label, never a value; and the revocation of one.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/me</td><td>Identity, group memberships, effective permissions per namespace, and notifications, such as an administrator having widened their own access in a namespace the caller owns.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/me/devices</td><td>A mobile device: platform, push token, label. Revoked with the API token it is bound to.</td></tr>
           <tr><td class="wrapcell">PUT /api/v1/me/notifications</td><td>Notification preferences, per namespace and per event kind.</td></tr>
 
           <tr><th colspan="2">Administration</th></tr>
-          <tr><td class="wrapcell">POST /api/v1/namespaces</td><td>A namespace with an owner and quotas. Administrator only.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/users, /groups</td><td>Users, groups and group membership.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/service-accounts</td><td>A non-human principal in a namespace the caller owns. Tokens via <code>/api/v1/auth/tokens</code>.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/namespaces</td><td>A namespace with an owner and quotas, its name refused where a login holds it. Administrator only.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/namespaces</td><td>The namespaces the caller holds a grant in, and every one for an administrator.</td></tr>
+          <tr><td class="wrapcell">GET, PUT /api/v1/namespaces/{ns}/quotas</td><td>The namespace's <a href="#quotas-per-namespace">quotas</a> and allowed runner pools. <code>PUT</code> is an administrator's, and audited.</td></tr>
+          <tr><td class="wrapcell">GET, POST /api/v1/users</td><td>The users, and a new one: login, display name, and <code>admin</code> where it is an administrator, answered with a single-use, short-lived enrolment link shown once. Administrator only, save the first administrator, whom the <a href="#first-run">bootstrap token</a> creates.</td></tr>
+          <tr><td class="wrapcell">GET, POST /api/v1/groups</td><td>The groups, and a new one. Administrator only.</td></tr>
+          <tr><td class="wrapcell">PUT, DELETE /api/v1/groups/{group}/members/{login}</td><td>Adds or removes one member, touching no grant. Administrator only.</td></tr>
+          <tr><td class="wrapcell">GET, POST /api/v1/service-accounts</td><td>The service accounts of the namespaces the caller owns, and a new one in one of them, written <code>NS/NAME</code>. Tokens via <code>/api/v1/auth/tokens</code>.</td></tr>
+          <tr><td class="wrapcell">DELETE /api/v1/service-accounts/{ns}/{name}</td><td>Removes one and revokes its tokens. The built-in <code>NS/agentiik</code> is refused.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runners</td><td>Joins a machine to the pool its join token names, with its public key, labels, capacity, architecture and agent version, and its namespaces and containment where it sends them. Answers the runner identifier, the pool, a credential shown once and its <code>rotate_by</code>. Authenticated by the join token in the body alone. See <a href="#registering-a-runner">Registering a runner</a>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/runners</td><td>Runner inventory: labels, capacity, last heartbeat, the state and concurrency it last reported, who drained or revoked it and when, and the end of a revocation's grace. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runners/{runner}/drain<br>POST /api/v1/runners/{runner}/revoke</td><td>Drains or revokes one runner. The body is <code>{"reason"}</code>, one line of at most 256 characters, handed to the runner at its next heartbeat. Answers the runner as <code>GET /api/v1/runners</code> lists it, with <code>drained_by</code>, <code>drained_at</code>, <code>revoked_by</code>, <code>revoked_at</code> and <code>results_accepted_until</code>. <code>404</code> for a runner not there, <code>409</code> for draining a revoked one. An order given twice keeps the first, so revoking again adds no time. Requires <code>grant:manage</code> at installation scope. See <a href="#registering-a-runner">Registering a runner</a>.</td></tr>
@@ -6577,6 +6588,9 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
           <tr><td class="wrapcell">GET /api/v1/{ns}/secrets</td><td><code>{"secrets": [...]}</code>, each declaration with <code>name</code>, <code>provider</code>, <code>path</code> where it has one, <code>mount</code>, <code>declared_by</code> and <code>declared_at</code>, never a value. Requires <code>workflow:read</code> at namespace scope.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/secrets/{name}</td><td>One declaration, the same way.</td></tr>
           <tr><td class="wrapcell">PUT, DELETE /api/v1/{ns}/secrets/{name}</td><td>Declares, changes or deletes one secret: <code>provider</code>, <code>path</code>, and for <code>builtin</code> a <code>value</code> no answer returns. One secret per request, so two Terraform applies never drop each other's change. Requires <code>secret:write</code> at namespace scope. See <a href="#secrets">Secrets</a>.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/grants</td><td>Grants and denies on the namespace, inherited by every workflow in it.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/{ns}/grants</td><td>Shares the namespace: principal as <a href="#principals">written</a>, role, optional expiry, optional deny. Requires <code>grant:manage</code> at namespace scope. An administrator granting themselves notifies the owners (<a href="#administrators">Administrators</a>).</td></tr>
+          <tr><td class="wrapcell">DELETE /api/v1/{ns}/grants/{id}</td><td>Revokes one grant, from the next request and the next run creation.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/grants</td><td>Grants and denies that apply, with the scope of each.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows/{name}/grants</td><td>Shares the workflow: principal, role, optional expiry, optional deny. Requires <code>grant:manage</code>.</td></tr>
           <tr><td class="wrapcell">DELETE /api/v1/{ns}/workflows/{name}/grants/{id}</td><td>Revokes one grant, from the next request and the next run creation. An open log stream asks again every 30 s, credential and <code>run:read</code>, and ends once either is gone.</td></tr>
@@ -6642,6 +6656,7 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td><code>400</code></td><td>A body refused as Request bodies below says, or no <code>commit</code>.</td></tr>
           <tr><td><code>404</code></td><td>No such version, or a workflow the caller holds no <code>workflow:run</code> on.</td></tr>
           <tr><td><code>413</code></td><td>As below.</td></tr>
+          <tr><td><code>429</code></td><td>From v0.3.0, the namespace has created <code>max_runs_per_hour</code> runs in the last 60 minutes; <code>Retry-After</code> says when one more fits.</td></tr>
           <tr><td><code>422</code></td><td><code>{error, input, rule}</code>, <code>rule</code> being <code>required</code>, <code>schema</code> or <code>undeclared</code>; or a declaration that does not compile, which only a version pushed before pushes checked it can hold.</td></tr>
           <tr><td><code>500</code></td><td>The version or its tree could not be read.</td></tr>
           <tr><td><code>503</code></td><td>A schema names a file of the tree and the installation has no object store attached.</td></tr>
@@ -6730,8 +6745,10 @@ Authorization: Bearer &lt;api token&gt;
       <table>
         <thead><tr><th>Command</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td>agk login</td><td>Signs in against an installation and stores an API token in the local profile.</td></tr>
+          <tr><td>agk login</td><td>Signs in against an installation with a passkey in the browser, through a loopback redirect and a one-time code (<a href="#auth">Authentication</a>), and stores an API token in the local profile.</td></tr>
           <tr><td>agk whoami</td><td>Prints the current principal, its groups and its effective permissions on a given workflow.</td></tr>
+          <tr><td>agk user create</td><td>Creates a user, <code>--admin</code> for an administrator, and prints the enrolment link. The first administrator is created this way with the bootstrap token (<a href="#first-run">First run</a>).</td></tr>
+          <tr><td>agk auth policy</td><td>Prints the authentication policy, of the installation or of <code>--namespace</code>, and with settings given, sets it (<a href="#auth">Authentication</a>).</td></tr>
           <tr><td>agk validate</td><td>Validates the YAML, resolves includes and inheritance, detects cycles, checks ports against the manifests of the referenced images.</td></tr>
           <tr><td>agk graph</td><td>Writes the resolved graph as DOT or Mermaid, for review inside a merge request.</td></tr>
           <tr><td>agk run --local</td><td>Runs the whole workflow against the local Docker daemon, with no controller, no bus and no database. Artifacts land in a working directory.</td></tr>
