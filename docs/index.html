@@ -4778,11 +4778,30 @@ concurrency:
         <tbody>
           <tr><td>user</td><td>Local account: a login, a display name and one or more credentials. A passkey is the intended one; a password is a fallback the installation can forbid (see <a href="#auth">Authentication</a>).</td></tr>
           <tr><td>group</td><td>Named set of users; a user may belong to any number. Grants target groups, so membership changes without touching grants.</td></tr>
-          <tr><td class="wrapcell">service account</td><td>Non-human, holds API tokens, cannot sign in to a client. Each namespace has a built-in one, to which scheduled, webhook and event runs are attributed.</td></tr>
-          <tr><td>api token</td><td>Bearer credential with an expiry and an optional scope that can only narrow its principal's rights. Stored hashed, shown once.</td></tr>
+          <tr><td class="wrapcell">service account</td><td>Non-human, holds API tokens, cannot sign in to a client. Each namespace has a built-in one, <code>NS/agentiik</code>, to which scheduled, webhook and event runs are attributed.</td></tr>
+          <tr><td>api token</td><td>Bearer credential with an expiry (<a href="#sessions-and-tokens">90 days by default, a year at most</a>) and an optional scope that can only narrow its principal's rights. Stored hashed, shown once.</td></tr>
         </tbody>
       </table>
     </div>
+    <p>From <a href="roadmap/#m03">v0.3.0</a>, a principal is written the same way in a grant, the API, <code>agk</code> and the audit log:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Written</th><th>Names</th></tr></thead>
+        <tbody>
+          <tr><td><code>alice</code></td><td>The user whose login is <code>alice</code>.</td></tr>
+          <tr><td><code>group:team-finance</code></td><td>The group <code>team-finance</code>.</td></tr>
+          <tr><td><code>finance/nightly-sync</code></td><td>The service account <code>nightly-sync</code> of the namespace <code>finance</code>.</td></tr>
+          <tr><td><code>finance/agentiik</code></td><td>The built-in identity of <code>finance</code>.</td></tr>
+          <tr><td><code>operator</code></td><td>The v0.2 operator, on rows written before v0.3.0 and on no new one.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plain">
+      <li>Logins and namespace names share one name space: a login is refused where a namespace of that name exists, and a namespace where a login does. A user's personal namespace is named after their login, and a namespace created first would take it from them.</li>
+      <li><code>operator</code> and the <a href="#scopes-and-resolution">reserved words</a> are refused as logins. <code>operator</code> names the v0.2 operator on old rows, and a user of that name would read as their author.</li>
+      <li>A service account is written with its namespace, so one name in two namespaces is two principals, and the slash, which no login holds, keeps the forms apart. <code>agentiik</code> is the built-in identity's name in every namespace and no other service account's.</li>
+      <li>A namespace's built-in identity, <code>NS/agentiik</code>, holds no grant until an owner gives it one: what a namespace's unattended runs may do is then a decision someone made, visible in the grant list, never a default nobody reviewed.</li>
+    </ul>
 
     <h3 id="auth">Authentication</h3>
     <p>A user authenticates with a passkey (Web Authentication Level 3, a W3C Recommendation since 25 August 2026). A password is a fallback an installation can remove.</p>
@@ -5104,7 +5123,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
         <thead><tr><th>Quota</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td>max_concurrent_tasks</td><td>Fleet share one namespace can hold at once, so that a fan-out of ten thousand items cannot starve everyone else.</td></tr>
-          <tr><td>max_runs_per_hour</td><td>Rate limit across every trigger kind, webhooks included.</td></tr>
+          <tr><td>max_runs_per_hour</td><td>Rate limit across every trigger kind, webhooks included: the runs created in the last 60 minutes, a sliding count. Past it the API answers <code>429</code> with <code>Retry-After</code>, the seconds until the oldest run counted leaves the window. Sliding rather than per clock hour, which would let twice the quota through across the turn of an hour.</td></tr>
           <tr><td>max_artifact_bytes</td><td>Total live artifact storage; beyond it, new writes are refused.</td></tr>
           <tr><td>max_retention_days</td><td>Upper bound on what the namespace may ask to keep.</td></tr>
           <tr><td>max_run_duration</td><td>Upper bound on a workflow's root <code>timeout</code>, so no run holds capacity longer than the operator accepts.</td></tr>
@@ -5119,12 +5138,22 @@ Authorization: Bearer &lt;an administrator's token&gt;
         <thead><tr><th>Client</th><th>Credential</th><th>Rules</th></tr></thead>
         <tbody>
           <tr><td>web console</td><td>opaque session identifier in a cookie: <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code></td><td>Revocable server-side, idle expiry. Records the credential that opened it, so an enrolment-only session is known server-side, not by convention.</td></tr>
-          <tr><td>API, agk, mobile</td><td>bearer token</td><td>Stored hashed, shown once, revocable one by one, listed with last use and device label.</td></tr>
+          <tr><td>API, agk, mobile</td><td>bearer token</td><td>Stored hashed, shown once, revocable one by one, listed with last use and device label. Expires after 90 days unless asked otherwise, and after a year at most.</td></tr>
           <tr><td>webhook</td><td>HMAC over the raw body with a per-trigger secret, a bearer token bound to a service account, or a client certificate</td><td>Authenticates the caller, not a user.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>Authorisation is re-evaluated when a run is created, because a trigger armed months ago can fire long after the grant that armed it.</p>
+    <p>An API token's expiry is 90 days by default, so a token forgotten in a script stops on its own within a season, and a year at most, so that no token is a credential for good and every one is renewed by someone who still means it. A service account's tokens follow the same rules.</p>
+    <p>Authorisation is re-evaluated when a run is created, because a trigger armed months ago can fire long after the grant that armed it. From <a href="roadmap/#m03">v0.3.0</a>, a run whose principal no longer holds <code>workflow:run</code> at that moment ends <code>cancelled</code> before any task, with a reason naming the grant that lapsed:</p>
+  </div>
+
+  <div class="block">
+    <div class="note-label">a run refused at creation, from v0.3.0</div>
+<pre><code>cancelled: finance/agentiik no longer holds workflow:run on finance/monthly-invoicing: grant 01JQ3M8T (operator on the namespace finance) expired at 2026-10-01T00:00:00Z</code></pre>
+  </div>
+
+  <div class="prose">
+    <p><code>cancelled</code> rather than <code>failed</code>, because nothing in the workflow failed; and a run rather than a silence, so that whoever armed the trigger sees why it did nothing.</p>
   </div>
 </section>
 
@@ -5264,7 +5293,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
     <ul class="plain">
       <li>Evaluates the graph on every task state change and publishes the tasks that have become ready.</li>
       <li>Holds concurrency-group locks, per-step parallelism counters and per-namespace quotas.</li>
-      <li>Re-checks authorisation when a run is created, against the principal recorded on the trigger.</li>
+      <li>Re-checks authorisation when a run is created, against the principal recorded on the trigger, and from v0.3.0 ends a run that fails it <code>cancelled</code>, naming the lapsed grant (<a href="#sessions-and-tokens">Sessions and tokens</a>).</li>
       <li>Emits the notification events that the API turns into push messages: failure, approval requested, completion of a run the recipient started.</li>
       <li>Runs as several instances with one active at a time, elected by a session-level PostgreSQL advisory lock. Failover is a state resume, never a rebuild: the state lives in the database, not in the process. See <a href="#how-the-api-and-the-controller-stay-in-step">How the API and the controller stay in step</a>.</li>
       <li>Stops, rather than retrying in place, once it can no longer reach the database, the bus or its lock, or once the control plane's bus credential expires; its supervisor starts it again as a standby. Its connections set TCP keepalives, so a controller cut off without a reset loses its session, and the lock with it, within half a minute rather than the operating system's two hours.</li>
@@ -6057,7 +6086,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
           <tr><td>waiting</td><td>Suspended at a <a href="#catalog"><code>wait</code></a> step, for a duration, an external signal or a human approval; nothing else puts a run here. The state a mobile notification is meant to clear.</td></tr>
           <tr><td>succeeded</td><td>Every reached step finished, none failed beyond tolerance. A task not over when the run ends, which can only be one of a step a <code>merge: first</code> superseded, is written <code>cancelled</code> in the pass that ends the run, and every redeemed one is stopped with reason <code>superseded</code>, repeated in the heartbeat's <code>cancel</code>. Its runner's report later adds the exit code its container exited with, its log and its usage, and nothing else.</td></tr>
           <tr><td>failed</td><td>At least one step failed without <code>continue_on_error</code>. A task not over is ended as for <code>succeeded</code>.</td></tr>
-          <tr><td>cancelled</td><td>Cancelled by a principal holding <code>workflow:run</code>, by a concurrency group or by a <code>merge: first</code>. The one state a run can end in without having started, when it is cancelled from <code>queued</code>.</td></tr>
+          <tr><td>cancelled</td><td>Cancelled by a principal holding <code>workflow:run</code>, by a concurrency group, by a <code>merge: first</code>, or, from v0.3.0, by the controller when its principal fails the check at creation (<a href="#sessions-and-tokens">Sessions and tokens</a>). The one state a run can end in without having started, when it is cancelled from <code>queued</code>.</td></tr>
           <tr><td>timed_out</td><td>The deadline set by the root <code>timeout</code> of the entry point expired. Every task not over is written <code>timed_out</code> in the pass that ends the run, and every redeemed one is stopped with reason <code>deadline</code>, repeated in the heartbeat's <code>cancel</code>. Its runner's report later adds the exit code its container exited with, its log and its usage, and nothing else.</td></tr>
         </tbody>
       </table>
