@@ -1654,7 +1654,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Implement namespace creation and administration (name, kind, quotas, allowed runner pools) as an administrator-only route. <a class="ref" href="../#api">api</a><a class="ref" href="../#quotas-per-namespace">quotas-per-namespace</a><a class="ref" href="../#storage">storage</a></li>
           <li>Create each user's personal namespace on first sign-in, named after their login, and refuse to rename or delete it. <a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a><a class="ref" href="../#storage">storage</a></li>
           <li>Define the platform administrator (users, groups, namespaces, quotas, runners, runner policies) with no implicit run:read_data in any namespace. <a class="ref" href="../#administrators">administrators</a></li>
-          <li>Implement the bootstrap token that creates the first administrator and is invalidated on first use. <a class="ref" href="../#administrators">administrators</a></li>
+          <li>Implement the bootstrap token that creates the first administrator and ends when that administrator enrols a passkey. <a class="ref" href="../#administrators">administrators</a></li>
           <li>Audit identity and access events (sign-ins and failed sign-ins, credential enrolment and removal, recovery codes issued and used, token creation and revocation, policy, grant, deny, namespace and quota changes), and alert the namespace owners, not only the log, when an administrator widens their own access. <a class="ref" href="../#observability">observability</a><a class="ref" href="../#administrators">administrators</a></li>
         </ul>
       </div>
