@@ -31,6 +31,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - Use cases: a new chapter of six complete workflows, each validating against the workflow schema.
 - Get started and the command line table install with `brew install agentiik/tap/agk` and `brew install --HEAD agentiik/tap/agentiik`.
 - Shorter, with 13 new figures and 31 new tables: the documentation goes from 32,600 to 26,400 words and the roadmap from 20,800 to 17,600.
+- The result a runner owes a dispatch across a crash, `AGK_TLS_CERT_FILE` and `AGK_TLS_KEY_FILE` with the terminator's hop as the one plaintext exception, the audit chain verified at each controller term (`audit_verified`), whole numbers read as ints in expressions, a `runner.toml` reference table, and runner-side hooks said to run from v0.9.0.
 
 ### Roadmap
 
