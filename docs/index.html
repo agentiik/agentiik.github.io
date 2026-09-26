@@ -621,6 +621,7 @@ img{max-width:100%}
         <li><a href="#install-a-server">Install a server</a>
           <ul class="subs">
             <li><a href="#install-with-compose">On Linux, with Docker Compose</a></li>
+            <li><a href="#behind-a-reverse-proxy">Behind a reverse proxy</a></li>
             <li><a href="#install-with-homebrew">On a Mac, with Homebrew</a></li>
             <li><a href="#add-a-runner">Add a runner on another machine</a></li>
             <li><a href="#server-not-yet">What v0.2.1 does not do yet</a></li>
@@ -1153,8 +1154,7 @@ services:
   api:
     &lt;&lt;: *agentiik
     image: ghcr.io/agentiik/api:${AGENTIIK_VERSION}
-    env_file: [control-plane.env, api.env]
-    environment: { AGK_PUBLIC_URL: "https://${AGENTIIK_HOST}:${AGENTIIK_PORT}", AGK_LISTEN: ":${AGENTIIK_PORT}" }
+    env_file: [control-plane.env, api.env, listen.env] # listen.env: its address, which setup writes from .env
     volumes: ["${AGENTIIK_DATA}/api:/agentiik", "${AGENTIIK_DATA}/objects:/objects", "${AGENTIIK_DATA}/socket:/run/postgresql"]
   controller:
     &lt;&lt;: *agentiik
@@ -1182,8 +1182,46 @@ services:
       <div class="note-label">on the Linux machine</div>
 <pre><code><span class="p">$</span> <span class="cmd">git clone https://github.com/agentiik/deploy.git</span>
 <span class="p">$</span> <span class="cmd">cd deploy/single-host</span>
-<span class="p">$</span> <span class="cmd">cp .env.example .env</span>
-<span class="p">$</span> <span class="cmd">AGENTIIK_TOKEN="$(sudo ./setup)"</span>
+<span class="p">$</span> <span class="cmd">cp .env.example .env</span></code></pre>
+    </div>
+
+    <p><code>.env</code> holds the choices this host makes, each with a line saying what it is:</p>
+
+    <!-- Verbatim copy of single-host/.env.example in https://github.com/agentiik/deploy, HTML-escaped: a check compares the two, so edit that file and copy it here, never the other way. -->
+    <div class="block">
+      <div class="note-label">.env.example, from agentiik/deploy: cp makes it .env</div>
+<pre><code># Copy to .env, which setup and docker compose both read. These are the choices one host makes.
+
+# The version of Agentiik, one for every image and every repository.
+AGENTIIK_VERSION=v0.2.1
+
+# The name runners reach the bus at, on port 4222, and agk the API at unless a proxy is in front: a DNS name or an IPv4 address, which the certificate setup makes is issued to.
+AGENTIIK_HOST=localhost
+
+# The port the API serves HTTPS on, on every interface of this host. Behind a proxy, plain HTTP on 127.0.0.1 alone, which the proxy forwards to.
+AGENTIIK_PORT=8443
+
+# Empty, the API serves TLS itself at https://AGENTIIK_HOST:AGENTIIK_PORT. The https URL of a reverse proxy that terminates TLS in front of it, such as https://agentiik.example.com, puts the installation behind that proxy.
+AGENTIIK_PUBLIC_URL=
+
+# Where the control plane keeps its database, bus, objects, keys and certificate.
+AGENTIIK_DATA=/srv/agentiik
+
+# The namespace setup creates, where workflows are pushed and run.
+AGENTIIK_NAMESPACE=demo
+
+# How many tasks the runner holds at once. Kept low, since the runner shares this host with PostgreSQL.
+AGENTIIK_RUNNER_CONCURRENCY=2
+
+# Uncomment to build the images from the agentiik source instead of pulling them: AGENTIIK_VERSION is then any tag or branch.
+#COMPOSE_FILE=compose.yaml:compose.build.yaml</code></pre>
+    </div>
+
+    <p><code>AGENTIIK_HOST</code> is the one to change first, for a runner on another machine. Behind a reverse proxy, <code>AGENTIIK_PUBLIC_URL</code> is set too: <a href="#behind-a-reverse-proxy">Behind a reverse proxy</a>. Then <code>setup</code>:</p>
+
+    <div class="block">
+      <div class="note-label">on the Linux machine, in deploy/single-host</div>
+<pre><code><span class="p">$</span> <span class="cmd">AGENTIIK_TOKEN="$(sudo ./setup)"</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN</span>
 <span class="p">$</span> <span class="cmd">docker compose ps</span>
 NAME                    IMAGE                                COMMAND                  SERVICE      STATUS
@@ -1198,15 +1236,16 @@ agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.1       "/usr/local/bin/agk
 
     <h3 id="run-on-the-server">Run the workflow there</h3>
 
-    <p>On the same machine, with <code>agk</code> <a href="#install">installed as above</a>, two variables point it at the server: its address, and the certificate <code>setup</code> made. From another machine, <a href="#agk-from-another-machine">copy that certificate and trust it</a>.</p>
+    <p>On the same machine, with <code>agk</code> <a href="#install">installed as above</a>, three variables point it at the server: its address, and the certificate <code>setup</code> made, which <code>SSL_CERT_DIR</code> gives <code>agk</code> and <code>CURL_CA_BUNDLE</code> gives <code>curl</code>. Behind a reverse proxy, the address and the certificate are <a href="#behind-a-reverse-proxy">the proxy's</a>. From another machine, <a href="#agk-from-another-machine">copy that certificate and trust it</a>.</p>
 
     <div class="block">
       <div class="note-label">point agk at the server</div>
 <pre><code><span class="p">$</span> <span class="cmd">export AGENTIIK_SERVER=https://localhost:8443</span>
-<span class="p">$</span> <span class="cmd">export SSL_CERT_DIR=/etc/agentiik/trust</span></code></pre>
+<span class="p">$</span> <span class="cmd">export SSL_CERT_DIR=/etc/agentiik/trust</span>
+<span class="p">$</span> <span class="cmd">export CURL_CA_BUNDLE=/etc/agentiik/trust/agentiik.pem</span></code></pre>
     </div>
 
-    <p>The first workflow again, in a directory of its own, with one line on standard error for <code>agk logs</code> to show:</p>
+    <p>The first workflow again, in a directory of its own, with one line on standard error for <code>agk logs</code> to show, and one file for <code>curl</code> to fetch:</p>
 
     <div class="block">
       <div class="note-label">push, run, read</div>
@@ -1220,12 +1259,14 @@ metadata:
 outputs:
   greeting:
     from: { step: greet, port: out }
+    retain: 7d
 steps:
   greet:
     image: alpine:3.21
     script:
       - echo "greet runs on $(uname -m)" &gt;&amp;2
       - echo "hello from ${AGK_STEP}"
+      - echo "a file from ${AGK_STEP}" &gt; /agk/out/files/greeting.txt
     outputs: [out]
 EOF
 <span class="p">$</span> <span class="cmd">git add agentiik.yaml &amp;&amp; git commit -qm "A first workflow"</span>
@@ -1234,11 +1275,12 @@ EOF
 <span class="p">$</span> <span class="cmd">run=$(awk '/ started at / { print $2; exit }' ~/first-run.log)</span>
 <span class="p">$</span> <span class="cmd">agk status "$run"</span>
 <span class="p">$</span> <span class="cmd">agk logs "$run"</span>
+<span class="p">$</span> <span class="cmd">curl -fsSL -H "Authorization: Bearer $AGENTIIK_TOKEN" "$AGENTIIK_SERVER/api/v1/artifacts/agk%3A%2F%2Frun%2F$run%2Fgreet%2Fout%2Fgreeting.txt"</span>
 <span class="p">$</span> <span class="cmd">cd -</span></code></pre>
     </div>
 
     <div class="block">
-      <div class="note-label">what agk push, run, status and logs print</div>
+      <div class="note-label">what agk push, run, status and logs print, then curl</div>
 <pre><code>user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: ...
 alpine:3.21 resolved to alpine@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507
 demo/first-run@9d4e925 pushed to https://localhost:8443
@@ -1253,7 +1295,8 @@ manual by operator at 2026-09-26T09:00:44Z
 greet  succeeded, out 1 sha256:2ec2167f189f
 output greeting: 1 item
 greet | greet runs on x86_64
-greet | driver: the container exited 0: the output envelopes are published</code></pre>
+greet | driver: the container exited 0: the output envelopes are published
+a file from greet</code></pre>
     </div>
 
     <div class="tablewrap">
@@ -1264,6 +1307,7 @@ greet | driver: the container exited 0: the output envelopes are published</code
           <tr><td>agk run --namespace demo</td><td>Starts a run of <code>HEAD</code> on the server and follows it to its end. An interrupt stops the following, not the run.</td></tr>
           <tr><td>agk status &lt;run&gt;</td><td>How the run and each step stand, and the digest of each output.</td></tr>
           <tr><td>agk logs &lt;run&gt;</td><td>What each step wrote on standard error. What it wrote on standard output became its output.</td></tr>
+          <tr><td>curl</td><td>Fetches the file the step left in <code>/agk/out/files/</code>, an artifact of its output kept for the seven days <code>retain</code> says, by its URI <code>agk://run/&lt;run&gt;/greet/out/greeting.txt</code>, percent-encoded as one segment of the path.</td></tr>
         </tbody>
       </table>
     </div>
@@ -1328,7 +1372,7 @@ greet | driver: the container exited 0: the output envelopes are published</code
           <tr><td>A Linux host, x86-64 or arm64</td><td>The runner hands the Docker daemon paths on the host to bind, which the virtual machine of Docker Desktop on macOS or Windows cannot see. <code>agk</code> runs anywhere.</td></tr>
           <tr><td>Docker Engine 28 or later, with the Compose plugin</td><td>Every component is a container, and so is every step.</td></tr>
           <tr><td><code>sudo</code>, <code>openssl</code>, <code>curl</code>, <code>git</code></td><td><code>setup</code> writes under <code>/etc</code>, <code>/var/lib</code>, <code>/run</code> and <code>/srv</code>, and makes the certificate and the keys.</td></tr>
-          <tr><td>Ports 8443 and 4222 open, and 8222 free on the loopback</td><td>The API serves HTTPS on 8443 (<code>AGENTIIK_PORT</code>) to <code>agk</code> and to every runner, and the bus listens on 4222 for every runner, both on every interface: open them to the machines that reach the installation, and to nothing else. The bus's health check listens on <code>127.0.0.1:8222</code> alone.</td></tr>
+          <tr><td>Ports 8443 and 4222 open, and 8222 free on the loopback</td><td>The API serves HTTPS on 8443 (<code>AGENTIIK_PORT</code>) to <code>agk</code> and to every runner, and the bus listens on 4222 for every runner, both on every interface: open them to the machines that reach the installation, and to nothing else. Behind a reverse proxy, the proxy's 443 takes the place of 8443, which then listens on the loopback alone. The bus's health check listens on <code>127.0.0.1:8222</code> alone.</td></tr>
         </tbody>
       </table>
     </div>
@@ -1338,9 +1382,49 @@ greet | driver: the container exited 0: the output envelopes are published</code
       <div class="note-label">install</div>
 <pre><code><span class="p">$</span> <span class="cmd">git clone https://github.com/agentiik/deploy.git</span>
 <span class="p">$</span> <span class="cmd">cd deploy/single-host</span>
-<span class="p">$</span> <span class="cmd">cp .env.example .env</span>
-<span class="c"># edit .env: AGENTIIK_HOST first, if other machines will reach this one</span>
-<span class="p">$</span> <span class="cmd">AGENTIIK_TOKEN="$(sudo ./setup)"</span>
+<span class="p">$</span> <span class="cmd">cp .env.example .env</span></code></pre>
+    </div>
+
+    <!-- Verbatim copy of single-host/.env.example in https://github.com/agentiik/deploy, HTML-escaped: a check compares the two, so edit that file and copy it here, never the other way. -->
+    <div class="block">
+      <div class="note-label">.env.example, from agentiik/deploy: cp makes it .env</div>
+<pre><code># Copy to .env, which setup and docker compose both read. These are the choices one host makes.
+
+# The version of Agentiik, one for every image and every repository.
+AGENTIIK_VERSION=v0.2.1
+
+# The name runners reach the bus at, on port 4222, and agk the API at unless a proxy is in front: a DNS name or an IPv4 address, which the certificate setup makes is issued to.
+AGENTIIK_HOST=localhost
+
+# The port the API serves HTTPS on, on every interface of this host. Behind a proxy, plain HTTP on 127.0.0.1 alone, which the proxy forwards to.
+AGENTIIK_PORT=8443
+
+# Empty, the API serves TLS itself at https://AGENTIIK_HOST:AGENTIIK_PORT. The https URL of a reverse proxy that terminates TLS in front of it, such as https://agentiik.example.com, puts the installation behind that proxy.
+AGENTIIK_PUBLIC_URL=
+
+# Where the control plane keeps its database, bus, objects, keys and certificate.
+AGENTIIK_DATA=/srv/agentiik
+
+# The namespace setup creates, where workflows are pushed and run.
+AGENTIIK_NAMESPACE=demo
+
+# How many tasks the runner holds at once. Kept low, since the runner shares this host with PostgreSQL.
+AGENTIIK_RUNNER_CONCURRENCY=2
+
+# Uncomment to build the images from the agentiik source instead of pulling them: AGENTIIK_VERSION is then any tag or branch.
+#COMPOSE_FILE=compose.yaml:compose.build.yaml</code></pre>
+    </div>
+
+    <ul class="plain">
+      <li><code>AGENTIIK_HOST</code> first: <code>localhost</code> works on one machine, and a runner on another machine needs a name or an address that machine reaches.</li>
+      <li><code>AGENTIIK_VERSION</code> is the one variable that picks what runs, and every other file follows it.</li>
+      <li><code>AGENTIIK_PUBLIC_URL</code> stays empty unless a reverse proxy is in front, which then starts before <code>setup</code>: <a href="#behind-a-reverse-proxy">Behind a reverse proxy</a>.</li>
+      <li>The runner on this host joins the pool <code>default</code> with no label, and takes every step that names no <code>runs_on</code>.</li>
+    </ul>
+
+    <div class="block">
+      <div class="note-label">start</div>
+<pre><code><span class="p">$</span> <span class="cmd">AGENTIIK_TOKEN="$(sudo ./setup)"</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN</span>
 setup: installing Agentiik v0.2.1 at https://localhost:8443, keeping its state in /srv/agentiik
 setup: the secrets tmpfs is mounted at /run/agentiik/secrets, and /etc/fstab mounts it at boot
@@ -1356,19 +1440,6 @@ setup: the runner is ready
 setup: Agentiik v0.2.1 is running at https://localhost:8443. Clients trust /etc/agentiik/trust/agentiik.pem.</code></pre>
     </div>
 
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>.env</th><th>Default</th><th>Chooses</th></tr></thead>
-        <tbody>
-          <tr><td>AGENTIIK_VERSION</td><td><code>v0.2.1</code></td><td>The version of every image. The one variable that picks what runs.</td></tr>
-          <tr><td>AGENTIIK_HOST</td><td><code>localhost</code></td><td>The name <code>agk</code> and every runner reach the API and the bus at, which the certificate is issued to: a DNS name or an IPv4 address. <code>localhost</code> works on one machine; a runner on another machine needs a name that machine reaches.</td></tr>
-          <tr><td>AGENTIIK_PORT</td><td><code>8443</code></td><td>The HTTPS port, on every interface.</td></tr>
-          <tr><td>AGENTIIK_DATA</td><td><code>/srv/agentiik</code></td><td>Where the database, the bus, the objects, the keys and the certificate live.</td></tr>
-          <tr><td>AGENTIIK_NAMESPACE</td><td><code>demo</code></td><td>The namespace <code>setup</code> creates, to push workflows to. The runner on this host joins the pool <code>default</code> with no label, and takes every step that names no <code>runs_on</code>.</td></tr>
-          <tr><td>AGENTIIK_RUNNER_CONCURRENCY</td><td><code>2</code></td><td>How many tasks the runner holds at once, low because it shares the host with PostgreSQL.</td></tr>
-        </tbody>
-      </table>
-    </div>
 
     <p><code>setup</code> says what it does on standard error and prints the operator token on standard output, which the line above keeps in your shell and nowhere else. Save it in a password manager, <code>echo "$AGENTIIK_TOKEN"</code>: only its hash is written down. Lost, it is replaced by running <code>sudo ./setup</code> again, which keeps everything else.</p>
 
@@ -1387,7 +1458,7 @@ agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.1       "/usr/local/bin/agk
     <p>A service that is not <code>Up</code> says why in <code>docker compose logs api</code>, or <code>controller</code>, <code>runner</code>, <code>nats</code>, <code>postgres</code>. Then point <code>agk</code> at it and run a workflow, as <a href="#run-on-the-server">Get started</a> does.</p>
 
     <h4 id="agk-from-another-machine">Use it from another machine</h4>
-    <p><code>AGENTIIK_HOST</code> in <code>.env</code> is the name the other machine reaches this one at, set before <code>setup</code> runs, or <code>setup</code> run again after it changes. <code>AGENTIIK_SERVER</code> is then <code>https://</code> that name <code>:8443</code>, and <code>AGENTIIK_TOKEN</code> the operator token. Copy <code>/etc/agentiik/trust/agentiik.pem</code> to that machine and trust it: <code>SSL_CERT_DIR</code> naming its directory on Linux, and on macOS:</p>
+    <p><code>AGENTIIK_HOST</code> in <code>.env</code> is the name the other machine reaches this one at, set before <code>setup</code> runs, or <code>setup</code> run again after it changes. <code>AGENTIIK_SERVER</code> is then <code>https://</code> that name <code>:8443</code>, or <code>AGENTIIK_PUBLIC_URL</code> <a href="#behind-a-reverse-proxy">behind a reverse proxy</a>, and <code>AGENTIIK_TOKEN</code> the operator token. Copy <code>/etc/agentiik/trust/agentiik.pem</code> to that machine and trust it: <code>SSL_CERT_DIR</code> naming its directory on Linux, and on macOS:</p>
     <div class="block">
       <div class="note-label">macOS: agk trusts what the keychain trusts</div>
 <pre><code><span class="p">$</span> <span class="cmd">sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain agentiik.pem</span></code></pre>
@@ -1429,6 +1500,202 @@ agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.1       "/usr/local/bin/agk
       <li>A backup is the database and the files together, since a run restored without its objects points at artifacts that no longer exist. The archive holds the master key, which opens every secret in the dump: keep the two apart, or encrypt them.</li>
       <li>The bus credential of the API and the controller expires after 90 days, and the API warns from 14 days before. <code>setup</code> hands the renewed one to the controller and restarts both.</li>
     </ul>
+
+    <h3 id="behind-a-reverse-proxy">Behind a reverse proxy</h3>
+
+    <p>The proxy holds the TLS certificate and serves the API on 443; the API serves plain HTTP on the loopback, for the proxy alone; the bus keeps its own TLS on 4222 and is not proxied, since it speaks NATS rather than HTTP.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th></th><th>Without a proxy</th><th>Behind a proxy</th></tr></thead>
+        <tbody>
+          <tr><td>The API</td><td>HTTPS on <code>:8443</code>, every interface, with the certificate <code>setup</code> makes</td><td>Plain HTTP on <code>127.0.0.1:8443</code> (<code>AGENTIIK_PORT</code>), for the proxy to forward to</td></tr>
+          <tr><td>The proxy</td><td>None</td><td>HTTPS on <code>:443</code>, with a certificate of its own: Let's Encrypt, or its own authority</td></tr>
+          <tr><td>The bus</td><td>NATS over TLS on <code>:4222</code>, with <code>setup</code>'s certificate</td><td>The same</td></tr>
+          <tr><td><code>agk</code> and runners reach the API at</td><td><code>https://AGENTIIK_HOST:8443</code></td><td><code>AGENTIIK_PUBLIC_URL</code>, which every presigned URL is minted on too</td></tr>
+          <tr><td>They trust, for the API</td><td><code>/etc/agentiik/trust/agentiik.pem</code></td><td>The system's own authorities, or <code>/etc/agentiik/trust/proxy.pem</code> where the proxy's authority is not one of them</td></tr>
+          <tr><td>Runners trust, for the bus</td><td><code>agentiik.pem</code></td><td><code>agentiik.pem</code></td></tr>
+          <tr><td>Open to other machines</td><td>8443 and 4222</td><td>443 and 4222; 8443 listens on the loopback alone</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>One line of <code>.env</code> chooses it, and <code>setup</code> writes the API's address from it:</p>
+
+    <div class="block">
+      <div class="note-label">.env</div>
+<pre><code>AGENTIIK_PUBLIC_URL=https://agentiik.example.com</code></pre>
+    </div>
+
+    <p><code>AGENTIIK_HOST</code> stays the name runners reach the bus at, usually the same one. The proxy starts before <code>setup</code>, since the runner <code>setup</code> joins reaches the API through it. With Caddy, in a container on this host:</p>
+
+    <div class="block">
+      <div class="note-label">install, with Caddy in front</div>
+<pre><code><span class="p">$</span> <span class="cmd">git clone https://github.com/agentiik/deploy.git</span>
+<span class="p">$</span> <span class="cmd">cd deploy/single-host</span>
+<span class="p">$</span> <span class="cmd">cp .env.example .env</span>
+<span class="p">$</span> <span class="cmd">sed -i 's|^AGENTIIK_HOST=.*|AGENTIIK_HOST=agentiik.example.com|; s|^AGENTIIK_PUBLIC_URL=.*|AGENTIIK_PUBLIC_URL=https://agentiik.example.com|' .env</span>
+<span class="p">$</span> <span class="cmd">docker run --detach --name caddy --restart unless-stopped --network host --env-file .env \</span>
+<span class="cmd">  -v "$PWD/proxy/Caddyfile:/etc/caddy/Caddyfile:ro" -v caddy-data:/data caddy:2</span>
+<span class="p">$</span> <span class="cmd">export AGENTIIK_SERVER=https://agentiik.example.com</span>
+<span class="p">$</span> <span class="cmd">export SSL_CERT_DIR=/etc/agentiik/trust</span></code></pre>
+    </div>
+
+    <p>Only where the proxy's certificate is from an authority the system does not trust, such as Caddy's own for an IP address or a name like <code>agentiik.internal</code>, does that authority join <code>/etc/agentiik/trust</code>, where the runner and <code>agk</code> look, and <code>curl</code> trust it too:</p>
+
+    <div class="block">
+      <div class="note-label">only for a proxy's own authority</div>
+<pre><code><span class="p">$</span> <span class="cmd">sudo mkdir -p /etc/agentiik/trust</span>
+<span class="p">$</span> <span class="cmd">docker exec caddy sh -c 'until [ -s /data/caddy/pki/authorities/local/root.crt ]; do sleep 1; done; cat /data/caddy/pki/authorities/local/root.crt' |</span>
+<span class="cmd">  sudo tee /etc/agentiik/trust/proxy.pem &gt;/dev/null</span>
+<span class="p">$</span> <span class="cmd">export CURL_CA_BUNDLE=/etc/agentiik/trust/proxy.pem</span></code></pre>
+    </div>
+
+    <div class="block">
+      <div class="note-label">start</div>
+<pre><code><span class="p">$</span> <span class="cmd">AGENTIIK_TOKEN="$(sudo ./setup)"</span>
+<span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN</span></code></pre>
+    </div>
+
+    <p>The rest is as <a href="#install-with-compose">without a proxy</a>: <code>docker compose ps</code>, then <a href="#run-on-the-server">a first workflow</a> with the variables set above.</p>
+
+    <h4 id="proxy-configurations">Caddy, nginx or Traefik</h4>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Proxy</th><th>Files in <code>proxy/</code></th><th>Where they go</th></tr></thead>
+        <tbody>
+          <tr><td>Caddy</td><td><code>Caddyfile</code></td><td>Mounted as above, or <code>/etc/caddy/Caddyfile</code> with <code>AGENTIIK_PUBLIC_URL</code> in Caddy's environment. Caddy obtains and renews the certificate itself.</td></tr>
+          <tr><td>nginx</td><td><code>nginx.conf</code></td><td><code>/etc/nginx/conf.d/agentiik.conf</code>, with your name and certificate in place of <code>agentiik.example.com</code>.</td></tr>
+          <tr><td>Traefik</td><td><code>traefik.yaml</code>, <code>traefik-agentiik.yaml</code></td><td><code>/etc/traefik/</code>, with your name and an address for Let's Encrypt in place of the examples.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Each sets what the API needs of a proxy, where the proxy's default does not already give it:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>The API needs</th><th>Because</th><th>Caddy</th><th>nginx</th><th>Traefik</th></tr></thead>
+        <tbody>
+          <tr><td>A log stream passed on as it is written</td><td>A step's log is server-sent events</td><td><code>flush_interval -1</code></td><td><code>proxy_buffering off</code></td><td>its default</td></tr>
+          <tr><td>The path passed undecoded</td><td>An artifact's URI is one segment whose slashes are <code>%2F</code></td><td>its default</td><td><code>proxy_pass</code> with no path after the address</td><td><code>allowEncodedSlash: true</code></td></tr>
+          <tr><td>No body size limit</td><td>A runner uploads artifacts of up to 5 GiB, and the API bounds each route itself</td><td>its default</td><td><code>client_max_body_size 0</code>, and <code>proxy_request_buffering off</code> to stream it</td><td>its default</td></tr>
+          <tr><td>No timeout under an hour</td><td>A download has an hour, and a log stream lasts as long as its step</td><td>its default</td><td><code>proxy_read_timeout 1h</code>, <code>proxy_send_timeout 1h</code></td><td><code>readTimeout: 0</code>, for uploads</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>No <code>X-Forwarded-*</code> header is needed: the API reads none, and every address it hands out is minted on <code>AGENTIIK_PUBLIC_URL</code>. The CI of agentiik/deploy runs the install above behind Caddy, and each of these files in front of a stand-in that checks the first three rows.</p>
+
+    <!-- Verbatim copy of single-host/proxy/Caddyfile in https://github.com/agentiik/deploy, HTML-escaped: a check compares the two, so edit that file and copy it here, never the other way. -->
+    <div class="block">
+      <div class="note-label">proxy/Caddyfile, from agentiik/deploy</div>
+<pre><code># Caddy in front of the single-host installation. It serves the address AGENTIIK_PUBLIC_URL names,
+# from the environment, with a certificate it obtains and renews: from Let's Encrypt for a public
+# name, from its own authority for an IP address or a name such as agentiik.internal.
+{$AGENTIIK_PUBLIC_URL} {
+	# The API, in plain HTTP on the loopback: AGENTIIK_PORT in .env.
+	reverse_proxy 127.0.0.1:8443 {
+		# Every write passed on at once, so that a step's log stream (server-sent events) is
+		# never held back. Caddy already does it for text/event-stream; this says so.
+		flush_interval -1
+	}
+	# Nothing else to set: Caddy passes the path as sent, %2F included, sets no request body
+	# limit and no response timeout, and the API reads no X-Forwarded-* header.
+}</code></pre>
+    </div>
+
+    <!-- Verbatim copy of single-host/proxy/nginx.conf in https://github.com/agentiik/deploy, HTML-escaped: a check compares the two, so edit that file and copy it here, never the other way. -->
+    <div class="block">
+      <div class="note-label">proxy/nginx.conf, from agentiik/deploy: /etc/nginx/conf.d/agentiik.conf</div>
+<pre><code># nginx in front of the single-host installation: a server block for /etc/nginx/conf.d/, with the
+# name AGENTIIK_PUBLIC_URL names and a certificate for it, from certbot for example.
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name agentiik.example.com;
+    ssl_certificate /etc/letsencrypt/live/agentiik.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/agentiik.example.com/privkey.pem;
+
+    # A push is up to 16 MiB and an artifact a runner uploads up to 5 GiB: no limit here, since
+    # the API holds each route to its own. nginx's default is 1 MiB.
+    client_max_body_size 0;
+
+    location / {
+        # No path after the address, so nginx passes the path as the client sent it: an artifact's
+        # URI is one segment with its slashes as %2F, which a decoded path would split.
+        proxy_pass http://127.0.0.1:8443;
+        proxy_http_version 1.1;
+
+        # A step's log stream (server-sent events) goes out as it is written. The API also says
+        # so with X-Accel-Buffering: no; uploads stream to the API rather than to a temporary file.
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        # An artifact has an hour to download, and a log stream lasts as long as its step, with a
+        # comment every 15 seconds in between. nginx's default is 60 seconds.
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+    }
+}</code></pre>
+    </div>
+
+    <!-- Verbatim copy of single-host/proxy/traefik.yaml in https://github.com/agentiik/deploy, HTML-escaped: a check compares the two, so edit that file and copy it here, never the other way. -->
+    <div class="block">
+      <div class="note-label">proxy/traefik.yaml, from agentiik/deploy: /etc/traefik/traefik.yaml</div>
+<pre><code># Traefik in front of the single-host installation: its static configuration, as
+# /etc/traefik/traefik.yaml, with traefik-agentiik.yaml beside it for the route.
+entryPoints:
+  websecure:
+    address: ":443"
+    transport:
+      respondingTimeouts:
+        # Traefik v3 stops reading a request after 60 seconds, which cuts an artifact upload of
+        # up to 5 GiB short: 0 is no limit. The API bounds what it reads on each route.
+        readTimeout: 0
+    http:
+      encodedCharacters:
+        # An artifact's URI is one path segment with its slashes as %2F, which Traefik refuses
+        # by default. It reaches the API undecoded.
+        allowEncodedSlash: true
+
+providers:
+  file:
+    filename: /etc/traefik/traefik-agentiik.yaml
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@example.com
+      storage: /etc/traefik/acme.json
+      tlsChallenge: {}</code></pre>
+    </div>
+
+    <!-- Verbatim copy of single-host/proxy/traefik-agentiik.yaml in https://github.com/agentiik/deploy, HTML-escaped: a check compares the two, so edit that file and copy it here, never the other way. -->
+    <div class="block">
+      <div class="note-label">proxy/traefik-agentiik.yaml, from agentiik/deploy: /etc/traefik/traefik-agentiik.yaml</div>
+<pre><code># Traefik's route to the single-host installation, which traefik.yaml reads with its file provider.
+http:
+  routers:
+    agentiik:
+      rule: Host(`agentiik.example.com`) # the name AGENTIIK_PUBLIC_URL names
+      entryPoints: [websecure]
+      service: agentiik
+      tls:
+        certResolver: letsencrypt
+  services:
+    agentiik:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:8443 # the API, in plain HTTP on the loopback: AGENTIIK_PORT in .env
+        # Nothing else to set: Traefik streams server-sent events as they come, passes the body
+        # whole with no size limit, and the API reads no X-Forwarded-* header.</code></pre>
+    </div>
+
+    <h4 id="proxy-remote-runner">A runner on another machine</h4>
+
+    <p>It joins as in <a href="#add-a-runner">Add a runner on another machine</a>, with two differences: <code>AGENTIIK_SERVER</code> is the proxy's URL, <code>https://agentiik.example.com</code>, and it copies every certificate in <code>/etc/agentiik/trust</code>, <code>agentiik.pem</code> for the bus and <code>proxy.pem</code> where there is one for the API. It reaches 443 and 4222; nothing connects to it.</p>
 
     <h3 id="install-with-homebrew">On a Mac, with Homebrew</h3>
 
@@ -1501,24 +1768,26 @@ agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.1       "/usr/local/bin/agk
 
     <h3 id="add-a-runner">Add a runner on another machine</h3>
 
-    <p>Any Linux machine with Docker Engine 28 can run steps for the <a href="#install-with-compose">Compose installation</a>, as long as it reaches <code>AGENTIIK_HOST</code> on ports 8443 and 4222; nothing connects to it. It joins a pool with a single-use token the operator issues, and takes the steps whose <code>runs_on</code> names its labels. The CI of agentiik/deploy runs these commands, the join on the other machine included, all but the copy of the certificate.</p>
+    <p>Any Linux machine with Docker Engine 28 can run steps for the <a href="#install-with-compose">Compose installation</a>, as long as it reaches <code>AGENTIIK_HOST</code> on ports 8443 and 4222, or the proxy's 443 in place of 8443; nothing connects to it. It joins a pool with a single-use token the operator issues, and takes the steps whose <code>runs_on</code> names its labels. The CI of agentiik/deploy runs these commands, the join on the other machine included, all but the copy of the certificate.</p>
 
     <div class="block">
       <div class="note-label">on the installation's host: a pool for the new machine's label, and a join token for it, valid an hour</div>
-<pre><code><span class="p">$</span> <span class="cmd">curl -fsS --cacert /etc/agentiik/trust/agentiik.pem -H "Authorization: Bearer $AGENTIIK_TOKEN" -H 'Content-Type: application/json' \</span>
+<pre><code><span class="p">$</span> <span class="cmd">curl -fsS -H "Authorization: Bearer $AGENTIIK_TOKEN" -H 'Content-Type: application/json' \</span>
 <span class="cmd">  --data '{"pool":{"name":"lab","labels":["zone=lab"],"namespaces":[],"resource_ceilings":{}}}' "$AGENTIIK_SERVER/api/v1/runner-pools"</span>
-<span class="p">$</span> <span class="cmd">JOIN_TOKEN=$(curl -fsS --cacert /etc/agentiik/trust/agentiik.pem -H "Authorization: Bearer $AGENTIIK_TOKEN" -H 'Content-Type: application/json' \</span>
+<span class="p">$</span> <span class="cmd">JOIN_TOKEN=$(curl -fsS -H "Authorization: Bearer $AGENTIIK_TOKEN" -H 'Content-Type: application/json' \</span>
 <span class="cmd">  --data '{"labels":["zone=lab"]}' "$AGENTIIK_SERVER/api/v1/runner-pools/lab/join-tokens" | sed -n 's/.*"token" *: *"\([^"]*\)".*/\1/p')</span>
 <span class="p">$</span> <span class="cmd">echo "$JOIN_TOKEN"</span></code></pre>
     </div>
 
     <div class="block">
-      <div class="note-label">on the other machine: the deploy repository, the certificate, the address, the token</div>
+      <div class="note-label">on the other machine: the deploy repository, the certificates, the address, the token</div>
 <pre><code><span class="p">$</span> <span class="cmd">git clone https://github.com/agentiik/deploy.git &amp;&amp; cd deploy/single-host</span>
-<span class="p">$</span> <span class="cmd">scp agentiik.example.com:/etc/agentiik/trust/agentiik.pem .</span>
+<span class="p">$</span> <span class="cmd">scp 'agentiik.example.com:/etc/agentiik/trust/*.pem' .</span>
 <span class="p">$</span> <span class="cmd">AGENTIIK_SERVER=https://agentiik.example.com:8443</span>
 <span class="p">$</span> <span class="cmd">JOIN_TOKEN=agkjoin_...</span></code></pre>
     </div>
+
+    <p>The certificates are <code>agentiik.pem</code>, which the bus serves and, with no proxy in front, the API, and <code>proxy.pem</code> where <a href="#behind-a-reverse-proxy">the proxy's authority</a> is one the system does not trust. Behind a proxy, <code>AGENTIIK_SERVER</code> is its URL, <code>https://agentiik.example.com</code>.</p>
 
     <div class="block">
       <div class="note-label">on the other machine: join and serve</div>
@@ -1568,7 +1837,7 @@ EOF
           <tr><td>A runner for the Mac installation</td><td>None: it listens on the loopback alone, and a runner is a Linux host.</td><td></td></tr>
           <tr><td>An object store</td><td>On disk, beside the API, not MinIO or S3.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
           <tr><td>network: egress</td><td>Refused rather than opened.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
-          <tr><td>A certificate from a public authority</td><td><code>setup</code> signs its own. Replace <code>/srv/agentiik/api/tls/server.pem</code> and <code>server.key</code> with yours and run <code>sudo ./setup</code> again; clients that already trust its authority then need no <code>agentiik.pem</code>.</td><td></td></tr>
+          <tr><td>A certificate from a public authority</td><td><code>setup</code> signs its own, unless <a href="#behind-a-reverse-proxy">a reverse proxy</a> in front serves the API with its own; the bus keeps <code>setup</code>'s. Replace <code>/srv/agentiik/api/tls/server.pem</code> and <code>server.key</code> with yours and run <code>sudo ./setup</code> again; clients that already trust its authority then need no <code>agentiik.pem</code>.</td><td></td></tr>
         </tbody>
       </table>
     </div>
@@ -7155,6 +7424,7 @@ resource "agentiik_workflow" "search" {
 
   <div class="prose">
     <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: its <code>compose.yaml</code> is in <a href="#run-on-a-server">Get started</a>, and <a href="#install-with-compose">Install a server</a> installs, operates, backs up and removes it. At <code>v0.2.1</code> it runs PostgreSQL, NATS, the API, the controller and one runner: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet.</p>
+    <p>The reverse proxy of the figure is optional: <a href="#behind-a-reverse-proxy">behind one</a>, <code>AGK_PUBLIC_URL</code> is the proxy's <code>https</code> URL and the API serves plain HTTP on the loopback, while the bus keeps its own TLS on 4222.</p>
     <p>The images are published on <code>ghcr.io</code> from <code>v0.2.1</code>, for linux/amd64 and linux/arm64: <code>ghcr.io/agentiik/api</code>, <code>controller</code> and <code>runner</code>, tagged with the version (<code>0.2.1</code> and <code>v0.2.1</code>) and <code>latest</code> at a release, and <code>dev</code> for every commit to <code>main</code>.</p>
     <ul class="plain">
       <li>Secrets: the built-in store, with its master key read from a file the API user alone can open, or from the host keyring.</li>
@@ -7565,7 +7835,7 @@ post_task = [
     <p>An installation that attaches no object store carries every object through the API as well, since the API is then its <a href="#the-task-message">object store</a>.</p>
 
     <h3 id="configuration">Configuration</h3>
-    <p>Both installations in <a href="#install-a-server">Install a server</a> write these settings for you: in <code>control-plane.env</code> and <code>api.env</code> beside <code>compose.yaml</code>, or in <code>$(brew --prefix)/etc/agentiik</code>.</p>
+    <p>Both installations in <a href="#install-a-server">Install a server</a> write these settings for you: in <code>control-plane.env</code>, <code>api.env</code> and <code>listen.env</code> beside <code>compose.yaml</code>, or in <code>$(brew --prefix)/etc/agentiik</code>. <code>setup</code> writes <code>listen.env</code> from <code>.env</code>: <a href="#behind-a-reverse-proxy">behind a reverse proxy</a>, <code>AGK_PUBLIC_URL</code> is the proxy's URL and <code>AGK_LISTEN</code> is <code>127.0.0.1</code> at <code>AGENTIIK_PORT</code>, with no <code>AGK_TLS_CERT_FILE</code>.</p>
     <p>Every program reads <code>AGK_*</code> environment variables. Below, <code>api</code> is <code>agentiik-api serve</code>, <code>controller</code> is <code>agentiik-controller</code> and <code>migrate</code> is <code>agentiik-api migrate</code>, and each reads its own rows and nothing else. <code>agentiik-api namespace</code> reads <code>AGK_DATABASE_URL</code> and <code>AGK_DATABASE_PASSWORD_FILE</code> alone. <code>agentiik-api bus-init</code>, <code>bus-credential</code> and <code>audit-verify</code> read no environment: each takes a directory or a file as its one argument, since a person runs it by hand. A server program's secret is never a value: it sits in a file an <code>AGK_*_FILE</code> variable names, since every process the program starts inherits its environment and anybody who can inspect it reads it. The runner keeps its secrets out of the environment another way, in files that join and rotation write for it, listed last below. A variable set to nothing is unset. Durations are written as Go writes them, <code>90m</code> or <code>720h</code>: the units stop at hours, and no time at all is refused.</p>
     <p>A required setting that is missing, or any setting that is unreadable or malformed, refuses the start and names the variable: a server that started anyway would fail on the first request needing it, and one that fell back to a default would run an installation nobody configured. Every such setting is named on the same start, and a refusal never repeats a value that may hold a secret, whether a URL or the path an <code>_FILE</code> variable holds.</p>
     <div class="tablewrap">
