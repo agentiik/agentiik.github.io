@@ -1,0 +1,35 @@
+# Fails when a file the documentation shows verbatim, such as the single-host compose.yaml
+# of agentiik/deploy in Get started, is no longer the file on that repository's main.
+# .github/check-copies.py says how a copy is marked and compared.
+#
+# It also runs once a day and on demand, since the file can change in the other repository
+# without anything changing here.
+
+name: Copies
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The ref of the copied repositories to compare with, main by default.
+        required: false
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compare each verbatim copy with its file
+        env:
+          COPY_REF: ${{ inputs.ref || 'main' }}
+        run: python3 .github/check-copies.py
