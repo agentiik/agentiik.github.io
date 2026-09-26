@@ -2898,112 +2898,487 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <script>
 (function(){
-  var nav = document.querySelector('.side');
-  if(!nav) return;
-  var parts = Array.prototype.slice.call(nav.querySelectorAll('details.part'));
-  var links = Array.prototype.slice.call(nav.querySelectorAll('.side-toc a[href^="#"]'));
-  var narrow = window.matchMedia('(max-width:980px)');
-
-  // Every navigable target, in document order: chapters and their sections alike.
-  var targets = [], map = {};
-  links.forEach(function(a){
-    var el = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
-    if(!el) return;
-    targets.push(el);
-    map[el.id] = a;
-  });
-  targets.sort(function(x, y){
-    return (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
-  });
-
-  // A chapter's own line, for the chapter a section belongs to.
-  function chapterItem(a){
-    var li = a.parentNode;
-    while(li && !(li.tagName === 'LI' && li.parentNode && !li.parentNode.classList.contains('subs'))){
-      li = li.parentNode;
-    }
-    return li;
+  var doc = document, root = doc.documentElement;
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)');
+  var narrow = window.matchMedia('(max-width:1023px)');
+  var wide = window.matchMedia('(min-width:1600px)');
+  function $all(sel, el){ return Array.prototype.slice.call((el || doc).querySelectorAll(sel)); }
+  function icon(paths){
+    return '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' + paths + '</svg>';
   }
-  function partOf(a){
-    var d = a.parentNode;
-    while(d && d.tagName !== 'DETAILS'){ d = d.parentNode; }
-    return d;
+  var ICON = {
+    menu: icon('<path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>'),
+    close: icon('<path d="M4 4l8 8M12 4l-8 8"/>'),
+    moon: '<svg class="moon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/></svg>',
+    sun: '<svg class="sun" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.8"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>',
+    copy: icon('<rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V3.9c0-.8-.6-1.4-1.4-1.4H3.9c-.8 0-1.4.6-1.4 1.4v5.2c0 .8.6 1.4 1.4 1.4h1.6"/>'),
+    check: icon('<path d="M3 8.5l3.2 3L13 4.5"/>'),
+    zoom: icon('<path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5L9 7M2.5 13.5L7 9"/>')
+  };
+
+  var bar = doc.querySelector('.topbar') || doc.querySelector('.page-tools');
+  var nav = doc.querySelector('.side');
+  var shell = doc.querySelector('.shell');
+
+  // ---------- Theme ----------
+  // The page follows the system until somebody chooses; the choice is remembered on this
+  // device only, and the script in the head applies it before the first paint.
+  function currentTheme(){
+    var t = root.getAttribute('data-theme');
+    if(t) return t;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-
-  var current = null, openItem = null;
-
-  // Parts stay as the reader left them. The only thing reopened is the part
-  // being read, and only if it was folded away, so that scrolling never hides
-  // a part somebody deliberately opened.
-  function reveal(a){
-    var part = partOf(a);
-    if(part && !part.open) part.open = true;
-    var item = chapterItem(a);
-    if(item !== openItem){
-      if(openItem) openItem.removeAttribute('data-open');
-      if(item) item.setAttribute('data-open', '');
-      openItem = item;
+  if(bar){
+    var themeBtn = doc.createElement('button');
+    themeBtn.type = 'button';
+    themeBtn.className = 'icon-btn theme-btn';
+    themeBtn.innerHTML = ICON.moon + ICON.sun;
+    function labelTheme(){
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
+      themeBtn.setAttribute('aria-label', 'Switch to the ' + next + ' theme');
+      themeBtn.title = 'Switch to the ' + next + ' theme';
     }
-  }
-
-  function scrollIntoNav(a){
-    if(narrow.matches || nav.scrollHeight <= nav.clientHeight) return;
-    var r = a.getBoundingClientRect(), nr = nav.getBoundingClientRect();
-    if(r.top < nr.top + 12 || r.bottom > nr.bottom - 12){
-      nav.scrollTop += (r.top - nr.top) - (nav.clientHeight / 2) + (r.height / 2);
-    }
+    labelTheme();
+    themeBtn.addEventListener('click', function(){
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('agentiik-theme', next); } catch(e) {}
+      labelTheme();
+    });
+    bar.appendChild(themeBtn);
   }
 
-  function sync(){
-    if(!targets.length) return;
-    var bar = document.querySelector('.topbar');
-    var line = (bar ? bar.offsetHeight : 58) + 26;
-    var active = targets[0];
-    for(var i = 0; i < targets.length; i++){
-      if(targets[i].getBoundingClientRect().top <= line){ active = targets[i]; } else { break; }
+  // ---------- Contents: a drawer on a narrow screen ----------
+  var menuBtn = null, scrim = null;
+  function setNav(open, focus){
+    if(!menuBtn) return;
+    root.classList.toggle('nav-open', open);
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    menuBtn.innerHTML = open ? ICON.close : ICON.menu;
+    menuBtn.setAttribute('aria-label', open ? 'Close the contents' : 'Open the contents');
+    if(open && focus){
+      var here = nav.querySelector('[aria-current="true"]') || nav.querySelector('a');
+      if(here){
+        here.focus({preventScroll: true});
+        // Scrolled within the drawer alone: scrollIntoView would move every scrolling
+        // ancestor, the page included.
+        var r = here.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+        nav.scrollTop += (r.top - nr.top) - nav.clientHeight / 2;
+      }
     }
-    if(window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 4){
-      active = targets[targets.length - 1];
-    }
-    if(active === current) return;
-    if(current && map[current.id]) map[current.id].removeAttribute('aria-current');
-    current = active;
-    var a = map[current.id];
-    if(!a) return;
-    a.setAttribute('aria-current', 'true');
-    reveal(a);
-    scrollIntoNav(a);
+    if(!open && focus) menuBtn.focus();
+  }
+  if(bar && nav){
+    if(!nav.id) nav.id = 'contents';
+    menuBtn = doc.createElement('button');
+    menuBtn.type = 'button';
+    menuBtn.className = 'icon-btn menu-btn';
+    menuBtn.setAttribute('aria-controls', nav.id);
+    bar.insertBefore(menuBtn, bar.firstChild);
+    scrim = doc.createElement('div');
+    scrim.className = 'scrim';
+    doc.body.appendChild(scrim);
+    setNav(false);
+    menuBtn.addEventListener('click', function(){ setNav(!root.classList.contains('nav-open'), true); });
+    scrim.addEventListener('click', function(){ setNav(false, true); });
+    doc.addEventListener('keydown', function(e){
+      if(e.key === 'Escape' && root.classList.contains('nav-open')) setNav(false, true);
+    });
+    narrow.addEventListener('change', function(){ if(!narrow.matches) setNav(false); });
   }
 
-  // On a phone the sidebar sits above the document, so a chosen chapter folds
-  // it away again rather than pushing the text off the screen.
-  nav.addEventListener('click', function(e){
-    var t = e.target;
-    while(t && t !== nav && t.tagName !== 'A'){ t = t.parentNode; }
-    if(t && t.tagName === 'A' && narrow.matches){
-      var d = partOf(t);
-      if(d) setTimeout(function(){ d.open = false; }, 0);
-    }
-  });
+  // ---------- Contents: the chapter and section being read ----------
+  var rail = null, railList = null, railHead = null;
+  if(nav){
+    var links = $all('.side-toc a[href^="#"]', nav);
+    var targets = [], map = {};
+    links.forEach(function(a){
+      var el = doc.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+      if(!el) return;
+      targets.push(el);
+      map[el.id] = a;
+    });
+    targets.sort(function(x, y){
+      return (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
+    });
 
-  if(narrow.matches) parts.forEach(function(d){ d.open = false; });
-  // Open everywhere on a wide screen, folded on a phone where the sidebar sits
-  // above the document rather than beside it.
-  narrow.addEventListener('change', function(){
-    current = null;
-    parts.forEach(function(d){ d.open = !narrow.matches; });
+    function chapterItem(a){
+      var li = a.parentNode;
+      while(li && !(li.tagName === 'LI' && li.parentNode && !li.parentNode.classList.contains('subs'))){
+        li = li.parentNode;
+      }
+      return li;
+    }
+    function partOf(a){
+      var d = a.parentNode;
+      while(d && d.tagName !== 'DETAILS'){ d = d.parentNode; }
+      return d;
+    }
+    function sectionOf(el){
+      while(el && el.tagName !== 'SECTION'){ el = el.parentNode; }
+      return el;
+    }
+
+    // The rail: every addressed heading of the chapter in view, in the right margin of a
+    // wide screen. Built from the document, so it cannot disagree with it.
+    if(shell && doc.querySelector('main section')){
+      rail = doc.createElement('aside');
+      rail.className = 'rail';
+      rail.setAttribute('aria-label', 'In this chapter');
+      rail.innerHTML = '<p class="rail-title">In this chapter</p><a class="rail-chapter" href="#"></a><ul></ul>';
+      railHead = rail.querySelector('.rail-chapter');
+      railList = rail.querySelector('ul');
+      shell.appendChild(rail);
+      shell.classList.add('has-rail');
+    }
+    var railSection = null, railTargets = [], railMap = {}, railCurrent = null;
+    function buildRail(section){
+      if(!rail || section === railSection) return;
+      railSection = section;
+      railTargets = []; railMap = {}; railCurrent = null;
+      railList.innerHTML = '';
+      if(!section){ rail.hidden = true; return; }
+      var h2 = section.querySelector('h2');
+      railHead.textContent = h2 ? h2.textContent.replace(/#$/, '') : '';
+      railHead.setAttribute('href', '#' + section.id);
+      $all('h3[id], h4[id]', section).forEach(function(h){
+        var li = doc.createElement('li');
+        if(h.tagName === 'H4') li.className = 'h4';
+        var a = doc.createElement('a');
+        a.href = '#' + h.id;
+        a.textContent = h.textContent.replace(/#$/, '');
+        li.appendChild(a);
+        railList.appendChild(li);
+        railTargets.push(h);
+        railMap[h.id] = a;
+      });
+      rail.hidden = !railTargets.length;
+    }
+
+    var current = null, openItem = null;
+    function reveal(a){
+      var part = partOf(a);
+      if(part && !part.open) part.open = true;
+      var item = chapterItem(a);
+      if(item !== openItem){
+        if(openItem) openItem.removeAttribute('data-open');
+        if(item) item.setAttribute('data-open', '');
+        openItem = item;
+      }
+    }
+    function scrollIntoNav(a){
+      if(narrow.matches || nav.scrollHeight <= nav.clientHeight) return;
+      var r = a.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+      if(r.top < nr.top + 12 || r.bottom > nr.bottom - 12){
+        nav.scrollTop += (r.top - nr.top) - (nav.clientHeight / 2) + (r.height / 2);
+      }
+    }
+    function lineY(){ return (bar ? bar.offsetHeight : 56) + 28; }
+    function sync(){
+      if(!targets.length) return;
+      var line = lineY();
+      var active = targets[0];
+      for(var i = 0; i < targets.length; i++){
+        if(targets[i].getBoundingClientRect().top <= line){ active = targets[i]; } else { break; }
+      }
+      var atEnd = window.innerHeight + window.pageYOffset >= doc.documentElement.scrollHeight - 4;
+      if(atEnd) active = targets[targets.length - 1];
+      if(active !== current){
+        if(current && map[current.id]) map[current.id].removeAttribute('aria-current');
+        current = active;
+        var a = map[current.id];
+        if(a){
+          a.setAttribute('aria-current', 'true');
+          reveal(a);
+          scrollIntoNav(a);
+        }
+      }
+      if(rail && wide.matches){
+        buildRail(sectionOf(current));
+        var ra = null;
+        for(var j = 0; j < railTargets.length; j++){
+          if(railTargets[j].getBoundingClientRect().top <= line){ ra = railTargets[j]; } else { break; }
+        }
+        if(atEnd && railTargets.length) ra = railTargets[railTargets.length - 1];
+        if(ra !== railCurrent){
+          if(railCurrent && railMap[railCurrent.id]) railMap[railCurrent.id].removeAttribute('aria-current');
+          railCurrent = ra;
+          if(ra && railMap[ra.id]) railMap[ra.id].setAttribute('aria-current', 'true');
+        }
+      }
+    }
+
+    // A chosen chapter closes the drawer, so the reader lands on the text.
+    nav.addEventListener('click', function(e){
+      var t = e.target;
+      while(t && t !== nav && t.tagName !== 'A'){ t = t.parentNode; }
+      if(t && t.tagName === 'A' && narrow.matches) setNav(false);
+    });
+
+    var queued = false;
+    function onScroll(){
+      if(queued) return;
+      queued = true;
+      window.requestAnimationFrame(function(){ queued = false; sync(); });
+    }
+    window.addEventListener('scroll', onScroll, {passive: true});
+    window.addEventListener('resize', onScroll);
+    wide.addEventListener('change', function(){ railSection = null; sync(); });
     sync();
+  }
+
+  // ---------- Headings: a link to each one that has an address ----------
+  $all('main section[id] > .sec-head h2, main h3[id], main h4[id]').forEach(function(h){
+    var id = h.id || h.closest('section').id;
+    if(!id || h.querySelector('.anchor')) return;
+    var a = doc.createElement('a');
+    a.className = 'anchor';
+    a.href = '#' + id;
+    a.textContent = '#';
+    a.setAttribute('aria-label', 'Link to ' + h.textContent);
+    h.appendChild(a);
   });
 
-  var queued = false;
-  function onScroll(){
-    if(queued) return;
-    queued = true;
-    window.requestAnimationFrame(function(){ queued = false; sync(); });
+  // ---------- Tables: each in its own scroller ----------
+  $all('main table').forEach(function(t){
+    var wrap = t.parentNode;
+    if(!wrap.classList || !wrap.classList.contains('tablewrap')){
+      wrap = doc.createElement('div');
+      wrap.className = 'tablewrap';
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    }
+  });
+  // A scroller whose content is wider than it can be scrolled with the keyboard too.
+  function scrollers(){
+    $all('.tablewrap, .block pre, .figbody').forEach(function(el){
+      var over = el.scrollWidth > el.clientWidth + 1;
+      if(over && !el.hasAttribute('tabindex')){
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('data-kbd', '');
+        if(!el.hasAttribute('role')){
+          el.setAttribute('role', 'region');
+          var what = el.classList.contains('tablewrap') ? 'Table' : el.tagName === 'PRE' ? 'Code' : 'Figure';
+          el.setAttribute('aria-label', what + ', scrolls sideways');
+        }
+      } else if(!over && el.hasAttribute('data-kbd')){
+        el.removeAttribute('tabindex'); el.removeAttribute('data-kbd');
+        el.removeAttribute('role'); el.removeAttribute('aria-label');
+      }
+    });
   }
-  window.addEventListener('scroll', onScroll, {passive:true});
-  window.addEventListener('resize', onScroll);
-  sync();
+  scrollers();
+  var rq = null;
+  window.addEventListener('resize', function(){ clearTimeout(rq); rq = setTimeout(scrollers, 150); });
+  window.addEventListener('load', scrollers);
+
+  // ---------- Code: a copy button on every block ----------
+  // What is copied is what a reader would type: the commands without their prompt, and a
+  // here-document's body with them, but not the output a terminal answered. A block with no
+  // prompt at all is a file, and is copied whole.
+  function copyText(pre){
+    var clone = pre.cloneNode(true);
+    var prompts = clone.querySelectorAll('.p');
+    if(!prompts.length) return pre.textContent.replace(/\n$/, '');
+    Array.prototype.forEach.call(prompts, function(p){ p.textContent = '\u0001'; });
+    var lines = clone.textContent.split('\n'), out = [], heredoc = null;
+    lines.forEach(function(l){
+      if(heredoc !== null){
+        out.push(l);
+        if(l.trim() === heredoc) heredoc = null;
+        return;
+      }
+      if(l.charAt(0) === '\u0001'){
+        var cmd = l.slice(1).replace(/^ /, '');
+        out.push(cmd);
+        var m = cmd.match(/<<-?\s*['"]?([A-Za-z_][A-Za-z0-9_]*)['"]?/);
+        if(m) heredoc = m[1];
+      }
+    });
+    return out.join('\n');
+  }
+  function writeClipboard(text){
+    if(navigator.clipboard && window.isSecureContext){
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function(resolve, reject){
+      var ta = doc.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0'; ta.style.top = '0';
+      doc.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = doc.execCommand('copy'); } catch(e) {}
+      doc.body.removeChild(ta);
+      ok ? resolve() : reject();
+    });
+  }
+  $all('.block').forEach(function(block){
+    var pre = block.querySelector('pre');
+    if(!pre || block.querySelector('.copy-btn')) return;
+    var btn = doc.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.innerHTML = ICON.copy + '<span>Copy</span>';
+    var label = block.querySelector('.note-label');
+    btn.setAttribute('aria-label', 'Copy' + (label ? ' ' + label.textContent.trim() : ' this block'));
+    var status = btn.querySelector('span');
+    var timer = null;
+    btn.addEventListener('click', function(){
+      writeClipboard(copyText(pre)).then(function(){
+        btn.setAttribute('data-state', 'done');
+        btn.innerHTML = ICON.check + '<span>Copied</span>';
+      }, function(){
+        btn.innerHTML = ICON.copy + '<span>Select and copy</span>';
+      }).then(function(){
+        clearTimeout(timer);
+        timer = setTimeout(function(){
+          btn.removeAttribute('data-state');
+          btn.innerHTML = ICON.copy + '<span>Copy</span>';
+        }, 1800);
+      });
+    });
+    if(label){
+      var text = doc.createElement('span');
+      text.className = 'label-text';
+      while(label.firstChild) text.appendChild(label.firstChild);
+      label.appendChild(text);
+      label.appendChild(btn);
+    } else {
+      block.appendChild(btn);
+    }
+  });
+
+  // ---------- Tabs: files that are alternatives to one another ----------
+  $all('.tabset').forEach(function(set, n){
+    var panels = [], byName = {};
+    $all(':scope > [data-tab]', set).forEach(function(el){
+      var name = el.getAttribute('data-tab');
+      if(!byName[name]){
+        var panel = doc.createElement('div');
+        panel.className = 'tabpanel';
+        panel.setAttribute('role', 'tabpanel');
+        byName[name] = panel;
+        panels.push({name: name, panel: panel});
+        set.insertBefore(panel, el);
+      }
+      byName[name].appendChild(el);
+    });
+    if(panels.length < 2) return;
+    var list = doc.createElement('div');
+    list.className = 'tablist';
+    list.setAttribute('role', 'tablist');
+    if(set.getAttribute('aria-label')) list.setAttribute('aria-label', set.getAttribute('aria-label'));
+    var tabs = panels.map(function(p, i){
+      var id = 'tab-' + n + '-' + i;
+      var t = doc.createElement('button');
+      t.type = 'button';
+      t.id = id;
+      t.setAttribute('role', 'tab');
+      t.textContent = p.name;
+      p.panel.id = id + '-panel';
+      p.panel.setAttribute('aria-labelledby', id);
+      t.setAttribute('aria-controls', p.panel.id);
+      list.appendChild(t);
+      return t;
+    });
+    function select(i, focus){
+      tabs.forEach(function(t, j){
+        var on = i === j;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+        panels[j].panel.hidden = !on;
+      });
+      if(focus) tabs[i].focus();
+      scrollers();
+    }
+    tabs.forEach(function(t, i){
+      t.addEventListener('click', function(){ select(i); });
+      t.addEventListener('keydown', function(e){
+        var k = e.key, j = null;
+        if(k === 'ArrowRight') j = (i + 1) % tabs.length;
+        else if(k === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+        else if(k === 'Home') j = 0;
+        else if(k === 'End') j = tabs.length - 1;
+        if(j !== null){ e.preventDefault(); select(j, true); }
+      });
+    });
+    set.insertBefore(list, set.firstChild);
+    set.classList.add('is-tabbed');
+    select(0);
+  });
+
+  // ---------- Figures: enlarge on click, close with Escape ----------
+  var box = null, boxBody = null, boxTitle = null, lastFocus = null;
+  function lightbox(){
+    if(box) return box;
+    box = doc.createElement('dialog');
+    box.className = 'lightbox';
+    box.setAttribute('aria-label', 'Enlarged figure');
+    box.innerHTML = '<div class="lightbox-frame"><div class="lightbox-bar"><span class="lightbox-title"></span>' +
+      '<button type="button" class="icon-btn" aria-label="Close the enlarged figure">' + ICON.close + '</button></div>' +
+      '<div class="lightbox-body"></div></div>';
+    boxBody = box.querySelector('.lightbox-body');
+    boxTitle = box.querySelector('.lightbox-title');
+    box.querySelector('.icon-btn').addEventListener('click', function(){ box.close(); });
+    boxBody.addEventListener('click', function(e){
+      // A click on the drawing closes it, but a drag to pan it does not.
+      if(!window.getSelection || String(window.getSelection()) === '') box.close();
+    });
+    box.addEventListener('click', function(e){ if(e.target === box) box.close(); });
+    box.addEventListener('close', function(){
+      boxBody.innerHTML = '';
+      root.classList.remove('lightbox-open');
+      if(lastFocus) lastFocus.focus({preventScroll: true});
+    });
+    doc.body.appendChild(box);
+    return box;
+  }
+  function visibleArt(fig){
+    var candidates = $all('.figbody > svg, :scope > svg, :scope > img', fig);
+    for(var i = 0; i < candidates.length; i++){
+      if(candidates[i].getClientRects().length) return candidates[i];
+    }
+    return candidates[0];
+  }
+  function enlarge(fig, from){
+    var art = visibleArt(fig);
+    if(!art || typeof HTMLDialogElement !== 'function') return;
+    lightbox();
+    lastFocus = from || null;
+    var copy = art.cloneNode(true);
+    copy.removeAttribute('id');
+    $all('[id]', copy).forEach(function(el){ el.removeAttribute('id'); });
+    if(art.classList.contains('mock')) copy.classList.add('is-mock');
+    copy.style.minWidth = '';
+    boxBody.appendChild(copy);
+    var cap = fig.querySelector('figcaption b');
+    boxTitle.innerHTML = cap ? '<b></b>' : '';
+    if(cap) boxTitle.firstChild.textContent = cap.textContent;
+    root.classList.add('lightbox-open');
+    box.showModal();
+    box.querySelector('.icon-btn').focus({preventScroll: true});
+  }
+  $all('main figure, .shot').forEach(function(fig){
+    if(fig.classList.contains('cast') || !visibleArt(fig)) return;
+    fig.setAttribute('data-zoom', '');
+    var btn = doc.createElement('button');
+    btn.type = 'button';
+    btn.className = 'zoom-btn';
+    btn.innerHTML = ICON.zoom;
+    var cap = fig.querySelector('figcaption b');
+    btn.setAttribute('aria-label', 'Enlarge the figure' + (cap ? ': ' + cap.textContent : ''));
+    btn.title = 'Enlarge';
+    btn.addEventListener('click', function(e){ e.stopPropagation(); enlarge(fig, btn); });
+    fig.appendChild(btn);
+    fig.addEventListener('click', function(e){
+      if(e.target.closest('a, button, figcaption')) return;
+      // A horizontal drag to scroll a wide figure on a phone is not a request to enlarge it.
+      if(String(window.getSelection ? window.getSelection() : '') !== '') return;
+      enlarge(fig, btn);
+    });
+  });
 })();
 </script>
 <script>
