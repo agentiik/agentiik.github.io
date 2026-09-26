@@ -4789,17 +4789,26 @@ concurrency:
 
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Setting</th><th>Values</th><th>Effect</th></tr></thead>
+        <thead><tr><th>Setting</th><th>Values</th><th>Default</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td>password</td><td><code>allowed</code>, <code>forbidden</code></td><td><code>forbidden</code> deletes the stored hash and the endpoint refuses passwords. Hiding a form is not a policy.</td></tr>
-          <tr><td>passkey</td><td><code>optional</code>, <code>required</code></td><td><code>required</code>: nothing is reachable until one credential is enrolled.</td></tr>
-          <tr><td>user_verification</td><td><code>required</code>, <code>preferred</code></td><td><code>required</code> by default, on registration and every assertion, which makes a passkey two factors: the authenticator and whatever unlocks it.</td></tr>
-          <tr><td>device_bound_only</td><td><code>true</code>, <code>false</code></td><td>Refuses a credential whose Backup Eligibility flag is set, that is, a synced passkey.</td></tr>
-          <tr><td>min_passkeys</td><td>integer, default 2</td><td>Credentials required before the password may be removed. Two, so that losing a device is an inconvenience rather than an incident.</td></tr>
+          <tr><td>password</td><td><code>allowed</code>, <code>forbidden</code></td><td><code>allowed</code></td><td><code>forbidden</code> deletes the stored hash and the endpoint refuses passwords. Hiding a form is not a policy. Allowed by default as the fallback that gets a person to their first passkey.</td></tr>
+          <tr><td>passkey</td><td><code>optional</code>, <code>required</code></td><td><code>required</code></td><td><code>required</code>: nothing is reachable until one credential is enrolled.</td></tr>
+          <tr><td>user_verification</td><td><code>required</code>, <code>preferred</code></td><td><code>required</code></td><td>On registration and every assertion, which makes a passkey two factors: the authenticator and whatever unlocks it.</td></tr>
+          <tr><td>device_bound_only</td><td><code>true</code>, <code>false</code></td><td><code>false</code></td><td>Refuses a credential whose Backup Eligibility flag is set, that is, a synced passkey. Off by default, since most people's passkeys are synced.</td></tr>
+          <tr><td>min_passkeys</td><td>integer</td><td><code>2</code></td><td>Credentials required before the password may be removed. Two, so that losing a device is an inconvenience rather than an incident.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The policy is set per installation. A namespace may tighten it, never loosen it, for instance by requiring device-bound passkeys of everyone holding a grant in it.</p>
+    <p>An administrator sets the installation's policy with <code>PUT /api/v1/auth/policy</code> or <code>agk auth policy</code>, and a namespace's with <code>PUT /api/v1/{ns}/auth/policy</code>, from <a href="roadmap/#m03">v0.3.0</a>; the audit log records every change. A namespace may tighten the installation's policy, never loosen it, for instance by requiring device-bound passkeys of everyone holding a grant in it, and a namespace policy that would loosen it is refused naming the setting. What applies is the stricter of the two, setting by setting, so an installation that loosens later loosens no namespace that asked for more.</p>
+
+    <div class="block">
+      <div class="note-label">the installation's policy, from v0.3.0</div>
+<pre><code><span class="p">&gt;</span> <span class="cmd">PUT /api/v1/auth/policy</span>
+Authorization: Bearer &lt;an administrator's token&gt;
+
+{ "password": "allowed", "passkey": "required", "user_verification": "required",
+  "device_bound_only": false, "min_passkeys": 2 }</code></pre>
+    </div>
 
     <div class="decision">
       <span class="note-label">Decision</span>
@@ -4920,6 +4929,36 @@ concurrency:
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>Forbidding passwords does not touch automation: a service account holds only API tokens, and the policy does not apply to it. At a terminal, <code>agk login</code> opens a browser, the passkey ceremony runs there against the same Relying Party, and the command line receives a token; the mobile applications use the platform's native passkey APIs. Passkeys change how people prove who they are, never how machines do.</p>
+    </div>
+
+    <h4>The sign-in page</h4>
+    <p>A passkey ceremony runs in a browser, on a page whose origin the browser checks against the Relying Party Identifier: the host of <code>AGK_PUBLIC_URL</code>, or of <code>AGK_PROXY_URL</code> behind a proxy. The console comes in its own releases, so from <a href="roadmap/#m03">v0.3.0</a> the API serves a minimal page of its own on that origin: <code>/auth/sign-in</code> to sign in, and <code>/auth/enrol</code> to enrol a passkey from an enrolment link or a recovery code. It is embedded in <code>agentiik-api</code>, loads nothing from anywhere else, and does the two ceremonies and the password fallback where the policy allows it, nothing more.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Installation addressed by</th><th>Passkeys</th></tr></thead>
+        <tbody>
+          <tr><td>a DNS name, <code>agentiik.example.com</code></td><td>Yes, that name being the Relying Party Identifier.</td></tr>
+          <tr><td><code>localhost</code></td><td>Yes, from a browser on the same machine.</td></tr>
+          <tr><td>an IP address, <code>192.0.2.10</code></td><td>No: a Relying Party Identifier is a domain, and a browser refuses an IP address. <code>init</code> says so at every run. The policy then allows passwords, and one requiring a passkey or forbidding passwords is refused.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A browser runs the ceremony only on a page whose certificate it trusts, never one clicked past a warning: the certificate <code>init</code> issues is trusted on the machine that signs in, as <a href="#agk-from-another-machine">From another machine</a> does for <code>agk</code>, or a <a href="#behind-a-reverse-proxy">reverse proxy</a> serves one of its own.</p>
+
+    <h4>Signing in from a terminal</h4>
+    <ol class="steps">
+      <li><code>agk login</code> listens on a port of the loopback, makes a one-time verifier and opens the browser at the sign-in page, handing it the loopback address and the verifier's SHA-256.</li>
+      <li>The passkey ceremony runs in the browser, against the same Relying Party as every other sign-in.</li>
+      <li>The page redirects to the loopback address with a one-time code: single use, good for a minute.</li>
+      <li><code>agk</code> sends the code and the verifier to <code>POST /api/v1/auth/exchange</code> and is answered an API token, which it stores in the local profile.</li>
+    </ol>
+    <p>The exchange is PKCE's (RFC 7636): a code seen on the way, in the browser's history or by another process on the machine, opens nothing without the verifier, which never left <code>agk</code>. A device code, the other common way to sign in a terminal, can be phished, since anybody can send someone a code to approve for them. A machine with no browser takes a token made elsewhere, in <code>AGENTIIK_TOKEN</code>.</p>
+
+    <h4>Verifying a passkey</h4>
+    <p>From <a href="roadmap/#m03">v0.3.0</a>, the API verifies registrations and assertions with the Go standard library alone: a CBOR decoder written for it and fuzzed, which refuses indefinite lengths, duplicate map keys and trailing bytes; COSE keys ES256, EdDSA and RS256, checked with <code>crypto/ecdsa</code>, <code>crypto/ed25519</code> and <code>crypto/rsa</code>; attestation conveyance <code>none</code>, the attestation format <code>none</code> accepted.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>No WebAuthn library and no attestation. The code that decides who someone is should be read whole by whoever reviews it, and the part a library would bring, a CBOR decoder, is small enough to write and to fuzz. Attestation would certify the authenticator's make, but the synced passkeys most people hold carry none, so asking for it would refuse them or prove nothing. <code>device_bound_only</code> reads the Backup Eligibility flag in the authenticator data, which needs no attestation; it is the authenticator's own statement, which an installation that must prove its hardware cannot rest on.</p>
     </div>
 
     <h3 id="permissions">Permissions</h3>
