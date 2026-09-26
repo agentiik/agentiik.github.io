@@ -4464,7 +4464,7 @@ concurrency:
           <tr><td class="wrapcell">runner</td><td>bus</td><td>TLS or HTTPS</td><td>short-lived token minted by the API, lasting no longer than an hour, the runner credential's <code>rotate_by</code> and <code>revocation_grace</code></td><td>pulls tasks, publishes results and each task's <code>running</code> and <code>publishing</code>, hears stops on <code>agentiik.stops</code></td></tr>
           <tr><td class="wrapcell">runner</td><td>API</td><td>HTTPS</td><td>runner credential, then a per-task grant</td><td>registration, rotation, heartbeat (whose answer repeats the stops), grant redemption, log shipping</td></tr>
           <tr><td class="wrapcell">runner</td><td>object store</td><td>HTTPS</td><td>presigned URL or signed POST policy, no standing credential</td><td>the workflow tree, input and output artifacts</td></tr>
-          <tr><td class="wrapcell">runner</td><td>registry</td><td>HTTPS</td><td>none in v0.2.0; namespace secrets from <a href="roadmap/#m08">v0.8.0</a></td><td>brick images, by digest</td></tr>
+          <tr><td class="wrapcell">runner</td><td>registry</td><td>HTTPS</td><td>none in v0.2; namespace secrets from <a href="roadmap/#m08">v0.8.0</a></td><td>brick images, by digest</td></tr>
           <tr><td class="wrapcell">runner</td><td>Docker daemon</td><td>local unix socket</td><td>file permission on the socket</td><td>container lifecycle, daemon event stream</td></tr>
           <tr><td class="wrapcell">brick container</td><td>nothing, or the egress proxy</td><td>HTTPS through the proxy</td><td>none; the proxy enforces the step's allow list</td><td>only under <code>network: egress</code></td></tr>
           <tr><td class="wrapcell">API</td><td>APNs, FCM</td><td>HTTPS</td><td>the installation's own credentials</td><td>push notifications: an identifier and a state</td></tr>
@@ -5131,7 +5131,7 @@ concurrency:
     </ul>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Pulling</th><th>v0.2.0</th><th>From <a href="roadmap/#m08">v0.8.0</a></th></tr></thead>
+        <thead><tr><th>Pulling</th><th>v0.2</th><th>From <a href="roadmap/#m08">v0.8.0</a></th></tr></thead>
         <tbody>
           <tr><td>credentials</td><td>none: registries every runner can reach. A <code>401</code> fails the task on the platform's account and names v0.8.0.</td><td>namespace secrets, redeemed for the pull</td></tr>
           <tr><td>signatures</td><td>not verified: there is no policy to verify against</td><td>the per-namespace policy, in the runner</td></tr>
@@ -5407,7 +5407,7 @@ steps:
           <tr><td>metrics</td><td>Queue depth per runner label, task duration per brick and version, retry rate, loss rate, runner occupancy, end-to-end latency per workflow, exported by the controller in the Prometheus text format (<a href="#metrics">Metrics</a>). Quota consumption per namespace comes with the quotas (<a href="roadmap/#m03">v0.3.0</a>).</td></tr>
           <tr><td>logs</td><td>Structured JSON, indexed by run, step, attempt and shard, streamed live over SSE and archived in the object store. Reading them needs <code>run:read</code>; the payload viewer needs <code>run:read_data</code>.</td></tr>
           <tr><td>envelopes</td><td>Every step keeps its input and output envelopes, readable as they are in the console and through <code>GET /api/v1/runs/{id}/steps/{step}/outputs/{port}</code> and <code>GET /api/v1/runs/{id}/steps/{step}/inputs/{port}</code>, so an incident is reproducible without extra instrumentation. What each dispatch was handed is kept per attempt and shard. Reading an envelope needs <code>run:read_data</code>; <code>run:read</code> sees the digests.</td></tr>
-          <tr><td>audit log</td><td>Separate and append-only. Sign-in success and failure, credential enrolment and removal, recovery codes issued and used, authentication policy changes, token creation and revocation, device registration, grant and deny changes, namespace and quota changes, manual trigger, approval, cancellation, secret write, runner policy change, runner drain and revocation, and any administrator action that widened their own access. What <code>v0.2.0</code> records: <a href="#audit-log">Audit log</a>.</td></tr>
+          <tr><td>audit log</td><td>Separate and append-only. Sign-in success and failure, credential enrolment and removal, recovery codes issued and used, authentication policy changes, token creation and revocation, device registration, grant and deny changes, namespace and quota changes, manual trigger, approval, cancellation, secret write, runner policy change, runner drain and revocation, and any administrator action that widened their own access. What <code>v0.2</code> records: <a href="#audit-log">Audit log</a>.</td></tr>
         </tbody>
       </table>
     </div>
@@ -5454,7 +5454,7 @@ steps:
     <p>The audit log is one chain across the installation, kept in PostgreSQL beside the act it records: an entry is appended in the act's own transaction, so an act that lands is recorded and one rolled back is not, and the audit log refusing an entry refuses the act. The database numbers, dates and hashes each entry after the last under a row lock, so acts committing at once take turns and never fork the chain. The application's role may only append and read, and triggers refuse a change, a removal or a truncation to every role.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>What</th><th>In v0.2.0</th></tr></thead>
+        <thead><tr><th>What</th><th>In v0.2</th></tr></thead>
         <tbody>
           <tr><td>an entry</td><td><code>seq</code> (from 1, no gap), <code>at</code> (the database's clock, written <code>2026-09-25T10:00:00.123456Z</code>), <code>actor</code>, <code>action</code>, <code>namespace</code> (left out for an act on the installation), <code>target</code>, <code>result</code> (<code>done</code>, or <code>unchanged</code> for an act asked of something already so: a second cancellation, a runner drained twice), <code>detail</code>, <code>prev_hash</code> and <code>hash</code> (lowercase hexadecimal). On the wire <code>detail</code> is a JSON string holding the object's text, never a secret's value or a token: a receiver that re-encoded an object would reorder or respace the bytes that were hashed.</td></tr>
           <tr><td>the hash</td><td>SHA-256 over the bytes <code>agentiik audit 1</code>, the previous entry's 32-byte hash (32 zero bytes before the first), <code>seq</code> as eight bytes big-endian, then, in this order, <code>at</code> as written above, <code>actor</code>, <code>action</code>, <code>namespace</code> (empty where left out), <code>target</code>, <code>result</code> and <code>detail</code>, each as its UTF-8 length in four bytes big-endian followed by its UTF-8.</td></tr>
@@ -7670,7 +7670,7 @@ post_task = [
     </ol>
     <div class="decision">
       <span class="note-label">Interim, until v0.3.0</span>
-      <p>A v0.2.0 installation has no principals, so it has one operator: a token whose hash sits in the file <code>AGK_OPERATOR_TOKEN_FILE</code> names. <code>agentiik-api</code> identifies it as one principal allowed every permission at every scope, and everyone else stays denied. Both halves live in the API's main package, so <a href="roadmap/#m03">v0.3.0</a>'s bootstrap token deletes them in one place.</p>
+      <p>A v0.2 installation has no principals, so it has one operator: a token whose hash sits in the file <code>AGK_OPERATOR_TOKEN_FILE</code> names. <code>agentiik-api</code> identifies it as one principal allowed every permission at every scope, and everyone else stays denied. Both halves live in the API's main package, so <a href="roadmap/#m03">v0.3.0</a>'s bootstrap token deletes them in one place.</p>
     </div>
   </div>
 
@@ -7679,7 +7679,7 @@ post_task = [
   </div>
 
   <div class="block">
-    <div class="note-label">a v0.2.0 installation, the first time</div>
+    <div class="note-label">a v0.2 installation, the first time</div>
 <pre><code><span class="p">$</span> <span class="cmd">agentiik-api migrate</span>
 <span class="p">$</span> <span class="cmd">agentiik-api namespace create finance</span>     <span class="c"># until v0.3.0's routes create namespaces</span>
 <span class="p">$</span> <span class="cmd">agentiik-api bus-init /var/lib/agentiik/bus</span>     <span class="c"># then start nats-server on accounts.conf</span>
