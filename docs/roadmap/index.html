@@ -863,6 +863,8 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
     bottom:0;
     width:min(86vw,340px);
     height:auto;
+    /* A fixed grid item is still aligned by the grid: stretch it between its insets. */
+    align-self:stretch;
     padding:18px 16px 48px;
     background:var(--surface);
     border-right:1px solid var(--line-strong);
