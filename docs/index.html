@@ -1613,6 +1613,7 @@ services:
       AGK_PROXY_URL: ${AGENTIIK_PROXY_URL:-}
       SSL_CERT_DIR: /agentiik/trust # the certificate init made, beside the system's authorities
     volumes: [api:/agentiik, objects:/objects, socket:/run/postgresql]
+    healthcheck: { test: [CMD, /agentiik-api, health], interval: 2s } # the image has no shell, hence the exec form
 
   controller:
     &lt;&lt;: *agentiik
@@ -1632,7 +1633,7 @@ services:
   runner:
     &lt;&lt;: *agentiik
     image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.2.4}
-    depends_on: { &lt;&lt;: *after-init, api: { condition: service_started } }
+    depends_on: { &lt;&lt;: *after-init, api: { condition: service_healthy } }
     cap_drop: [ALL]
     cap_add: [CHOWN, FOWNER, DAC_OVERRIDE, SETUID, SETGID]
     environment:
@@ -2018,6 +2019,7 @@ services:
       AGK_PROXY_URL: ${AGENTIIK_PROXY_URL:-}
       SSL_CERT_DIR: /agentiik/trust # the certificate init made, beside the system's authorities
     volumes: [api:/agentiik, objects:/objects, socket:/run/postgresql]
+    healthcheck: { test: [CMD, /agentiik-api, health], interval: 2s } # the image has no shell, hence the exec form
 
   controller:
     &lt;&lt;: *agentiik
@@ -2037,7 +2039,7 @@ services:
   runner:
     &lt;&lt;: *agentiik
     image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.2.4}
-    depends_on: { &lt;&lt;: *after-init, api: { condition: service_started } }
+    depends_on: { &lt;&lt;: *after-init, api: { condition: service_healthy } }
     cap_drop: [ALL]
     cap_add: [CHOWN, FOWNER, DAC_OVERRIDE, SETUID, SETGID]
     environment:
@@ -2262,7 +2264,7 @@ agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.3       "/usr/local/bin/agk
     <ul class="plain">
       <li>An upgrade is <code>docker compose up</code> on the new images: <code>init</code> migrates the database before the API and the controller start again. <code>agk</code> is upgraded the way it was installed.</li>
       <li>A backup is the database and the volumes together, since a run restored without its objects points at artifacts that no longer exist. The archive holds the master key, which opens every secret in the dump: keep the two apart, or encrypt them.</li>
-      <li>The bus credential of the API and the controller lasts 90 days, and the API warns from 14 days before its end. <code>init</code> renews it at any <code>docker compose up</code> in that time; <code>docker compose up -d --force-recreate</code> also restarts the API and the controller on it.</li>
+      <li>The bus credential of the API and the controller lasts 90 days, and the API warns from 14 days before its end. <code>init</code> renews it at any <code>docker compose up -d</code> in those 14 days, and the API and the controller take the new one with no restart. Nothing renews it on its own yet: an installation nobody runs <code>docker compose up -d</code> on in that time stops dispatching at the credential's end, until the next one.</li>
     </ul>
 
     <h3 id="behind-a-reverse-proxy">Behind a reverse proxy</h3>
@@ -6887,7 +6889,8 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td>agentiik-api namespace create NAME</td><td>Creates a namespace, until <a href="roadmap/#m03">v0.3.0</a>'s routes do: lowercase words joined by hyphens, at most 255 characters, none of the reserved words. Creating one that exists changes nothing and says so. Reads <code>AGK_DATABASE_URL</code> and <code>AGK_DATABASE_PASSWORD_FILE</code>, so it runs where the API runs, and records <code>namespace.create</code>.</td></tr>
           <tr><td>agentiik-api namespace remove NAME</td><td>Removes a namespace that holds no workflow, run, secret or stored object, and refuses one that does, saying what it holds. Records <code>namespace.delete</code>.</td></tr>
           <tr><td>agentiik-api bus-init DIR</td><td>Creates the installation's NATS operator and accounts, once, and writes <code>accounts.conf</code>, <code>account.seed</code> and <code>control-plane.creds</code> in <code>DIR</code>, each mode 0600, the credential valid 90 days. Refuses a <code>DIR</code> its group or anybody else may write to. See <a href="#configuration">Configuration</a>.</td></tr>
-          <tr><td>agentiik-api bus-credential DIR</td><td>Mints a new 90-day <code>control-plane.creds</code> in <code>DIR</code> from the account seed, leaving the operator and the accounts alone. Restart the API and the controller to read it.</td></tr>
+          <tr><td>agentiik-api bus-credential DIR</td><td>Mints a new 90-day <code>control-plane.creds</code> in <code>DIR</code> from the account seed, leaving the operator and the accounts alone. The API and the controller reread the file at every connection to the bus, so they take it with no restart when the bus drops the credential it replaces, at that one's expiry; a restart takes it at once.</td></tr>
+          <tr><td>agentiik-api health</td><td>Exits 0 once the API serving in the same container answers, and 1 saying why otherwise: the Compose file's health check, run in the exec form since the image has no shell. It asks where <code>AGK_LISTEN</code> says serve listens, on the loopback where that is every interface, in plain HTTP behind <code>AGK_PROXY_URL</code> and over TLS without verifying otherwise, never through a proxy, for up to 5 s. Any answer counts as ready, since serve answers nothing until the database, the bus and every route are open.</td></tr>
           <tr><td>agentiik-api audit-verify FILE</td><td>Checks the chain of an audit log export, one entry per line, repeats allowed, and prints how far it holds or where it breaks, exiting 1. Reads no environment and no database (<a href="#audit-log">Audit log</a>).</td></tr>
           <tr><td>agentiik-controller</td><td>Leads by advisory lock, sweeps, consumes results and publishes tasks.</td></tr>
         </tbody>
@@ -9308,7 +9311,7 @@ post_task = [
           <tr><td class="wrapcell">AGK_MIGRATE_DATABASE_URL</td><td>migrate, init</td><td>required there</td><td>A role that may change the schema, which the application role may not, under the same rules but for naming a role.</td></tr>
           <tr><td class="wrapcell">AGK_MIGRATE_DATABASE_PASSWORD_FILE</td><td>migrate, init</td><td>none</td><td>That role's password, on one line.</td></tr>
           <tr><td class="wrapcell">AGK_BUS_URL</td><td>api, controller</td><td>required</td><td>One or more <code>tls://</code> or <code>wss://</code> addresses separated by commas, with no user or token: the bus is never reached in plaintext, and every runner is handed this address too.</td></tr>
-          <tr><td class="wrapcell">AGK_BUS_CREDENTIALS_FILE</td><td>api, controller</td><td>required</td><td>The control plane's NATS user credential, its JWT and seed as <code>nsc</code> writes them: the <code>control-plane.creds</code> <code>agentiik-api bus-init</code> writes, valid 90 days and renewed by <code>bus-credential</code>. The API warns daily from 14 days before it expires. It is refused once expired, since the bus would refuse it; at expiry the controller ends, so nothing is dispatched until it is renewed; the API goes on minting runners' bus credentials, so runners keep the bus and finish what they hold, but creates no runner pool (<code>503</code>).</td></tr>
+          <tr><td class="wrapcell">AGK_BUS_CREDENTIALS_FILE</td><td>api, controller</td><td>required</td><td>The control plane's NATS user credential, its JWT and seed as <code>nsc</code> writes them: the <code>control-plane.creds</code> <code>agentiik-api bus-init</code> writes, valid 90 days and renewed by <code>agentiik-api init</code> from 14 days before its expiry, or by <code>bus-credential</code>; the API and the controller reread the file at every connection, so one renewed before the old one expires is taken with no restart. The API warns daily from 14 days before it expires. It is refused once expired, since the bus would refuse it; at expiry the controller ends unless the file holds a later one, so nothing is dispatched until it is renewed; the API goes on minting runners' bus credentials, so runners keep the bus and finish what they hold, but creates no runner pool (<code>503</code>).</td></tr>
           <tr><td class="wrapcell">AGK_BUS_ACCOUNT_SEED_FILE</td><td>api</td><td>required</td><td>The NATS account seed the API mints runners' short-lived bus credentials with: the <code>account.seed</code> <code>agentiik-api bus-init</code> writes, in a directory kept <code>chmod 700</code>. A seed that is not an account's is refused, since no bus trusts what it signs.</td></tr>
           <tr><td class="wrapcell">AGK_OBJECTS_DIR</td><td>api, controller</td><td>required</td><td>An absolute path to an existing directory the program can write in: the built-in object store, which the controller reads envelopes from and writes task inputs to, until MinIO and S3 (<a href="roadmap/#m09">v0.9.0</a>). The images run as uid 65532 and hold <code>/var/lib/agentiik/objects</code> owned by it, so a volume mounted there is writable.</td></tr>
           <tr><td class="wrapcell">AGK_PRESIGN_KEY_FILE</td><td>api</td><td>required</td><td>A key of 32 bytes or more in base64, as <code>openssl rand -base64 32</code> writes one. It signs every presigned URL and upload policy, and every API of an installation holds the same one.</td></tr>
