@@ -871,7 +871,7 @@ img{max-width:100%}
 <section id="get-started">
   <div class="sec-head"><span class="mark">§</span><h2>Get started</h2></div>
   <div class="prose">
-    <p>A workflow runs on your machine with <code>agk run --local</code>, and on a server with <code>agk push</code> and <code>agk run --namespace</code>. This chapter does both: a first workflow on your machine, then <a href="#run-on-a-server">the same workflow on a server</a> started with Docker Compose. Every output below is what a terminal answered, at <code>v0.2.0</code> for the local run and at <code>v0.2.1</code> for the server, not what the rest of this documentation promises.</p>
+    <p>A workflow runs on your machine with <code>agk run --local</code>, and on a server with <code>agk push</code> and <code>agk run --namespace</code>. This chapter does both: a first workflow on your machine, then <a href="#run-on-a-server">the same workflow on a server</a> started with Docker Compose. Every output below is what a terminal answered at <code>v0.2.1</code>, not what the rest of this documentation promises.</p>
 
     <h3 id="what-you-need">What you need</h3>
     <div class="tablewrap">
@@ -893,10 +893,10 @@ img{max-width:100%}
 <pre><code><span class="p">$</span> <span class="cmd">brew trust agentiik/tap</span>
 <span class="p">$</span> <span class="cmd">brew install agentiik/tap/agk</span>
 <span class="p">$</span> <span class="cmd">agk --version</span>
-agk v0.2.0, 6ede6bc7674730750d3d0a1fc9dd4228a3d78976, go1.27.1</code></pre>
+agk v0.2.1, 95f6f889439e22900df8d9d42252247a5439e360, go1.27.1</code></pre>
     </div>
 
-    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.2.0</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
+    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.2.1</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
 
     <p><code>agk</code> alone prints its verbs, the table in <a href="#command-line">Command line</a>.</p>
 
@@ -963,8 +963,8 @@ this daemon applies neither an AppArmor profile nor an SELinux label to a contai
     0.0s  greet  running
     0.4s  greet  succeeded, out 1
 demo/first-run succeeded in 0.4s: 1 step, 1 container
-greeting: 1 item in .agk/runs/01M3EAW8C89XKN7CE9TB2ZMVMZ/outputs/greeting.json
-run 01M3EAW8C89XKN7CE9TB2ZMVMZ: .agk/runs/01M3EAW8C89XKN7CE9TB2ZMVMZ</code></pre>
+greeting: 1 item in .agk/runs/01M3EPQAM9D02NX7A8820CA903/outputs/greeting.json
+run 01M3EPQAM9D02NX7A8820CA903: .agk/runs/01M3EPQAM9D02NX7A8820CA903</code></pre>
     </div>
 
     <p>The second and third lines are what your machine gives up: Docker Desktop does not remap user namespaces (<a href="#three-tiers-of-containment">Three tiers of containment</a>), and it applies neither AppArmor nor SELinux (<a href="#settings-applied-to-every-container">Settings applied to every container</a>). <code>--require-userns-remap</code> holds the first floor instead, and a run on a laptop then refuses to start.</p>
@@ -977,16 +977,16 @@ run 01M3EAW8C89XKN7CE9TB2ZMVMZ: .agk/runs/01M3EAW8C89XKN7CE9TB2ZMVMZ</code></pre
       <div class="note-label">.agk/runs/&lt;run&gt;/outputs/greeting.json</div>
 <pre><code>{
   "meta": {
-    "run_id": "01M3EAW8C89XKN7CE9TB2ZMVMZ",
+    "run_id": "01M3EPQAM9D02NX7A8820CA903",
     "step": "greet",
     "port": "out",
     "attempt": 1,
     "count": 1,
-    "produced_at": "2026-09-26T07:46:34.806684Z"
+    "produced_at": "2026-09-26T11:13:36.213224Z"
   },
   "items": [
     {
-      "id": "01M3EAW8NQZVGGXKQFDWM8C9B4",
+      "id": "01M3EPQAYNRA50Q69J7YT73CB5",
       "data": { "stdout": "hello from greet\n" },
       "files": []
     }
@@ -1036,12 +1036,12 @@ EOF</code></pre>
 <pre><code><span class="p">$</span> <span class="cmd">agk run --local</span>
 <span class="c"># the three lines about the daemon, as above</span>
     0.0s  greet  running
-    0.2s  greet  succeeded, out 1
-    0.2s  count  running
+    0.3s  greet  succeeded, out 1
+    0.3s  count  running
     0.7s  count  succeeded, out 1
 demo/first-run succeeded in 0.7s: 2 steps, 2 containers
-counted: 1 item in .agk/runs/01M3EAWF0X0BCRV0TV81K9YDQ1/outputs/counted.json
-run 01M3EAWF0X0BCRV0TV81K9YDQ1: .agk/runs/01M3EAWF0X0BCRV0TV81K9YDQ1</code></pre>
+counted: 1 item in .agk/runs/01M3EPQGDQPEZDJJA4M5ENA77V/outputs/counted.json
+run 01M3EPQGDQPEZDJJA4M5ENA77V: .agk/runs/01M3EPQGDQPEZDJJA4M5ENA77V</code></pre>
     </div>
   </div>
 
