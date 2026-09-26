@@ -6,6 +6,12 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+### Site
+
+- Redesigned on the design system: Archivo and JetBrains Mono only, its tokens in both themes, a theme switch, the width of the screen for tables, figures and code with prose kept to a measure, the contents as a drawer on a phone and the chapter's sections in the right margin of a wide screen, every table scrolling on its own with an edge that shows it, copy buttons, heading anchors, figures that enlarge, the proxy files as tabs, and the four console mockups redrawn as vector from one markup for both themes.
+
 ## v0.2.2, 2026-09-26
 
 ### Documentation
