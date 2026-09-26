@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>(function(){var r=document.documentElement;r.className+=" js";try{var t=localStorage.getItem("agentiik-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t)}catch(e){}})()</script>
+<script>(function(){var r=document.documentElement;r.className+=" js";try{localStorage.removeItem("agentiik-theme")}catch(e){}})()</script>
 <title>Roadmap · Agentiik</title>
 <link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
@@ -195,13 +195,6 @@ h1{
 .icon-btn:hover{color:var(--ink);border-color:var(--line-strong)}
 .icon-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .menu-btn{display:none}
-.theme-btn .sun{display:none}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .theme-btn .sun{display:block}
-  :root:not([data-theme="light"]) .theme-btn .moon{display:none}
-}
-:root[data-theme="dark"] .theme-btn .sun{display:block}
-:root[data-theme="dark"] .theme-btn .moon{display:none}
 
 @media (max-width:700px){
   .version-tag,.topbar-sub{display:none}
@@ -2921,34 +2914,6 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
   var bar = doc.querySelector('.topbar') || doc.querySelector('.page-tools');
   var nav = doc.querySelector('.side');
   var shell = doc.querySelector('.shell');
-
-  // ---------- Theme ----------
-  // The page follows the system until somebody chooses; the choice is remembered on this
-  // device only, and the script in the head applies it before the first paint.
-  function currentTheme(){
-    var t = root.getAttribute('data-theme');
-    if(t) return t;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-  if(bar){
-    var themeBtn = doc.createElement('button');
-    themeBtn.type = 'button';
-    themeBtn.className = 'icon-btn theme-btn';
-    themeBtn.innerHTML = ICON.moon + ICON.sun;
-    function labelTheme(){
-      var next = currentTheme() === 'dark' ? 'light' : 'dark';
-      themeBtn.setAttribute('aria-label', 'Switch to the ' + next + ' theme');
-      themeBtn.title = 'Switch to the ' + next + ' theme';
-    }
-    labelTheme();
-    themeBtn.addEventListener('click', function(){
-      var next = currentTheme() === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
-      try { localStorage.setItem('agentiik-theme', next); } catch(e) {}
-      labelTheme();
-    });
-    bar.appendChild(themeBtn);
-  }
 
   // ---------- Contents: a drawer on a narrow screen ----------
   var menuBtn = null, scrim = null;
