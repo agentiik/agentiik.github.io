@@ -2200,7 +2200,7 @@ AGENTIIK_OPERATOR_TOKEN=
       </table>
     </div>
 
-    <p>From <a href="roadmap/#m03">v0.3.0</a> the API reads one header the proxy writes, <code>X-Forwarded-For</code>, for one thing: the address a sign-in comes from, which the audit log records and the counts of failed sign-ins and of password attempts are kept by. It takes the header's last entry, the one the proxy wrote after whatever its client sent, and reads it only behind <code>AGENTIIK_PROXY_URL</code>, since the API then listens on the loopback and nothing but the proxy reaches it; where no entry reads as an address, the connection's, the proxy's own, is taken. Caddy and Traefik write it by default. nginx writes it only where told to, and the <code>nginx.conf</code> below, agentiik/deploy's as it stands, does not tell it yet: add <code>proxy_set_header X-Forwarded-For $remote_addr;</code> to its <code>location /</code>. Without it every sign-in counts as the proxy's address, and one whose client wrote the header itself as whatever that client chose. Every address the API hands out is minted on <code>AGENTIIK_PROXY_URL</code>. The CI of agentiik/deploy runs the install above behind Caddy, and each of these files in front of a stand-in that checks the first three rows.</p>
+    <p>From <a href="roadmap/#m03">v0.3.0</a> the API reads one header the proxy writes, <code>X-Forwarded-For</code>, for one thing: the address a sign-in comes from, which the audit log records and the counts of failed sign-ins and of password attempts are kept by. It takes the header's last entry, the one the proxy wrote after whatever its client sent, and reads it only behind <code>AGENTIIK_PROXY_URL</code>, since the API then listens on the loopback and nothing but the proxy reaches it; where no entry reads as an address, the connection's, the proxy's own, is taken. Caddy and Traefik write it by default. nginx writes it only where told to, which the <code>nginx.conf</code> below does with <code>proxy_set_header X-Forwarded-For $remote_addr;</code>; a configuration copied before v0.3.0 needs that line added. Without it every sign-in counts as the proxy's address, and one whose client wrote the header itself as whatever that client chose. Every address the API hands out is minted on <code>AGENTIIK_PROXY_URL</code>. The CI of agentiik/deploy runs the install above behind Caddy, and each of these files in front of a stand-in that checks the first three rows.</p>
 
     <div class="tabset" aria-label="The proxy's configuration">
     <!-- Verbatim copy of single-host/proxy/Caddyfile in https://github.com/agentiik/deploy, HTML-escaped: a check compares the two, so edit that file and copy it here, never the other way. -->
@@ -2217,7 +2217,8 @@ AGENTIIK_OPERATOR_TOKEN=
 		flush_interval -1
 	}
 	# Nothing else to set: Caddy passes the path as sent, %2F included, sets no request body
-	# limit and no response timeout, and the API reads no X-Forwarded-* header.
+	# limit and no response timeout, and appends the client's address to X-Forwarded-For, whose
+	# last entry is the address the API counts sign-in attempts by.
 }</code></pre>
     </div>
 
@@ -2242,6 +2243,10 @@ server {
         # URI is one segment with its slashes as %2F, which a decoded path would split.
         proxy_pass http://127.0.0.1:8443;
         proxy_http_version 1.1;
+
+        # The API counts sign-in attempts per client address, the last X-Forwarded-For entry. Set
+        # from the connection alone, so that a client's own header never names somebody else.
+        proxy_set_header X-Forwarded-For $remote_addr;
 
         # A step's log stream (server-sent events) goes out as it is written. The API also says
         # so with X-Accel-Buffering: no; uploads stream to the API rather than to a temporary file.
@@ -2305,7 +2310,8 @@ http:
         servers:
           - url: http://127.0.0.1:8443 # the API, in plain HTTP on the loopback: AGENTIIK_PORT in .env
         # Nothing else to set: Traefik streams server-sent events as they come, passes the body
-        # whole with no size limit, and the API reads no X-Forwarded-* header.</code></pre>
+        # whole with no size limit, and appends the client's address to X-Forwarded-For, whose
+        # last entry is the address the API counts sign-in attempts by.</code></pre>
     </div>
     </div>
 
