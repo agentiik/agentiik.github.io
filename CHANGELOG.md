@@ -76,6 +76,9 @@ Every repository of the project carries the same version and is tagged at the sa
 - The grant routes at both scopes: who may list, create and revoke, what each refuses, and the owners told of every grant an administrator writes or of any widening of their own access.
 - `GET /api/v1/me` and dismissing a notification, with a notification past 90 days removed on read; `agk whoami`, `agk share`, `agk grants`, `agk user` and `agk group`.
 - Bodies of users, groups, grants and service accounts are held to 64 KiB, and a route that reads no body refuses one.
+- Service accounts as merged: the routes and `agk service-account`, the built-in `NS/agentiik` given by `init` and `migrate` to every older namespace, and unattended runs written as its own.
+- A token may expire a minute past the year, a principal holds at most 100 live ones, a service account's own token mints none for that account, and none is minted for `NS/agentiik`.
+- `init` says so and goes on where a login holds `AGK_INIT_NAMESPACE`'s name.
 
 ## v0.2.5, 2026-09-26
 
