@@ -59,6 +59,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - `agk namespace create`, `list`, `show`, `delete` and `quotas`, which reads first and lifts a bound only with `--lift NAME`; a change to a namespace answered with a 5xx exits 4.
 - `agentiik-api namespace` creates a namespace with no owner and its built-in identity, removes one as the route does, and records both by `installation`.
 - Namespace and quota bodies are held to 64 KiB and 1,024 pools and refuse `null`; `namespace.update` records the quotas as they then stand.
+- `POST /api/v1/auth/tokens` answers 403 to a scoped token and to the bootstrap token; the listing is newest first, a scoped token lists and revokes itself alone, and revoking twice answers 204.
+- `agk token create`, `list` and `revoke`; `create` prints the token alone on standard output.
+- A token's value is `agktoken_` and 43 base64url characters; token bodies are held to 64 KiB and 1,024 permissions or places.
+- `api_token.create` and `api_token.revoke` record whose token, its expiry, label and scope, in a service account's namespace.
 
 ## v0.2.5, 2026-09-26
 
