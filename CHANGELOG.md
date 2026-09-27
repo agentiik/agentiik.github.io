@@ -105,6 +105,9 @@ Every repository of the project carries the same version and is tagged at the sa
 - Storage lists `artifact_objects`, `artifact_uploads` and `artifact_room` and the new run columns, and says what an object's count counts; an envelope may outlive a one-shot output, whose file then answers 410.
 - PostgreSQL 18 in the Compose installation from v0.3.0: `postgres-upgrade` runs before PostgreSQL, upgrades a 17 cluster in copy mode and keeps it as `data/postgres-17`, needing the cluster's size and 128 MiB free; backups leave `data/postgres*` out; Homebrew stays on 17; `ghcr.io/agentiik/postgres-upgrade` is published with the other images.
 - The roadmap plans in v0.3.0 the sign-in and enrolment page and setting a password and a TOTP under Passkeys, passwords and recovery, and the purges and the collection of what v0.2 left under Quotas, isolation and what stays invisible; the plan holds 672 tasks.
+- An enrolment link or recovery code refused is recorded as `signin.fail`, naming its account and never the code, within the same bound; each password a policy change takes is a `credential.remove` by whoever changed it.
+- An administrator putting themselves in a group, taking themselves out, or removing a group they are in tells the owners where that widens their own access, and the entry names who was told.
+- The audit log says what changes something and is not recorded, and why: a push, a TOTP generator started, a sign-out, a notification dismissed, a runner joining and its own traffic, an upload, a 429, and a wrong guess from a signed-in session.
 
 ## v0.2.5, 2026-09-26
 
