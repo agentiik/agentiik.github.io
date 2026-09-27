@@ -10,7 +10,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Documentation
 
-- The v0.2.5 operator token becomes v0.3.0's bootstrap token, working until the first administrator, made with `agk user create LOGIN --admin`, has enrolled a passkey; enrolment links last an hour.
+- The v0.2.5 operator token becomes v0.3.0's bootstrap token, working until the first administrator, made with `agk user create LOGIN --admin`, can sign in; enrolment links last an hour.
 - Upgrades change `compose.yaml` and `.env` and nothing else, as CI checks.
 - The authentication policy's defaults and routes, the API's sign-in page, `agk login`'s loopback exchange, and passkeys unavailable on an IP address.
 - Passkeys verified with the standard library and no attestation.
@@ -18,7 +18,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - API tokens expire after 90 days by default, a year at most.
 - `max_runs_per_hour` counts a sliding hour and answers 429 with `Retry-After`.
 - An administrator widening their own access notifies the owners in `GET /api/v1/me`.
-- A run refused at creation ends `cancelled`, naming the lapsed grant.
+- A run its principal may no longer start ends `cancelled`, naming the lapsed grant.
 - The v0.3.0 routes for users, groups, service accounts, namespaces, namespace grants, tokens and the policy.
 - The identity and access audit actions of v0.3.0.
 - A deny names one permission; a grant's scope is `NS` or `NS/workflow`; a token's scope is `{permissions, within}`.
@@ -32,7 +32,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - Removing a principal removes what it holds, and is refused while a namespace's record names it as owner.
 - A namespace's policy applies at sign-in to every account holding a grant in it, and the installation's is stored whole.
 - A passkey's kind comes from Backup Eligibility alone, which never changes.
-- Enrolment links: their three kinds, what a fresh one revokes, one enrolment-only session each, and a suspended account's still working.
+- Enrolment links: their three kinds, what a fresh one revokes, and a suspended account's still working.
 - An installation addressed by IP signs in with passwords without rewriting its stored policy.
 - What passkey verification refuses, and a stalled signature counter refusing the sign-in, audited and told to the user, with no lock.
 - Removing a workflow or a namespace removes its grants.
@@ -43,7 +43,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - `DELETE /api/v1/me/credentials/{id}`, and a single read and a delete for users, groups and namespaces.
 - Group, membership and service account changes are audited.
 - Storage lists the identity tables as migrated: no mail on users, and an AAGUID that may name a model nothing certifies.
-- The Relying Party Identifier is the host of the public URL; a domain shared with a console comes with the console.
+- The Relying Party Identifier is the host of the public URL.
 - The bootstrap token's hash is kept in the database from v0.3.0.
 - `max_runs_per_hour` is counted under a lock on the namespace, `Retry-After` gives the seconds until one more run fits, a refused `workflow:` call fails its step, and a 429 is not audited; `agk run` exits 1 for it.
 - `allowed_runner_pools` names pools that exist; a step only a pool outside it could take fails at dispatch with 125, and a redemption by such a pool is refused with 422.
