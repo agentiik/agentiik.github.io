@@ -1566,12 +1566,11 @@ flowchart LR
 <span class="p">$</span> <span class="cmd">export AGENTIIK_SERVER=https://localhost:8443</span></code></pre>
     </div>
 
-    <p>The token in <code>.env</code> is the bootstrap token. It administers the server and owns every namespace until the first administrator has signed in, and does nothing after, so its one lasting use is to create that administrator, <code>alice</code> here, and give them the namespace <code>demo</code> the server made, since an administrator holds a namespace only where a grant gives one:</p>
+    <p>The token in <code>.env</code> is the bootstrap token. It administers the server and owns every namespace until the first administrator has signed in, and does nothing after, so its one lasting use is to create that administrator, <code>alice</code> here, who is given in the same act the namespace <code>demo</code> the server made:</p>
 
     <div class="block">
       <div class="note-label">the first administrator, with the bootstrap token</div>
-<pre><code><span class="p">$</span> <span class="cmd">agk user create alice --admin</span>
-<span class="p">$</span> <span class="cmd">agk share demo --user alice --role owner</span></code></pre>
+<pre><code><span class="p">$</span> <span class="cmd">agk user create alice --admin</span></code></pre>
     </div>
 
     <p><code>agk user create</code> prints a link, single use and good for an hour. Open it in a browser on this machine that trusts <code>trust/agentiik.pem</code> (<a href="#compose-first-admin">The first administrator</a> says how), register a passkey there, then sign alice in here:</p>
@@ -1945,16 +1944,14 @@ agentiik-runner-1             ghcr.io/agentiik/runner:v0.2.5             "/usr/l
     <p>A browser signing in with a passkey has to trust the certificate the same way, since it runs no passkey ceremony on a page clicked past a warning (<a href="#sign-in-page">The sign-in page</a>); a <a href="#behind-a-reverse-proxy">reverse proxy</a> with a certificate from a public authority spares the step.</p>
 
     <h4 id="compose-first-admin">The first administrator</h4>
-    <p>The token in <code>.env</code> is the bootstrap token. It administers the installation and owns every namespace until the first administrator has signed in, and does nothing after, so its one lasting use is to create that administrator, <code>alice</code> here. An administrator holds a namespace only where a grant gives one, so the token gives <code>alice</code> the one <code>init</code> made too:</p>
+    <p>The token in <code>.env</code> is the bootstrap token. It administers the installation and owns every namespace until the first administrator has signed in, and does nothing after, so its one lasting use is to create that administrator, <code>alice</code> here, who is given in the same act the namespaces the token owned, <code>demo</code> among them:</p>
 
     <div class="block">
       <div class="note-label">the first administrator, with the bootstrap token</div>
 <pre><code><span class="p">$</span> <span class="cmd">agk user create alice --admin</span>
 alice is an administrator with no credential yet. Open this link once, before 10:15 UTC, to enrol a passkey, or a password where the installation allows one:
 https://localhost:8443/auth/enrol#agkenrol_...
-the bootstrap token works until alice has signed in; then sign in as alice with agk login
-<span class="p">$</span> <span class="cmd">agk share demo --user alice --role owner</span>
-granted owner on demo to alice: grant 01M3EF3ZQ1V6D2N8KX4T7B9CWA</code></pre>
+the bootstrap token works until alice has signed in; then sign in as alice with agk login</code></pre>
     </div>
 
     <p>Open the link, once and within the hour, in a browser that trusts the installation's certificate, since a browser runs no passkey ceremony on a page clicked past a certificate warning (<a href="#sign-in-page">The sign-in page</a>). Behind a <a href="#behind-a-reverse-proxy">reverse proxy</a> whose certificate is from a public authority, any browser does. Otherwise the certificate is in <code>trust/</code>. <code>proxy.pem</code>, the authority of a proxy with one of its own, goes in the browser's settings as an authority. <code>agentiik.pem</code> is one certificate rather than an authority, which the settings of a browser on Linux refuse as one: macOS trusts it as <a href="#agk-from-another-machine">above</a>, and Chrome or Chromium on Linux once <code>certutil -d sql:$HOME/.pki/nssdb -A -t P,, -n agentiik -i trust/agentiik.pem</code>, from libnss3-tools, has written it in their certificate database, as the same command does for Firefox with its profile's directory. With <code>AGENTIIK_HOST</code> left at <code>localhost</code>, the browser is on this machine. The page registers a passkey, or sets a password on an installation addressed by an IP address, where no browser runs a passkey ceremony. <code>agk user create alice --admin</code> again prints a fresh link, for one that lapsed. Then sign in here, and give <code>curl</code> below a token of alice's:</p>
@@ -2110,7 +2107,7 @@ AGENTIIK_OPERATOR_TOKEN=
       </table>
     </div>
 
-    <p>A second namespace, which <code>alice</code> is given as <code>demo</code> was:</p>
+    <p>A namespace <code>init</code> makes later has no owner, and <code>alice</code>, an administrator, gives it to herself:</p>
 
     <div class="block">
       <div class="note-label">a second namespace</div>
@@ -2402,7 +2399,7 @@ http:
     </div>
 
     <p><code>curl</code> reads its own list of authorities rather than the keychain, hence <code>--cacert</code>. The logs are in <code>$(brew --prefix)/var/log/agentiik</code>, one file per program.</p>
-    <p>The first administrator is created as for Compose (<a href="#compose-first-admin">The first administrator</a>), giving them the namespace <code>agentiik-setup</code> made, named after you, in place of <code>demo</code>, under a login other than that name, since logins and namespaces share one name space. Safari trusts the certificate already, through the System keychain.</p>
+    <p>The first administrator is created as for Compose (<a href="#compose-first-admin">The first administrator</a>), and is given the namespace <code>agentiik-setup</code> made, named after you, in place of <code>demo</code>; pick a login other than that name, since logins and namespaces share one name space. Safari trusts the certificate already, through the System keychain.</p>
 
     <h4>Stop, restart, upgrade, back up, remove</h4>
     <div class="block">
