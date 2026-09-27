@@ -83,6 +83,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - The passkey ceremonies: a 32-byte challenge good for 5 minutes, user verification asked wherever any policy requires it, a passkey added from a session, and the session a registration opens; an enrolment code opens no session of its own.
 - `signin.fail` is recorded by the address, bounded at 10 per address and 100 in all per 10 minutes; `installation` creates each personal namespace at its user's first sign-in.
 - Storage gains `webauthn_challenges`, and a session records only the credential that opened it.
+- `POST /api/v1/auth/sign-out` and `GET /auth/assets/{name}`; what the sign-in and enrolment pages show, and their Content-Security-Policy.
+- The web console is served on the API's origin, at the root of the public URL, so the Relying Party Identifier stays the public URL's host; a page on another host of the same site is a threat the `Origin` check answers. The roadmap's console deployment tasks say so.
 
 ## v0.2.5, 2026-09-26
 
