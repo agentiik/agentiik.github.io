@@ -88,6 +88,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - Password sign-in: 10 attempts per login and 30 per address in 15 minutes, then 429 with `Retry-After`; one hash per processor at once, and 503 after waiting 5 seconds; a TOTP code beside a password, RFC 6238, no code accepted twice.
 - Where a passkey is required, a password's session only enrols, whatever passkeys the account holds, read at every request; the passkey that reaches `min_passkeys` deletes the password.
 - Behind `AGENTIIK_PROXY_URL` the API reads a sign-in's address from the last `X-Forwarded-For` entry; nginx needs `proxy_set_header X-Forwarded-For $remote_addr;`, which the deploy `nginx.conf` does not carry yet.
+- Setting a password from an enrolment link, a recovery code or a session, and a TOTP generator from a session: `POST /api/v1/auth/password/enrol`, `PUT` and `DELETE /api/v1/me/password`, `/api/v1/me/totp` and its confirmation; 12 characters to 1,024 bytes, not the login, no composition rule.
+- An enrolment link sets a password where the policy allows one, the only way in on an installation addressed by an IP address; `agk user create` says so, and storage gains `totp_enrolments`.
 
 ## v0.2.5, 2026-09-26
 
