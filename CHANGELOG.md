@@ -95,6 +95,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - Forbidding passwords acts when they come to be forbidden, deleting passwords and their TOTP generators and suspending the accounts with no passkey the policy accepts; a passkey enrolled from a code lifts that suspension, a password set from one does not.
 - A policy change that would leave no administrator able to sign in is refused with 409; the policy routes replace the whole policy, and `agk auth policy` reads it first, sets what is named and takes `--inherit`.
 - Adding a way in from a session takes a sign-in in the last 10 minutes, else 403 with RFC 9470's challenge; the credential routes and `policy.change`, `credential.remove` and `credential.enrol` say what they record.
+- `agk login` signs in with a passkey or a password, prints the port to forward over SSH, keeps one token per installation in `profile.json` and revokes the one it replaces; `agk logout`; the exchange's code, its 401, 403 and 409, and the exit codes both verbs leave with.
+- Storage gains `exchange_codes`, and `api_token.create` records the credential that signed in for a token `agk login` minted.
 
 ## v0.2.5, 2026-09-26
 
