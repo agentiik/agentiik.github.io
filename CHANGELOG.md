@@ -10,7 +10,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Documentation
 
-- The v0.2.5 operator token becomes v0.3.0's bootstrap token, working until the first administrator, made with `agk user create LOGIN --admin`, has enrolled a passkey; enrolment links last an hour.
+- The v0.2.5 operator token becomes v0.3.0's bootstrap token, working until the first administrator, made with `agk user create LOGIN --admin`, can sign in; enrolment links last an hour.
 - Upgrades change `compose.yaml` and `.env` and nothing else, as CI checks.
 - The authentication policy's defaults and routes, the API's sign-in page, `agk login`'s loopback exchange, and passkeys unavailable on an IP address.
 - Passkeys verified with the standard library and no attestation.
@@ -18,7 +18,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - API tokens expire after 90 days by default, a year at most.
 - `max_runs_per_hour` counts a sliding hour and answers 429 with `Retry-After`.
 - An administrator widening their own access notifies the owners in `GET /api/v1/me`.
-- A run refused at creation ends `cancelled`, naming the lapsed grant.
+- A run its principal may no longer start ends `cancelled`, naming the lapsed grant.
 - The v0.3.0 routes for users, groups, service accounts, namespaces, namespace grants, tokens and the policy.
 - The identity and access audit actions of v0.3.0.
 - A deny names one permission; a grant's scope is `NS` or `NS/workflow`; a token's scope is `{permissions, within}`.
@@ -32,7 +32,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - Removing a principal removes what it holds, and is refused while a namespace's record names it as owner.
 - A namespace's policy applies at sign-in to every account holding a grant in it, and the installation's is stored whole.
 - A passkey's kind comes from Backup Eligibility alone, which never changes.
-- Enrolment links: their three kinds, what a fresh one revokes, one enrolment-only session each, and a suspended account's still working.
+- Enrolment links: their three kinds, what a fresh one revokes, and a suspended account's still working.
 - An installation addressed by IP signs in with passwords without rewriting its stored policy.
 - What passkey verification refuses, and a stalled signature counter refusing the sign-in, audited and told to the user, with no lock.
 - Removing a workflow or a namespace removes its grants.
@@ -43,7 +43,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - `DELETE /api/v1/me/credentials/{id}`, and a single read and a delete for users, groups and namespaces.
 - Group, membership and service account changes are audited.
 - Storage lists the identity tables as migrated: no mail on users, and an AAGUID that may name a model nothing certifies.
-- The Relying Party Identifier is the host of the public URL; a domain shared with a console comes with the console.
+- The Relying Party Identifier is the host of the public URL.
 - The bootstrap token's hash is kept in the database from v0.3.0.
 - `max_runs_per_hour` is counted under a lock on the namespace, `Retry-After` gives the seconds until one more run fits, a refused `workflow:` call fails its step, and a 429 is not audited; `agk run` exits 1 for it.
 - `allowed_runner_pools` names pools that exist; a step only a pool outside it could take fails at dispatch with 125, and a redemption by such a pool is refused with 422.
@@ -71,6 +71,43 @@ Every repository of the project carries the same version and is tagged at the sa
 - The web console's statistics: a workflow's runs, durations, queue wait, exit codes, hours and ports, a namespace against its quotas, and the pools and runners for administrators, one range driving a zoom, a readout, a comparison, CSV and JSON exports and a link to the runs counted; three mockups show them.
 - `GET /api/v1/{ns}/stats/runs`, `/stats/steps`, `/stats/ports` and `/stats/quotas`, and `GET /api/v1/stats/pools` for administrators, from v0.6.0, counting only what `run:read` reaches; `agk console` draws a histogram of a workflow's durations from the first.
 - The roadmap's console shell follows the look, and v0.6.0 gains Statistics and charts, thirteen tasks across agentiik, schemas and console with the chart library an open question, and `agk console`'s histogram; a milestone may hold eight groups, and the plan holds 668 tasks.
+- The user and group routes as merged: the display name defaults to the login, a repeat before enrolling answers 200 with a fresh link, groups take up to 1,024 first members, and a membership change answers the group.
+- A user's empty personal namespace goes with them, and the last administrator who can sign in is not removed once the bootstrap has ended.
+- The grant routes at both scopes: who may list, create and revoke, what each refuses, and the owners told of every grant an administrator writes or of any widening of their own access.
+- `GET /api/v1/me` and dismissing a notification, with a notification past 90 days removed on read; `agk whoami`, `agk share`, `agk grants`, `agk user` and `agk group`.
+- Bodies of users, groups, grants and service accounts are held to 64 KiB, and a route that reads no body refuses one.
+- Service accounts as merged: the routes and `agk service-account`, the built-in `NS/agentiik` given by `init` and `migrate` to every older namespace, and unattended runs written as its own.
+- A token may expire a minute past the year, a principal holds at most 100 live ones, a service account's own token mints none for that account, and none is minted for `NS/agentiik`.
+- `init` says so and goes on where a login holds `AGK_INIT_NAMESPACE`'s name.
+- The session cookie `__Host-agentiik_session`: 12 hours idle, 30 days at most, no expiry of its own; a request changing something needs the public URL's `Origin`, two credentials are 400, and a session that may only enrol is 403 elsewhere.
+- The passkey ceremonies: a 32-byte challenge good for 5 minutes, user verification asked wherever any policy requires it, a passkey added from a session, and the session a registration opens; an enrolment code opens no session of its own.
+- `signin.fail` is recorded by the address, bounded at 10 per address and 100 in all per 10 minutes; `installation` creates each personal namespace at its user's first sign-in.
+- Storage gains `webauthn_challenges`, and a session records only the credential that opened it.
+- `POST /api/v1/auth/sign-out` and `GET /auth/assets/{name}`; what the sign-in and enrolment pages show, and their Content-Security-Policy.
+- The web console is served on the API's origin, at the root of the public URL, so the Relying Party Identifier stays the public URL's host; a page on another host of the same site is a threat the `Origin` check answers. The roadmap's console deployment tasks say so.
+- Password sign-in: 10 attempts per login and 30 per address in 15 minutes, then 429 with `Retry-After`; one hash per processor at once, and 503 after waiting 5 seconds; a TOTP code beside a password, RFC 6238, no code accepted twice.
+- Where a passkey is required, a password's session only enrols, whatever passkeys the account holds, read at every request; the passkey that reaches `min_passkeys` deletes the password.
+- Behind `AGENTIIK_PROXY_URL` the API reads a sign-in's address from the last `X-Forwarded-For` entry; nginx needs `proxy_set_header X-Forwarded-For $remote_addr;`, which the deploy `nginx.conf` does not carry yet.
+- Setting a password from an enrolment link, a recovery code or a session, and a TOTP generator from a session: `POST /api/v1/auth/password/enrol`, `PUT` and `DELETE /api/v1/me/password`, `/api/v1/me/totp` and its confirmation; 12 characters to 1,024 bytes, not the login, no composition rule.
+- An enrolment link sets a password where the policy allows one, the only way in on an installation addressed by an IP address; `agk user create` says so, and storage gains `totp_enrolments`.
+- Recovery codes from another administrator, `agk user recover`, never for oneself, enrolling a passkey or a password; `agentiik-api recover` on the host for an administrator, told to every administrator in `GET /api/v1/me` as `break_glass_recovery`.
+- The bootstrap token ends when an administrator it created can sign in to a full session, with a passkey, or with a password where the policy requires none; its recovery codes end with it, and a first link opens nothing once its user holds a credential.
+- Forbidding passwords acts when they come to be forbidden, deleting passwords and their TOTP generators and suspending the accounts with no passkey the policy accepts; a passkey enrolled from a code lifts that suspension, a password set from one does not.
+- A policy change that would leave no administrator able to sign in is refused with 409; the policy routes replace the whole policy, and `agk auth policy` reads it first, sets what is named and takes `--inherit`.
+- Adding a way in from a session takes a sign-in in the last 10 minutes, else 403 with RFC 9470's challenge; the credential routes and `policy.change`, `credential.remove` and `credential.enrol` say what they record.
+- `agk login` signs in with a passkey or a password, prints the port to forward over SSH, keeps one token per installation in `profile.json` and revokes the one it replaces; `agk logout`; the exchange's code, its 401, 403 and 409, and the exit codes both verbs leave with.
+- Storage gains `exchange_codes`, and `api_token.create` records the credential that signed in for a token `agk login` minted.
+- A run's principal is asked again at admission, before its concurrency group and on every pass until it is let in; a run refused ends `cancelled` with a reason naming a grant by identifier, role and scope, the whole account going to `run.cancel` by `installation`; a run the bootstrap token started and not let in when it ends is cancelled.
+- `max_artifact_bytes` counts live artifacts and writes under way, each digest once, and the built-in store answers 507 past it, failing the step on the platform's account; `max_retention_days` keeps what declares no `retain`; `max_run_duration` caps the root `timeout` rather than refusing it, and bounds a run writing none.
+- The quota gauges `agentiik_quota_used` and `agentiik_quota_limit`, folded past 1,000 namespaces.
+- The controller that leads runs the purges, the collection and the orphan sweep: a pass at the start of its term and every 10 minutes, batches of 1,000 rows or 100 runs, a line in its log per pass, and six counters; the collection's 24-hour grace is a constant, and a write holds its object a day past its policy.
+- Orphans go to the collection a day after they were written and are deleted a day later; the artifact files v0.2 left unrecorded are recorded by `init`, `migrate` given `AGK_OBJECTS_DIR`, and the controller, and v0.2 runs expire at their namespace's `max_retention_days`.
+- Storage lists `artifact_objects`, `artifact_uploads` and `artifact_room` and the new run columns, and says what an object's count counts; an envelope may outlive a one-shot output, whose file then answers 410.
+- PostgreSQL 18 in the Compose installation from v0.3.0: `postgres-upgrade` runs before PostgreSQL, upgrades a 17 cluster in copy mode and keeps it as `data/postgres-17`, needing the cluster's size and 128 MiB free; backups leave `data/postgres*` out; Homebrew stays on 17; `ghcr.io/agentiik/postgres-upgrade` is published with the other images.
+- The roadmap plans in v0.3.0 the sign-in and enrolment page and setting a password and a TOTP under Passkeys, passwords and recovery, and the purges and the collection of what v0.2 left under Quotas, isolation and what stays invisible; the plan holds 672 tasks.
+- An enrolment link or recovery code refused is recorded as `signin.fail`, naming its account and never the code, within the same bound; each password a policy change takes is a `credential.remove` by whoever changed it.
+- An administrator putting themselves in a group, taking themselves out, or removing a group they are in tells the owners where that widens their own access, and the entry names who was told.
+- The audit log says what changes something and is not recorded, and why: a push, a TOTP generator started, a sign-out, a notification dismissed, a runner joining and its own traffic, an upload, a 429, and a wrong guess from a signed-in session.
 
 ## v0.2.5, 2026-09-26
 
