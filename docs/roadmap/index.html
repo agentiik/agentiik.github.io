@@ -1132,7 +1132,7 @@ img{max-width:100%}
         <tbody>
           <tr><td>Makes possible</td><td>What becomes possible, in one line.</td></tr>
           <tr><td>Why here</td><td>Why it sits at this point in the order.</td></tr>
-          <tr><td>Work</td><td>Listed in full, never summarised: three to six groups, each naming its repository. Each task links <span class="ref-demo">§</span> to the section that specifies it, or is marked <span class="ref-demo">implied</span>: work the documentation assumes without writing down, such as a fixture, a test harness or a migration.</td></tr>
+          <tr><td>Work</td><td>Listed in full, never summarised: three to seven groups, each naming its repository. Each task links <span class="ref-demo">§</span> to the section that specifies it, or is marked <span class="ref-demo">implied</span>: work the documentation assumes without writing down, such as a fixture, a test harness or a migration.</td></tr>
           <tr><td>Done when</td><td>The fact that closes it, checkable from outside the code.</td></tr>
         </tbody>
       </table>
@@ -2108,9 +2108,9 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 </section>
 <!-- ============ v0.6.0 ============ -->
 <section id="m06">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.6.0: A console to watch it</h2><span class="tally">0 of 73 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.6.0: A console to watch it</h2><span class="tally">0 of 88 done</span></div>
   <div class="prose">
-    <p class="makes"><b>Makes possible:</b> a run is read end to end, and a workflow edited, without leaving the browser.</p>
+    <p class="makes"><b>Makes possible:</b> a run is read end to end without leaving the browser or the terminal, and a workflow edited without leaving the browser.</p>
 
     <p>The console comes late on purpose: built earlier, it would decide rules, and a rule decided in an interface is one the API does not enforce. Built after the rules it shows, it stays a view, and YAML stays the source of truth. Three parts matter beyond the screen:</p>
     <ul class="plain">
@@ -2118,6 +2118,8 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <li><b>The YAML editor</b>, which preserves format, so a browser edit is the diff a person would have written.</li>
       <li><b>The sharing panel</b>, the one part with no YAML counterpart.</li>
     </ul>
+
+    <p>The same views reach a terminal as <code>agk console</code>, for whoever works over SSH. It reads the routes the web console reads, as the principal <code>agk</code> is signed in as, and adds no route, no permission and nothing an installation serves, so it can decide no rule either. It acts on runs alone and leaves to the browser what needs one (<a href="../#terminal">Terminal console</a>).</p>
 
     <div class="work">
       <div class="work-group">
@@ -2241,13 +2243,36 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Show administrators runners and pools (labels, capacity, last heartbeat) to write allowed_runner_pools against, never naming a runner's host. <a class="ref" href="../#api">api</a><a class="ref" href="../#administrators">administrators</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
         </ul>
       </div>
+      <div class="work-group">
+        <div class="work-head">
+          <h4>The console in a terminal</h4>
+          <span class="work-repo">agentiik</span>
+        </div>
+        <ul>
+          <li>Add agk console, a verb drawing a full-screen interface over /api/v1 as the principal agk is signed in as, through agk login's token or AGENTIIK_TOKEN, with no server, route or permission of its own. <a class="ref" href="../#terminal">terminal</a><a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#pointing-agk-at-an-installation">pointing-agk-at-an-installation</a></li>
+          <li>Settle the open question of what draws the screen, a terminal interface library such as Bubble Tea or the standard library with golang.org/x/term at most, and record the reason in go.mod as every dependency does. <a class="ref" href="../#terminal">terminal</a><a class="ref" href="../#where-the-terminal-console-runs">where-the-terminal-console-runs</a></li>
+          <li>Read the principal's effective permissions from GET /api/v1/me and hide what it does not hold, the payload panes without run:read_data among them, a token's scope narrowing the console as it narrows every request. <a class="ref" href="../#terminal">terminal</a><a class="ref" href="../#permissions">permissions</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a></li>
+          <li>Build the runs view on GET /api/v1/runs, kept live: state as a word, run, workflow, trigger, start, duration and principal, failed runs lifted into a band above the list, filtered by namespace, workflow, state and since. <a class="ref" href="../#terminal-views">terminal-views</a><a class="ref" href="../#api">api</a></li>
+          <li>Build the run inspector: each step's state, duration and shard count; a step's exit code and its meaning, attempt, shard, image digest, runner name and labels, never the host; each port's envelope with its item count, its payload under run:read_data alone. <a class="ref" href="../#terminal-views">terminal-views</a><a class="ref" href="../#exit-codes">exit-codes</a><a class="ref" href="../#envelope-structure">envelope-structure</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
+          <li>Stream a step's log in the inspector from GET /api/v1/runs/{id}/steps/{step}/logs, history then live, resuming from Last-Event-ID with the code agk logs already follows a stream with. <a class="ref" href="../#terminal-views">terminal-views</a><a class="ref" href="../#api">api</a><a class="ref" href="../#observability">observability</a></li>
+          <li>Cancel a run and replay it from a step under workflow:run, each after a prompt naming what it does to which run and defaulting to no. <a class="ref" href="../#terminal-keys">terminal-keys</a><a class="ref" href="../#api">api</a><a class="ref" href="../#memoisation-and-replay">memoisation-and-replay</a></li>
+          <li>Write the resolved graph from GET /api/v1/{ns}/workflows/{name} as a list in running order, each step with its live state and each edge under the step it leaves, naming both ends, so it fits 80 columns at any size. <a class="ref" href="../#terminal-views">terminal-views</a><a class="ref" href="../#graph">graph</a></li>
+          <li>Build the workflows view: the workflows of a namespace the principal can read, each one's versions and declared triggers, opening a version's graph. <a class="ref" href="../#terminal-views">terminal-views</a><a class="ref" href="../#api">api</a><a class="ref" href="../#triggers">triggers</a></li>
+          <li>Build the sharing view from what agk grants prints, for a workflow or a namespace: grants as written, and resolved for one principal with each permission's scope, a deny the only subtraction, changing nothing. <a class="ref" href="../#terminal-views">terminal-views</a><a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a><a class="ref" href="../#what-the-terminal-console-leaves">what-the-terminal-console-leaves</a></li>
+          <li>Show administrators runners and pools from GET /api/v1/runners and GET /api/v1/runner-pools: labels, capacity, last heartbeat, state, drained or revoked by whom, never a host. <a class="ref" href="../#terminal-views">terminal-views</a><a class="ref" href="../#administrators">administrators</a><a class="ref" href="../#registering-a-runner">registering-a-runner</a></li>
+          <li>Drive every view from the keyboard, the bottom line naming each key by its effect, a key for what the principal does not hold left out, and ? listing them all. <a class="ref" href="../#terminal-keys">terminal-keys</a><a class="ref" href="../#voice">voice</a></li>
+          <li>Draw in the terminal's own sixteen colours with every state a word beside its colour, honour NO_COLOR, and need nothing over SSH but 80 columns and 24 rows. <a class="ref" href="../#where-the-terminal-console-runs">where-the-terminal-console-runs</a><a class="ref" href="../#colour-rules">colour-rules</a></li>
+          <li>Print the view once as plain lines and exit 0 where standard input or output is not a terminal or TERM is dumb, so a script never waits on a screen. <a class="ref" href="../#where-the-terminal-console-runs">where-the-terminal-console-runs</a></li>
+          <li>Test every view on recorded API fixtures through a virtual terminal of fixed size, comparing screens and plain lines, with no controller, runner or database. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+        </ul>
+      </div>
     </div>
 
     <div class="gate">
       <span class="note-label">Done when</span>
-      <p>A failed run is diagnosed in the console alone (the step, the exit code, what was refused), and a workflow edited there comes back as a YAML diff of only the edit.</p>
+      <p>A failed run is diagnosed in the console alone, in a browser or with <code>agk console</code> over SSH (the step, the exit code, what was refused), and a workflow edited in the browser comes back as a YAML diff of only the edit.</p>
     </div>
-    <p class="where"><span>Repositories</span> <code>design</code> · <code>console</code> · <code>schemas</code></p>
+    <p class="where"><span>Repositories</span> <code>design</code> · <code>console</code> · <code>schemas</code> · <code>agentiik</code></p>
   </div>
 </section>
 
@@ -2534,7 +2559,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Let an installation point its catalog at its own registry, with no fork of the API or the site. <a class="ref" href="../#registry">registry</a></li>
           <li>Let a namespace declare private registry credentials as namespace secrets, redeemed for the pull, never carried into a workflow shared with another team. <a class="ref" href="../#registry">registry</a><a class="ref" href="../#secrets">secrets</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
           <li>Enforce the per-namespace signature verification policy (which identities may sign) in the runner, before the container is created, never trusting the registry. <a class="ref" href="../#supply-chain">supply-chain</a><a class="ref" href="../#further-rules">further-rules</a><a class="ref" href="../#runner">runner</a></li>
-          <li>Suspend a run in waiting on a wait step, for a duration, an external signal or a human approval, without a task occupying a runner: cleared by the signal, the duration expiring, or POST /api/v1/runs/{id}/approve or /reject under workflow:run, also run.approve and run.reject over MCP and in the console, which lifts pending approvals into the band above its run table, the decision recorded in approvals and the audit log with its comment or reason. <a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a><a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#ui">ui</a></li>
+          <li>Suspend a run in waiting on a wait step, for a duration, an external signal or a human approval, without a task occupying a runner: cleared by the signal, the duration expiring, or POST /api/v1/runs/{id}/approve or /reject under workflow:run, also run.approve and run.reject over MCP and in both consoles, the web one and agk console, each lifting pending approvals into the band above its run list, the decision recorded in approvals and the audit log with its comment or reason. <a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a><a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#ui">ui</a><a class="ref" href="../#terminal-keys">terminal-keys</a></li>
         </ul>
       </div>
       <div class="work-group">
@@ -2866,6 +2891,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
         <thead><tr><th>Reordering</th><th>Allowed</th><th>Why</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell">v0.8.0 anywhere after v0.1.0</td><td>yes</td><td>It depends on the brick contract alone. It is the plan's deliberate slack.</td></tr>
+          <tr><td class="wrapcell">agk console before the web console</td><td>yes</td><td>Any time after v0.4.0: it needs the API alone, and nothing the web console builds, its design tokens included. It sits beside the web console so that the two keep one set of views, decided once.</td></tr>
           <tr><td class="wrapcell">v0.7.0 before v0.6.0</td><td>yes</td><td>Either one makes the other easier to judge: the console shows a run to a person, MCP to a client that cannot see.</td></tr>
           <tr><td class="wrapcell">v0.5.0 before v0.4.0</td><td class="no">no</td><td>A trigger has to resolve a commit. Against a moving branch it is the drift the hosted repository exists to prevent, and it would be built twice.</td></tr>
           <tr><td class="wrapcell">any surface before v0.3.0</td><td class="no">never</td><td>Console, triggers and MCP are three ways in, so permissions come before any of them, not alongside.</td></tr>

@@ -65,6 +65,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - `api_token.create` and `api_token.revoke` record whose token, its expiry, label and scope, in a service account's namespace.
 - `init` creates `AGK_INIT_NAMESPACE` again at every run where it is missing, with no owner.
 - `agk console`, the console in a terminal: runs, a run, its graph, workflows, sharing and runners over the web console's routes, as the signed-in principal, with no server and no permission of its own.
+- The roadmap plans `agk console` in v0.6.0, a seventh group of fifteen tasks, and its approvals with the wait step in v0.8.0.
 
 ## v0.2.5, 2026-09-26
 
