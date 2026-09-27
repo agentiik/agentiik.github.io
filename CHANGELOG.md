@@ -70,6 +70,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - The web console takes `agk console`'s design language: a top bar with the namespace switcher and the principal and no sidebar, panes with rounded borders, state badges, monospaced identifiers, the graph as boxes and edges, toasts and a key line, keeping the browser's mouse, forms, visual editor and passkeys. Its four mockups and the home page's are redrawn as browser windows, scheduled runs by `finance/agentiik`.
 - The web console's statistics: a workflow's runs, durations, queue wait, exit codes, hours and ports, a namespace against its quotas, and the pools and runners for administrators, one range driving a zoom, a readout, a comparison, CSV and JSON exports and a link to the runs counted; three mockups show them.
 - `GET /api/v1/{ns}/stats/runs`, `/stats/steps`, `/stats/ports` and `/stats/quotas`, and `GET /api/v1/stats/pools` for administrators, from v0.6.0, counting only what `run:read` reaches; `agk console` draws a histogram of a workflow's durations from the first.
+- The roadmap's console shell follows the look, and v0.6.0 gains Statistics and charts, thirteen tasks across agentiik, schemas and console with the chart library an open question, and `agk console`'s histogram; a milestone may hold eight groups, and the plan holds 668 tasks.
 
 ## v0.2.5, 2026-09-26
 
