@@ -107,7 +107,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - The roadmap plans in v0.3.0 the sign-in and enrolment page and setting a password and a TOTP under Passkeys, passwords and recovery, and the purges and the collection of what v0.2 left under Quotas, isolation and what stays invisible; the plan holds 672 tasks.
 - An enrolment link or recovery code refused is recorded as `signin.fail`, naming its account and never the code, within the same bound; each password a policy change takes is a `credential.remove` by whoever changed it.
 - An administrator putting themselves in a group, taking themselves out, or removing a group they are in tells the owners where that widens their own access, and the entry names who was told.
-- The audit log says what changes something and is not recorded, and why: a push, a TOTP generator started, a sign-out, a notification dismissed, a runner joining and its own traffic, an upload, a 429, and a wrong guess from a signed-in session.
+- The audit log says what changes something and is not recorded, and why: a push, a TOTP generator started, a sign-out, a notification dismissed, a runner's own traffic, an upload, a 429, and a wrong guess from a signed-in session.
 - The bootstrap token ends when the first administrator has signed in: at their first passkey, or at the first request of a full session their password opens, the policy relaxed since included; `GET /api/v1/users/{login}` answers `suspended_for`, and a password set from a code where passwords are allowed also lifts a `no_passkey` suspension.
 - Once the bootstrap has ended, a grant carrying a role or a group membership that would leave no administrator able to sign in is refused with 409 naming the setting; a password that could only ever enrol, a passkey required and `min_passkeys` held, is refused with 409 naming `passkey`.
 - agk talks to the installation `agk login` last signed in to where neither `--server` nor `AGENTIIK_SERVER` names one, never sending `AGENTIIK_TOKEN` there (exit 2); a refused exchange is recorded as `signin.fail`.
@@ -119,6 +119,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - Every table naming a namespace is under row level security, the audit log, the policy, the notifications and the service accounts included; a refusal asks what an allowed request would, so that how long it takes discovers nothing either, and a run names its runner by identifier alone.
 - A notification names its `act` and who did it, `by`; putting anybody in a group is told to the owners where it holds a role, the other administrators are told where nobody owns, and `GET /api/v1/me` leaves out a workflow its caller holds nothing in.
 - A deny of `grant:manage` on a workflow is refused with 422.
+- A runner joining is recorded as `runner.join`, by whoever issued its join token, and `group_member.add` names who was told wherever a user is put in a group holding a role.
 
 ## v0.2.5, 2026-09-26
 
