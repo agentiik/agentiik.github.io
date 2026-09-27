@@ -45,6 +45,25 @@ Every repository of the project carries the same version and is tagged at the sa
 - Storage lists the identity tables as migrated: no mail on users, and an AAGUID that may name a model nothing certifies.
 - The Relying Party Identifier is the host of the public URL; a domain shared with a console comes with the console.
 - The bootstrap token's hash is kept in the database from v0.3.0.
+- `max_runs_per_hour` is counted under a lock on the namespace, `Retry-After` gives the seconds until one more run fits, a refused `workflow:` call fails its step, and a 429 is not audited; `agk run` exits 1 for it.
+- `allowed_runner_pools` names pools that exist; a step only a pool outside it could take fails at dispatch with 125, and a redemption by such a pool is refused with 422.
+- `operator` marks everything the bootstrap token writes, and `installation` what `init` and `agentiik-api namespace` do.
+- Administering is `grant:manage` at the installation, through a token with no scope; an administrator may grant in any namespace, its owner told.
+- Owning a namespace and holding a grant in one mean an unexpired role grant, own or a group's; a deny alone is no grant and takes no ownership away.
+- A token scoped to a workflow does not reach its namespace's routes, and a token that opens nothing is answered one `401` sentence.
+- `agentiik-api migrate` keeps the bootstrap token's hash as `init` does, from `AGK_OPERATOR_TOKEN`, and imports a v0.2 hash from `AGK_OPERATOR_TOKEN_FILE` once; the other programs pass that file over.
+- Homebrew keeps the bootstrap token in `operator-token.env` and migrates at every start, so an upgrade is `brew upgrade` and a restart.
+- An installation built by hand starts with `AGK_OPERATOR_TOKEN=$token agentiik-api migrate`, and a v0.2 one upgrades by running the new `migrate`.
+- Upgrading to v0.3.0 starts from v0.2.5's `compose.yaml`.
+- `POST /api/v1/namespaces` requires an owner, a user or group given the `owner` role in the same transaction and recorded as `grant.create` beside `namespace.create`; deleting a personal namespace is refused with 409.
+- `agk namespace create`, `list`, `show`, `delete` and `quotas`, which reads first and lifts a bound only with `--lift NAME`; a change to a namespace answered with a 5xx exits 4.
+- `agentiik-api namespace` creates a namespace with no owner and its built-in identity, removes one as the route does, and records both by `installation`.
+- Namespace and quota bodies are held to 64 KiB and 1,024 pools and refuse `null`; `namespace.update` records the quotas as they then stand.
+- `POST /api/v1/auth/tokens` answers 403 to a scoped token and to the bootstrap token; the listing is newest first, a scoped token lists and revokes itself alone, and revoking twice answers 204.
+- `agk token create`, `list` and `revoke`; `create` prints the token alone on standard output.
+- A token's value is `agktoken_` and 43 base64url characters; token bodies are held to 64 KiB and 1,024 permissions or places.
+- `api_token.create` and `api_token.revoke` record whose token, its expiry, label and scope, in a service account's namespace.
+- `init` creates `AGK_INIT_NAMESPACE` again at every run where it is missing, with no owner.
 
 ## v0.2.5, 2026-09-26
 
