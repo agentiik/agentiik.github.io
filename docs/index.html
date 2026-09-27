@@ -6738,9 +6738,17 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
           <tr><td class="wrapcell">GET /api/v1/runs/{id}/steps/{step}/inputs/{port}?attempt=&amp;shard=</td><td>What a dispatch of the step was handed on an input port, under <code>/agk/in/</code>. <code>attempt</code> counts from 1 as <code>AGK_ATTEMPT</code> does, the last by default; <code>shard</code> is <code>AGK_SHARD</code>, required where the step fans out. Requires <code>run:read_data</code>. <code>400</code> for a missing or malformed <code>attempt</code> or <code>shard</code>, <code>404</code> for a dispatch or port not there, <code>410</code> once purged.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/artifacts/{uri}</td><td>302 to a short-lived presigned URL, or the bytes themselves where the artifact has a fetch budget, since a redirect cannot be counted. Requires <code>run:read_data</code>.</td></tr>
           <tr><td class="wrapcell">POST /hooks/{ns}/{path}</td><td>Webhook triggers.</td></tr>
+
+          <tr><th colspan="2">Statistics, from v0.6.0</th></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/stats/runs</td><td>Per bucket, the runs of the namespace's workflows by final state, the p50, p95 and p99 of their duration and of their tasks' queue wait, and the attempts retried by exit code; with <code>histogram=N</code>, their durations over the range in N bins. Narrowed by <code>workflow</code>. Counts only the workflows the caller holds <code>run:read</code> on, as <code>GET /api/v1/runs</code> lists them (<a href="#console-statistics">Statistics</a>).</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/stats/steps</td><td>Per step of a <code>workflow</code>, per bucket: the percentiles of its duration, its attempts and exit codes, and a fan-out's items a minute; with <code>by=hour</code>, its p50 by weekday and hour over the range. Requires <code>run:read</code> on the workflow.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/stats/ports</td><td>Per port of each step of a <code>workflow</code>, per bucket, the items published and the share rejected or sent to <code>error</code>, from each envelope's <code>meta.count</code> and never its items. Requires <code>run:read</code> on the workflow, and never <code>run:read_data</code>.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/{ns}/stats/quotas</td><td>Per bucket, the runs created and those refused with 429, the most tasks in flight at once, and the artifact bytes live, each beside the quota it meets. Read by whoever reads the namespace.</td></tr>
+          <tr><td class="wrapcell">GET /api/v1/stats/pools</td><td>Per pool and per runner, per bucket: the slots in use and the capacity, and each silence between heartbeats of 20 s or more, with its length and the tasks it cost. Administrator only.</td></tr>
         </tbody>
       </table>
     </div>
+    <p>Every statistics route takes <code>from</code> and <code>to</code> (RFC 3339, the last 24 hours when left out), <code>bucket</code> (<code>1m</code>, <code>15m</code>, <code>1h</code> or <code>1d</code>, chosen from the range when left out, and refused with <code>400</code> past 1,000 buckets) and <code>compare=previous</code>, which adds the same span before the range. It answers JSON, or CSV to <code>Accept: text/csv</code>, and every bucket carries the <code>since</code> and <code>until</code> that <code>GET /api/v1/runs</code> takes, so that a point opens the runs it counts.</p>
 
   </div>
 
@@ -7903,6 +7911,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>sharing panel</td><td>On every workflow and namespace: who holds what, where each permission comes from, what one person can actually do. One control adds, expires or denies.</td></tr>
           <tr><td>repository browser</td><td>The tree at any ref, and a branch switcher to run a change before merging it.</td></tr>
           <tr><td>diff</td><td>Two commits, over the whole tree and not only the entry point, or two runs of the same commit.</td></tr>
+          <tr><td>statistics</td><td>Charts of a workflow's runs, steps and ports, of a namespace against its quotas and, for administrators, of the pools and runners (<a href="#console-statistics">Statistics</a>).</td></tr>
           <tr><td>brick catalog</td><td>Manifests, parameter schemas, published examples.</td></tr>
           <tr><td>MCP panel</td><td>On a workflow that declares one: the endpoint URL, and the tools exactly as a client sees them, schemas rendered from the declaration.</td></tr>
           <tr><td>namespace switcher</td><td>In the top bar: the personal namespace first, shared ones grouped after it.</td></tr>
@@ -9516,6 +9525,1327 @@ resource "agentiik_workflow" "search" {
       <p>YAML stays the source of truth even when editing happens in the console. A graph store exporting YAML would make review in a Git repository illusory, and the two would diverge at the first feature with no visual equivalent. The sharing panel is the one part of the console with no YAML counterpart, by design.</p>
     </div>
   </div>
+
+<!-- statistics: start -->
+  <div class="prose">
+    <h3 id="console-statistics">Statistics</h3>
+    <p>For whoever wants the numbers behind the runs, the web console draws them as charts: a workflow's and its steps', a namespace's against its quotas and, to an administrator, the pools' and the runners'. Each chart is a series an aggregate route of the API answers (<a href="#api">API and command line</a>), computed where the runs are recorded, and <code>agk console</code> draws the compact form of the same series.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Of</th><th>Series</th><th>Drawn as</th></tr></thead>
+        <tbody>
+          <tr><td>a workflow</td><td>Its runs by final state, and the share of each bucket that did not succeed; the p50, p95 and p99 of their duration; the queue wait of their tasks, from creation to dispatch; the attempts retried, by exit code.</td><td class="wrapcell">stacked columns, lines, bars</td></tr>
+          <tr><td>a step</td><td>Its duration by weekday and hour; its exit codes; the items on each of its ports and the share rejected or sent to <code>error</code>; a fan-out's throughput, in items a minute while its shards run.</td><td class="wrapcell">a heatmap, bars, lines</td></tr>
+          <tr><td>a namespace</td><td>The runs created in each hour, and those refused with 429, against <code>max_runs_per_hour</code>; the tasks in flight against <code>max_concurrent_tasks</code>; the artifact bytes against <code>max_artifact_bytes</code>, and what each day added.</td><td class="wrapcell">columns, a line, an area, each under its limit</td></tr>
+          <tr><td>a pool, a runner</td><td>To an administrator alone: the slots in use against the capacity, which falls as a runner drains; each silence between heartbeats longer than two intervals, 20 s, those of 30 s and more, after which a runner's tasks are declared lost, set apart.</td><td class="wrapcell">a line over a step line, a timeline</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>range</td><td>The last hour, 24 hours, 7, 30 or 90 days, or a span chosen, for every chart of the page at once. The bucket follows the range, so that a chart holds a few hundred points at most: a minute up to two hours, 15 minutes up to two days, an hour up to 14 days, a day beyond.</td></tr>
+          <tr><td>zoom</td><td>Dragging across a chart narrows the range to that span, for every chart; a double click steps back.</td></tr>
+          <tr><td>readout</td><td>Under the pointer, the bucket's bounds and the exact value of each series; on a column, a cell or a mark, that one's.</td></tr>
+          <tr><td>comparison</td><td>The same span before the range, dashed behind it, and the change beside each figure.</td></tr>
+          <tr><td>export</td><td>The series behind the page as CSV or JSON: the numbers the route answered, never the picture.</td></tr>
+          <tr><td>a point</td><td>A click opens the runs it counts: the runs view filtered by workflow, state and the bucket's bounds, as <code>GET /api/v1/runs</code> takes them.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plain">
+      <li>A series counts only what the caller may read: the runs of the workflows it holds <code>run:read</code> on, as <code>GET /api/v1/runs</code> lists them, so a chart shows nothing a list would not. It carries counts, durations and exit codes, never an item, so <code>run:read_data</code> is never asked. A namespace's quota series go to whoever reads the namespace, and the pools and runners to administrators alone.</li>
+      <li>The browser never reads Prometheus: the controller's <a href="#metrics">metrics</a> stay the operator's, on the operator's network.</li>
+      <li>A series is computed from the run, task and artifact records rather than kept apart, so a range reaches back as far as the namespace keeps its runs, and no further.</li>
+      <li>Colour follows the state a series counts, as everywhere in the console, and a series that is no state is drawn in the accent, in strengths of the one hue. Every chart has its legend and a table of its numbers, so no series is told by colour alone.</li>
+      <li><code>agk console</code> shows the compact form, from the same routes: a workflow's sparkline of its last twenty runs and, beside it, a small histogram of its durations over the range (<a href="#terminal-live">Live state and notifications</a>). The charts stay the browser's.</li>
+    </ul>
+  </div>
+
+  <figure class="console">
+    <svg class="mock web" viewBox="0 0 1440 1176" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mockup of the statistics page of the workflow finance/monthly-invoicing in the web console, over the last 30 days, a bucket a day, compared with the previous 30. A range selector, a comparison switch and CSV and JSON exports run along the top, then five figures: 313 runs, 94.6% succeeded, a p95 duration of 6m 12s, a p95 queue wait of 3.4s and invoice&#x27;s throughput. Six charts follow. Runs by state, as shares of each day, succeeded, failed, timed_out and cancelled stacked, with the previous period dashed; the pointer on 10 September, where 5 of 17 runs failed, and a readout with the exact values and a link to those runs. Exit codes of invoice as bars, 108 far ahead of 1, 120, 137 and lost. The run&#x27;s duration as p50, p95 and p99 lines with the previous p95 dashed. The queue wait&#x27;s p50 and p95, peaking on 1 September. A heatmap of invoice&#x27;s p50 duration by weekday and hour, slowest on weekday mornings, one cell hovered. And the share of items rejected by normalize and sent to error by invoice.">
+<rect x=".5" y=".5" width="1439" height="1175" rx="10" class="f-bg"/>
+<path d="M.5 46V10.5a10 10 0 0 1 10-10h1419a10 10 0 0 1 10 10V46z" class="f-raised"/>
+<path d="M.5 45.5H1439.5" class="f-none s-line"/>
+<circle cx="20" cy="23.0" r="5.5" class="f-line-strong"/>
+<circle cx="38" cy="23.0" r="5.5" class="f-line-strong"/>
+<circle cx="56" cy="23.0" r="5.5" class="f-line-strong"/>
+<path transform="translate(80 15)" d="M2.5 3.5h11v9h-11zM6.5 3.5v9" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(112 15)" d="M10 3.5 5.5 8l4.5 4.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(136 15)" d="M6 3.5l4.5 4.5L6 12.5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="440.5" y="8.5" width="559" height="29" rx="8" class="f-bg s-line" stroke-width="1"/>
+<path transform="translate(502.11 15) scale(0.94)" d="M4.5 7.5h7v6h-7zM6 7.5V5.5a2 2 0 0 1 4 0v2" class="f-none s-muted" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="523.11" y="27.73" font-size="13.5" class="f-text" font-weight="500">agentiik.example.com</text>
+<text x="657.71" y="27.73" font-size="13.5" class="f-muted">/finance/workflows/monthly-invoicing/statistics</text>
+<path transform="translate(973 15)" d="M12.8 8a4.8 4.8 0 1 1-1.4-3.4M12.8 2.8v2.6h-2.6" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1348 15)" d="M8 2.5v8M5 5.5 8 2.5l3 3M4 8.5v5h8v-5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1378 15)" d="M8 3v10M3 8h10" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1406 15)" d="M3.5 3.5h9v9h-9zM6 1.8h7.7v7.7" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(0 46)">
+<rect x="0" y="0" width="1440" height="52" class="f-surface"/>
+<path d="M0 51.5H1440" class="f-none s-line" stroke-width="1"/>
+<rect x="20" y="18" width="18" height="4.5" rx="1" class="f-accent"/><rect x="20" y="24.5" width="8" height="4.5" rx="1" class="f-accent" opacity=".62"/><rect x="30" y="24.5" width="8" height="4.5" rx="1" class="f-accent" opacity=".62"/><rect x="20" y="31" width="18" height="2.5" rx="1" class="f-accent" opacity=".3"/>
+<text x="46" y="31.77" font-size="16.5" class="f-text" font-weight="700" letter-spacing="-.33">agentiik</text>
+<rect x="134.5" y="11.5" width="95.7" height="29" rx="5" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="145" y="30.73" font-size="13.5" class="f-accent t-mono" font-weight="600" textLength="56.7">finance</text>
+<path transform="translate(207.7 18)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="252.7" y="30.9" font-size="14" class="f-muted" font-weight="500">Runs</text>
+<rect x="304.52" y="11.5" width="91.74" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="316.02" y="30.9" font-size="14" class="f-text" font-weight="600">Workflows</text>
+<text x="414.76" y="30.9" font-size="14" class="f-muted" font-weight="500">Statistics</text>
+<text x="503.56" y="30.9" font-size="14" class="f-muted" font-weight="500">Bricks</text>
+<text x="573.74" y="30.9" font-size="14" class="f-muted" font-weight="500">Sharing</text>
+<text x="653.02" y="30.9" font-size="14" class="f-muted" font-weight="500">Settings</text>
+<path transform="translate(1408 18)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1402" y="30.73" font-size="13.5" class="f-text t-mono" font-weight="600" text-anchor="end" textLength="40.5">alice</text>
+<circle cx="1341.5" cy="26" r="12" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="1341.5" y="30.38" font-size="12.5" class="f-accent" font-weight="600" text-anchor="middle">A</text>
+<path transform="translate(1297.5 18)" d="M4 11V7.5a4 4 0 0 1 8 0V11l1.2 1.5H2.8zM6.5 14h3" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1310.5" cy="18" r="7" class="f-wait"/>
+<text x="1310.5" y="21.68" font-size="10.5" class="f-bg" font-weight="700" text-anchor="middle">3</text>
+<text x="1273.5" y="30.73" font-size="13.5" class="f-ok" font-weight="500" text-anchor="end">live</text>
+<circle cx="1243.58" cy="26" r="3.4" class="f-ok"/>
+<rect x="933.08" y="10.5" width="289" height="31" rx="5" class="f-bg s-line-strong" stroke-width="1"/>
+<path transform="translate(942.58 18)" d="M7 2.5a4.5 4.5 0 1 1 0 9a4.5 4.5 0 1 1 0-9zM10.4 10.4 13.5 13.5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="966.58" y="30.73" font-size="13.5" class="f-faint">Search runs and workflows</text>
+<rect x="1197.17" y="16.5" width="16.9" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="1202.17" y="30.02" font-size="11.5" class="f-muted t-mono">/</text>
+<rect x="0" y="52" width="1440" height="48" class="f-bg"/>
+<path d="M0 99.5H1440" class="f-none s-line" stroke-width="1"/>
+<text x="22" y="80.9" font-size="14" class="f-accent t-mono" font-weight="500" textLength="58.8">finance</text>
+<text x="88.8" y="80.9" font-size="14" class="f-faint">/</text>
+<text x="100.86" y="80.9" font-size="14" class="f-text t-mono" font-weight="700" textLength="142.8">monthly-invoicing</text>
+<text x="277.66" y="80.9" font-size="14" class="f-muted" font-weight="500">Graph</text>
+<text x="345.56" y="80.9" font-size="14" class="f-muted" font-weight="500">Runs</text>
+<text x="406.88" y="80.9" font-size="14" class="f-text" font-weight="600">Statistics</text>
+<rect x="404.88" y="97" width="64.06" height="2.5" rx="1" class="f-accent"/>
+<text x="494.94" y="80.9" font-size="14" class="f-muted" font-weight="500">Sharing</text>
+<text x="572.22" y="80.9" font-size="14" class="f-muted" font-weight="500">Versions</text>
+<rect x="1347.39" y="61.5" width="72.11" height="29" rx="5" class="f-accent s-accent" stroke-width="1"/>
+<path transform="translate(1357.89 68)" d="M5 3.5v9l7-4.5z" class="f-none s-on-accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1381.89" y="80.72" font-size="13.5" class="f-on-accent" font-weight="500">Run</text>
+<rect x="20.5" y="117.5" width="429.45" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="33" y="136.72" font-size="13.5" class="f-text" font-weight="500">1 hour</text>
+<text x="97.2" y="136.72" font-size="13.5" class="f-text" font-weight="500">24 hours</text>
+<text x="176.39" y="136.72" font-size="13.5" class="f-text" font-weight="500">7 days</text>
+<rect x="231.58" y="119.5" width="68.66" height="25" rx="4" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="242.08" y="136.72" font-size="13.5" class="f-accent" font-weight="600">30 days</text>
+<text x="315.74" y="136.72" font-size="13.5" class="f-text" font-weight="500">90 days</text>
+<text x="389.26" y="136.72" font-size="13.5" class="f-text" font-weight="500">Custom</text>
+<text x="466.45" y="136.55" font-size="13" class="f-faint">29 Aug to 27 Sep · a bucket a day</text>
+<rect x="683.66" y="123.5" width="29" height="17" rx="8.5" class="f-accent"/>
+<circle cx="704.16" cy="132" r="6" class="f-raised"/>
+<text x="721.16" y="136.72" font-size="13.5" class="f-text">Compare with the previous 30 days</text>
+<rect x="1335.24" y="117.5" width="84.26" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(1345.74 124)" d="M8 2.5v8M4.8 7.5 8 10.7l3.2-3.2M3 13.5h10" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1369.74" y="136.72" font-size="13.5" class="f-text" font-weight="500">JSON</text>
+<rect x="1251.43" y="117.5" width="74.81" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(1261.93 124)" d="M8 2.5v8M4.8 7.5 8 10.7l3.2-3.2M3 13.5h10" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1285.93" y="136.72" font-size="13.5" class="f-text" font-weight="500">CSV</text>
+<text x="1238.93" y="136.55" font-size="13" class="f-faint" text-anchor="end">Export the series</text>
+<rect x="20" y="158" width="270.4" height="88" rx="7" class="f-surface"/>
+<path d="M283.4 158A7 7 0 0 1 290.4 165V239A7 7 0 0 1 283.4 246H27A7 7 0 0 1 20 239V165A7 7 0 0 1 27 158M27 158H283.4" class="f-none s-line-strong" stroke-width="1.25"/>
+<text x="36" y="182.55" font-size="13" class="f-muted">Runs</text>
+<text x="36" y="215.7" font-size="22" class="f-text t-mono" font-weight="600" textLength="39.6">313</text>
+<text x="85.6" y="214.38" font-size="12.5" class="f-ok t-mono" font-weight="500" textLength="22.5">+8%</text>
+<text x="36" y="236.2" font-size="12" class="f-faint">290 in the previous 30 days</text>
+<rect x="192.4" y="169.31" width="4" height="18.69" rx="1" class="f-muted" opacity=".55"/>
+<rect x="198.4" y="170.62" width="4" height="17.38" rx="1" class="f-muted" opacity=".55"/>
+<rect x="204.4" y="171.92" width="4" height="16.08" rx="1" class="f-muted" opacity=".55"/>
+<rect x="210.4" y="168" width="4" height="20" rx="1" class="f-muted" opacity=".55"/>
+<rect x="216.4" y="173.23" width="4" height="14.77" rx="1" class="f-muted" opacity=".55"/>
+<rect x="222.4" y="181.08" width="4" height="6.92" rx="1" class="f-muted" opacity=".55"/>
+<rect x="228.4" y="183.69" width="4" height="4.31" rx="1" class="f-muted" opacity=".55"/>
+<rect x="234.4" y="170.62" width="4" height="17.38" rx="1" class="f-muted" opacity=".55"/>
+<rect x="240.4" y="169.31" width="4" height="18.69" rx="1" class="f-muted" opacity=".55"/>
+<rect x="246.4" y="171.92" width="4" height="16.08" rx="1" class="f-muted" opacity=".55"/>
+<rect x="252.4" y="168" width="4" height="20" rx="1" class="f-muted" opacity=".55"/>
+<rect x="258.4" y="170.62" width="4" height="17.38" rx="1" class="f-muted" opacity=".55"/>
+<rect x="264.4" y="182.38" width="4" height="5.62" rx="1" class="f-muted" opacity=".55"/>
+<rect x="270.4" y="185" width="4" height="3" rx="1" class="f-accent"/>
+<rect x="302.4" y="158" width="270.4" height="88" rx="7" class="f-surface"/>
+<path d="M565.8 158A7 7 0 0 1 572.8 165V239A7 7 0 0 1 565.8 246H309.4A7 7 0 0 1 302.4 239V165A7 7 0 0 1 309.4 158M309.4 158H565.8" class="f-none s-line-strong" stroke-width="1.25"/>
+<text x="318.4" y="182.55" font-size="13" class="f-muted">Succeeded</text>
+<text x="318.4" y="215.7" font-size="22" class="f-text t-mono" font-weight="600" textLength="66">94.6%</text>
+<text x="394.4" y="214.38" font-size="12.5" class="f-ok t-mono" font-weight="500" textLength="60">+2.7 pts</text>
+<text x="318.4" y="236.2" font-size="12" class="f-faint">296 of 313; 12 failed, 2 timed out</text>
+<rect x="584.8" y="158" width="270.4" height="88" rx="7" class="f-surface"/>
+<path d="M848.2 158A7 7 0 0 1 855.2 165V239A7 7 0 0 1 848.2 246H591.8A7 7 0 0 1 584.8 239V165A7 7 0 0 1 591.8 158M591.8 158H848.2" class="f-none s-line-strong" stroke-width="1.25"/>
+<text x="600.8" y="182.55" font-size="13" class="f-muted">Duration, p95</text>
+<text x="600.8" y="215.7" font-size="22" class="f-text t-mono" font-weight="600" textLength="79.2">6m 12s</text>
+<text x="690" y="214.38" font-size="12.5" class="f-ok t-mono" font-weight="500" textLength="30">−49s</text>
+<text x="600.8" y="236.2" font-size="12" class="f-faint">p50 3m 47s · p99 7m 38s</text>
+<rect x="757.2" y="173.14" width="4" height="14.86" rx="1" class="f-muted" opacity=".55"/>
+<rect x="763.2" y="171.56" width="4" height="16.44" rx="1" class="f-muted" opacity=".55"/>
+<rect x="769.2" y="175.12" width="4" height="12.88" rx="1" class="f-muted" opacity=".55"/>
+<rect x="775.2" y="168" width="4" height="20" rx="1" class="f-muted" opacity=".55"/>
+<rect x="781.2" y="169.58" width="4" height="18.42" rx="1" class="f-muted" opacity=".55"/>
+<rect x="787.2" y="181.05" width="4" height="6.95" rx="1" class="f-muted" opacity=".55"/>
+<rect x="793.2" y="184.21" width="4" height="3.79" rx="1" class="f-muted" opacity=".55"/>
+<rect x="799.2" y="172.74" width="4" height="15.26" rx="1" class="f-muted" opacity=".55"/>
+<rect x="805.2" y="175.51" width="4" height="12.49" rx="1" class="f-muted" opacity=".55"/>
+<rect x="811.2" y="171.95" width="4" height="16.05" rx="1" class="f-muted" opacity=".55"/>
+<rect x="817.2" y="169.98" width="4" height="18.02" rx="1" class="f-muted" opacity=".55"/>
+<rect x="823.2" y="174.33" width="4" height="13.67" rx="1" class="f-muted" opacity=".55"/>
+<rect x="829.2" y="183.42" width="4" height="4.58" rx="1" class="f-muted" opacity=".55"/>
+<rect x="835.2" y="185" width="4" height="3" rx="1" class="f-accent"/>
+<rect x="867.2" y="158" width="270.4" height="88" rx="7" class="f-surface"/>
+<path d="M1130.6 158A7 7 0 0 1 1137.6 165V239A7 7 0 0 1 1130.6 246H874.2A7 7 0 0 1 867.2 239V165A7 7 0 0 1 874.2 158M874.2 158H1130.6" class="f-none s-line-strong" stroke-width="1.25"/>
+<text x="883.2" y="182.55" font-size="13" class="f-muted">Queue wait, p95</text>
+<text x="883.2" y="215.7" font-size="22" class="f-text t-mono" font-weight="600" textLength="52.8">3.4s</text>
+<text x="946" y="214.38" font-size="12.5" class="f-fail t-mono" font-weight="500" textLength="37.5">+0.6s</text>
+<text x="883.2" y="236.2" font-size="12" class="f-faint">created to dispatched</text>
+<rect x="1039.6" y="171.78" width="4" height="16.22" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1045.6" y="169.89" width="4" height="18.11" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1051.6" y="174.61" width="4" height="13.39" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1057.6" y="168.94" width="4" height="19.06" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1063.6" y="172.72" width="4" height="15.28" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1069.6" y="182.17" width="4" height="5.83" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1075.6" y="184.06" width="4" height="3.94" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1081.6" y="171.78" width="4" height="16.22" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1087.6" y="170.83" width="4" height="17.17" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1093.6" y="172.72" width="4" height="15.28" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1099.6" y="168" width="4" height="20" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1105.6" y="171.78" width="4" height="16.22" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1111.6" y="183.11" width="4" height="4.89" rx="1" class="f-muted" opacity=".55"/>
+<rect x="1117.6" y="185" width="4" height="3" rx="1" class="f-accent"/>
+<rect x="1149.6" y="158" width="270.4" height="88" rx="7" class="f-surface"/>
+<path d="M1413 158A7 7 0 0 1 1420 165V239A7 7 0 0 1 1413 246H1156.6A7 7 0 0 1 1149.6 239V165A7 7 0 0 1 1156.6 158M1156.6 158H1413" class="f-none s-line-strong" stroke-width="1.25"/>
+<text x="1165.6" y="182.55" font-size="13" class="f-muted">invoice throughput</text>
+<text x="1165.6" y="215.7" font-size="22" class="f-text t-mono" font-weight="600" textLength="171.6">212 items/min</text>
+<text x="1347.2" y="214.38" font-size="12.5" class="f-ok t-mono" font-weight="500" textLength="30">+19%</text>
+<text x="1165.6" y="236.2" font-size="12" class="f-faint">while its shards run</text>
+<rect x="20" y="262" width="900" height="262" rx="7" class="f-surface"/>
+<path d="M913 262A7 7 0 0 1 920 269V517A7 7 0 0 1 913 524H27A7 7 0 0 1 20 517V269A7 7 0 0 1 27 262M27 262H34M211.62 262H649M906 262H913" class="f-none s-line-strong" stroke-width="1"/>
+<text x="40" y="266.9" font-size="14" class="f-text" font-weight="600">Runs that did not succeed</text>
+<text x="900" y="266.38" font-size="12.5" class="f-faint" text-anchor="end">share of each day's runs; the rest succeeded</text>
+<rect x="43" y="283" width="10" height="10" rx="2" class="f-fail"/>
+<text x="62" y="292.38" font-size="12.5" class="f-muted">failed</text>
+<rect x="111.12" y="283" width="10" height="10" rx="2" class="f-fail" opacity=".5"/>
+<text x="130.12" y="292.38" font-size="12.5" class="f-muted">timed_out</text>
+<rect x="204.5" y="283" width="10" height="10" rx="2" class="f-line-strong"/>
+<text x="223.5" y="292.38" font-size="12.5" class="f-muted">cancelled</text>
+<path d="M293 288h16" class="f-none s-muted" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="315" y="292.38" font-size="12.5" class="f-muted">all three, previous 30 days</text>
+<path d="M80 490H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="494.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">0%</text>
+<path d="M80 445.5H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="449.52" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">10%</text>
+<path d="M80 401H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="405.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">20%</text>
+<path d="M80 356.5H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="360.52" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">30%</text>
+<path d="M80 312H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="316.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">40%</text>
+<rect x="406" y="312" width="28" height="178" rx="4" class="f-sunken"/>
+<path d="M140 490V458.77Q140 455.77 143 455.77H153Q156 455.77 156 458.77V490Z" class="f-fail"/>
+<path d="M167.2 490V452.55Q167.2 449.55 170.2 449.55H180.2Q183.2 449.55 183.2 452.55V490Z" class="f-fail"/>
+<path d="M221.6 490V461.21Q221.6 458.21 224.6 458.21H234.6Q237.6 458.21 237.6 461.21V490Z" class="f-line-strong"/>
+<path d="M330.4 490V461.21Q330.4 458.21 333.4 458.21H343.4Q346.4 458.21 346.4 461.21V490Z" class="f-fail"/>
+<path d="M412 490V362.12Q412 359.12 415 359.12H425Q428 359.12 428 362.12V490Z" class="f-fail"/>
+<path d="M412 357.56V335.94Q412 332.94 415 332.94H425Q428 332.94 428 335.94V357.56Z" class="f-fail" opacity=".5"/>
+<path d="M548 490V458.77Q548 455.77 551 455.77H561Q564 455.77 564 458.77V490Z" class="f-fail"/>
+<path d="M602.4 490V463.33Q602.4 460.33 605.4 460.33H615.4Q618.4 460.33 618.4 463.33V490Z" class="f-line-strong"/>
+<path d="M629.6 490V452.55Q629.6 449.55 632.6 449.55H642.6Q645.6 449.55 645.6 452.55V490Z" class="f-fail" opacity=".5"/>
+<path d="M711.2 490V458.77Q711.2 455.77 714.2 455.77H724.2Q727.2 455.77 727.2 458.77V490Z" class="f-fail"/>
+<path d="M765.6 490V455.92Q765.6 452.92 768.6 452.92H778.6Q781.6 452.92 781.6 455.92V490Z" class="f-line-strong"/>
+<path d="M792.8 490V463.33Q792.8 460.33 795.8 460.33H805.8Q808.8 460.33 808.8 463.33V490Z" class="f-fail"/>
+<path d="M93.6 452.18L120.8 455.74L148 449.06L175.2 437.49L202.4 457.07L229.6 459.3L256.8 453.06L284 465.08L311.2 458.85L338.4 450.84L365.6 457.96L392.8 446.83L420 454.85L447.2 460.63L474.4 453.95L501.6 463.75L528.8 456.62L556 448.62L583.2 453.51L610.4 459.74L637.6 454.4L664.8 461.52L692 464.63L719.2 451.73L746.4 457.51L773.6 449.5L800.8 455.29L828 452.62L855.2 462.41L882.4 458.4" class="f-none s-muted" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 4"/>
+<text x="93.6" y="510.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">29 Aug</text>
+<text x="202.4" y="510.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">02 Sep</text>
+<text x="311.2" y="510.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">06 Sep</text>
+<text x="420" y="510.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">10 Sep</text>
+<text x="528.8" y="510.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">14 Sep</text>
+<text x="637.6" y="510.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">18 Sep</text>
+<text x="746.4" y="510.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">22 Sep</text>
+<text x="882.4" y="510.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">27 Sep</text>
+<rect x="932" y="262" width="488" height="262" rx="7" class="f-surface"/>
+<path d="M1413 262A7 7 0 0 1 1420 269V517A7 7 0 0 1 1413 524H939A7 7 0 0 1 932 517V269A7 7 0 0 1 939 262M939 262H946M1090.3 262H1259.38M1406 262H1413" class="f-none s-line-strong" stroke-width="1"/>
+<text x="952" y="266.9" font-size="14" class="f-text" font-weight="600">Exit codes of invoice</text>
+<text x="1400" y="266.38" font-size="12.5" class="f-faint" text-anchor="end">46 retried · 39 recovered</text>
+<text x="952" y="310.73" font-size="13.5" class="f-text t-mono" font-weight="600" textLength="24.3">108</text>
+<text x="992" y="310.55" font-size="13" class="f-muted">transient failure</text>
+<rect x="1122" y="299" width="230" height="14" rx="3" class="f-fail"/>
+<text x="1360" y="310.38" font-size="12.5" class="f-text t-mono" textLength="15">46</text>
+<text x="952" y="344.73" font-size="13.5" class="f-text t-mono" font-weight="600">1</text>
+<text x="992" y="344.55" font-size="13" class="f-muted">application failure</text>
+<rect x="1122" y="333" width="20" height="14" rx="3" class="f-fail" opacity=".7"/>
+<text x="1150" y="344.38" font-size="12.5" class="f-text t-mono">4</text>
+<text x="952" y="378.73" font-size="13.5" class="f-text t-mono" font-weight="600" textLength="24.3">120</text>
+<text x="992" y="378.55" font-size="13" class="f-muted">invalid input</text>
+<rect x="1122" y="367" width="10" height="14" rx="3" class="f-fail" opacity=".7"/>
+<text x="1140" y="378.38" font-size="12.5" class="f-text t-mono">2</text>
+<text x="952" y="412.73" font-size="13.5" class="f-text t-mono" font-weight="600" textLength="24.3">137</text>
+<text x="992" y="412.55" font-size="13" class="f-muted">killed after the grace</text>
+<rect x="1122" y="401" width="5" height="14" rx="3" class="f-fail" opacity=".7"/>
+<text x="1135" y="412.38" font-size="12.5" class="f-text t-mono">1</text>
+<text x="952" y="446.73" font-size="13.5" class="f-text t-mono" font-weight="600" textLength="32.4">lost</text>
+<text x="992" y="446.55" font-size="13" class="f-muted">no exit code</text>
+<rect x="1122" y="435" width="5" height="14" rx="3" class="f-fail" opacity=".7"/>
+<text x="1135" y="446.38" font-size="12.5" class="f-text t-mono">1</text>
+<text x="952" y="484.38" font-size="12.5" class="f-faint">attempts that failed, 30 days; 108 is retried by the step's</text>
+<text x="952" y="502.38" font-size="12.5" class="f-faint">policy, the rest end the step</text>
+<rect x="20" y="538" width="900" height="262" rx="7" class="f-surface"/>
+<path d="M913 538A7 7 0 0 1 920 545V793A7 7 0 0 1 913 800H27A7 7 0 0 1 20 793V545A7 7 0 0 1 27 538M27 538H34M101.58 538H751.38M906 538H913" class="f-none s-line-strong" stroke-width="1"/>
+<text x="40" y="542.9" font-size="14" class="f-text" font-weight="600">Duration</text>
+<text x="900" y="542.38" font-size="12.5" class="f-faint" text-anchor="end">whole run, p50 · p95 · p99</text>
+<path d="M40 564h16" class="f-none s-accent" stroke-width="2" stroke-linecap="round"/>
+<text x="62" y="568.38" font-size="12.5" class="f-muted">p50</text>
+<path d="M99.38 564h16" class="f-none s-muted" stroke-width="2" stroke-linecap="round"/>
+<text x="121.38" y="568.38" font-size="12.5" class="f-muted">p95</text>
+<path d="M158.75 564h16" class="f-none s-faint" stroke-width="2" stroke-linecap="round"/>
+<text x="180.75" y="568.38" font-size="12.5" class="f-muted">p99</text>
+<path d="M218.12 564h16" class="f-none s-muted" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="240.12" y="568.38" font-size="12.5" class="f-muted">p95, previous 30 days</text>
+<path d="M80 766H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="770.02" font-size="11.5" class="f-faint t-mono" text-anchor="end">0</text>
+<path d="M80 736.33H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="740.36" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">3m</text>
+<path d="M80 706.67H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="710.69" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">6m</text>
+<path d="M80 677H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="681.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">9m</text>
+<path d="M80 647.33H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="651.36" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">12m</text>
+<path d="M80 617.67H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="621.69" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">15m</text>
+<path d="M80 588H896" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="592.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">18m</text>
+<path d="M80 699.91L108.14 702.05L136.28 696.28L164.41 691.01L192.55 697.11L220.69 697.77L248.83 695.29L276.97 701.39L305.1 702.55L333.24 696.61L361.38 694.8L389.52 697.6L417.66 698.59L445.79 695.79L473.93 700.4L502.07 701.89L530.21 696.94L558.34 695.46L586.48 694.14L614.62 697.27L642.76 696.12L670.9 700.73L699.03 701.56L727.17 696.78L755.31 697.27L783.45 694.96L811.59 695.79L839.72 696.94L867.86 700.9L896 701.72" class="f-none s-muted" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 4"/>
+<path d="M80 703.54L108.14 706.5L136.28 693.32L164.41 665.13L192.55 688.87L220.69 691.5L248.83 694.64L276.97 704.85L305.1 708.48L333.24 692.33L361.38 693.65L389.52 689.2L417.66 598.22L445.79 691.67L473.93 703.86L502.07 706.01L530.21 691.5L558.34 690.02L586.48 693.81L614.62 687.05L642.76 689.86L670.9 701.39L699.03 705.51L727.17 692.16L755.31 693.32L783.45 691.01L811.59 689.86L839.72 692.49L867.86 704.69L896 708.15" class="f-none s-faint" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M80 707.99L108.14 709.8L136.28 705.35L164.41 688.37L192.55 703.86L220.69 704.85L248.83 706.34L276.97 710.13L305.1 711.61L333.24 705.18L361.38 705.68L389.52 704.36L417.66 651.62L445.79 704.85L473.93 709.3L502.07 710.62L530.21 705.35L558.34 704.69L586.48 706.17L614.62 703.21L642.76 703.86L670.9 708.64L699.03 709.96L727.17 705.18L755.31 706.34L783.45 704.85L811.59 704.03L839.72 705.84L867.86 709.63L896 710.29" class="f-none s-muted" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M80 727.93L108.14 728.75L136.28 728.42L164.41 724.47L192.55 728.26L220.69 727.6L248.83 729.08L276.97 729.91L305.1 729.41L333.24 728.09L361.38 728.59L389.52 727.76L417.66 722.82L445.79 728.26L473.93 729.58L502.07 730.07L530.21 728.75L558.34 728.42L586.48 727.93L614.62 728.59L642.76 728.92L670.9 729.74L699.03 729.25L727.17 728.26L755.31 728.75L783.45 727.93L811.59 728.42L839.72 729.08L867.86 729.91L896 729.58" class="f-none s-accent" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="80" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">29 Aug</text>
+<text x="192.55" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">02 Sep</text>
+<text x="305.1" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">06 Sep</text>
+<text x="417.66" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">10 Sep</text>
+<text x="530.21" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">14 Sep</text>
+<text x="642.76" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">18 Sep</text>
+<text x="755.31" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">22 Sep</text>
+<text x="896" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">27 Sep</text>
+<text x="427.66" y="604.42" font-size="12" class="f-muted t-mono" textLength="230.4">10 Sep: p95 11m 34s, p99 16m 58s</text>
+<rect x="932" y="538" width="488" height="262" rx="7" class="f-surface"/>
+<path d="M1413 538A7 7 0 0 1 1420 545V793A7 7 0 0 1 1413 800H939A7 7 0 0 1 932 793V545A7 7 0 0 1 939 538M939 538H946M1029.96 538H1274.12M1406 538H1413" class="f-none s-line-strong" stroke-width="1"/>
+<text x="952" y="542.9" font-size="14" class="f-text" font-weight="600">Queue wait</text>
+<text x="1400" y="542.38" font-size="12.5" class="f-faint" text-anchor="end">created to dispatched</text>
+<path d="M952 564h16" class="f-none s-accent" stroke-width="2" stroke-linecap="round"/>
+<text x="974" y="568.38" font-size="12.5" class="f-muted">p50</text>
+<path d="M1011.38 564h16" class="f-none s-muted" stroke-width="2" stroke-linecap="round"/>
+<text x="1033.38" y="568.38" font-size="12.5" class="f-muted">p95</text>
+<path d="M988 766H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="770.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">0s</text>
+<path d="M988 730.4H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="734.42" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">10s</text>
+<path d="M988 694.8H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="698.82" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">20s</text>
+<path d="M988 659.2H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="663.23" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">30s</text>
+<path d="M988 623.6H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="627.62" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">40s</text>
+<path d="M988 588H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="592.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">50s</text>
+<path d="M988 758.52L1002.14 759.24L1016.28 754.61L1030.41 596.54L1044.55 752.47L1058.69 753.9L1072.83 754.96L1086.97 758.88L1101.1 759.59L1115.24 753.54L1129.38 754.25L1143.52 752.12L1157.66 733.6L1171.79 754.61L1185.93 758.17L1200.07 758.88L1214.21 753.9L1228.34 753.18L1242.48 754.96L1256.62 752.83L1270.76 754.25L1284.9 757.81L1299.03 758.52L1313.17 753.9L1327.31 753.54L1341.45 754.25L1355.59 752.47L1369.72 753.9L1383.86 758.17L1398 758.88" class="f-none s-muted" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M988 762.8L1002.14 763.15L1016.28 762.08L1030.41 741.79L1044.55 761.73L1058.69 762.08L1072.83 762.44L1086.97 763.15L1101.1 763.15L1115.24 761.73L1129.38 762.08L1143.52 761.73L1157.66 757.46L1171.79 762.08L1185.93 762.8L1200.07 763.15L1214.21 762.08L1228.34 761.73L1242.48 762.44L1256.62 761.73L1270.76 762.08L1284.9 762.8L1299.03 763.15L1313.17 762.08L1327.31 761.73L1341.45 762.08L1355.59 761.37L1369.72 762.08L1383.86 762.8L1398 763.15" class="f-none s-accent" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="988" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">29 Aug</text>
+<text x="1129.38" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">08 Sep</text>
+<text x="1270.76" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">18 Sep</text>
+<text x="1398" y="786.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">27 Sep</text>
+<text x="1040.41" y="604.74" font-size="12" class="f-muted">1 Sep: the namespace at max_concurrent_tasks</text>
+<rect x="20" y="814" width="900" height="262" rx="7" class="f-surface"/>
+<path d="M913 814A7 7 0 0 1 920 821V1069A7 7 0 0 1 913 1076H27A7 7 0 0 1 20 1069V821A7 7 0 0 1 27 814M27 814H34M185.3 814H774.5M906 814H913" class="f-none s-line-strong" stroke-width="1"/>
+<text x="40" y="818.9" font-size="14" class="f-text" font-weight="600">invoice by hour of day</text>
+<text x="900" y="818.38" font-size="12.5" class="f-faint" text-anchor="end">p50 duration, 30 days</text>
+<rect x="40.5" y="828.5" width="119" height="27" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="52" y="846.55" font-size="13" class="f-text t-mono" textLength="54.6">invoice</text>
+<path transform="translate(136 834)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="84" y="883.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="21.6">Mon</text>
+<rect x="97" y="868" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="130.5" y="868" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="164" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="197.5" y="868" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="231" y="868" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="264.5" y="868" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="298" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="331.5" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="365" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="398.5" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".48"/>
+<rect x="432" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="465.5" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="499" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="532.5" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="566" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="599.5" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="633" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="666.5" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="700" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="733.5" y="868" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="767" y="868" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="800.5" y="868" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="834" y="868" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="867.5" y="868" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<text x="84" y="908.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="21.6">Tue</text>
+<rect x="97" y="893" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="130.5" y="893" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="164" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="197.5" y="893" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="231" y="893" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="264.5" y="893" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="298" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="331.5" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="365" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="398.5" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".48"/>
+<rect x="432" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="465.5" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="499" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="532.5" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="566" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="599.5" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="633" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="666.5" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="700" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="733.5" y="893" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="767" y="893" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="800.5" y="893" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="834" y="893" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="867.5" y="893" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<text x="84" y="933.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="21.6">Wed</text>
+<rect x="97" y="918" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="130.5" y="918" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="164" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="197.5" y="918" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="231" y="918" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="264.5" y="918" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="298" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="331.5" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="365" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="398.5" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".48"/>
+<rect x="432" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="465.5" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="499" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="532.5" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="566" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="599.5" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="633" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="666.5" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="700" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="733.5" y="918" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="767" y="918" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="800.5" y="918" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="834" y="918" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="867.5" y="918" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<text x="84" y="958.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="21.6">Thu</text>
+<rect x="97" y="943" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="130.5" y="943" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="164" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="197.5" y="943" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="231" y="943" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="264.5" y="943" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="298" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="331.5" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".9"/>
+<rect x="365" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".9"/>
+<rect x="398.5" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".48"/>
+<rect x="432" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="465.5" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="499" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="532.5" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="566" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="599.5" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="633" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="666.5" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="700" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="733.5" y="943" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="767" y="943" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="800.5" y="943" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="834" y="943" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="867.5" y="943" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<text x="84" y="983.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="21.6">Fri</text>
+<rect x="97" y="968" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="130.5" y="968" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="164" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="197.5" y="968" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="231" y="968" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="264.5" y="968" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="298" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="331.5" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="365" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="398.5" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".48"/>
+<rect x="432" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="465.5" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="499" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="532.5" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="566" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="599.5" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="633" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="666.5" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="700" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="733.5" y="968" width="31.5" height="22" rx="3" class="f-accent" opacity=".3"/>
+<rect x="767" y="968" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="800.5" y="968" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="834" y="968" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="867.5" y="968" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<text x="84" y="1008.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="21.6">Sat</text>
+<rect x="97" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="130.5" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="164" y="993" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="197.5" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="231" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="264.5" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="298" y="993" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="331.5" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="365" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="398.5" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="432" y="993" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="465.5" y="993" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="499" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="532.5" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="566" y="993" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="599.5" y="993" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="633" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="666.5" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="700" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="733.5" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="767" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="800.5" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="834" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="867.5" y="993" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<text x="84" y="1033.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="21.6">Sun</text>
+<rect x="97" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="130.5" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="164" y="1018" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="197.5" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="231" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="264.5" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="298" y="1018" width="31.5" height="22" rx="3" class="f-accent" opacity=".68"/>
+<rect x="331.5" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="365" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="398.5" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="432" y="1018" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="465.5" y="1018" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="499" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="532.5" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="566" y="1018" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="599.5" y="1018" width="31.5" height="22" rx="3" class="f-accent" opacity=".14"/>
+<rect x="633" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="666.5" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="700" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="733.5" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="767" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="800.5" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="834" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<rect x="867.5" y="1018" width="31.5" height="22" rx="3" class="f-sunken" opacity=".6"/>
+<text x="112.75" y="1057.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="13.8">00</text>
+<text x="213.25" y="1057.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="13.8">03</text>
+<text x="313.75" y="1057.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="13.8">06</text>
+<text x="414.25" y="1057.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="13.8">09</text>
+<text x="514.75" y="1057.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="13.8">12</text>
+<text x="615.25" y="1057.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="13.8">15</text>
+<text x="715.75" y="1057.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="13.8">18</text>
+<text x="816.25" y="1057.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="13.8">21</text>
+<text x="180" y="846.2" font-size="12" class="f-faint">p50</text>
+<rect x="210.52" y="836" width="22" height="12" rx="2" class="f-accent" opacity=".14"/>
+<text x="238.52" y="846.02" font-size="11.5" class="f-muted t-mono" textLength="41.4">2m 30s</text>
+<rect x="293.92" y="836" width="22" height="12" rx="2" class="f-accent" opacity=".3"/>
+<text x="321.92" y="846.02" font-size="11.5" class="f-muted t-mono" textLength="41.4">3m 00s</text>
+<rect x="377.32" y="836" width="22" height="12" rx="2" class="f-accent" opacity=".48"/>
+<text x="405.32" y="846.02" font-size="11.5" class="f-muted t-mono" textLength="41.4">3m 30s</text>
+<rect x="460.72" y="836" width="22" height="12" rx="2" class="f-accent" opacity=".68"/>
+<text x="488.72" y="846.02" font-size="11.5" class="f-muted t-mono" textLength="41.4">4m 00s</text>
+<rect x="544.12" y="836" width="22" height="12" rx="2" class="f-accent" opacity=".9"/>
+<text x="572.12" y="846.02" font-size="11.5" class="f-muted t-mono" textLength="55.2">≥ 4m 30s</text>
+<rect x="641.32" y="836" width="22" height="12" rx="2" class="f-sunken"/>
+<text x="669.32" y="846.2" font-size="12" class="f-muted">no run</text>
+<rect x="330.75" y="942.25" width="33" height="23.5" rx="3.5" class="f-none s-text" stroke-width="1.5"/>
+<rect x="932" y="814" width="488" height="262" rx="7" class="f-surface"/>
+<path d="M1413 814A7 7 0 0 1 1420 821V1069A7 7 0 0 1 1413 1076H939A7 7 0 0 1 932 1069V821A7 7 0 0 1 939 814M939 814H946M1045.5 814H1211.62M1406 814H1413" class="f-none s-line-strong" stroke-width="1"/>
+<text x="952" y="818.9" font-size="14" class="f-text" font-weight="600">Items refused</text>
+<text x="1400" y="818.38" font-size="12.5" class="f-faint" text-anchor="end">851 rejected, 197 error, of 62,292</text>
+<path d="M952 840h16" class="f-none s-wait" stroke-width="2" stroke-linecap="round"/>
+<text x="974" y="844.38" font-size="12.5" class="f-muted">rejected by normalize</text>
+<path d="M1108.25 840h16" class="f-none s-fail" stroke-width="2" stroke-linecap="round"/>
+<text x="1130.25" y="844.38" font-size="12.5" class="f-muted">error from invoice</text>
+<path d="M988 1042H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="1046.03" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">0%</text>
+<path d="M988 997.5H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="1001.52" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">1%</text>
+<path d="M988 953H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="957.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">2%</text>
+<path d="M988 908.5H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="912.52" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">3%</text>
+<path d="M988 864H1398" class="f-none s-line" stroke-width="1"/>
+<text x="980" y="868.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">4%</text>
+<path d="M988 984.15L1002.14 993.05L1016.28 979.7L1030.41 961.9L1044.55 975.25L1058.69 984.15L1072.83 979.7L1086.97 988.6L1101.1 997.5L1115.24 970.8L1129.38 979.7L1143.52 984.15L1157.66 975.25L1171.79 979.7L1185.93 988.6L1200.07 993.05L1214.21 984.15L1228.34 975.25L1242.48 979.7L1256.62 970.8L1270.76 984.15L1284.9 988.6L1299.03 993.05L1313.17 979.7L1327.31 975.25L1341.45 984.15L1355.59 979.7L1369.72 975.25L1383.86 988.6L1398 984.15" class="f-none s-wait" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M988 1033.1L1002.14 1037.55L1016.28 1028.65L1030.41 1024.2L1044.55 1033.1L1058.69 1033.1L1072.83 1028.65L1086.97 1037.55L1101.1 1037.55L1115.24 1033.1L1129.38 1028.65L1143.52 1033.1L1157.66 912.95L1171.79 1028.65L1185.93 1037.55L1200.07 1037.55L1214.21 1033.1L1228.34 1028.65L1242.48 1033.1L1256.62 1033.1L1270.76 1028.65L1284.9 1037.55L1299.03 1037.55L1313.17 1033.1L1327.31 1033.1L1341.45 1028.65L1355.59 1033.1L1369.72 1033.1L1383.86 1037.55L1398 1037.55" class="f-none s-fail" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="988" y="1062.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">29 Aug</text>
+<text x="1129.38" y="1062.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">08 Sep</text>
+<text x="1270.76" y="1062.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">18 Sep</text>
+<text x="1398" y="1062.03" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">27 Sep</text>
+<path d="M0 1098H1440V1121a9 9 0 0 1-9 9H9a9 9 0 0 1-9-9z" class="f-surface"/>
+<path d="M0 1098.5H1440" class="f-none s-line" stroke-width="1"/>
+<rect x="18.5" y="1104.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="24" y="1118.2" font-size="12" class="f-text t-mono" font-weight="700">/</text>
+<text x="44.2" y="1118.55" font-size="13" class="f-muted">Search</text>
+<rect x="104.04" y="1104.5" width="32.6" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="109.54" y="1118.2" font-size="12" class="f-text t-mono" font-weight="700" textLength="21.6">[ ]</text>
+<text x="144.14" y="1118.55" font-size="13" class="f-muted">Range</text>
+<rect x="200.99" y="1104.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="206.49" y="1118.2" font-size="12" class="f-text t-mono" font-weight="700">e</text>
+<text x="226.69" y="1118.55" font-size="13" class="f-muted">Export</text>
+<rect x="283.67" y="1104.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="289.17" y="1118.2" font-size="12" class="f-text t-mono" font-weight="700">?</text>
+<text x="309.37" y="1118.55" font-size="13" class="f-muted">Keys</text>
+<text x="1422" y="1118.38" font-size="12.5" class="f-faint t-mono" text-anchor="end" textLength="112.5">agentiik v0.6.0</text>
+<rect x="440" y="306" width="222.04" height="160" rx="6" class="f-raised"/>
+<path d="M656.04 306A6 6 0 0 1 662.04 312V460A6 6 0 0 1 656.04 466H446A6 6 0 0 1 440 460V312A6 6 0 0 1 446 306M446 306H656.04" class="f-none s-line-strong" stroke-width="1.25"/>
+<text x="454" y="328.38" font-size="12.5" class="f-text" font-weight="600">Thu 10 Sep · 17 runs</text>
+<rect x="455" y="341" width="10" height="10" rx="2" class="f-fail"/>
+<text x="474" y="350.38" font-size="12.5" class="f-muted">failed</text>
+<text x="648.04" y="350.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="67.5">5 · 29.4%</text>
+<rect x="455" y="361" width="10" height="10" rx="2" class="f-fail" opacity=".5"/>
+<text x="474" y="370.38" font-size="12.5" class="f-muted">timed_out</text>
+<text x="648.04" y="370.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="60">1 · 5.9%</text>
+<rect x="455" y="381" width="10" height="10" rx="2" class="f-line-strong"/>
+<text x="474" y="390.38" font-size="12.5" class="f-muted">cancelled</text>
+<text x="648.04" y="390.38" font-size="12.5" class="f-text t-mono" text-anchor="end">0</text>
+<rect x="455" y="401" width="10" height="10" rx="2" class="f-ok"/>
+<text x="474" y="410.38" font-size="12.5" class="f-muted">succeeded</text>
+<text x="648.04" y="410.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="75">11 · 64.7%</text>
+<path d="M454 426h12" class="f-none s-muted" stroke-width="1.5" stroke-dasharray="3 2"/>
+<text x="474" y="430.38" font-size="12.5" class="f-muted">previous period</text>
+<text x="648.04" y="430.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="30">7.9%</text>
+<path d="M441 440H661.04" class="f-none s-line" stroke-width="1"/>
+<text x="454" y="459.2" font-size="12" class="f-accent" font-weight="500">Open the 6 runs that did not succeed</text>
+<path transform="translate(422 395.76)" d="M0 0V17.5L4.6 13.3L7.7 20.2L10.6 18.9L7.6 12.2H13.6Z" class="f-text s-raised" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="221" y="912" width="252.5" height="26" rx="5" class="f-text"/>
+<text x="231" y="929.38" font-size="12.5" class="f-bg t-mono" textLength="232.5">Thu 07:00 · p50 4m 58s · 9 runs</text>
+</g>
+<rect x=".5" y=".5" width="1439" height="1175" rx="10" class="f-none s-line-strong"/>
+</svg>
+    <figcaption><b>A workflow, for the nerds.</b> Thirty days of <code>monthly-invoicing</code> against the thirty before: the day five runs of seventeen failed, read exactly under the pointer, the exit codes behind the retries, the percentiles, the queue wait, the hours <code>invoice</code> runs slowest and the items refused. A mockup of what v0.6.0 builds.</figcaption>
+  </figure>
+  <figure class="console">
+    <svg class="mock web" viewBox="0 0 1440 1016" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mockup of the web console&#x27;s statistics of the namespace finance over the last seven days, a bucket an hour, seen by chloe, its owner. Three charts, each against its limit drawn as a dashed red line: runs per hour as bars under max_runs_per_hour, 120, with the hour on Thursday 24 September at 14:00 where 120 runs were created and 9 refused with 429, its readout naming ledger-export&#x27;s webhook; tasks in flight under max_concurrent_tasks, 32, the pointer on the same hour, held at the limit for 41 minutes while 318 tasks waited; and artifact bytes rising to 334 GiB under max_artifact_bytes, 500 GiB, dipping at each night&#x27;s purge. On the right, each quota as it stands with a meter, the allowed runner pools, and when storage meets its bound at this rate.">
+<rect x=".5" y=".5" width="1439" height="1015" rx="10" class="f-bg"/>
+<path d="M.5 46V10.5a10 10 0 0 1 10-10h1419a10 10 0 0 1 10 10V46z" class="f-raised"/>
+<path d="M.5 45.5H1439.5" class="f-none s-line"/>
+<circle cx="20" cy="23.0" r="5.5" class="f-line-strong"/>
+<circle cx="38" cy="23.0" r="5.5" class="f-line-strong"/>
+<circle cx="56" cy="23.0" r="5.5" class="f-line-strong"/>
+<path transform="translate(80 15)" d="M2.5 3.5h11v9h-11zM6.5 3.5v9" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(112 15)" d="M10 3.5 5.5 8l4.5 4.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(136 15)" d="M6 3.5l4.5 4.5L6 12.5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="440.5" y="8.5" width="559" height="29" rx="8" class="f-bg s-line" stroke-width="1"/>
+<path transform="translate(589.12 15) scale(0.94)" d="M4.5 7.5h7v6h-7zM6 7.5V5.5a2 2 0 0 1 4 0v2" class="f-none s-muted" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="610.12" y="27.73" font-size="13.5" class="f-text" font-weight="500">agentiik.example.com</text>
+<text x="744.72" y="27.73" font-size="13.5" class="f-muted">/finance/statistics</text>
+<path transform="translate(973 15)" d="M12.8 8a4.8 4.8 0 1 1-1.4-3.4M12.8 2.8v2.6h-2.6" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1348 15)" d="M8 2.5v8M5 5.5 8 2.5l3 3M4 8.5v5h8v-5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1378 15)" d="M8 3v10M3 8h10" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1406 15)" d="M3.5 3.5h9v9h-9zM6 1.8h7.7v7.7" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(0 46)">
+<rect x="0" y="0" width="1440" height="52" class="f-surface"/>
+<path d="M0 51.5H1440" class="f-none s-line" stroke-width="1"/>
+<rect x="20" y="18" width="18" height="4.5" rx="1" class="f-accent"/><rect x="20" y="24.5" width="8" height="4.5" rx="1" class="f-accent" opacity=".62"/><rect x="30" y="24.5" width="8" height="4.5" rx="1" class="f-accent" opacity=".62"/><rect x="20" y="31" width="18" height="2.5" rx="1" class="f-accent" opacity=".3"/>
+<text x="46" y="31.77" font-size="16.5" class="f-text" font-weight="700" letter-spacing="-.33">agentiik</text>
+<rect x="134.5" y="11.5" width="95.7" height="29" rx="5" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="145" y="30.73" font-size="13.5" class="f-accent t-mono" font-weight="600" textLength="56.7">finance</text>
+<path transform="translate(207.7 18)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="252.7" y="30.9" font-size="14" class="f-muted" font-weight="500">Runs</text>
+<text x="316.02" y="30.9" font-size="14" class="f-muted" font-weight="500">Workflows</text>
+<rect x="401.3" y="11.5" width="83.06" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="412.8" y="30.9" font-size="14" class="f-text" font-weight="600">Statistics</text>
+<text x="502.86" y="30.9" font-size="14" class="f-muted" font-weight="500">Bricks</text>
+<text x="573.04" y="30.9" font-size="14" class="f-muted" font-weight="500">Sharing</text>
+<text x="652.32" y="30.9" font-size="14" class="f-muted" font-weight="500">Settings</text>
+<path transform="translate(1408 18)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1402" y="30.73" font-size="13.5" class="f-text t-mono" font-weight="600" text-anchor="end" textLength="40.5">chloe</text>
+<circle cx="1341.5" cy="26" r="12" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="1341.5" y="30.38" font-size="12.5" class="f-accent" font-weight="600" text-anchor="middle">C</text>
+<path transform="translate(1297.5 18)" d="M4 11V7.5a4 4 0 0 1 8 0V11l1.2 1.5H2.8zM6.5 14h3" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1310.5" cy="18" r="7" class="f-wait"/>
+<text x="1310.5" y="21.68" font-size="10.5" class="f-bg" font-weight="700" text-anchor="middle">1</text>
+<text x="1273.5" y="30.73" font-size="13.5" class="f-ok" font-weight="500" text-anchor="end">live</text>
+<circle cx="1243.58" cy="26" r="3.4" class="f-ok"/>
+<rect x="933.08" y="10.5" width="289" height="31" rx="5" class="f-bg s-line-strong" stroke-width="1"/>
+<path transform="translate(942.58 18)" d="M7 2.5a4.5 4.5 0 1 1 0 9a4.5 4.5 0 1 1 0-9zM10.4 10.4 13.5 13.5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="966.58" y="30.73" font-size="13.5" class="f-faint">Search runs and workflows</text>
+<rect x="1197.17" y="16.5" width="16.9" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="1202.17" y="30.02" font-size="11.5" class="f-muted t-mono">/</text>
+<rect x="0" y="52" width="1440" height="48" class="f-bg"/>
+<path d="M0 99.5H1440" class="f-none s-line" stroke-width="1"/>
+<text x="22" y="80.9" font-size="14" class="f-text t-mono" font-weight="700" textLength="58.8">finance</text>
+<text x="114.8" y="80.9" font-size="14" class="f-muted" font-weight="500">Workflows</text>
+<text x="209.58" y="80.9" font-size="14" class="f-text" font-weight="600">Quotas</text>
+<rect x="207.58" y="97" width="51.18" height="2.5" rx="1" class="f-accent"/>
+<text x="284.76" y="80.9" font-size="14" class="f-muted" font-weight="500">Storage</text>
+<rect x="20.5" y="117.5" width="291.73" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="33" y="136.72" font-size="13.5" class="f-text" font-weight="500">24 hours</text>
+<rect x="101.69" y="119.5" width="60.69" height="25" rx="4" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="112.19" y="136.72" font-size="13.5" class="f-accent" font-weight="600">7 days</text>
+<text x="177.88" y="136.72" font-size="13.5" class="f-text" font-weight="500">30 days</text>
+<text x="251.53" y="136.72" font-size="13.5" class="f-text" font-weight="500">Custom</text>
+<text x="328.73" y="136.55" font-size="13" class="f-faint">20 Sep 07:00 to 27 Sep 06:00 · a bucket an hour</text>
+<rect x="630.57" y="123.5" width="29" height="17" rx="8.5" class="f-line-strong"/>
+<circle cx="639.07" cy="132" r="6" class="f-raised"/>
+<text x="668.07" y="136.72" font-size="13.5" class="f-text">Compare with the previous 7 days</text>
+<rect x="1335.24" y="117.5" width="84.26" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(1345.74 124)" d="M8 2.5v8M4.8 7.5 8 10.7l3.2-3.2M3 13.5h10" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1369.74" y="136.72" font-size="13.5" class="f-text" font-weight="500">JSON</text>
+<rect x="1251.43" y="117.5" width="74.81" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(1261.93 124)" d="M8 2.5v8M4.8 7.5 8 10.7l3.2-3.2M3 13.5h10" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1285.93" y="136.72" font-size="13.5" class="f-text" font-weight="500">CSV</text>
+<text x="1238.93" y="136.55" font-size="13" class="f-faint" text-anchor="end">Export the series</text>
+<rect x="20" y="158" width="1030" height="246" rx="7" class="f-surface"/>
+<path d="M1043 158A7 7 0 0 1 1050 165V397A7 7 0 0 1 1043 404H27A7 7 0 0 1 20 397V165A7 7 0 0 1 27 158M27 158H34M136.3 158H795.5M1036 158H1043" class="f-none s-line-strong" stroke-width="1"/>
+<text x="40" y="162.9" font-size="14" class="f-text" font-weight="600">Runs per hour</text>
+<text x="1030" y="162.38" font-size="12.5" class="f-faint" text-anchor="end">every trigger, against max_runs_per_hour</text>
+<rect x="43" y="179" width="10" height="10" rx="2" class="f-muted"/>
+<text x="62" y="188.38" font-size="12.5" class="f-muted">created</text>
+<rect x="123.12" y="179" width="10" height="10" rx="2" class="f-fail"/>
+<text x="142.12" y="188.38" font-size="12.5" class="f-muted">refused with 429</text>
+<path d="M249.12 184h16" class="f-none s-fail" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="271.12" y="188.38" font-size="12.5" class="f-muted">max_runs_per_hour</text>
+<path d="M80 372H1006" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="376.02" font-size="11.5" class="f-faint t-mono" text-anchor="end">0</text>
+<path d="M80 325.14H1006" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="329.17" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">40</text>
+<path d="M80 278.29H1006" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="282.31" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">80</text>
+<path d="M80 231.43H1006" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="235.45" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="20.7">120</text>
+<path d="M80.96 372V366.47Q80.96 364.97 82.46 364.97H83.06Q84.56 364.97 84.56 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M86.47 372V367.64Q86.47 366.14 87.97 366.14H88.57Q90.07 366.14 90.07 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M91.98 372V368.81Q91.98 367.31 93.48 367.31H94.08Q95.58 367.31 95.58 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M97.49 372V369.99Q97.49 368.49 98.99 368.49H99.59Q101.09 368.49 101.09 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M103 372V366.47Q103 364.97 104.5 364.97H105.1Q106.6 364.97 106.6 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M108.52 372V367.64Q108.52 366.14 110.02 366.14H110.62Q112.12 366.14 112.12 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M114.03 372V368.81Q114.03 367.31 115.53 367.31H116.13Q117.63 367.31 117.63 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M119.54 372V369.99Q119.54 368.49 121.04 368.49H121.64Q123.14 368.49 123.14 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M125.05 372V366.47Q125.05 364.97 126.55 364.97H127.15Q128.65 364.97 128.65 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M130.56 372V367.64Q130.56 366.14 132.06 366.14H132.66Q134.16 366.14 134.16 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M136.07 372V368.81Q136.07 367.31 137.57 367.31H138.17Q139.67 367.31 139.67 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M141.59 372V369.99Q141.59 368.49 143.09 368.49H143.69Q145.19 368.49 145.19 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M147.1 372V366.47Q147.1 364.97 148.6 364.97H149.2Q150.7 364.97 150.7 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M152.61 372V367.64Q152.61 366.14 154.11 366.14H154.71Q156.21 366.14 156.21 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M158.12 372V368.81Q158.12 367.31 159.62 367.31H160.22Q161.72 367.31 161.72 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M163.63 372V369.99Q163.63 368.49 165.13 368.49H165.73Q167.23 368.49 167.23 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M169.15 372V366.47Q169.15 364.97 170.65 364.97H171.25Q172.75 364.97 172.75 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M174.66 372V369.99Q174.66 368.49 176.16 368.49H176.76Q178.26 368.49 178.26 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M180.17 372V366.47Q180.17 364.97 181.67 364.97H182.27Q183.77 364.97 183.77 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M185.68 372V367.64Q185.68 366.14 187.18 366.14H187.78Q189.28 366.14 189.28 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M191.19 372V368.81Q191.19 367.31 192.69 367.31H193.29Q194.79 367.31 194.79 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M196.71 372V369.99Q196.71 368.49 198.21 368.49H198.81Q200.31 368.49 200.31 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M202.22 372V366.47Q202.22 364.97 203.72 364.97H204.32Q205.82 364.97 205.82 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M207.73 372V346.56Q207.73 345.06 209.23 345.06H209.83Q211.33 345.06 211.33 346.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M213.24 372V357.1Q213.24 355.6 214.74 355.6H215.34Q216.84 355.6 216.84 357.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M218.75 372V337.19Q218.75 335.69 220.25 335.69H220.85Q222.35 335.69 222.35 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M224.27 372V316.1Q224.27 314.6 225.77 314.6H226.37Q227.87 314.6 227.87 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M229.78 372V347.73Q229.78 346.23 231.28 346.23H231.88Q233.38 346.23 233.38 347.73V372Z" class="f-muted" opacity=".55"/>
+<path d="M235.29 372V326.64Q235.29 325.14 236.79 325.14H237.39Q238.89 325.14 238.89 326.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M240.8 372V305.56Q240.8 304.06 242.3 304.06H242.9Q244.4 304.06 244.4 305.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M246.31 372V337.19Q246.31 335.69 247.81 335.69H248.41Q249.91 335.69 249.91 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M251.82 372V316.1Q251.82 314.6 253.32 314.6H253.92Q255.42 314.6 255.42 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M257.34 372V347.73Q257.34 346.23 258.84 346.23H259.44Q260.94 346.23 260.94 347.73V372Z" class="f-muted" opacity=".55"/>
+<path d="M262.85 372V326.64Q262.85 325.14 264.35 325.14H264.95Q266.45 325.14 266.45 326.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M268.36 372V305.56Q268.36 304.06 269.86 304.06H270.46Q271.96 304.06 271.96 305.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M273.87 372V337.19Q273.87 335.69 275.37 335.69H275.97Q277.47 335.69 277.47 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M279.38 372V357.1Q279.38 355.6 280.88 355.6H281.48Q282.98 355.6 282.98 357.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M284.9 372V358.27Q284.9 356.77 286.4 356.77H287Q288.5 356.77 288.5 358.27V372Z" class="f-muted" opacity=".55"/>
+<path d="M290.41 372V359.44Q290.41 357.94 291.91 357.94H292.51Q294.01 357.94 294.01 359.44V372Z" class="f-muted" opacity=".55"/>
+<path d="M295.92 372V367.64Q295.92 366.14 297.42 366.14H298.02Q299.52 366.14 299.52 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M301.43 372V368.81Q301.43 367.31 302.93 367.31H303.53Q305.03 367.31 305.03 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M306.94 372V368.81Q306.94 367.31 308.44 367.31H309.04Q310.54 367.31 310.54 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M312.46 372V369.99Q312.46 368.49 313.96 368.49H314.56Q316.06 368.49 316.06 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M317.97 372V366.47Q317.97 364.97 319.47 364.97H320.07Q321.57 364.97 321.57 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M323.48 372V367.64Q323.48 366.14 324.98 366.14H325.58Q327.08 366.14 327.08 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M328.99 372V368.81Q328.99 367.31 330.49 367.31H331.09Q332.59 367.31 332.59 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M334.5 372V369.99Q334.5 368.49 336 368.49H336.6Q338.1 368.49 338.1 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M340.02 372V345.39Q340.02 343.89 341.52 343.89H342.12Q343.62 343.89 343.62 345.39V372Z" class="f-muted" opacity=".55"/>
+<path d="M345.53 372V362.96Q345.53 361.46 347.03 361.46H347.63Q349.13 361.46 349.13 362.96V372Z" class="f-muted" opacity=".55"/>
+<path d="M351.04 372V305.56Q351.04 304.06 352.54 304.06H353.14Q354.64 304.06 354.64 305.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M356.55 372V337.19Q356.55 335.69 358.05 335.69H358.65Q360.15 335.69 360.15 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M362.06 372V316.1Q362.06 314.6 363.56 314.6H364.16Q365.66 314.6 365.66 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M367.57 372V347.73Q367.57 346.23 369.07 346.23H369.68Q371.18 346.23 371.18 347.73V372Z" class="f-muted" opacity=".55"/>
+<path d="M373.09 372V326.64Q373.09 325.14 374.59 325.14H375.19Q376.69 325.14 376.69 326.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M378.6 372V305.56Q378.6 304.06 380.1 304.06H380.7Q382.2 304.06 382.2 305.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M384.11 372V337.19Q384.11 335.69 385.61 335.69H386.21Q387.71 335.69 387.71 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M389.62 372V316.1Q389.62 314.6 391.12 314.6H391.72Q393.22 314.6 393.22 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M395.13 372V347.73Q395.13 346.23 396.63 346.23H397.23Q398.73 346.23 398.73 347.73V372Z" class="f-muted" opacity=".55"/>
+<path d="M400.65 372V326.64Q400.65 325.14 402.15 325.14H402.75Q404.25 325.14 404.25 326.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M406.16 372V305.56Q406.16 304.06 407.66 304.06H408.26Q409.76 304.06 409.76 305.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M411.67 372V362.96Q411.67 361.46 413.17 361.46H413.77Q415.27 361.46 415.27 362.96V372Z" class="f-muted" opacity=".55"/>
+<path d="M417.18 372V357.1Q417.18 355.6 418.68 355.6H419.28Q420.78 355.6 420.78 357.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M422.69 372V358.27Q422.69 356.77 424.19 356.77H424.79Q426.29 356.77 426.29 358.27V372Z" class="f-muted" opacity=".55"/>
+<path d="M428.21 372V366.47Q428.21 364.97 429.71 364.97H430.31Q431.81 364.97 431.81 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M433.72 372V367.64Q433.72 366.14 435.22 366.14H435.82Q437.32 366.14 437.32 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M439.23 372V367.64Q439.23 366.14 440.73 366.14H441.33Q442.83 366.14 442.83 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M444.74 372V368.81Q444.74 367.31 446.24 367.31H446.84Q448.34 367.31 448.34 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M450.25 372V369.99Q450.25 368.49 451.75 368.49H452.35Q453.85 368.49 453.85 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M455.77 372V366.47Q455.77 364.97 457.27 364.97H457.87Q459.37 364.97 459.37 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M461.28 372V367.64Q461.28 366.14 462.78 366.14H463.38Q464.88 366.14 464.88 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M466.79 372V368.81Q466.79 367.31 468.29 367.31H468.89Q470.39 367.31 470.39 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M472.3 372V344.21Q472.3 342.71 473.8 342.71H474.4Q475.9 342.71 475.9 344.21V372Z" class="f-muted" opacity=".55"/>
+<path d="M477.81 372V361.79Q477.81 360.29 479.31 360.29H479.91Q481.41 360.29 481.41 361.79V372Z" class="f-muted" opacity=".55"/>
+<path d="M483.32 372V326.64Q483.32 325.14 484.82 325.14H485.43Q486.93 325.14 486.93 326.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M488.84 372V305.56Q488.84 304.06 490.34 304.06H490.94Q492.44 304.06 492.44 305.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M494.35 372V337.19Q494.35 335.69 495.85 335.69H496.45Q497.95 335.69 497.95 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M499.86 372V316.1Q499.86 314.6 501.36 314.6H501.96Q503.46 314.6 503.46 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M505.37 372V347.73Q505.37 346.23 506.87 346.23H507.47Q508.97 346.23 508.97 347.73V372Z" class="f-muted" opacity=".55"/>
+<path d="M510.88 372V326.64Q510.88 325.14 512.38 325.14H512.98Q514.48 325.14 514.48 326.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M516.4 372V305.56Q516.4 304.06 517.9 304.06H518.5Q520 304.06 520 305.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M521.91 372V337.19Q521.91 335.69 523.41 335.69H524.01Q525.51 335.69 525.51 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M527.42 372V316.1Q527.42 314.6 528.92 314.6H529.52Q531.02 314.6 531.02 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M532.93 372V347.73Q532.93 346.23 534.43 346.23H535.03Q536.53 346.23 536.53 347.73V372Z" class="f-muted" opacity=".55"/>
+<path d="M538.44 372V326.64Q538.44 325.14 539.94 325.14H540.54Q542.04 325.14 542.04 326.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M543.96 372V361.79Q543.96 360.29 545.46 360.29H546.06Q547.56 360.29 547.56 361.79V372Z" class="f-muted" opacity=".55"/>
+<path d="M549.47 372V362.96Q549.47 361.46 550.97 361.46H551.57Q553.07 361.46 553.07 362.96V372Z" class="f-muted" opacity=".55"/>
+<path d="M554.98 372V357.1Q554.98 355.6 556.48 355.6H557.08Q558.58 355.6 558.58 357.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M560.49 372V369.99Q560.49 368.49 561.99 368.49H562.59Q564.09 368.49 564.09 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M566 372V366.47Q566 364.97 567.5 364.97H568.1Q569.6 364.97 569.6 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M571.52 372V366.47Q571.52 364.97 573.02 364.97H573.62Q575.12 364.97 575.12 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M577.03 372V367.64Q577.03 366.14 578.53 366.14H579.13Q580.63 366.14 580.63 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M582.54 372V368.81Q582.54 367.31 584.04 367.31H584.64Q586.14 367.31 586.14 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M588.05 372V369.99Q588.05 368.49 589.55 368.49H590.15Q591.65 368.49 591.65 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M593.56 372V366.47Q593.56 364.97 595.06 364.97H595.66Q597.16 364.97 597.16 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M599.08 372V367.64Q599.08 366.14 600.58 366.14H601.18Q602.68 366.14 602.68 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M604.59 372V343.04Q604.59 341.54 606.09 341.54H606.69Q608.19 341.54 608.19 343.04V372Z" class="f-muted" opacity=".55"/>
+<path d="M610.1 372V360.61Q610.1 359.11 611.6 359.11H612.2Q613.7 359.11 613.7 360.61V372Z" class="f-muted" opacity=".55"/>
+<path d="M615.61 372V347.73Q615.61 346.23 617.11 346.23H617.71Q619.21 346.23 619.21 347.73V372Z" class="f-muted" opacity=".55"/>
+<path d="M621.12 372V326.64Q621.12 325.14 622.62 325.14H623.22Q624.72 325.14 624.72 326.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M626.63 372V305.56Q626.63 304.06 628.13 304.06H628.73Q630.23 304.06 630.23 305.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M632.15 372V337.19Q632.15 335.69 633.65 335.69H634.25Q635.75 335.69 635.75 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M637.66 372V316.1Q637.66 314.6 639.16 314.6H639.76Q641.26 314.6 641.26 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M643.17 372V290.33Q643.17 288.83 644.67 288.83H645.27Q646.77 288.83 646.77 290.33V372Z" class="f-muted" opacity=".55"/>
+<path d="M648.68 372V232.93Q648.68 231.43 650.18 231.43H650.78Q652.28 231.43 652.28 232.93V372Z" class="f-muted" opacity=".55"/>
+<path d="M648.68 231.43V222.39Q648.68 220.89 650.18 220.89H650.78Q652.28 220.89 652.28 222.39V231.43Z" class="f-fail"/>
+<path d="M654.19 372V259.87Q654.19 258.37 655.69 258.37H656.29Q657.79 258.37 657.79 259.87V372Z" class="f-muted" opacity=".55"/>
+<path d="M659.71 372V337.19Q659.71 335.69 661.21 335.69H661.81Q663.31 335.69 663.31 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M665.22 372V316.1Q665.22 314.6 666.72 314.6H667.32Q668.82 314.6 668.82 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M670.73 372V347.73Q670.73 346.23 672.23 346.23H672.83Q674.33 346.23 674.33 347.73V372Z" class="f-muted" opacity=".55"/>
+<path d="M676.24 372V360.61Q676.24 359.11 677.74 359.11H678.34Q679.84 359.11 679.84 360.61V372Z" class="f-muted" opacity=".55"/>
+<path d="M681.75 372V361.79Q681.75 360.29 683.25 360.29H683.85Q685.35 360.29 685.35 361.79V372Z" class="f-muted" opacity=".55"/>
+<path d="M687.27 372V362.96Q687.27 361.46 688.77 361.46H689.37Q690.87 361.46 690.87 362.96V372Z" class="f-muted" opacity=".55"/>
+<path d="M692.78 372V368.81Q692.78 367.31 694.28 367.31H694.88Q696.38 367.31 696.38 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M698.29 372V369.99Q698.29 368.49 699.79 368.49H700.39Q701.89 368.49 701.89 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M703.8 372V369.99Q703.8 368.49 705.3 368.49H705.9Q707.4 368.49 707.4 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M709.31 372V366.47Q709.31 364.97 710.81 364.97H711.41Q712.91 364.97 712.91 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M714.83 372V367.64Q714.83 366.14 716.33 366.14H716.93Q718.43 366.14 718.43 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M720.34 372V368.81Q720.34 367.31 721.84 367.31H722.44Q723.94 367.31 723.94 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M725.85 372V369.99Q725.85 368.49 727.35 368.49H727.95Q729.45 368.49 729.45 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M731.36 372V366.47Q731.36 364.97 732.86 364.97H733.46Q734.96 364.97 734.96 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M736.87 372V341.87Q736.87 340.37 738.37 340.37H738.97Q740.47 340.37 740.47 341.87V372Z" class="f-muted" opacity=".55"/>
+<path d="M742.38 372V359.44Q742.38 357.94 743.88 357.94H744.48Q745.98 357.94 745.98 359.44V372Z" class="f-muted" opacity=".55"/>
+<path d="M747.9 372V316.1Q747.9 314.6 749.4 314.6H750Q751.5 314.6 751.5 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M753.41 372V347.73Q753.41 346.23 754.91 346.23H755.51Q757.01 346.23 757.01 347.73V372Z" class="f-muted" opacity=".55"/>
+<path d="M758.92 372V326.64Q758.92 325.14 760.42 325.14H761.02Q762.52 325.14 762.52 326.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M764.43 372V305.56Q764.43 304.06 765.93 304.06H766.53Q768.03 304.06 768.03 305.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M769.94 372V337.19Q769.94 335.69 771.44 335.69H772.04Q773.54 335.69 773.54 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M775.46 372V316.1Q775.46 314.6 776.96 314.6H777.56Q779.06 314.6 779.06 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M780.97 372V347.73Q780.97 346.23 782.47 346.23H783.07Q784.57 346.23 784.57 347.73V372Z" class="f-muted" opacity=".55"/>
+<path d="M786.48 372V326.64Q786.48 325.14 787.98 325.14H788.58Q790.08 325.14 790.08 326.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M791.99 372V305.56Q791.99 304.06 793.49 304.06H794.09Q795.59 304.06 795.59 305.56V372Z" class="f-muted" opacity=".55"/>
+<path d="M797.5 372V337.19Q797.5 335.69 799 335.69H799.6Q801.1 335.69 801.1 337.19V372Z" class="f-muted" opacity=".55"/>
+<path d="M803.02 372V316.1Q803.02 314.6 804.52 314.6H805.12Q806.62 314.6 806.62 316.1V372Z" class="f-muted" opacity=".55"/>
+<path d="M808.53 372V359.44Q808.53 357.94 810.03 357.94H810.63Q812.13 357.94 812.13 359.44V372Z" class="f-muted" opacity=".55"/>
+<path d="M814.04 372V360.61Q814.04 359.11 815.54 359.11H816.14Q817.64 359.11 817.64 360.61V372Z" class="f-muted" opacity=".55"/>
+<path d="M819.55 372V361.79Q819.55 360.29 821.05 360.29H821.65Q823.15 360.29 823.15 361.79V372Z" class="f-muted" opacity=".55"/>
+<path d="M825.06 372V367.64Q825.06 366.14 826.56 366.14H827.16Q828.66 366.14 828.66 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M830.58 372V368.81Q830.58 367.31 832.08 367.31H832.68Q834.18 367.31 834.18 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M836.09 372V368.81Q836.09 367.31 837.59 367.31H838.19Q839.69 367.31 839.69 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M841.6 372V369.99Q841.6 368.49 843.1 368.49H843.7Q845.2 368.49 845.2 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M847.11 372V366.47Q847.11 364.97 848.61 364.97H849.21Q850.71 364.97 850.71 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M852.62 372V367.64Q852.62 366.14 854.12 366.14H854.72Q856.22 366.14 856.22 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M858.13 372V368.81Q858.13 367.31 859.63 367.31H860.23Q861.73 367.31 861.73 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M863.65 372V369.99Q863.65 368.49 865.15 368.49H865.75Q867.25 368.49 867.25 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M869.16 372V366.47Q869.16 364.97 870.66 364.97H871.26Q872.76 364.97 872.76 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M874.67 372V367.64Q874.67 366.14 876.17 366.14H876.77Q878.27 366.14 878.27 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M880.18 372V368.81Q880.18 367.31 881.68 367.31H882.28Q883.78 367.31 883.78 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M885.69 372V369.99Q885.69 368.49 887.19 368.49H887.79Q889.29 368.49 889.29 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M891.21 372V366.47Q891.21 364.97 892.71 364.97H893.31Q894.81 364.97 894.81 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M896.72 372V367.64Q896.72 366.14 898.22 366.14H898.82Q900.32 366.14 900.32 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M902.23 372V368.81Q902.23 367.31 903.73 367.31H904.33Q905.83 367.31 905.83 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M907.74 372V369.99Q907.74 368.49 909.24 368.49H909.84Q911.34 368.49 911.34 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M913.25 372V366.47Q913.25 364.97 914.75 364.97H915.35Q916.85 364.97 916.85 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M918.77 372V367.64Q918.77 366.14 920.27 366.14H920.87Q922.37 366.14 922.37 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M924.28 372V368.81Q924.28 367.31 925.78 367.31H926.38Q927.88 367.31 927.88 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M929.79 372V369.99Q929.79 368.49 931.29 368.49H931.89Q933.39 368.49 933.39 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M935.3 372V366.47Q935.3 364.97 936.8 364.97H937.4Q938.9 364.97 938.9 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M940.81 372V367.64Q940.81 366.14 942.31 366.14H942.91Q944.41 366.14 944.41 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M946.33 372V368.81Q946.33 367.31 947.83 367.31H948.43Q949.93 367.31 949.93 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M951.84 372V369.99Q951.84 368.49 953.34 368.49H953.94Q955.44 368.49 955.44 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M957.35 372V366.47Q957.35 364.97 958.85 364.97H959.45Q960.95 364.97 960.95 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M962.86 372V367.64Q962.86 366.14 964.36 366.14H964.96Q966.46 366.14 966.46 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M968.37 372V367.64Q968.37 366.14 969.87 366.14H970.47Q971.97 366.14 971.97 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M973.88 372V368.81Q973.88 367.31 975.38 367.31H975.98Q977.48 367.31 977.48 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M979.4 372V369.99Q979.4 368.49 980.9 368.49H981.5Q983 368.49 983 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M984.91 372V366.47Q984.91 364.97 986.41 364.97H987.01Q988.51 364.97 988.51 366.47V372Z" class="f-muted" opacity=".55"/>
+<path d="M990.42 372V367.64Q990.42 366.14 991.92 366.14H992.52Q994.02 366.14 994.02 367.64V372Z" class="f-muted" opacity=".55"/>
+<path d="M995.93 372V368.81Q995.93 367.31 997.43 367.31H998.03Q999.53 367.31 999.53 368.81V372Z" class="f-muted" opacity=".55"/>
+<path d="M1001.44 372V369.99Q1001.44 368.49 1002.94 368.49H1003.54Q1005.04 368.49 1005.04 369.99V372Z" class="f-muted" opacity=".55"/>
+<path d="M80 231.43H1006" class="f-none s-fail" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect x="84" y="212.43" width="156.9" height="16" rx="3" class="f-surface"/>
+<text x="90" y="224.45" font-size="11.5" class="f-muted t-mono" textLength="144.9">max_runs_per_hour 120</text>
+<text x="176.46" y="392.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Mon 21</text>
+<text x="308.74" y="392.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Tue 22</text>
+<text x="441.03" y="392.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Wed 23</text>
+<text x="573.32" y="392.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Thu 24</text>
+<text x="705.6" y="392.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Fri 25</text>
+<text x="837.89" y="392.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Sat 26</text>
+<text x="970.17" y="392.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Sun 27</text>
+<rect x="20" y="418" width="1030" height="246" rx="7" class="f-surface"/>
+<path d="M1043 418A7 7 0 0 1 1050 425V657A7 7 0 0 1 1043 664H27A7 7 0 0 1 20 657V425A7 7 0 0 1 27 418M27 418H34M134.48 418H686.62M1036 418H1043" class="f-none s-line-strong" stroke-width="1"/>
+<text x="40" y="422.9" font-size="14" class="f-text" font-weight="600">Tasks in flight</text>
+<text x="1030" y="422.38" font-size="12.5" class="f-faint" text-anchor="end">the most at once in each hour, against max_concurrent_tasks</text>
+<path d="M40 444h16" class="f-none s-accent" stroke-width="2" stroke-linecap="round"/>
+<text x="62" y="448.38" font-size="12.5" class="f-muted">tasks in flight</text>
+<path d="M149.88 444h16" class="f-none s-fail" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="171.88" y="448.38" font-size="12.5" class="f-muted">max_concurrent_tasks</text>
+<path d="M80 632H1006" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="636.02" font-size="11.5" class="f-faint t-mono" text-anchor="end">0</text>
+<path d="M80 591H1006" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="595.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">10</text>
+<path d="M80 550H1006" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="554.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">20</text>
+<path d="M80 509H1006" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="513.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">30</text>
+<path d="M80 468H1006" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="472.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">40</text>
+<path d="M80 595.1L85.54 611.5L91.09 599.2L96.63 615.6L102.18 603.3L107.72 619.7L113.27 607.4L118.81 595.1L124.36 611.5L129.9 599.2L135.45 615.6L140.99 603.3L146.54 619.7L152.08 607.4L157.63 595.1L163.17 611.5L168.72 599.2L174.26 619.7L179.81 607.4L185.35 595.1L190.9 611.5L196.44 599.2L201.99 615.6L207.53 541.8L213.08 574.6L218.62 591L224.17 578.7L229.71 595.1L235.26 582.8L240.8 599.2L246.35 586.9L251.89 603.3L257.44 591L262.98 578.7L268.53 595.1L274.07 582.8L279.62 615.6L285.16 603.3L290.71 619.7L296.25 607.4L301.8 595.1L307.34 615.6L312.89 603.3L318.43 619.7L323.98 607.4L329.52 595.1L335.07 611.5L340.61 537.7L346.16 574.6L351.7 586.9L357.25 603.3L362.79 591L368.34 578.7L373.88 595.1L379.43 582.8L384.97 599.2L390.51 586.9L396.06 603.3L401.6 591L407.15 578.7L412.69 611.5L418.24 599.2L423.78 615.6L429.33 603.3L434.87 619.7L440.42 611.5L445.96 599.2L451.51 615.6L457.05 603.3L462.6 619.7L468.14 607.4L473.69 533.6L479.23 574.6L484.78 582.8L490.32 599.2L495.87 586.9L501.41 603.3L506.96 591L512.5 578.7L518.05 595.1L523.59 582.8L529.14 599.2L534.68 586.9L540.23 603.3L545.77 607.4L551.32 595.1L556.86 611.5L562.41 599.2L567.95 615.6L573.5 607.4L579.04 595.1L584.59 611.5L590.13 599.2L595.68 615.6L601.22 603.3L606.77 529.5L612.31 574.6L617.86 578.7L623.4 595.1L628.95 582.8L634.49 599.2L640.04 586.9L645.58 603.3L651.13 500.8L656.67 521.3L662.22 595.1L667.76 582.8L673.31 599.2L678.85 603.3L684.4 619.7L689.94 607.4L695.49 595.1L701.03 611.5L706.57 603.3L712.12 619.7L717.66 607.4L723.21 595.1L728.75 611.5L734.3 599.2L739.84 525.4L745.39 574.6L750.93 603.3L756.48 591L762.02 578.7L767.57 595.1L773.11 582.8L778.66 599.2L784.2 586.9L789.75 603.3L795.29 591L800.84 578.7L806.38 595.1L811.93 599.2L817.47 615.6L823.02 603.3L828.56 619.7L834.11 607.4L839.65 599.2L845.2 615.6L850.74 603.3L856.29 619.7L861.83 607.4L867.38 595.1L872.92 611.5L878.47 599.2L884.01 615.6L889.56 603.3L895.1 619.7L900.65 607.4L906.19 595.1L911.74 611.5L917.28 599.2L922.83 615.6L928.37 603.3L933.92 619.7L939.46 607.4L945.01 595.1L950.55 611.5L956.1 599.2L961.64 615.6L967.19 603.3L972.73 595.1L978.28 611.5L983.82 599.2L989.37 615.6L994.91 603.3L1000.46 619.7L1006 607.4L1006 632L1000.46 632L994.91 632L989.37 632L983.82 632L978.28 632L972.73 632L967.19 632L961.64 632L956.1 632L950.55 632L945.01 632L939.46 632L933.92 632L928.37 632L922.83 632L917.28 632L911.74 632L906.19 632L900.65 632L895.1 632L889.56 632L884.01 632L878.47 632L872.92 632L867.38 632L861.83 632L856.29 632L850.74 632L845.2 632L839.65 632L834.11 632L828.56 632L823.02 632L817.47 632L811.93 632L806.38 632L800.84 632L795.29 632L789.75 632L784.2 632L778.66 632L773.11 632L767.57 632L762.02 632L756.48 632L750.93 632L745.39 632L739.84 632L734.3 632L728.75 632L723.21 632L717.66 632L712.12 632L706.57 632L701.03 632L695.49 632L689.94 632L684.4 632L678.85 632L673.31 632L667.76 632L662.22 632L656.67 632L651.13 632L645.58 632L640.04 632L634.49 632L628.95 632L623.4 632L617.86 632L612.31 632L606.77 632L601.22 632L595.68 632L590.13 632L584.59 632L579.04 632L573.5 632L567.95 632L562.41 632L556.86 632L551.32 632L545.77 632L540.23 632L534.68 632L529.14 632L523.59 632L518.05 632L512.5 632L506.96 632L501.41 632L495.87 632L490.32 632L484.78 632L479.23 632L473.69 632L468.14 632L462.6 632L457.05 632L451.51 632L445.96 632L440.42 632L434.87 632L429.33 632L423.78 632L418.24 632L412.69 632L407.15 632L401.6 632L396.06 632L390.51 632L384.97 632L379.43 632L373.88 632L368.34 632L362.79 632L357.25 632L351.7 632L346.16 632L340.61 632L335.07 632L329.52 632L323.98 632L318.43 632L312.89 632L307.34 632L301.8 632L296.25 632L290.71 632L285.16 632L279.62 632L274.07 632L268.53 632L262.98 632L257.44 632L251.89 632L246.35 632L240.8 632L235.26 632L229.71 632L224.17 632L218.62 632L213.08 632L207.53 632L201.99 632L196.44 632L190.9 632L185.35 632L179.81 632L174.26 632L168.72 632L163.17 632L157.63 632L152.08 632L146.54 632L140.99 632L135.45 632L129.9 632L124.36 632L118.81 632L113.27 632L107.72 632L102.18 632L96.63 632L91.09 632L85.54 632L80 632Z" class="f-accent" opacity=".12"/>
+<path d="M80 595.1L85.54 611.5L91.09 599.2L96.63 615.6L102.18 603.3L107.72 619.7L113.27 607.4L118.81 595.1L124.36 611.5L129.9 599.2L135.45 615.6L140.99 603.3L146.54 619.7L152.08 607.4L157.63 595.1L163.17 611.5L168.72 599.2L174.26 619.7L179.81 607.4L185.35 595.1L190.9 611.5L196.44 599.2L201.99 615.6L207.53 541.8L213.08 574.6L218.62 591L224.17 578.7L229.71 595.1L235.26 582.8L240.8 599.2L246.35 586.9L251.89 603.3L257.44 591L262.98 578.7L268.53 595.1L274.07 582.8L279.62 615.6L285.16 603.3L290.71 619.7L296.25 607.4L301.8 595.1L307.34 615.6L312.89 603.3L318.43 619.7L323.98 607.4L329.52 595.1L335.07 611.5L340.61 537.7L346.16 574.6L351.7 586.9L357.25 603.3L362.79 591L368.34 578.7L373.88 595.1L379.43 582.8L384.97 599.2L390.51 586.9L396.06 603.3L401.6 591L407.15 578.7L412.69 611.5L418.24 599.2L423.78 615.6L429.33 603.3L434.87 619.7L440.42 611.5L445.96 599.2L451.51 615.6L457.05 603.3L462.6 619.7L468.14 607.4L473.69 533.6L479.23 574.6L484.78 582.8L490.32 599.2L495.87 586.9L501.41 603.3L506.96 591L512.5 578.7L518.05 595.1L523.59 582.8L529.14 599.2L534.68 586.9L540.23 603.3L545.77 607.4L551.32 595.1L556.86 611.5L562.41 599.2L567.95 615.6L573.5 607.4L579.04 595.1L584.59 611.5L590.13 599.2L595.68 615.6L601.22 603.3L606.77 529.5L612.31 574.6L617.86 578.7L623.4 595.1L628.95 582.8L634.49 599.2L640.04 586.9L645.58 603.3L651.13 500.8L656.67 521.3L662.22 595.1L667.76 582.8L673.31 599.2L678.85 603.3L684.4 619.7L689.94 607.4L695.49 595.1L701.03 611.5L706.57 603.3L712.12 619.7L717.66 607.4L723.21 595.1L728.75 611.5L734.3 599.2L739.84 525.4L745.39 574.6L750.93 603.3L756.48 591L762.02 578.7L767.57 595.1L773.11 582.8L778.66 599.2L784.2 586.9L789.75 603.3L795.29 591L800.84 578.7L806.38 595.1L811.93 599.2L817.47 615.6L823.02 603.3L828.56 619.7L834.11 607.4L839.65 599.2L845.2 615.6L850.74 603.3L856.29 619.7L861.83 607.4L867.38 595.1L872.92 611.5L878.47 599.2L884.01 615.6L889.56 603.3L895.1 619.7L900.65 607.4L906.19 595.1L911.74 611.5L917.28 599.2L922.83 615.6L928.37 603.3L933.92 619.7L939.46 607.4L945.01 595.1L950.55 611.5L956.1 599.2L961.64 615.6L967.19 603.3L972.73 595.1L978.28 611.5L983.82 599.2L989.37 615.6L994.91 603.3L1000.46 619.7L1006 607.4" class="f-none s-accent" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M80 500.8H1006" class="f-none s-fail" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect x="84" y="481.8" width="170.7" height="16" rx="3" class="f-surface"/>
+<text x="90" y="493.82" font-size="11.5" class="f-muted t-mono" textLength="158.7">max_concurrent_tasks 32</text>
+<text x="174.26" y="652.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Mon 21</text>
+<text x="307.34" y="652.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Tue 22</text>
+<text x="440.42" y="652.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Wed 23</text>
+<text x="573.5" y="652.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Thu 24</text>
+<text x="706.57" y="652.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Fri 25</text>
+<text x="839.65" y="652.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Sat 26</text>
+<text x="972.73" y="652.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="41.4">Sun 27</text>
+<path d="M651.13 468V632" class="f-none s-muted" stroke-width="1"/>
+<circle cx="651.13" cy="500.8" r="4.5" class="f-accent s-surface" stroke-width="2"/>
+<rect x="20" y="678" width="1030" height="246" rx="7" class="f-surface"/>
+<path d="M1043 678A7 7 0 0 1 1050 685V917A7 7 0 0 1 1043 924H27A7 7 0 0 1 20 917V685A7 7 0 0 1 27 678M27 678H34M131.26 678H806M1036 678H1043" class="f-none s-line-strong" stroke-width="1"/>
+<text x="40" y="682.9" font-size="14" class="f-text" font-weight="600">Artifact bytes</text>
+<text x="1030" y="682.38" font-size="12.5" class="f-faint" text-anchor="end">live storage, against max_artifact_bytes</text>
+<path d="M40 704h16" class="f-none s-accent" stroke-width="2" stroke-linecap="round"/>
+<text x="62" y="708.38" font-size="12.5" class="f-muted">artifact bytes</text>
+<path d="M149.25 704h16" class="f-none s-fail" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="171.25" y="708.38" font-size="12.5" class="f-muted">max_artifact_bytes</text>
+<path d="M80 892H720" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="896.02" font-size="11.5" class="f-faint t-mono" text-anchor="end">0</text>
+<path d="M80 862.18H720" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="866.21" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="48.3">100 GiB</text>
+<path d="M80 832.36H720" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="836.39" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="48.3">200 GiB</text>
+<path d="M80 802.55H720" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="806.57" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="48.3">300 GiB</text>
+<path d="M80 772.73H720" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="776.75" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="48.3">400 GiB</text>
+<path d="M80 742.91H720" class="f-none s-line" stroke-width="1"/>
+<text x="72" y="746.93" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="48.3">500 GiB</text>
+<path d="M80 797.06L83.83 797.03L87.66 797.03L91.5 797L95.33 797L99.16 797L102.99 796.97L106.83 796.97L110.66 796.94L114.49 796.94L118.32 796.94L122.16 796.91L125.99 796.91L129.82 796.88L133.65 796.88L137.49 796.88L141.32 796.85L145.15 796.85L148.98 796.82L152.81 796.82L156.65 797.21L160.48 797.21L164.31 797.18L168.14 797.18L171.98 797.09L175.81 796.97L179.64 796.88L183.47 796.79L187.31 796.67L191.14 796.61L194.97 796.49L198.8 796.4L202.63 796.31L206.47 796.22L210.3 796.1L214.13 796.02L217.96 795.93L221.8 795.93L225.63 795.9L229.46 795.9L233.29 795.9L237.13 795.87L240.96 795.87L244.79 795.84L248.62 796.22L252.46 796.22L256.29 796.22L260.12 796.19L263.95 796.1L267.78 796.02L271.62 795.93L275.45 795.81L279.28 795.72L283.11 795.63L286.95 795.51L290.78 795.45L294.61 795.33L298.44 795.24L302.28 795.15L306.11 795.06L309.94 794.94L313.77 794.94L317.6 794.91L321.44 794.91L325.27 794.91L329.1 794.88L332.93 794.88L336.77 794.85L340.6 795.24L344.43 795.24L348.26 795.24L352.1 795.21L355.93 795.12L359.76 795.03L363.59 794.94L367.43 794.85L371.26 794.76L375.09 794.64L378.92 794.55L382.75 794.46L386.59 794.35L390.42 794.29L394.25 794.17L398.08 794.08L401.92 793.99L405.75 793.99L409.58 793.96L413.41 793.96L417.25 793.93L421.08 793.93L424.91 793.93L428.74 793.9L432.57 794.29L436.41 794.29L440.24 794.26L444.07 794.26L447.9 794.17L451.74 794.05L455.57 793.96L459.4 793.87L463.23 793.78L467.07 793.69L470.9 793.6L474.73 793.48L478.56 793.39L482.4 793.3L486.23 793.18L490.06 793.12L493.89 793L497.72 793L501.56 793L505.39 792.97L509.22 792.97L513.05 792.94L516.89 792.94L520.72 792.94L524.55 793.33L528.38 793.3L532.22 793.3L536.05 793.27L539.88 793.18L543.71 793.09L547.54 793L551.38 792.88L555.21 792.79L559.04 792.71L562.87 792.62L566.71 792.53L570.54 792.44L574.37 792.32L578.2 792.23L582.04 792.14L585.87 792.02L589.7 792.02L593.53 792.02L597.37 791.99L601.2 791.99L605.03 791.96L608.86 791.96L612.69 791.96L616.53 792.35L620.36 792.32L624.19 792.32L628.02 792.29L631.86 792.29L635.69 792.29L639.52 792.26L643.35 792.26L647.19 792.23L651.02 792.23L654.85 792.23L658.68 792.2L662.51 792.2L666.35 792.17L670.18 792.17L674.01 792.17L677.84 792.14L681.68 792.14L685.51 792.11L689.34 792.11L693.17 792.11L697.01 792.08L700.84 792.08L704.67 792.05L708.5 792.44L712.34 792.44L716.17 792.44L720 792.41L720 892L716.17 892L712.34 892L708.5 892L704.67 892L700.84 892L697.01 892L693.17 892L689.34 892L685.51 892L681.68 892L677.84 892L674.01 892L670.18 892L666.35 892L662.51 892L658.68 892L654.85 892L651.02 892L647.19 892L643.35 892L639.52 892L635.69 892L631.86 892L628.02 892L624.19 892L620.36 892L616.53 892L612.69 892L608.86 892L605.03 892L601.2 892L597.37 892L593.53 892L589.7 892L585.87 892L582.04 892L578.2 892L574.37 892L570.54 892L566.71 892L562.87 892L559.04 892L555.21 892L551.38 892L547.54 892L543.71 892L539.88 892L536.05 892L532.22 892L528.38 892L524.55 892L520.72 892L516.89 892L513.05 892L509.22 892L505.39 892L501.56 892L497.72 892L493.89 892L490.06 892L486.23 892L482.4 892L478.56 892L474.73 892L470.9 892L467.07 892L463.23 892L459.4 892L455.57 892L451.74 892L447.9 892L444.07 892L440.24 892L436.41 892L432.57 892L428.74 892L424.91 892L421.08 892L417.25 892L413.41 892L409.58 892L405.75 892L401.92 892L398.08 892L394.25 892L390.42 892L386.59 892L382.75 892L378.92 892L375.09 892L371.26 892L367.43 892L363.59 892L359.76 892L355.93 892L352.1 892L348.26 892L344.43 892L340.6 892L336.77 892L332.93 892L329.1 892L325.27 892L321.44 892L317.6 892L313.77 892L309.94 892L306.11 892L302.28 892L298.44 892L294.61 892L290.78 892L286.95 892L283.11 892L279.28 892L275.45 892L271.62 892L267.78 892L263.95 892L260.12 892L256.29 892L252.46 892L248.62 892L244.79 892L240.96 892L237.13 892L233.29 892L229.46 892L225.63 892L221.8 892L217.96 892L214.13 892L210.3 892L206.47 892L202.63 892L198.8 892L194.97 892L191.14 892L187.31 892L183.47 892L179.64 892L175.81 892L171.98 892L168.14 892L164.31 892L160.48 892L156.65 892L152.81 892L148.98 892L145.15 892L141.32 892L137.49 892L133.65 892L129.82 892L125.99 892L122.16 892L118.32 892L114.49 892L110.66 892L106.83 892L102.99 892L99.16 892L95.33 892L91.5 892L87.66 892L83.83 892L80 892Z" class="f-accent" opacity=".12"/>
+<path d="M80 797.06L83.83 797.03L87.66 797.03L91.5 797L95.33 797L99.16 797L102.99 796.97L106.83 796.97L110.66 796.94L114.49 796.94L118.32 796.94L122.16 796.91L125.99 796.91L129.82 796.88L133.65 796.88L137.49 796.88L141.32 796.85L145.15 796.85L148.98 796.82L152.81 796.82L156.65 797.21L160.48 797.21L164.31 797.18L168.14 797.18L171.98 797.09L175.81 796.97L179.64 796.88L183.47 796.79L187.31 796.67L191.14 796.61L194.97 796.49L198.8 796.4L202.63 796.31L206.47 796.22L210.3 796.1L214.13 796.02L217.96 795.93L221.8 795.93L225.63 795.9L229.46 795.9L233.29 795.9L237.13 795.87L240.96 795.87L244.79 795.84L248.62 796.22L252.46 796.22L256.29 796.22L260.12 796.19L263.95 796.1L267.78 796.02L271.62 795.93L275.45 795.81L279.28 795.72L283.11 795.63L286.95 795.51L290.78 795.45L294.61 795.33L298.44 795.24L302.28 795.15L306.11 795.06L309.94 794.94L313.77 794.94L317.6 794.91L321.44 794.91L325.27 794.91L329.1 794.88L332.93 794.88L336.77 794.85L340.6 795.24L344.43 795.24L348.26 795.24L352.1 795.21L355.93 795.12L359.76 795.03L363.59 794.94L367.43 794.85L371.26 794.76L375.09 794.64L378.92 794.55L382.75 794.46L386.59 794.35L390.42 794.29L394.25 794.17L398.08 794.08L401.92 793.99L405.75 793.99L409.58 793.96L413.41 793.96L417.25 793.93L421.08 793.93L424.91 793.93L428.74 793.9L432.57 794.29L436.41 794.29L440.24 794.26L444.07 794.26L447.9 794.17L451.74 794.05L455.57 793.96L459.4 793.87L463.23 793.78L467.07 793.69L470.9 793.6L474.73 793.48L478.56 793.39L482.4 793.3L486.23 793.18L490.06 793.12L493.89 793L497.72 793L501.56 793L505.39 792.97L509.22 792.97L513.05 792.94L516.89 792.94L520.72 792.94L524.55 793.33L528.38 793.3L532.22 793.3L536.05 793.27L539.88 793.18L543.71 793.09L547.54 793L551.38 792.88L555.21 792.79L559.04 792.71L562.87 792.62L566.71 792.53L570.54 792.44L574.37 792.32L578.2 792.23L582.04 792.14L585.87 792.02L589.7 792.02L593.53 792.02L597.37 791.99L601.2 791.99L605.03 791.96L608.86 791.96L612.69 791.96L616.53 792.35L620.36 792.32L624.19 792.32L628.02 792.29L631.86 792.29L635.69 792.29L639.52 792.26L643.35 792.26L647.19 792.23L651.02 792.23L654.85 792.23L658.68 792.2L662.51 792.2L666.35 792.17L670.18 792.17L674.01 792.17L677.84 792.14L681.68 792.14L685.51 792.11L689.34 792.11L693.17 792.11L697.01 792.08L700.84 792.08L704.67 792.05L708.5 792.44L712.34 792.44L716.17 792.44L720 792.41" class="f-none s-accent" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M80 742.91H720" class="f-none s-fail" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect x="84" y="723.91" width="191.4" height="16" rx="3" class="f-surface"/>
+<text x="90" y="735.93" font-size="11.5" class="f-muted t-mono" textLength="179.4">max_artifact_bytes 500 GiB</text>
+<text x="145.15" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Mon</text>
+<text x="237.13" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Tue</text>
+<text x="329.1" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Wed</text>
+<text x="421.08" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Thu</text>
+<text x="513.05" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Fri</text>
+<text x="605.03" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Sat</text>
+<text x="697.01" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Sun</text>
+<text x="716" y="780.78" font-size="12.5" class="f-text t-mono" font-weight="600" text-anchor="end" textLength="67.5">334.0 GiB</text>
+<text x="790" y="708.38" font-size="12.5" class="f-muted">added a day</text>
+<path d="M824 892H1026" class="f-none s-line" stroke-width="1"/>
+<text x="816" y="896.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">-1</text>
+<path d="M824 864.67H1026" class="f-none s-line" stroke-width="1"/>
+<text x="816" y="868.69" font-size="11.5" class="f-faint t-mono" text-anchor="end">0</text>
+<path d="M824 837.33H1026" class="f-none s-line" stroke-width="1"/>
+<text x="816" y="841.36" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">+1</text>
+<path d="M824 810H1026" class="f-none s-line" stroke-width="1"/>
+<text x="816" y="814.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">+2</text>
+<path d="M824 782.67H1026" class="f-none s-line" stroke-width="1"/>
+<text x="816" y="786.69" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">+3</text>
+<path d="M824 755.33H1026" class="f-none s-line" stroke-width="1"/>
+<text x="816" y="759.36" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">+4</text>
+<path d="M824 728H1026" class="f-none s-line" stroke-width="1"/>
+<text x="816" y="732.02" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">+5</text>
+<path d="M829.43 864.67V777.47Q829.43 774.47 832.43 774.47H844.43Q847.43 774.47 847.43 777.47V864.67Z" class="f-accent"/>
+<path d="M858.29 864.67V777.47Q858.29 774.47 861.29 774.47H873.29Q876.29 774.47 876.29 777.47V864.67Z" class="f-accent"/>
+<path d="M887.14 864.67V780.2Q887.14 777.2 890.14 777.2H902.14Q905.14 777.2 905.14 780.2V864.67Z" class="f-accent"/>
+<path d="M916 864.67V777.47Q916 774.47 919 774.47H931Q934 774.47 934 777.47V864.67Z" class="f-accent"/>
+<path d="M944.86 864.67V777.47Q944.86 774.47 947.86 774.47H959.86Q962.86 774.47 962.86 777.47V864.67Z" class="f-accent"/>
+<path d="M973.71 875.6V864.67Q973.71 864.67 973.71 864.67H991.71Q991.71 864.67 991.71 864.67V875.6Z" class="f-muted" opacity=".7"/>
+<path d="M1002.57 894.73V864.67Q1002.57 864.67 1002.57 864.67H1020.57Q1020.57 864.67 1020.57 864.67V894.73Z" class="f-muted" opacity=".7"/>
+<text x="838.43" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Mon</text>
+<text x="867.29" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Tue</text>
+<text x="896.14" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Wed</text>
+<text x="925" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Thu</text>
+<text x="953.86" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Fri</text>
+<text x="982.71" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Sat</text>
+<text x="1011.57" y="912.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="20.7">Sun</text>
+<rect x="1062" y="158" width="358" height="766" rx="7" class="f-surface"/>
+<path d="M1413 158A7 7 0 0 1 1420 165V917A7 7 0 0 1 1413 924H1069A7 7 0 0 1 1062 917V165A7 7 0 0 1 1069 158M1069 158H1076M1135.18 158H1370.88M1406 158H1413" class="f-none s-line-strong" stroke-width="1"/>
+<text x="1082" y="162.9" font-size="14" class="f-text" font-weight="600">Quotas</text>
+<text x="1400" y="162.38" font-size="12.5" class="f-faint" text-anchor="end">now</text>
+<text x="1082" y="198.55" font-size="13" class="f-text t-mono" font-weight="600" textLength="156">max_concurrent_tasks</text>
+<text x="1400" y="198.38" font-size="12.5" class="f-muted t-mono" text-anchor="end" textLength="15">32</text>
+<rect x="1082" y="211" width="318" height="6" rx="3" class="f-line"/>
+<rect x="1082" y="211" width="89.44" height="6" rx="3" class="f-accent"/>
+<rect x="1398.5" y="207" width="3" height="14" rx="1.5" class="f-fail"/>
+<text x="1082" y="238.38" font-size="12.5" class="f-faint">9 in flight; 32, the limit, on Thursday</text>
+<text x="1082" y="272.55" font-size="13" class="f-text t-mono" font-weight="600" textLength="132.6">max_runs_per_hour</text>
+<text x="1400" y="272.38" font-size="12.5" class="f-muted t-mono" text-anchor="end" textLength="22.5">120</text>
+<rect x="1082" y="285" width="318" height="6" rx="3" class="f-line"/>
+<rect x="1082" y="285" width="68.9" height="6" rx="3" class="f-accent"/>
+<rect x="1398.5" y="281" width="3" height="14" rx="1.5" class="f-fail"/>
+<text x="1082" y="312.38" font-size="12.5" class="f-faint">26 in the last hour; 9 refused on Thursday</text>
+<text x="1082" y="346.55" font-size="13" class="f-text t-mono" font-weight="600" textLength="140.4">max_artifact_bytes</text>
+<text x="1400" y="346.38" font-size="12.5" class="f-muted t-mono" text-anchor="end" textLength="52.5">500 GiB</text>
+<rect x="1082" y="359" width="318" height="6" rx="3" class="f-line"/>
+<rect x="1082" y="359" width="212.42" height="6" rx="3" class="f-accent"/>
+<text x="1082" y="386.38" font-size="12.5" class="f-faint">334.0 GiB live, +2.2 GiB a day</text>
+<text x="1082" y="420.55" font-size="13" class="f-text t-mono" font-weight="600" textLength="140.4">max_retention_days</text>
+<text x="1400" y="420.38" font-size="12.5" class="f-muted t-mono" text-anchor="end" textLength="15">90</text>
+<rect x="1082" y="433" width="318" height="6" rx="3" class="f-line"/>
+<rect x="1082" y="433" width="106" height="6" rx="3" class="f-accent"/>
+<text x="1082" y="460.38" font-size="12.5" class="f-faint">the longest any workflow asks: 30 days</text>
+<text x="1082" y="494.55" font-size="13" class="f-text t-mono" font-weight="600" textLength="124.8">max_run_duration</text>
+<text x="1400" y="494.38" font-size="12.5" class="f-muted t-mono" text-anchor="end" textLength="15">2h</text>
+<rect x="1082" y="507" width="318" height="6" rx="3" class="f-line"/>
+<rect x="1082" y="507" width="45.05" height="6" rx="3" class="f-accent"/>
+<text x="1082" y="534.38" font-size="12.5" class="f-faint">the longest run this week: 17m</text>
+<text x="1082" y="570.55" font-size="13" class="f-text t-mono" font-weight="600" textLength="156">allowed_runner_pools</text>
+<rect x="1082.5" y="581.5" width="65.4" height="21" rx="4" class="f-sunken"/>
+<text x="1090" y="596.2" font-size="12" class="f-text t-mono" textLength="50.4">default</text>
+<rect x="1154.9" y="581.5" width="36.6" height="21" rx="4" class="f-sunken"/>
+<text x="1162.4" y="596.2" font-size="12" class="f-text t-mono" textLength="21.6">dmz</text>
+<path d="M1078 628H1404" class="f-none s-line" stroke-width="1"/>
+<text x="1082" y="656.55" font-size="13" class="f-muted">At this week's rate, artifact storage meets</text>
+<text x="1082" y="675.55" font-size="13" class="f-muted">max_artifact_bytes in 74 days. A red tick</text>
+<text x="1082" y="694.55" font-size="13" class="f-muted">marks the week's peak where it met a limit.</text>
+<text x="1082" y="724.38" font-size="12.5" class="f-faint">The quotas are an administrator's to change,</text>
+<text x="1082" y="742.38" font-size="12.5" class="f-faint">with PUT /api/v1/namespaces/{ns}/quotas.</text>
+<path d="M0 938H1440V961a9 9 0 0 1-9 9H9a9 9 0 0 1-9-9z" class="f-surface"/>
+<path d="M0 938.5H1440" class="f-none s-line" stroke-width="1"/>
+<rect x="18.5" y="944.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="24" y="958.2" font-size="12" class="f-text t-mono" font-weight="700">/</text>
+<text x="44.2" y="958.55" font-size="13" class="f-muted">Search</text>
+<rect x="104.04" y="944.5" width="32.6" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="109.54" y="958.2" font-size="12" class="f-text t-mono" font-weight="700" textLength="21.6">[ ]</text>
+<text x="144.14" y="958.55" font-size="13" class="f-muted">Range</text>
+<rect x="200.99" y="944.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="206.49" y="958.2" font-size="12" class="f-text t-mono" font-weight="700">e</text>
+<text x="226.69" y="958.55" font-size="13" class="f-muted">Export</text>
+<rect x="283.67" y="944.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="289.17" y="958.2" font-size="12" class="f-text t-mono" font-weight="700">?</text>
+<text x="309.37" y="958.55" font-size="13" class="f-muted">Keys</text>
+<text x="1422" y="958.38" font-size="12.5" class="f-faint t-mono" text-anchor="end" textLength="112.5">agentiik v0.6.0</text>
+<rect x="666.48" y="198" width="247.62" height="120" rx="6" class="f-raised"/>
+<path d="M908.11 198A6 6 0 0 1 914.11 204V312A6 6 0 0 1 908.11 318H672.48A6 6 0 0 1 666.48 312V204A6 6 0 0 1 672.48 198M672.48 198H908.11" class="f-none s-line-strong" stroke-width="1.25"/>
+<text x="680.48" y="220.38" font-size="12.5" class="f-text" font-weight="600">Thu 24 Sep, 14:00 to 15:00</text>
+<rect x="681.48" y="233" width="10" height="10" rx="2" class="f-muted"/>
+<text x="700.48" y="242.38" font-size="12.5" class="f-muted">created</text>
+<text x="900.11" y="242.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="22.5">120</text>
+<rect x="681.48" y="253" width="10" height="10" rx="2" class="f-fail"/>
+<text x="700.48" y="262.38" font-size="12.5" class="f-muted">refused with 429</text>
+<text x="900.11" y="262.38" font-size="12.5" class="f-text t-mono" text-anchor="end">9</text>
+<text x="700.48" y="282.38" font-size="12.5" class="f-muted">ledger-export, by webhook</text>
+<text x="900.11" y="282.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="22.5">104</text>
+<path d="M667.48 292H913.11" class="f-none s-line" stroke-width="1"/>
+<text x="680.48" y="311.2" font-size="12" class="f-accent" font-weight="500">Open the 120 runs of this hour</text>
+<path transform="translate(653.13 503.8)" d="M0 0V17.5L4.6 13.3L7.7 20.2L10.6 18.9L7.6 12.2H13.6Z" class="f-text s-raised" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="667.13" y="462" width="224.88" height="140" rx="6" class="f-raised"/>
+<path d="M886 462A6 6 0 0 1 892 468V596A6 6 0 0 1 886 602H673.13A6 6 0 0 1 667.13 596V468A6 6 0 0 1 673.13 462M673.13 462H886" class="f-none s-line-strong" stroke-width="1.25"/>
+<text x="681.13" y="484.38" font-size="12.5" class="f-text" font-weight="600">Thu 24 Sep, 14:00 to 15:00</text>
+<path d="M681.13 502h12" class="f-none s-accent" stroke-width="2"/>
+<text x="701.13" y="506.38" font-size="12.5" class="f-muted">in flight, at most</text>
+<text x="878" y="506.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="60">32 of 32</text>
+<text x="701.13" y="526.38" font-size="12.5" class="f-muted">held at the limit</text>
+<text x="878" y="526.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="45">41 min</text>
+<text x="701.13" y="546.38" font-size="12.5" class="f-muted">tasks that waited</text>
+<text x="878" y="546.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="22.5">318</text>
+<text x="701.13" y="566.38" font-size="12.5" class="f-muted">their wait, p95</text>
+<text x="878" y="566.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="22.5">52s</text>
+<path d="M668.13 576H891" class="f-none s-line" stroke-width="1"/>
+<text x="681.13" y="595.2" font-size="12" class="f-accent" font-weight="500">Open the runs that waited</text>
+</g>
+<rect x=".5" y=".5" width="1439" height="1015" rx="10" class="f-none s-line-strong"/>
+</svg>
+    <figcaption><b>A namespace against its quotas.</b> A webhook storm on Thursday meets <code>max_runs_per_hour</code>, nine runs refused with 429, and holds <code>max_concurrent_tasks</code> for 41 minutes, while storage grows by some 2 GiB a day towards <code>max_artifact_bytes</code>.</figcaption>
+  </figure>
+  <figure class="console">
+    <svg class="mock web" viewBox="0 0 1440 998" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mockup of the web console&#x27;s statistics of the runner pools and runners over the last 24 hours, a bucket every 15 minutes, shown to dana, an administrator, alone. Four small charts, one per pool, default, dmz, lab and gpu, each with its slots in use as a line over a wash and its capacity as a dashed step line: dmz falls from 12 slots to 8 at 06:02 when runner-dmz-03 was drained, and the readout at 06:00 says all 8 are in use with 23 tasks waiting for the pool; gpu has had no capacity since its runner reported unhealthy. Below, a timeline of heartbeat gaps per runner, amber for a silence of 20 to 30 seconds and red for one of 30 seconds or more, whose tasks were declared lost; the pointer on runner-gpu-01&#x27;s 31-second silence at 04:41, and bands for the draining runner and the one reporting unhealthy.">
+<rect x=".5" y=".5" width="1439" height="997" rx="10" class="f-bg"/>
+<path d="M.5 46V10.5a10 10 0 0 1 10-10h1419a10 10 0 0 1 10 10V46z" class="f-raised"/>
+<path d="M.5 45.5H1439.5" class="f-none s-line"/>
+<circle cx="20" cy="23.0" r="5.5" class="f-line-strong"/>
+<circle cx="38" cy="23.0" r="5.5" class="f-line-strong"/>
+<circle cx="56" cy="23.0" r="5.5" class="f-line-strong"/>
+<path transform="translate(80 15)" d="M2.5 3.5h11v9h-11zM6.5 3.5v9" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(112 15)" d="M10 3.5 5.5 8l4.5 4.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(136 15)" d="M6 3.5l4.5 4.5L6 12.5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="440.5" y="8.5" width="559" height="29" rx="8" class="f-bg s-line" stroke-width="1"/>
+<path transform="translate(588.11 15) scale(0.94)" d="M4.5 7.5h7v6h-7zM6 7.5V5.5a2 2 0 0 1 4 0v2" class="f-none s-muted" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="609.11" y="27.73" font-size="13.5" class="f-text" font-weight="500">agentiik.example.com</text>
+<text x="743.7" y="27.73" font-size="13.5" class="f-muted">/runners/statistics</text>
+<path transform="translate(973 15)" d="M12.8 8a4.8 4.8 0 1 1-1.4-3.4M12.8 2.8v2.6h-2.6" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1348 15)" d="M8 2.5v8M5 5.5 8 2.5l3 3M4 8.5v5h8v-5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1378 15)" d="M8 3v10M3 8h10" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1406 15)" d="M3.5 3.5h9v9h-9zM6 1.8h7.7v7.7" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(0 46)">
+<rect x="0" y="0" width="1440" height="52" class="f-surface"/>
+<path d="M0 51.5H1440" class="f-none s-line" stroke-width="1"/>
+<rect x="20" y="18" width="18" height="4.5" rx="1" class="f-accent"/><rect x="20" y="24.5" width="8" height="4.5" rx="1" class="f-accent" opacity=".62"/><rect x="30" y="24.5" width="8" height="4.5" rx="1" class="f-accent" opacity=".62"/><rect x="20" y="31" width="18" height="2.5" rx="1" class="f-accent" opacity=".3"/>
+<text x="46" y="31.77" font-size="16.5" class="f-text" font-weight="700" letter-spacing="-.33">agentiik</text>
+<rect x="134.5" y="11.5" width="95.7" height="29" rx="5" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="145" y="30.73" font-size="13.5" class="f-accent t-mono" font-weight="600" textLength="56.7">finance</text>
+<path transform="translate(207.7 18)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="252.7" y="30.9" font-size="14" class="f-muted" font-weight="500">Runs</text>
+<text x="316.02" y="30.9" font-size="14" class="f-muted" font-weight="500">Workflows</text>
+<text x="412.8" y="30.9" font-size="14" class="f-muted" font-weight="500">Statistics</text>
+<text x="501.6" y="30.9" font-size="14" class="f-muted" font-weight="500">Bricks</text>
+<text x="571.78" y="30.9" font-size="14" class="f-muted" font-weight="500">Sharing</text>
+<text x="651.06" y="30.9" font-size="14" class="f-muted" font-weight="500">Settings</text>
+<rect x="721.92" y="11.5" width="77.88" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="733.42" y="30.9" font-size="14" class="f-text" font-weight="600">Runners</text>
+<path transform="translate(1408 18)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1402" y="30.73" font-size="13.5" class="f-text t-mono" font-weight="600" text-anchor="end" textLength="32.4">dana</text>
+<circle cx="1349.6" cy="26" r="12" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="1349.6" y="30.38" font-size="12.5" class="f-accent" font-weight="600" text-anchor="middle">D</text>
+<text x="1321.6" y="30.55" font-size="13" class="f-faint" text-anchor="end">administrator</text>
+<path transform="translate(1213.03 18)" d="M4 11V7.5a4 4 0 0 1 8 0V11l1.2 1.5H2.8zM6.5 14h3" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1189.03" y="30.73" font-size="13.5" class="f-ok" font-weight="500" text-anchor="end">live</text>
+<circle cx="1159.11" cy="26" r="3.4" class="f-ok"/>
+<rect x="848.61" y="10.5" width="289" height="31" rx="5" class="f-bg s-line-strong" stroke-width="1"/>
+<path transform="translate(858.11 18)" d="M7 2.5a4.5 4.5 0 1 1 0 9a4.5 4.5 0 1 1 0-9zM10.4 10.4 13.5 13.5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="882.11" y="30.73" font-size="13.5" class="f-faint">Search runs and workflows</text>
+<rect x="1112.7" y="16.5" width="16.9" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="1117.7" y="30.02" font-size="11.5" class="f-muted t-mono">/</text>
+<rect x="0" y="52" width="1440" height="48" class="f-bg"/>
+<path d="M0 99.5H1440" class="f-none s-line" stroke-width="1"/>
+<text x="22" y="80.9" font-size="14" class="f-text t-mono" font-weight="700" textLength="100.8">installation</text>
+<text x="156.8" y="80.9" font-size="14" class="f-muted" font-weight="500">Runners</text>
+<text x="238.7" y="80.9" font-size="14" class="f-muted" font-weight="500">Pools</text>
+<text x="302.96" y="80.9" font-size="14" class="f-text" font-weight="600">Statistics</text>
+<rect x="300.96" y="97" width="64.06" height="2.5" rx="1" class="f-accent"/>
+<rect x="20.5" y="117.5" width="281.74" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="33" y="136.72" font-size="13.5" class="f-text" font-weight="500">1 hour</text>
+<rect x="86.7" y="119.5" width="74.19" height="25" rx="4" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="97.2" y="136.72" font-size="13.5" class="f-accent" font-weight="600">24 hours</text>
+<text x="176.39" y="136.72" font-size="13.5" class="f-text" font-weight="500">7 days</text>
+<text x="242.08" y="136.72" font-size="13.5" class="f-text" font-weight="500">30 days</text>
+<text x="318.74" y="136.55" font-size="13" class="f-faint">26 Sep 06:15 to 27 Sep 06:15 · a bucket every 15 minutes</text>
+<rect x="1335.24" y="117.5" width="84.26" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(1345.74 124)" d="M8 2.5v8M4.8 7.5 8 10.7l3.2-3.2M3 13.5h10" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1369.74" y="136.72" font-size="13.5" class="f-text" font-weight="500">JSON</text>
+<rect x="1251.43" y="117.5" width="74.81" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(1261.93 124)" d="M8 2.5v8M4.8 7.5 8 10.7l3.2-3.2M3 13.5h10" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1285.93" y="136.72" font-size="13.5" class="f-text" font-weight="500">CSV</text>
+<text x="1238.93" y="136.55" font-size="13" class="f-faint" text-anchor="end">Export the series</text>
+<rect x="20" y="158" width="694" height="214" rx="7" class="f-surface"/>
+<path d="M707 158A7 7 0 0 1 714 165V365A7 7 0 0 1 707 372H27A7 7 0 0 1 20 365V165A7 7 0 0 1 27 158M27 158H34M102.7 158H464M700 158H707" class="f-none s-line-strong" stroke-width="1"/>
+<text x="40" y="162.72" font-size="13.5" class="f-text t-mono" font-weight="600" textLength="56.7">default</text>
+<text x="694" y="162.38" font-size="12.5" class="f-faint" text-anchor="end">38% of slots in use · peak 11 of 12, 06:00</text>
+<text x="40" y="188.38" font-size="12.5" class="f-faint">no label</text>
+<path d="M99.38 184h16" class="f-none s-accent" stroke-width="2" stroke-linecap="round"/>
+<text x="121.38" y="188.38" font-size="12.5" class="f-muted">slots in use</text>
+<path d="M199.25 184h16" class="f-none s-text" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="221.25" y="188.38" font-size="12.5" class="f-muted">capacity</text>
+<path d="M72 342H692" class="f-none s-line" stroke-width="1"/>
+<text x="64" y="346.02" font-size="11.5" class="f-faint t-mono" text-anchor="end">0</text>
+<path d="M72 303.14H692" class="f-none s-line" stroke-width="1"/>
+<text x="64" y="307.17" font-size="11.5" class="f-faint t-mono" text-anchor="end">4</text>
+<path d="M72 264.29H692" class="f-none s-line" stroke-width="1"/>
+<text x="64" y="268.31" font-size="11.5" class="f-faint t-mono" text-anchor="end">8</text>
+<path d="M72 225.43H692" class="f-none s-line" stroke-width="1"/>
+<text x="64" y="229.45" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">12</text>
+<path d="M72 312.86L78.46 303.14L84.92 322.57L91.38 312.86L97.83 303.14L104.29 322.57L110.75 312.86L117.21 293.43L123.67 283.71L130.12 274L136.58 264.29L143.04 264.29L149.5 293.43L155.96 283.71L162.42 274L168.88 274L175.33 264.29L181.79 293.43L188.25 283.71L194.71 283.71L201.17 274L207.62 264.29L214.08 293.43L220.54 293.43L227 283.71L233.46 274L239.92 264.29L246.38 264.29L252.83 293.43L259.29 283.71L265.75 274L272.21 274L278.67 264.29L285.12 293.43L291.58 283.71L298.04 283.71L304.5 274L310.96 264.29L317.42 293.43L323.88 293.43L330.33 283.71L336.79 274L343.25 264.29L349.71 264.29L356.17 293.43L362.62 283.71L369.08 274L375.54 274L382 264.29L388.46 293.43L394.92 283.71L401.38 312.86L407.83 303.14L414.29 322.57L420.75 312.86L427.21 303.14L433.67 322.57L440.12 312.86L446.58 303.14L453.04 322.57L459.5 312.86L465.96 303.14L472.42 322.57L478.88 312.86L485.33 303.14L491.79 322.57L498.25 312.86L504.71 303.14L511.17 322.57L517.62 312.86L524.08 303.14L530.54 322.57L537 312.86L543.46 303.14L549.92 322.57L556.38 312.86L562.83 303.14L569.29 322.57L575.75 312.86L582.21 303.14L588.67 322.57L595.12 312.86L601.58 303.14L608.04 322.57L614.5 312.86L620.96 303.14L627.42 322.57L633.88 312.86L640.33 303.14L646.79 322.57L653.25 312.86L659.71 303.14L666.17 322.57L672.62 312.86L679.08 303.14L685.54 235.14L692 235.14L692 342L685.54 342L679.08 342L672.62 342L666.17 342L659.71 342L653.25 342L646.79 342L640.33 342L633.88 342L627.42 342L620.96 342L614.5 342L608.04 342L601.58 342L595.12 342L588.67 342L582.21 342L575.75 342L569.29 342L562.83 342L556.38 342L549.92 342L543.46 342L537 342L530.54 342L524.08 342L517.62 342L511.17 342L504.71 342L498.25 342L491.79 342L485.33 342L478.88 342L472.42 342L465.96 342L459.5 342L453.04 342L446.58 342L440.12 342L433.67 342L427.21 342L420.75 342L414.29 342L407.83 342L401.38 342L394.92 342L388.46 342L382 342L375.54 342L369.08 342L362.62 342L356.17 342L349.71 342L343.25 342L336.79 342L330.33 342L323.88 342L317.42 342L310.96 342L304.5 342L298.04 342L291.58 342L285.12 342L278.67 342L272.21 342L265.75 342L259.29 342L252.83 342L246.38 342L239.92 342L233.46 342L227 342L220.54 342L214.08 342L207.62 342L201.17 342L194.71 342L188.25 342L181.79 342L175.33 342L168.88 342L162.42 342L155.96 342L149.5 342L143.04 342L136.58 342L130.12 342L123.67 342L117.21 342L110.75 342L104.29 342L97.83 342L91.38 342L84.92 342L78.46 342L72 342Z" class="f-accent" opacity=".14"/>
+<path d="M72 312.86L78.46 303.14L84.92 322.57L91.38 312.86L97.83 303.14L104.29 322.57L110.75 312.86L117.21 293.43L123.67 283.71L130.12 274L136.58 264.29L143.04 264.29L149.5 293.43L155.96 283.71L162.42 274L168.88 274L175.33 264.29L181.79 293.43L188.25 283.71L194.71 283.71L201.17 274L207.62 264.29L214.08 293.43L220.54 293.43L227 283.71L233.46 274L239.92 264.29L246.38 264.29L252.83 293.43L259.29 283.71L265.75 274L272.21 274L278.67 264.29L285.12 293.43L291.58 283.71L298.04 283.71L304.5 274L310.96 264.29L317.42 293.43L323.88 293.43L330.33 283.71L336.79 274L343.25 264.29L349.71 264.29L356.17 293.43L362.62 283.71L369.08 274L375.54 274L382 264.29L388.46 293.43L394.92 283.71L401.38 312.86L407.83 303.14L414.29 322.57L420.75 312.86L427.21 303.14L433.67 322.57L440.12 312.86L446.58 303.14L453.04 322.57L459.5 312.86L465.96 303.14L472.42 322.57L478.88 312.86L485.33 303.14L491.79 322.57L498.25 312.86L504.71 303.14L511.17 322.57L517.62 312.86L524.08 303.14L530.54 322.57L537 312.86L543.46 303.14L549.92 322.57L556.38 312.86L562.83 303.14L569.29 322.57L575.75 312.86L582.21 303.14L588.67 322.57L595.12 312.86L601.58 303.14L608.04 322.57L614.5 312.86L620.96 303.14L627.42 322.57L633.88 312.86L640.33 303.14L646.79 322.57L653.25 312.86L659.71 303.14L666.17 322.57L672.62 312.86L679.08 303.14L685.54 235.14L692 235.14" class="f-none s-accent" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M72 225.43H75.23V225.43H81.69V225.43H88.15V225.43H94.6V225.43H101.06V225.43H107.52V225.43H113.98V225.43H120.44V225.43H126.9V225.43H133.35V225.43H139.81V225.43H146.27V225.43H152.73V225.43H159.19V225.43H165.65V225.43H172.1V225.43H178.56V225.43H185.02V225.43H191.48V225.43H197.94V225.43H204.4V225.43H210.85V225.43H217.31V225.43H223.77V225.43H230.23V225.43H236.69V225.43H243.15V225.43H249.6V225.43H256.06V225.43H262.52V225.43H268.98V225.43H275.44V225.43H281.9V225.43H288.35V225.43H294.81V225.43H301.27V225.43H307.73V225.43H314.19V225.43H320.65V225.43H327.1V225.43H333.56V225.43H340.02V225.43H346.48V225.43H352.94V225.43H359.4V225.43H365.85V225.43H372.31V225.43H378.77V225.43H385.23V225.43H391.69V225.43H398.15V225.43H404.6V225.43H411.06V225.43H417.52V225.43H423.98V225.43H430.44V225.43H436.9V225.43H443.35V225.43H449.81V225.43H456.27V225.43H462.73V225.43H469.19V225.43H475.65V225.43H482.1V225.43H488.56V225.43H495.02V225.43H501.48V225.43H507.94V225.43H514.4V225.43H520.85V225.43H527.31V225.43H533.77V225.43H540.23V225.43H546.69V225.43H553.15V225.43H559.6V225.43H566.06V225.43H572.52V225.43H578.98V225.43H585.44V225.43H591.9V225.43H598.35V225.43H604.81V225.43H611.27V225.43H617.73V225.43H624.19V225.43H630.65V225.43H637.1V225.43H643.56V225.43H650.02V225.43H656.48V225.43H662.94V225.43H669.4V225.43H675.85V225.43H682.31V225.43H688.77V225.43H692" class="f-none s-text" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="117.21" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">08:00</text>
+<text x="220.54" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">12:00</text>
+<text x="323.88" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">16:00</text>
+<text x="427.21" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">20:00</text>
+<text x="530.54" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">00:00</text>
+<text x="633.88" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">04:00</text>
+<rect x="726" y="158" width="694" height="214" rx="7" class="f-surface"/>
+<path d="M1413 158A7 7 0 0 1 1420 165V365A7 7 0 0 1 1413 372H733A7 7 0 0 1 726 365V165A7 7 0 0 1 733 158M733 158H740M776.3 158H1166.62M1406 158H1413" class="f-none s-line-strong" stroke-width="1"/>
+<text x="746" y="162.72" font-size="13.5" class="f-text t-mono" font-weight="600" textLength="24.3">dmz</text>
+<text x="1400" y="162.38" font-size="12.5" class="f-faint" text-anchor="end">51% · 8 of 8 now: runner-dmz-03 draining</text>
+<rect x="746.5" y="174.5" width="70.2" height="19" rx="4" class="f-sunken"/>
+<text x="754" y="188.03" font-size="11.5" class="f-text t-mono" textLength="55.2">zone=dmz</text>
+<path d="M833.2 184h16" class="f-none s-accent" stroke-width="2" stroke-linecap="round"/>
+<text x="855.2" y="188.38" font-size="12.5" class="f-muted">slots in use</text>
+<path d="M933.08 184h16" class="f-none s-text" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="955.08" y="188.38" font-size="12.5" class="f-muted">capacity</text>
+<path d="M778 342H1398" class="f-none s-line" stroke-width="1"/>
+<text x="770" y="346.02" font-size="11.5" class="f-faint t-mono" text-anchor="end">0</text>
+<path d="M778 303.14H1398" class="f-none s-line" stroke-width="1"/>
+<text x="770" y="307.17" font-size="11.5" class="f-faint t-mono" text-anchor="end">4</text>
+<path d="M778 264.29H1398" class="f-none s-line" stroke-width="1"/>
+<text x="770" y="268.31" font-size="11.5" class="f-faint t-mono" text-anchor="end">8</text>
+<path d="M778 225.43H1398" class="f-none s-line" stroke-width="1"/>
+<text x="770" y="229.45" font-size="11.5" class="f-faint t-mono" text-anchor="end" textLength="13.8">12</text>
+<path d="M778 225.43L784.46 254.57L790.92 254.57L797.38 322.57L803.83 312.86L810.29 332.29L816.75 322.57L823.21 303.14L829.67 293.43L836.12 283.71L842.58 274L849.04 303.14L855.5 293.43L861.96 283.71L868.42 274L874.88 303.14L881.33 293.43L887.79 283.71L894.25 274L900.71 303.14L907.17 293.43L913.62 283.71L920.08 274L926.54 303.14L933 293.43L939.46 283.71L945.92 274L952.38 303.14L958.83 293.43L965.29 283.71L971.75 274L978.21 225.43L984.67 225.43L991.12 225.43L997.58 225.43L1004.04 303.14L1010.5 293.43L1016.96 283.71L1023.42 274L1029.88 303.14L1036.33 293.43L1042.79 283.71L1049.25 274L1055.71 303.14L1062.17 293.43L1068.62 283.71L1075.08 274L1081.54 303.14L1088 293.43L1094.46 283.71L1100.92 274L1107.38 322.57L1113.83 312.86L1120.29 332.29L1126.75 322.57L1133.21 312.86L1139.67 332.29L1146.12 322.57L1152.58 312.86L1159.04 332.29L1165.5 322.57L1171.96 312.86L1178.42 332.29L1184.88 322.57L1191.33 312.86L1197.79 332.29L1204.25 322.57L1210.71 312.86L1217.17 332.29L1223.62 322.57L1230.08 312.86L1236.54 332.29L1243 322.57L1249.46 312.86L1255.92 332.29L1262.38 322.57L1268.83 312.86L1275.29 332.29L1281.75 322.57L1288.21 312.86L1294.67 332.29L1301.12 322.57L1307.58 312.86L1314.04 332.29L1320.5 322.57L1326.96 312.86L1333.42 332.29L1339.88 322.57L1346.33 312.86L1352.79 332.29L1359.25 322.57L1365.71 312.86L1372.17 332.29L1378.62 322.57L1385.08 312.86L1391.54 264.29L1398 264.29L1398 342L1391.54 342L1385.08 342L1378.62 342L1372.17 342L1365.71 342L1359.25 342L1352.79 342L1346.33 342L1339.88 342L1333.42 342L1326.96 342L1320.5 342L1314.04 342L1307.58 342L1301.12 342L1294.67 342L1288.21 342L1281.75 342L1275.29 342L1268.83 342L1262.38 342L1255.92 342L1249.46 342L1243 342L1236.54 342L1230.08 342L1223.62 342L1217.17 342L1210.71 342L1204.25 342L1197.79 342L1191.33 342L1184.88 342L1178.42 342L1171.96 342L1165.5 342L1159.04 342L1152.58 342L1146.12 342L1139.67 342L1133.21 342L1126.75 342L1120.29 342L1113.83 342L1107.38 342L1100.92 342L1094.46 342L1088 342L1081.54 342L1075.08 342L1068.62 342L1062.17 342L1055.71 342L1049.25 342L1042.79 342L1036.33 342L1029.88 342L1023.42 342L1016.96 342L1010.5 342L1004.04 342L997.58 342L991.12 342L984.67 342L978.21 342L971.75 342L965.29 342L958.83 342L952.38 342L945.92 342L939.46 342L933 342L926.54 342L920.08 342L913.62 342L907.17 342L900.71 342L894.25 342L887.79 342L881.33 342L874.88 342L868.42 342L861.96 342L855.5 342L849.04 342L842.58 342L836.12 342L829.67 342L823.21 342L816.75 342L810.29 342L803.83 342L797.38 342L790.92 342L784.46 342L778 342Z" class="f-accent" opacity=".14"/>
+<path d="M778 225.43L784.46 254.57L790.92 254.57L797.38 322.57L803.83 312.86L810.29 332.29L816.75 322.57L823.21 303.14L829.67 293.43L836.12 283.71L842.58 274L849.04 303.14L855.5 293.43L861.96 283.71L868.42 274L874.88 303.14L881.33 293.43L887.79 283.71L894.25 274L900.71 303.14L907.17 293.43L913.62 283.71L920.08 274L926.54 303.14L933 293.43L939.46 283.71L945.92 274L952.38 303.14L958.83 293.43L965.29 283.71L971.75 274L978.21 225.43L984.67 225.43L991.12 225.43L997.58 225.43L1004.04 303.14L1010.5 293.43L1016.96 283.71L1023.42 274L1029.88 303.14L1036.33 293.43L1042.79 283.71L1049.25 274L1055.71 303.14L1062.17 293.43L1068.62 283.71L1075.08 274L1081.54 303.14L1088 293.43L1094.46 283.71L1100.92 274L1107.38 322.57L1113.83 312.86L1120.29 332.29L1126.75 322.57L1133.21 312.86L1139.67 332.29L1146.12 322.57L1152.58 312.86L1159.04 332.29L1165.5 322.57L1171.96 312.86L1178.42 332.29L1184.88 322.57L1191.33 312.86L1197.79 332.29L1204.25 322.57L1210.71 312.86L1217.17 332.29L1223.62 322.57L1230.08 312.86L1236.54 332.29L1243 322.57L1249.46 312.86L1255.92 332.29L1262.38 322.57L1268.83 312.86L1275.29 332.29L1281.75 322.57L1288.21 312.86L1294.67 332.29L1301.12 322.57L1307.58 312.86L1314.04 332.29L1320.5 322.57L1326.96 312.86L1333.42 332.29L1339.88 322.57L1346.33 312.86L1352.79 332.29L1359.25 322.57L1365.71 312.86L1372.17 332.29L1378.62 322.57L1385.08 312.86L1391.54 264.29L1398 264.29" class="f-none s-accent" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M778 225.43H781.23V225.43H787.69V225.43H794.15V225.43H800.6V225.43H807.06V225.43H813.52V225.43H819.98V225.43H826.44V225.43H832.9V225.43H839.35V225.43H845.81V225.43H852.27V225.43H858.73V225.43H865.19V225.43H871.65V225.43H878.1V225.43H884.56V225.43H891.02V225.43H897.48V225.43H903.94V225.43H910.4V225.43H916.85V225.43H923.31V225.43H929.77V225.43H936.23V225.43H942.69V225.43H949.15V225.43H955.6V225.43H962.06V225.43H968.52V225.43H974.98V225.43H981.44V225.43H987.9V225.43H994.35V225.43H1000.81V225.43H1007.27V225.43H1013.73V225.43H1020.19V225.43H1026.65V225.43H1033.1V225.43H1039.56V225.43H1046.02V225.43H1052.48V225.43H1058.94V225.43H1065.4V225.43H1071.85V225.43H1078.31V225.43H1084.77V225.43H1091.23V225.43H1097.69V225.43H1104.15V225.43H1110.6V225.43H1117.06V225.43H1123.52V225.43H1129.98V225.43H1136.44V225.43H1142.9V225.43H1149.35V225.43H1155.81V225.43H1162.27V225.43H1168.73V225.43H1175.19V225.43H1181.65V225.43H1188.1V225.43H1194.56V225.43H1201.02V225.43H1207.48V225.43H1213.94V225.43H1220.4V225.43H1226.85V225.43H1233.31V225.43H1239.77V225.43H1246.23V225.43H1252.69V225.43H1259.15V225.43H1265.6V225.43H1272.06V225.43H1278.52V225.43H1284.98V225.43H1291.44V225.43H1297.9V225.43H1304.35V225.43H1310.81V225.43H1317.27V225.43H1323.73V225.43H1330.19V225.43H1336.65V225.43H1343.1V225.43H1349.56V225.43H1356.02V225.43H1362.48V225.43H1368.94V225.43H1375.4V225.43H1381.85V225.43H1388.31V264.29H1394.77V264.29H1398" class="f-none s-text" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="823.21" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">08:00</text>
+<text x="926.54" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">12:00</text>
+<text x="1029.88" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">16:00</text>
+<text x="1133.21" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">20:00</text>
+<text x="1236.54" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">00:00</text>
+<text x="1339.88" y="362.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">04:00</text>
+<path d="M1398 206V342" class="f-none s-muted" stroke-width="1"/>
+<circle cx="1398" cy="264.29" r="4.5" class="f-accent s-surface" stroke-width="2"/>
+<rect x="20" y="384" width="694" height="214" rx="7" class="f-surface"/>
+<path d="M707 384A7 7 0 0 1 714 391V591A7 7 0 0 1 707 598H27A7 7 0 0 1 20 591V391A7 7 0 0 1 27 384M27 384H34M70.3 384H592.62M700 384H707" class="f-none s-line-strong" stroke-width="1"/>
+<text x="40" y="388.73" font-size="13.5" class="f-text t-mono" font-weight="600" textLength="24.3">lab</text>
+<text x="694" y="388.38" font-size="12.5" class="f-faint" text-anchor="end">24% · peak 2 of 2</text>
+<rect x="40.5" y="400.5" width="70.2" height="19" rx="4" class="f-sunken"/>
+<text x="48" y="414.02" font-size="11.5" class="f-text t-mono" textLength="55.2">zone=lab</text>
+<path d="M127.2 410h16" class="f-none s-accent" stroke-width="2" stroke-linecap="round"/>
+<text x="149.2" y="414.38" font-size="12.5" class="f-muted">slots in use</text>
+<path d="M227.07 410h16" class="f-none s-text" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="249.07" y="414.38" font-size="12.5" class="f-muted">capacity</text>
+<path d="M72 568H692" class="f-none s-line" stroke-width="1"/>
+<text x="64" y="572.02" font-size="11.5" class="f-faint t-mono" text-anchor="end">0</text>
+<path d="M72 522.67H692" class="f-none s-line" stroke-width="1"/>
+<text x="64" y="526.69" font-size="11.5" class="f-faint t-mono" text-anchor="end">1</text>
+<path d="M72 477.33H692" class="f-none s-line" stroke-width="1"/>
+<text x="64" y="481.36" font-size="11.5" class="f-faint t-mono" text-anchor="end">2</text>
+<path d="M72 568L78.46 568L84.92 568L91.38 568L97.83 568L104.29 568L110.75 568L117.21 568L123.67 568L130.12 568L136.58 568L143.04 522.67L149.5 522.67L155.96 522.67L162.42 522.67L168.88 477.33L175.33 477.33L181.79 522.67L188.25 477.33L194.71 477.33L201.17 522.67L207.62 477.33L214.08 477.33L220.54 522.67L227 477.33L233.46 477.33L239.92 522.67L246.38 477.33L252.83 477.33L259.29 522.67L265.75 477.33L272.21 477.33L278.67 522.67L285.12 477.33L291.58 477.33L298.04 522.67L304.5 477.33L310.96 477.33L317.42 522.67L323.88 477.33L330.33 477.33L336.79 522.67L343.25 477.33L349.71 522.67L356.17 522.67L362.62 522.67L369.08 522.67L375.54 522.67L382 522.67L388.46 522.67L394.92 522.67L401.38 522.67L407.83 522.67L414.29 522.67L420.75 522.67L427.21 568L433.67 568L440.12 568L446.58 568L453.04 568L459.5 568L465.96 568L472.42 568L478.88 568L485.33 568L491.79 568L498.25 568L504.71 568L511.17 568L517.62 568L524.08 568L530.54 568L537 568L543.46 568L549.92 568L556.38 568L562.83 568L569.29 568L575.75 568L582.21 568L588.67 568L595.12 568L601.58 568L608.04 568L614.5 568L620.96 568L627.42 568L633.88 568L640.33 568L646.79 568L653.25 568L659.71 568L666.17 568L672.62 568L679.08 568L685.54 568L692 568L692 568L685.54 568L679.08 568L672.62 568L666.17 568L659.71 568L653.25 568L646.79 568L640.33 568L633.88 568L627.42 568L620.96 568L614.5 568L608.04 568L601.58 568L595.12 568L588.67 568L582.21 568L575.75 568L569.29 568L562.83 568L556.38 568L549.92 568L543.46 568L537 568L530.54 568L524.08 568L517.62 568L511.17 568L504.71 568L498.25 568L491.79 568L485.33 568L478.88 568L472.42 568L465.96 568L459.5 568L453.04 568L446.58 568L440.12 568L433.67 568L427.21 568L420.75 568L414.29 568L407.83 568L401.38 568L394.92 568L388.46 568L382 568L375.54 568L369.08 568L362.62 568L356.17 568L349.71 568L343.25 568L336.79 568L330.33 568L323.88 568L317.42 568L310.96 568L304.5 568L298.04 568L291.58 568L285.12 568L278.67 568L272.21 568L265.75 568L259.29 568L252.83 568L246.38 568L239.92 568L233.46 568L227 568L220.54 568L214.08 568L207.62 568L201.17 568L194.71 568L188.25 568L181.79 568L175.33 568L168.88 568L162.42 568L155.96 568L149.5 568L143.04 568L136.58 568L130.12 568L123.67 568L117.21 568L110.75 568L104.29 568L97.83 568L91.38 568L84.92 568L78.46 568L72 568Z" class="f-accent" opacity=".14"/>
+<path d="M72 568L78.46 568L84.92 568L91.38 568L97.83 568L104.29 568L110.75 568L117.21 568L123.67 568L130.12 568L136.58 568L143.04 522.67L149.5 522.67L155.96 522.67L162.42 522.67L168.88 477.33L175.33 477.33L181.79 522.67L188.25 477.33L194.71 477.33L201.17 522.67L207.62 477.33L214.08 477.33L220.54 522.67L227 477.33L233.46 477.33L239.92 522.67L246.38 477.33L252.83 477.33L259.29 522.67L265.75 477.33L272.21 477.33L278.67 522.67L285.12 477.33L291.58 477.33L298.04 522.67L304.5 477.33L310.96 477.33L317.42 522.67L323.88 477.33L330.33 477.33L336.79 522.67L343.25 477.33L349.71 522.67L356.17 522.67L362.62 522.67L369.08 522.67L375.54 522.67L382 522.67L388.46 522.67L394.92 522.67L401.38 522.67L407.83 522.67L414.29 522.67L420.75 522.67L427.21 568L433.67 568L440.12 568L446.58 568L453.04 568L459.5 568L465.96 568L472.42 568L478.88 568L485.33 568L491.79 568L498.25 568L504.71 568L511.17 568L517.62 568L524.08 568L530.54 568L537 568L543.46 568L549.92 568L556.38 568L562.83 568L569.29 568L575.75 568L582.21 568L588.67 568L595.12 568L601.58 568L608.04 568L614.5 568L620.96 568L627.42 568L633.88 568L640.33 568L646.79 568L653.25 568L659.71 568L666.17 568L672.62 568L679.08 568L685.54 568L692 568" class="f-none s-accent" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M72 477.33H75.23V477.33H81.69V477.33H88.15V477.33H94.6V477.33H101.06V477.33H107.52V477.33H113.98V477.33H120.44V477.33H126.9V477.33H133.35V477.33H139.81V477.33H146.27V477.33H152.73V477.33H159.19V477.33H165.65V477.33H172.1V477.33H178.56V477.33H185.02V477.33H191.48V477.33H197.94V477.33H204.4V477.33H210.85V477.33H217.31V477.33H223.77V477.33H230.23V477.33H236.69V477.33H243.15V477.33H249.6V477.33H256.06V477.33H262.52V477.33H268.98V477.33H275.44V477.33H281.9V477.33H288.35V477.33H294.81V477.33H301.27V477.33H307.73V477.33H314.19V477.33H320.65V477.33H327.1V477.33H333.56V477.33H340.02V477.33H346.48V477.33H352.94V477.33H359.4V477.33H365.85V477.33H372.31V477.33H378.77V477.33H385.23V477.33H391.69V477.33H398.15V477.33H404.6V477.33H411.06V477.33H417.52V477.33H423.98V477.33H430.44V477.33H436.9V477.33H443.35V477.33H449.81V477.33H456.27V477.33H462.73V477.33H469.19V477.33H475.65V477.33H482.1V477.33H488.56V477.33H495.02V477.33H501.48V477.33H507.94V477.33H514.4V477.33H520.85V477.33H527.31V477.33H533.77V477.33H540.23V477.33H546.69V477.33H553.15V477.33H559.6V477.33H566.06V477.33H572.52V477.33H578.98V477.33H585.44V477.33H591.9V477.33H598.35V477.33H604.81V477.33H611.27V477.33H617.73V477.33H624.19V477.33H630.65V477.33H637.1V477.33H643.56V477.33H650.02V477.33H656.48V477.33H662.94V477.33H669.4V477.33H675.85V477.33H682.31V477.33H688.77V477.33H692" class="f-none s-text" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="117.21" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">08:00</text>
+<text x="220.54" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">12:00</text>
+<text x="323.88" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">16:00</text>
+<text x="427.21" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">20:00</text>
+<text x="530.54" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">00:00</text>
+<text x="633.88" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">04:00</text>
+<rect x="726" y="384" width="694" height="214" rx="7" class="f-surface"/>
+<path d="M1413 384A7 7 0 0 1 1420 391V591A7 7 0 0 1 1413 598H733A7 7 0 0 1 726 591V391A7 7 0 0 1 733 384M733 384H740M776.3 384H1228.75M1406 384H1413" class="f-none s-line-strong" stroke-width="1"/>
+<text x="746" y="388.73" font-size="13.5" class="f-text t-mono" font-weight="600" textLength="24.3">gpu</text>
+<text x="1400" y="388.38" font-size="12.5" class="f-faint" text-anchor="end">16% · no capacity since 04:45</text>
+<rect x="746.5" y="400.5" width="70.2" height="19" rx="4" class="f-sunken"/>
+<text x="754" y="414.02" font-size="11.5" class="f-text t-mono" textLength="55.2">gpu=true</text>
+<path d="M833.2 410h16" class="f-none s-accent" stroke-width="2" stroke-linecap="round"/>
+<text x="855.2" y="414.38" font-size="12.5" class="f-muted">slots in use</text>
+<path d="M933.08 410h16" class="f-none s-text" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="955.08" y="414.38" font-size="12.5" class="f-muted">capacity</text>
+<path d="M778 568H1398" class="f-none s-line" stroke-width="1"/>
+<text x="770" y="572.02" font-size="11.5" class="f-faint t-mono" text-anchor="end">0</text>
+<path d="M778 477.33H1398" class="f-none s-line" stroke-width="1"/>
+<text x="770" y="481.36" font-size="11.5" class="f-faint t-mono" text-anchor="end">1</text>
+<path d="M778 568L784.46 568L790.92 568L797.38 568L803.83 568L810.29 568L816.75 568L823.21 568L829.67 568L836.12 568L842.58 568L849.04 568L855.5 568L861.96 568L868.42 568L874.88 568L881.33 568L887.79 568L894.25 568L900.71 568L907.17 568L913.62 568L920.08 568L926.54 568L933 568L939.46 568L945.92 568L952.38 568L958.83 568L965.29 568L971.75 568L978.21 568L984.67 568L991.12 568L997.58 568L1004.04 568L1010.5 568L1016.96 568L1023.42 568L1029.88 568L1036.33 568L1042.79 568L1049.25 568L1055.71 568L1062.17 568L1068.62 568L1075.08 568L1081.54 568L1088 568L1094.46 568L1100.92 568L1107.38 568L1113.83 568L1120.29 568L1126.75 568L1133.21 477.33L1139.67 477.33L1146.12 477.33L1152.58 477.33L1159.04 477.33L1165.5 477.33L1171.96 477.33L1178.42 477.33L1184.88 477.33L1191.33 477.33L1197.79 477.33L1204.25 477.33L1210.71 568L1217.17 568L1223.62 568L1230.08 568L1236.54 568L1243 568L1249.46 568L1255.92 568L1262.38 477.33L1268.83 477.33L1275.29 477.33L1281.75 477.33L1288.21 477.33L1294.67 477.33L1301.12 477.33L1307.58 477.33L1314.04 477.33L1320.5 477.33L1326.96 477.33L1333.42 477.33L1339.88 477.33L1346.33 477.33L1352.79 477.33L1359.25 568L1365.71 568L1372.17 568L1378.62 568L1385.08 568L1391.54 568L1398 568L1398 568L1391.54 568L1385.08 568L1378.62 568L1372.17 568L1365.71 568L1359.25 568L1352.79 568L1346.33 568L1339.88 568L1333.42 568L1326.96 568L1320.5 568L1314.04 568L1307.58 568L1301.12 568L1294.67 568L1288.21 568L1281.75 568L1275.29 568L1268.83 568L1262.38 568L1255.92 568L1249.46 568L1243 568L1236.54 568L1230.08 568L1223.62 568L1217.17 568L1210.71 568L1204.25 568L1197.79 568L1191.33 568L1184.88 568L1178.42 568L1171.96 568L1165.5 568L1159.04 568L1152.58 568L1146.12 568L1139.67 568L1133.21 568L1126.75 568L1120.29 568L1113.83 568L1107.38 568L1100.92 568L1094.46 568L1088 568L1081.54 568L1075.08 568L1068.62 568L1062.17 568L1055.71 568L1049.25 568L1042.79 568L1036.33 568L1029.88 568L1023.42 568L1016.96 568L1010.5 568L1004.04 568L997.58 568L991.12 568L984.67 568L978.21 568L971.75 568L965.29 568L958.83 568L952.38 568L945.92 568L939.46 568L933 568L926.54 568L920.08 568L913.62 568L907.17 568L900.71 568L894.25 568L887.79 568L881.33 568L874.88 568L868.42 568L861.96 568L855.5 568L849.04 568L842.58 568L836.12 568L829.67 568L823.21 568L816.75 568L810.29 568L803.83 568L797.38 568L790.92 568L784.46 568L778 568Z" class="f-accent" opacity=".14"/>
+<path d="M778 568L784.46 568L790.92 568L797.38 568L803.83 568L810.29 568L816.75 568L823.21 568L829.67 568L836.12 568L842.58 568L849.04 568L855.5 568L861.96 568L868.42 568L874.88 568L881.33 568L887.79 568L894.25 568L900.71 568L907.17 568L913.62 568L920.08 568L926.54 568L933 568L939.46 568L945.92 568L952.38 568L958.83 568L965.29 568L971.75 568L978.21 568L984.67 568L991.12 568L997.58 568L1004.04 568L1010.5 568L1016.96 568L1023.42 568L1029.88 568L1036.33 568L1042.79 568L1049.25 568L1055.71 568L1062.17 568L1068.62 568L1075.08 568L1081.54 568L1088 568L1094.46 568L1100.92 568L1107.38 568L1113.83 568L1120.29 568L1126.75 568L1133.21 477.33L1139.67 477.33L1146.12 477.33L1152.58 477.33L1159.04 477.33L1165.5 477.33L1171.96 477.33L1178.42 477.33L1184.88 477.33L1191.33 477.33L1197.79 477.33L1204.25 477.33L1210.71 568L1217.17 568L1223.62 568L1230.08 568L1236.54 568L1243 568L1249.46 568L1255.92 568L1262.38 477.33L1268.83 477.33L1275.29 477.33L1281.75 477.33L1288.21 477.33L1294.67 477.33L1301.12 477.33L1307.58 477.33L1314.04 477.33L1320.5 477.33L1326.96 477.33L1333.42 477.33L1339.88 477.33L1346.33 477.33L1352.79 477.33L1359.25 568L1365.71 568L1372.17 568L1378.62 568L1385.08 568L1391.54 568L1398 568" class="f-none s-accent" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M778 477.33H781.23V477.33H787.69V477.33H794.15V477.33H800.6V477.33H807.06V477.33H813.52V477.33H819.98V477.33H826.44V477.33H832.9V477.33H839.35V477.33H845.81V477.33H852.27V477.33H858.73V477.33H865.19V477.33H871.65V477.33H878.1V477.33H884.56V477.33H891.02V477.33H897.48V477.33H903.94V477.33H910.4V477.33H916.85V477.33H923.31V477.33H929.77V477.33H936.23V477.33H942.69V477.33H949.15V477.33H955.6V477.33H962.06V477.33H968.52V477.33H974.98V477.33H981.44V477.33H987.9V477.33H994.35V477.33H1000.81V477.33H1007.27V477.33H1013.73V477.33H1020.19V477.33H1026.65V477.33H1033.1V477.33H1039.56V477.33H1046.02V477.33H1052.48V477.33H1058.94V477.33H1065.4V477.33H1071.85V477.33H1078.31V477.33H1084.77V477.33H1091.23V477.33H1097.69V477.33H1104.15V477.33H1110.6V477.33H1117.06V477.33H1123.52V477.33H1129.98V477.33H1136.44V477.33H1142.9V477.33H1149.35V477.33H1155.81V477.33H1162.27V477.33H1168.73V477.33H1175.19V477.33H1181.65V477.33H1188.1V477.33H1194.56V477.33H1201.02V477.33H1207.48V477.33H1213.94V477.33H1220.4V477.33H1226.85V477.33H1233.31V477.33H1239.77V477.33H1246.23V477.33H1252.69V477.33H1259.15V477.33H1265.6V477.33H1272.06V477.33H1278.52V477.33H1284.98V477.33H1291.44V477.33H1297.9V477.33H1304.35V477.33H1310.81V477.33H1317.27V477.33H1323.73V477.33H1330.19V477.33H1336.65V477.33H1343.1V477.33H1349.56V477.33H1356.02V568H1362.48V568H1368.94V568H1375.4V568H1381.85V568H1388.31V568H1394.77V568H1398" class="f-none s-text" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="823.21" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">08:00</text>
+<text x="926.54" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">12:00</text>
+<text x="1029.88" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">16:00</text>
+<text x="1133.21" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">20:00</text>
+<text x="1236.54" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">00:00</text>
+<text x="1339.88" y="588.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">04:00</text>
+<text x="1398" y="467.53" font-size="12" class="f-muted" text-anchor="end">runner-gpu-01 unhealthy since 04:45</text>
+<rect x="20" y="610" width="1400" height="298" rx="7" class="f-surface"/>
+<path d="M1413 610A7 7 0 0 1 1420 617V901A7 7 0 0 1 1413 908H27A7 7 0 0 1 20 901V617A7 7 0 0 1 27 610M27 610H34M144.28 610H1126.25M1406 610H1413" class="f-none s-line-strong" stroke-width="1"/>
+<text x="40" y="614.9" font-size="14" class="f-text" font-weight="600">Heartbeat gaps</text>
+<text x="1400" y="614.38" font-size="12.5" class="f-faint" text-anchor="end">silences longer than two intervals, 20s, by runner</text>
+<rect x="43" y="631" width="10" height="10" rx="2" class="f-wait"/>
+<text x="62" y="640.38" font-size="12.5" class="f-muted">gap of 20 to 30s</text>
+<rect x="168.88" y="631" width="10" height="10" rx="2" class="f-fail"/>
+<text x="187.88" y="640.38" font-size="12.5" class="f-muted">30s and over: its tasks declared lost</text>
+<rect x="403.62" y="631" width="10" height="10" rx="2" class="f-wait-bg"/>
+<text x="422.62" y="640.38" font-size="12.5" class="f-muted">draining</text>
+<rect x="486.5" y="631" width="10" height="10" rx="2" class="f-fail-bg"/>
+<text x="505.5" y="640.38" font-size="12.5" class="f-muted">reporting unhealthy</text>
+<text x="186" y="677.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="127.5">runner-default-01</text>
+<path d="M200 673H1396" class="f-none s-line" stroke-width="1"/>
+<text x="186" y="707.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="127.5">runner-default-02</text>
+<path d="M200 703H1396" class="f-none s-line" stroke-width="1"/>
+<rect x="1019.25" y="697.8" width="6" height="10.4" rx="2" class="f-wait"/>
+<text x="186" y="737.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="97.5">runner-dmz-01</text>
+<path d="M200 733H1396" class="f-none s-line" stroke-width="1"/>
+<text x="186" y="767.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="97.5">runner-dmz-02</text>
+<path d="M200 763H1396" class="f-none s-line" stroke-width="1"/>
+<rect x="595.67" y="758.9" width="6" height="8.2" rx="2" class="f-wait"/>
+<rect x="1081.54" y="759.45" width="6" height="7.1" rx="2" class="f-wait"/>
+<text x="186" y="797.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="97.5">runner-dmz-03</text>
+<path d="M200 793H1396" class="f-none s-line" stroke-width="1"/>
+<rect x="1393.51" y="784" width="4.49" height="18" rx="3" class="f-wait-bg"/>
+<text x="1385.51" y="797.2" font-size="12" class="f-wait" text-anchor="end">drained by dana, 06:02</text>
+<text x="186" y="827.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="97.5">runner-lab-01</text>
+<path d="M200 823H1396" class="f-none s-line" stroke-width="1"/>
+<rect x="421.25" y="818.35" width="6" height="9.3" rx="2" class="f-wait"/>
+<text x="186" y="857.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="97.5">runner-gpu-01</text>
+<path d="M200 853H1396" class="f-none s-line" stroke-width="1"/>
+<rect x="1321.25" y="844" width="74.75" height="18" rx="3" class="f-fail-bg"/>
+<rect x="1193.67" y="849.45" width="6" height="7.1" rx="2" class="f-wait"/>
+<rect x="1231.04" y="846.7" width="6" height="12.6" rx="2" class="f-wait"/>
+<rect x="1268.42" y="845.05" width="6" height="15.9" rx="2" class="f-wait"/>
+<rect x="1318.25" y="843.95" width="6" height="18.1" rx="2" class="f-fail"/>
+<text x="287.21" y="882.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">08:00</text>
+<text x="486.54" y="882.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">12:00</text>
+<text x="685.88" y="882.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">16:00</text>
+<text x="885.21" y="882.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">20:00</text>
+<text x="1084.54" y="882.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">00:00</text>
+<text x="1283.88" y="882.02" font-size="11.5" class="f-faint t-mono" text-anchor="middle" textLength="34.5">04:00</text>
+<path d="M0 920H1440V943a9 9 0 0 1-9 9H9a9 9 0 0 1-9-9z" class="f-surface"/>
+<path d="M0 920.5H1440" class="f-none s-line" stroke-width="1"/>
+<rect x="18.5" y="926.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="24" y="940.2" font-size="12" class="f-text t-mono" font-weight="700">/</text>
+<text x="44.2" y="940.55" font-size="13" class="f-muted">Search</text>
+<rect x="104.04" y="926.5" width="32.6" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="109.54" y="940.2" font-size="12" class="f-text t-mono" font-weight="700" textLength="21.6">[ ]</text>
+<text x="144.14" y="940.55" font-size="13" class="f-muted">Range</text>
+<rect x="200.99" y="926.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="206.49" y="940.2" font-size="12" class="f-text t-mono" font-weight="700">e</text>
+<text x="226.69" y="940.55" font-size="13" class="f-muted">Export</text>
+<rect x="283.67" y="926.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="289.17" y="940.2" font-size="12" class="f-text t-mono" font-weight="700">?</text>
+<text x="309.37" y="940.55" font-size="13" class="f-muted">Keys</text>
+<text x="1422" y="940.38" font-size="12.5" class="f-faint t-mono" text-anchor="end" textLength="232.5">administrator · agentiik v0.6.0</text>
+<rect x="1166.52" y="188" width="217.48" height="120" rx="6" class="f-raised"/>
+<path d="M1378 188A6 6 0 0 1 1384 194V302A6 6 0 0 1 1378 308H1172.52A6 6 0 0 1 1166.52 302V194A6 6 0 0 1 1172.52 188M1172.52 188H1378" class="f-none s-line-strong" stroke-width="1.25"/>
+<text x="1180.52" y="210.38" font-size="12.5" class="f-text" font-weight="600">27 Sep, 06:00 to 06:15</text>
+<path d="M1180.52 228h12" class="f-none s-accent" stroke-width="2"/>
+<text x="1200.52" y="232.38" font-size="12.5" class="f-muted">slots in use</text>
+<text x="1370" y="232.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="45">8 of 8</text>
+<path d="M1180.52 248h12" class="f-none s-text" stroke-width="1.5" stroke-dasharray="3 2"/>
+<text x="1200.52" y="252.38" font-size="12.5" class="f-muted">capacity</text>
+<text x="1370" y="252.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="67.5">8, was 12</text>
+<text x="1200.52" y="272.38" font-size="12.5" class="f-muted">tasks waiting for dmz</text>
+<text x="1370" y="272.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="15">23</text>
+<path d="M1167.52 282H1383" class="f-none s-line" stroke-width="1"/>
+<text x="1180.52" y="301.2" font-size="12" class="f-accent" font-weight="500">runner-dmz-03 draining since 06:02</text>
+<path transform="translate(1322.25 857)" d="M0 0V17.5L4.6 13.3L7.7 20.2L10.6 18.9L7.6 12.2H13.6Z" class="f-text s-raised" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="1021.25" y="703" width="230" height="120" rx="6" class="f-raised"/>
+<path d="M1245.25 703A6 6 0 0 1 1251.25 709V817A6 6 0 0 1 1245.25 823H1027.25A6 6 0 0 1 1021.25 817V709A6 6 0 0 1 1027.25 703M1027.25 703H1245.25" class="f-none s-line-strong" stroke-width="1.25"/>
+<text x="1035.25" y="725.38" font-size="12.5" class="f-text" font-weight="600">runner-gpu-01 · 27 Sep 04:41:12</text>
+<rect x="1036.25" y="738" width="10" height="10" rx="2" class="f-fail"/>
+<text x="1055.25" y="747.38" font-size="12.5" class="f-muted">silent for</text>
+<text x="1237.25" y="747.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="22.5">31s</text>
+<text x="1055.25" y="767.38" font-size="12.5" class="f-muted">tasks declared lost</text>
+<text x="1237.25" y="767.38" font-size="12.5" class="f-text t-mono" text-anchor="end">1</text>
+<text x="1055.25" y="787.38" font-size="12.5" class="f-muted">since, it reports</text>
+<text x="1237.25" y="787.38" font-size="12.5" class="f-text t-mono" text-anchor="end" textLength="67.5">unhealthy</text>
+<path d="M1022.25 797H1250.25" class="f-none s-line" stroke-width="1"/>
+<text x="1035.25" y="816.2" font-size="12" class="f-accent" font-weight="500">Open the run whose task was lost</text>
+</g>
+<rect x=".5" y=".5" width="1439" height="997" rx="10" class="f-none s-line-strong"/>
+</svg>
+    <figcaption><b>Pools and runners, for an administrator.</b> Each pool's slots in use against its capacity, <code>dmz</code> losing four at 06:02 when <code>runner-dmz-03</code> was drained, and every heartbeat gap, the one of 31 seconds costing <code>runner-gpu-01</code> its task.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>Statistics are served by aggregate routes of the API rather than read from Prometheus or computed in the browser. An aggregate over runs discloses the runs, so it answers to the same grants: the API filters it by <code>run:read</code> as it filters <code>GET /api/v1/runs</code>, where a metrics endpoint knows no principal and sets every namespace's series side by side for whoever reaches it. Computed once, where the runs are recorded, a p95 is one number in the web console, in <code>agk console</code>, on a phone and in a script, where clients each paging through runs to compute their own would disagree, and none could page through a hundred thousand. And no metrics endpoint is opened to a browser: Prometheus stays on the operator's network, and an installation that runs none still has its charts.</p>
+    </div>
+  </div>
+<!-- statistics: end -->
 </section>
 
 <!-- ============ TERMINAL ============ -->
@@ -10233,7 +11563,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>runs</td><td>Newest first and kept live: state, run, workflow, trigger, start, duration and principal, and at full width a strip of the run's steps and a sparkline of its workflow's last twenty runs. Failed runs, and from <a href="roadmap/#m08">v0.8.0</a> waiting ones, sit in a band above the list, since they are why it is opened. Filtered as you type (<a href="#terminal-keys">Keys and the mouse</a>).</td><td class="wrapcell">GET /api/v1/runs</td></tr>
           <tr><td>run</td><td>Its graph drawn, each step's state live, a fan-out's shards one cell each beside a bar of those done. A step's exit code and its meaning, attempt, shard, image digest, runner name, pool and labels, never the host. Each port's envelope with its item count, and its JSON under <code>run:read_data</code>, up to the <a href="#size-rules">size rules</a>. Its log, history then live, as <code>agk logs</code> follows it. Cancel, replay from a step and, from v0.8.0, approve or reject.</td><td class="wrapcell">GET /api/v1/runs/{id}, its steps' inputs, outputs and logs</td></tr>
           <tr><td>graph</td><td>The resolved graph of a run or a version, full screen, drawn as boxes and edges (<a href="#terminal-graph">The graph, drawn</a>), or written as a list.</td><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}</td></tr>
-          <tr><td>workflows</td><td>The workflows of a namespace the principal can read, each one's versions, declared triggers and a sparkline of its last twenty runs, and a version's graph.</td><td class="wrapcell">what the web console lists, GET /api/v1/{ns}/workflows/{name} and GET /api/v1/runs</td></tr>
+          <tr><td>workflows</td><td>The workflows of a namespace the principal can read, each one's versions, declared triggers, a sparkline of its last twenty runs and a histogram of its durations, and a version's graph.</td><td class="wrapcell">what the web console lists, GET /api/v1/{ns}/workflows/{name}, GET /api/v1/runs and GET /api/v1/{ns}/stats/runs</td></tr>
           <tr><td>sharing</td><td>What <code>agk grants</code> prints, kept live, for a workflow or a namespace: the grants as written, and resolved for one principal with the scope each permission comes from, a deny the only subtraction.</td><td class="wrapcell">GET /api/v1/{ns}/grants, GET /api/v1/{ns}/workflows/{name}/grants</td></tr>
           <tr><td>runners</td><td>To an administrator alone: runners and pools, with labels, capacity, last heartbeat, state and concurrency, and who drained or revoked one and when, never a host.</td><td class="wrapcell">GET /api/v1/runners, GET /api/v1/runner-pools</td></tr>
         </tbody>
@@ -11386,6 +12716,7 @@ archive     queued
           <tr><td>spinner</td><td>Beside every running run, step and shard, in the accent's hue, beside the word <code>running</code>.</td><td class="wrapcell">the runs and the run, as they are read</td></tr>
           <tr><td>shard cells and bar</td><td>On a <code>fan_out</code>: one cell per shard in its state, and a bar of those done.</td><td class="wrapcell">GET /api/v1/runs/{id}</td></tr>
           <tr><td>sparkline</td><td>The durations of a workflow's last twenty runs, one bar each, oldest first: a failure in red, the run in progress in the accent, the rest muted, beside their median.</td><td class="wrapcell">GET /api/v1/runs, narrowed by <code>workflow</code> and <code>limit</code></td></tr>
+          <tr><td>histogram</td><td>A workflow's durations over the last 30 days, a dozen bins drawn in block characters, its p50 and p95 marked, beside its sparkline in the workflows view: the compact form of the web console's <a href="#console-statistics">statistics</a>.</td><td class="wrapcell">GET /api/v1/{ns}/stats/runs, with <code>histogram</code></td></tr>
           <tr><td>live</td><td>In the top line, a green dot and the word while the installation answers; in words, and asked again, when it stops.</td><td class="wrapcell">every read</td></tr>
           <tr><td>toast</td><td>A notification, in the corner, over the panes.</td><td class="wrapcell">GET /api/v1/me, and the runs view</td></tr>
         </tbody>
@@ -12815,6 +14146,7 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
           <tr><td class="wrapcell">fetching an artifact, or any payload written to disk</td><td>A host reached over SSH is often shared, and a payload left there is business data on a machine nobody audits. Envelopes are shown on screen, and a step's files listed by name, media type, size and digest.</td></tr>
           <tr><td class="wrapcell">changing grants, and what an administrator manages</td><td>The console shows sharing and runners and changes neither, as the decision below says.</td></tr>
           <tr><td class="wrapcell">the brick catalog and the MCP panel</td><td>Reference, read while writing a workflow, with the links and rendered schemas a browser gives.</td></tr>
+          <tr><td class="wrapcell">the statistics and their charts</td><td>A chart zoomed with the mouse, read under the pointer and exported is a browser's. The terminal draws the compact form of the same series, a sparkline and a histogram (<a href="#console-statistics">Statistics</a>).</td></tr>
         </tbody>
       </table>
     </div>

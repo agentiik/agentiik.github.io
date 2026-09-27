@@ -68,6 +68,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - `agk console` is drawn with Bubble Tea, Lip Gloss and Bubbles, confined to `cmd/agk`: panes that resize and stack at 80 by 24, the graph as boxes and edges, the design system's palette falling back to 256 and 16 colours and `NO_COLOR`, spinners, progress and sparklines, the mouse, a filter as you type, a command palette on `:` and toasts from `GET /api/v1/me`; eight mockups show it.
 - The roadmap plans `agk console` in v0.6.0, a seventh group of twenty-three tasks, and its approvals with the wait step in v0.8.0; the plan holds 654 tasks.
 - The web console takes `agk console`'s design language: a top bar with the namespace switcher and the principal and no sidebar, panes with rounded borders, state badges, monospaced identifiers, the graph as boxes and edges, toasts and a key line, keeping the browser's mouse, forms, visual editor and passkeys. Its four mockups and the home page's are redrawn as browser windows, scheduled runs by `finance/agentiik`.
+- The web console's statistics: a workflow's runs, durations, queue wait, exit codes, hours and ports, a namespace against its quotas, and the pools and runners for administrators, one range driving a zoom, a readout, a comparison, CSV and JSON exports and a link to the runs counted; three mockups show them.
+- `GET /api/v1/{ns}/stats/runs`, `/stats/steps`, `/stats/ports` and `/stats/quotas`, and `GET /api/v1/stats/pools` for administrators, from v0.6.0, counting only what `run:read` reaches; `agk console` draws a histogram of a workflow's durations from the first.
 
 ## v0.2.5, 2026-09-26
 
