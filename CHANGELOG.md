@@ -113,6 +113,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - agk talks to the installation `agk login` last signed in to where neither `--server` nor `AGENTIIK_SERVER` names one, never sending `AGENTIIK_TOKEN` there (exit 2); a refused exchange is recorded as `signin.fail`.
 - `stats` is reserved as a namespace name from v0.3.0, for v0.6.0's `GET /api/v1/stats/pools`; a namespace of that name made before keeps being served, and `init` and `migrate` say at every run to move its workflows.
 - Removing a TOTP generator takes a code it shows now, and no sign-in of the last 10 minutes, which starting and confirming one need.
+- An administrator the bootstrap token creates is given the `owner` role on every namespace no record names an owner of, recorded as `grant.create` by `operator`, so the first administrator owns the installation's namespaces with nothing shared by hand.
 
 ## v0.2.5, 2026-09-26
 
