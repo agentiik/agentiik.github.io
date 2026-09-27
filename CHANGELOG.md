@@ -51,6 +51,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - Administering is `grant:manage` at the installation, through a token with no scope; an administrator may grant in any namespace, its owner told.
 - Owning a namespace and holding a grant in one mean an unexpired role grant, own or a group's; a deny alone is no grant and takes no ownership away.
 - A token scoped to a workflow does not reach its namespace's routes, and a token that opens nothing is answered one `401` sentence.
+- `agentiik-api migrate` keeps the bootstrap token's hash as `init` does, from `AGK_OPERATOR_TOKEN`, and imports a v0.2 hash from `AGK_OPERATOR_TOKEN_FILE` once; the other programs pass that file over.
+- Homebrew keeps the bootstrap token in `operator-token.env` and migrates at every start, so an upgrade is `brew upgrade` and a restart.
+- An installation built by hand starts with `AGK_OPERATOR_TOKEN=$token agentiik-api migrate`, and a v0.2 one upgrades by running the new `migrate`.
+- Upgrading to v0.3.0 starts from v0.2.5's `compose.yaml`.
 
 ## v0.2.5, 2026-09-26
 
