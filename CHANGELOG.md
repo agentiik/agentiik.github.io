@@ -65,7 +65,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - `api_token.create` and `api_token.revoke` record whose token, its expiry, label and scope, in a service account's namespace.
 - `init` creates `AGK_INIT_NAMESPACE` again at every run where it is missing, with no owner.
 - `agk console`, the console in a terminal: runs, a run, its graph, workflows, sharing and runners over the web console's routes, as the signed-in principal, with no server and no permission of its own.
-- The roadmap plans `agk console` in v0.6.0, a seventh group of fifteen tasks, and its approvals with the wait step in v0.8.0.
+- `agk console` is drawn with Bubble Tea, Lip Gloss and Bubbles, confined to `cmd/agk`: panes that resize and stack at 80 by 24, the graph as boxes and edges, the design system's palette falling back to 256 and 16 colours and `NO_COLOR`, spinners, progress and sparklines, the mouse, a filter as you type, a command palette on `:` and toasts from `GET /api/v1/me`; eight mockups show it.
+- The roadmap plans `agk console` in v0.6.0, a seventh group of twenty-three tasks, and its approvals with the wait step in v0.8.0; the plan holds 654 tasks.
 
 ## v0.2.5, 2026-09-26
 
