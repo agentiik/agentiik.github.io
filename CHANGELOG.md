@@ -92,6 +92,9 @@ Every repository of the project carries the same version and is tagged at the sa
 - An enrolment link sets a password where the policy allows one, the only way in on an installation addressed by an IP address; `agk user create` says so, and storage gains `totp_enrolments`.
 - Recovery codes from another administrator, `agk user recover`, never for oneself, enrolling a passkey or a password; `agentiik-api recover` on the host for an administrator, told to every administrator in `GET /api/v1/me` as `break_glass_recovery`.
 - The bootstrap token ends when an administrator it created can sign in to a full session, with a passkey, or with a password where the policy requires none; its recovery codes end with it, and a first link opens nothing once its user holds a credential.
+- Forbidding passwords acts when they come to be forbidden, deleting passwords and their TOTP generators and suspending the accounts with no passkey the policy accepts; a passkey enrolled from a code lifts that suspension, a password set from one does not.
+- A policy change that would leave no administrator able to sign in is refused with 409; the policy routes replace the whole policy, and `agk auth policy` reads it first, sets what is named and takes `--inherit`.
+- Adding a way in from a session takes a sign-in in the last 10 minutes, else 403 with RFC 9470's challenge; the credential routes and `policy.change`, `credential.remove` and `credential.enrol` say what they record.
 
 ## v0.2.5, 2026-09-26
 
