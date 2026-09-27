@@ -64,6 +64,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - A token's value is `agktoken_` and 43 base64url characters; token bodies are held to 64 KiB and 1,024 permissions or places.
 - `api_token.create` and `api_token.revoke` record whose token, its expiry, label and scope, in a service account's namespace.
 - `init` creates `AGK_INIT_NAMESPACE` again at every run where it is missing, with no owner.
+- `agk console`, the console in a terminal: runs, a run, its graph, workflows, sharing and runners over the web console's routes, as the signed-in principal, with no server and no permission of its own.
 
 ## v0.2.5, 2026-09-26
 
