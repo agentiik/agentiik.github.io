@@ -98,6 +98,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - `agk login` signs in with a passkey or a password, prints the port to forward over SSH, keeps one token per installation in `profile.json` and revokes the one it replaces; `agk logout`; the exchange's code, its 401, 403 and 409, and the exit codes both verbs leave with.
 - Storage gains `exchange_codes`, and `api_token.create` records the credential that signed in for a token `agk login` minted.
 - A run's principal is asked again at admission, before its concurrency group and on every pass until it is let in; a run refused ends `cancelled` with a reason naming a grant by identifier, role and scope, the whole account going to `run.cancel` by `installation`; a run the bootstrap token started and not let in when it ends is cancelled.
+- `max_artifact_bytes` counts live artifacts and writes under way, each digest once, and the built-in store answers 507 past it, failing the step on the platform's account; `max_retention_days` keeps what declares no `retain`; `max_run_duration` caps the root `timeout` rather than refusing it, and bounds a run writing none.
+- The quota gauges `agentiik_quota_used` and `agentiik_quota_limit`, folded past 1,000 namespaces.
 
 ## v0.2.5, 2026-09-26
 
