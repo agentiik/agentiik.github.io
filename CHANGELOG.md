@@ -55,6 +55,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - Homebrew keeps the bootstrap token in `operator-token.env` and migrates at every start, so an upgrade is `brew upgrade` and a restart.
 - An installation built by hand starts with `AGK_OPERATOR_TOKEN=$token agentiik-api migrate`, and a v0.2 one upgrades by running the new `migrate`.
 - Upgrading to v0.3.0 starts from v0.2.5's `compose.yaml`.
+- `POST /api/v1/namespaces` requires an owner, a user or group given the `owner` role in the same transaction and recorded as `grant.create` beside `namespace.create`; deleting a personal namespace is refused with 409.
+- `agk namespace create`, `list`, `show`, `delete` and `quotas`, which reads first and lifts a bound only with `--lift NAME`; a change to a namespace answered with a 5xx exits 4.
+- `agentiik-api namespace` creates a namespace with no owner and its built-in identity, removes one as the route does, and records both by `installation`.
+- Namespace and quota bodies are held to 64 KiB and 1,024 pools and refuse `null`; `namespace.update` records the quotas as they then stand.
 
 ## v0.2.5, 2026-09-26
 
