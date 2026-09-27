@@ -111,6 +111,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - The bootstrap token ends when the first administrator has signed in: at their first passkey, or at the first request of a full session their password opens, the policy relaxed since included; `GET /api/v1/users/{login}` answers `suspended_for`, and a password set from a code where passwords are allowed also lifts a `no_passkey` suspension.
 - Once the bootstrap has ended, a grant carrying a role or a group membership that would leave no administrator able to sign in is refused with 409 naming the setting; a password that could only ever enrol, a passkey required and `min_passkeys` held, is refused with 409 naming `passkey`.
 - agk talks to the installation `agk login` last signed in to where neither `--server` nor `AGENTIIK_SERVER` names one, never sending `AGENTIIK_TOKEN` there (exit 2); a refused exchange is recorded as `signin.fail`.
+- `stats` is reserved as a namespace name from v0.3.0, for v0.6.0's `GET /api/v1/stats/pools`; a namespace of that name made before keeps being served, and `init` and `migrate` say at every run to move its workflows.
+- Removing a TOTP generator takes a code it shows now, and no sign-in of the last 10 minutes, which starting and confirming one need.
 
 ## v0.2.5, 2026-09-26
 
