@@ -47,6 +47,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - The bootstrap token's hash is kept in the database from v0.3.0.
 - `max_runs_per_hour` is counted under a lock on the namespace, `Retry-After` gives the seconds until one more run fits, a refused `workflow:` call fails its step, and a 429 is not audited; `agk run` exits 1 for it.
 - `allowed_runner_pools` names pools that exist; a step only a pool outside it could take fails at dispatch with 125, and a redemption by such a pool is refused with 422.
+- `operator` marks everything the bootstrap token writes, and `installation` what `init` and `agentiik-api namespace` do.
+- Administering is `grant:manage` at the installation, through a token with no scope; an administrator may grant in any namespace, its owner told.
+- Owning a namespace and holding a grant in one mean an unexpired role grant, own or a group's; a deny alone is no grant and takes no ownership away.
+- A token scoped to a workflow does not reach its namespace's routes, and a token that opens nothing is answered one `401` sentence.
 
 ## v0.2.5, 2026-09-26
 
