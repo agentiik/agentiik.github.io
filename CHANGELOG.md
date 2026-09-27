@@ -118,6 +118,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - Get started and Install a server create the first administrator with the bootstrap token, `agk user create alice --admin`, which hands them `demo`, then sign in from a browser that trusts the certificate and with `agk login`; a new token in `.env` counts only until that sign-in, and an administrator issues join tokens.
 - Every table naming a namespace is under row level security, the audit log, the policy, the notifications and the service accounts included; a refusal asks what an allowed request would, so that how long it takes discovers nothing either, and a run names its runner by identifier alone.
 - A notification names its `act` and who did it, `by`; putting anybody in a group is told to the owners where it holds a role, the other administrators are told where nobody owns, and `GET /api/v1/me` leaves out a workflow its caller holds nothing in.
+- A deny of `grant:manage` on a workflow is refused with 422.
 
 ## v0.2.5, 2026-09-26
 
