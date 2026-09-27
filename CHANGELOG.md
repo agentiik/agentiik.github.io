@@ -28,6 +28,23 @@ Every repository of the project carries the same version and is tagged at the sa
 - `secret:use` is checked at the push, against the pusher, by the version `PUT`, a git push and `workflow.commit` alike: a version naming a secret is refused with 403 without it, and running it takes `workflow:run` alone.
 - The access figure and the console's access mock deny `run:read_data` to an `editor`, which holds it, rather than to roles that never did.
 - Secret permissions come from namespace grants alone, and a grant or a deny ends at the instant its expiry names.
+- Logins and principal names follow the namespace grammar, 255 characters at most; `installation` is refused as a login, and `operator` also marks the bootstrap token's writes.
+- Removing a principal removes what it holds, and is refused while a namespace's record names it as owner.
+- A namespace's policy applies at sign-in to every account holding a grant in it, and the installation's is stored whole.
+- A passkey's kind comes from Backup Eligibility alone, which never changes.
+- Enrolment links: their three kinds, what a fresh one revokes, one enrolment-only session each, and a suspended account's still working.
+- An installation addressed by IP signs in with passwords without rewriting its stored policy.
+- What passkey verification refuses, and a stalled signature counter refusing the sign-in, audited and told to the user, with no lock.
+- Removing a workflow or a namespace removes its grants.
+- A self-granting administrator notifies the namespace's owner, or every holder of `owner` where there is none; owning a namespace means holding `owner` there.
+- Notifications are kept 90 days, or dismissed with `DELETE /api/v1/me/notifications/{id}`.
+- `max_concurrent_tasks` and `max_retention_days` default to 20 and 90; the other quotas bound nothing until set.
+- A token carries an administrator's powers only where its scope does not narrow them away.
+- `DELETE /api/v1/me/credentials/{id}`, and a single read and a delete for users, groups and namespaces.
+- Group, membership and service account changes are audited.
+- Storage lists the identity tables as migrated: no mail on users, and an AAGUID that may name a model nothing certifies.
+- The Relying Party Identifier is the host of the public URL; a domain shared with a console comes with the console.
+- The bootstrap token's hash is kept in the database from v0.3.0.
 
 ## v0.2.5, 2026-09-26
 
