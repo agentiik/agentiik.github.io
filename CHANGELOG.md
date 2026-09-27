@@ -116,6 +116,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - An administrator the bootstrap token creates is given the `owner` role on every namespace no record names an owner of, recorded as `grant.create` by `operator`, so the first administrator owns the installation's namespaces with nothing shared by hand.
 - Install a server copies deploy's `compose.yaml` as it no longer gives the API `AGK_OPERATOR_TOKEN_FILE`, and its `.env` examples as they call the token in `.env` the bootstrap token and have an administrator issue join tokens.
 - Get started and Install a server create the first administrator with the bootstrap token, `agk user create alice --admin`, which hands them `demo`, then sign in from a browser that trusts the certificate and with `agk login`; a new token in `.env` counts only until that sign-in, and an administrator issues join tokens.
+- Every table naming a namespace is under row level security, the audit log, the policy, the notifications and the service accounts included; a refusal asks what an allowed request would, so that how long it takes discovers nothing either, and a run names its runner by identifier alone.
 
 ## v0.2.5, 2026-09-26
 
