@@ -100,6 +100,9 @@ Every repository of the project carries the same version and is tagged at the sa
 - A run's principal is asked again at admission, before its concurrency group and on every pass until it is let in; a run refused ends `cancelled` with a reason naming a grant by identifier, role and scope, the whole account going to `run.cancel` by `installation`; a run the bootstrap token started and not let in when it ends is cancelled.
 - `max_artifact_bytes` counts live artifacts and writes under way, each digest once, and the built-in store answers 507 past it, failing the step on the platform's account; `max_retention_days` keeps what declares no `retain`; `max_run_duration` caps the root `timeout` rather than refusing it, and bounds a run writing none.
 - The quota gauges `agentiik_quota_used` and `agentiik_quota_limit`, folded past 1,000 namespaces.
+- The controller that leads runs the purges, the collection and the orphan sweep: a pass at the start of its term and every 10 minutes, batches of 1,000 rows or 100 runs, a line in its log per pass, and six counters; the collection's 24-hour grace is a constant, and a write holds its object a day past its policy.
+- Orphans go to the collection a day after they were written and are deleted a day later; the artifact files v0.2 left unrecorded are recorded by `init`, `migrate` given `AGK_OBJECTS_DIR`, and the controller, and v0.2 runs expire at their namespace's `max_retention_days`.
+- Storage lists `artifact_objects`, `artifact_uploads` and `artifact_room` and the new run columns, and says what an object's count counts; an envelope may outlive a one-shot output, whose file then answers 410.
 
 ## v0.2.5, 2026-09-26
 
