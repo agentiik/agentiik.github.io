@@ -90,6 +90,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - Behind `AGENTIIK_PROXY_URL` the API reads a sign-in's address from the last `X-Forwarded-For` entry; nginx needs `proxy_set_header X-Forwarded-For $remote_addr;`, which the deploy `nginx.conf` does not carry yet.
 - Setting a password from an enrolment link, a recovery code or a session, and a TOTP generator from a session: `POST /api/v1/auth/password/enrol`, `PUT` and `DELETE /api/v1/me/password`, `/api/v1/me/totp` and its confirmation; 12 characters to 1,024 bytes, not the login, no composition rule.
 - An enrolment link sets a password where the policy allows one, the only way in on an installation addressed by an IP address; `agk user create` says so, and storage gains `totp_enrolments`.
+- Recovery codes from another administrator, `agk user recover`, never for oneself, enrolling a passkey or a password; `agentiik-api recover` on the host for an administrator, told to every administrator in `GET /api/v1/me` as `break_glass_recovery`.
+- The bootstrap token ends when an administrator it created can sign in to a full session, with a passkey, or with a password where the policy requires none; its recovery codes end with it, and a first link opens nothing once its user holds a credential.
 
 ## v0.2.5, 2026-09-26
 
