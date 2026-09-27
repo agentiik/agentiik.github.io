@@ -1692,7 +1692,7 @@ x-agentiik: &amp;agentiik
   restart: unless-stopped
 
 # Each service that reads what init writes waits for it, and is restarted when a changed setting
-# recreates init: the new certificate, the new operator token's hash, a fresh join token.
+# recreates init: the new certificate, a fresh join token.
 x-after-init: &amp;after-init
   init: { condition: service_completed_successfully, restart: true }
 
@@ -1730,7 +1730,8 @@ services:
 
   # Runs at every docker compose up, and brings the installation in line with the settings: the
   # certificate for AGENTIIK_HOST, the keys, the bus identity, the migration, the namespace, the
-  # operator token's hash and a join token for the runner. Its log says what it did.
+  # bootstrap token's hash in the database until the first administrator has signed in, and a join
+  # token for the runner. Its log says what it did.
   init:
     image: ghcr.io/agentiik/api:${AGENTIIK_VERSION:-v0.2.5}
     command: [init]
@@ -1782,7 +1783,6 @@ services:
       AGK_OBJECTS_DIR: /objects
       AGK_PRESIGN_KEY_FILE: /agentiik/presign-key
       AGK_MASTER_KEY_FILE: /agentiik/master-key # the API's alone: the controller refuses to start with it
-      AGK_OPERATOR_TOKEN_FILE: /agentiik/operator-token.sha256
       AGK_LISTEN: :${AGENTIIK_PORT:-8443}
       AGK_PUBLIC_URL: https://${AGENTIIK_HOST:-localhost}:${AGENTIIK_PORT:-8443}
       AGK_TLS_CERT_FILE: /agentiik/tls/server.pem
@@ -2004,8 +2004,11 @@ a file from greet</code></pre>
 # other setting has its default in compose.yaml: uncomment what you change, then docker compose up -d,
 # and every service that reads a changed setting is recreated, and init brings the installation in line.
 
-# The operator token, which may do everything: 32 characters or more, such as openssl rand -hex 32
-# writes. Only its hash is written anywhere else. Changed, the previous one stops working.
+# The bootstrap token: 32 characters or more, such as openssl rand -hex 32 writes, of which only the
+# hash is kept anywhere else. Until the first administrator has signed in it administers the
+# installation and owns every namespace, and its one lasting use is to create that administrator.
+# From that sign-in it is refused, and this line, which compose.yaml still requires, is ignored.
+# Changed before then, the previous one stops working.
 AGENTIIK_OPERATOR_TOKEN=
 
 # Where the installation keeps its state, one directory per service: ./data beside compose.yaml,
@@ -2477,7 +2480,7 @@ configs:
 # The installation's API, as this machine reaches it: https://AGENTIIK_HOST:8443, or the proxy's URL.
 AGENTIIK_API=https://agentiik.example.com:8443
 
-# A join token of the pool this runner joins, which the operator issues, single use and valid an hour.
+# A join token of the pool this runner joins, which an administrator issues, single use and valid an hour.
 # Read only where the runner has to join: at the first start, and after AGENTIIK_API or AGENTIIK_LABELS
 # changed, which makes it a new runner and takes a new token.
 AGENTIIK_JOIN_TOKEN=agkjoin_...
