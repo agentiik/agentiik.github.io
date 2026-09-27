@@ -1552,7 +1552,7 @@ flowchart LR
 <span class="p">$</span> <span class="cmd">docker compose up -d --wait</span></code></pre>
     </div>
 
-    <p><code>--wait</code> returns once every service is up and healthy, and fails naming the one that is not. <code>.env</code> holds the operator token, which <code>agk</code> reads as <code>AGENTIIK_TOKEN</code> and without which <code>compose.yaml</code> refuses to start. The state is kept in <code>data/</code> beside <code>compose.yaml</code>.</p>
+    <p><code>--wait</code> returns once every service is up and healthy, and fails naming the one that is not. <code>.env</code> holds the bootstrap token, which <code>agk</code> reads as <code>AGENTIIK_TOKEN</code> and without which <code>compose.yaml</code> refuses to start. The state is kept in <code>data/</code> beside <code>compose.yaml</code>.</p>
 
     <h3 id="run-on-the-server">Run the workflow there</h3>
 
@@ -1565,6 +1565,24 @@ flowchart LR
 <span class="p">$</span> <span class="cmd">export SSL_CERT_DIR="$PWD/trust"</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_SERVER=https://localhost:8443</span></code></pre>
     </div>
+
+    <p>The token in <code>.env</code> is the bootstrap token. It administers the server and owns every namespace until the first administrator has signed in, and does nothing after, so its one lasting use is to create that administrator, <code>alice</code> here, and give them the namespace <code>demo</code> the server made, since an administrator holds a namespace only where a grant gives one:</p>
+
+    <div class="block">
+      <div class="note-label">the first administrator, with the bootstrap token</div>
+<pre><code><span class="p">$</span> <span class="cmd">agk user create alice --admin</span>
+<span class="p">$</span> <span class="cmd">agk share demo --user alice --role owner</span></code></pre>
+    </div>
+
+    <p><code>agk user create</code> prints a link, single use and good for an hour. Open it in a browser on this machine that trusts <code>trust/agentiik.pem</code> (<a href="#compose-first-admin">The first administrator</a> says how), register a passkey there, then sign alice in here:</p>
+
+    <div class="block">
+      <div class="note-label">once the passkey is registered</div>
+<pre><code><span class="p">$</span> <span class="cmd">unset AGENTIIK_TOKEN</span>
+<span class="p">$</span> <span class="cmd">agk login</span></code></pre>
+    </div>
+
+    <p><code>agk</code> presents alice's token from then on, and the bootstrap token stops working: a secret that administers everything, shared by whoever reads one file, is what users replace.</p>
 
     <p>Then, in the chapter's <code>first-run</code> directory, copied to this machine: a server runs a commit, so commit the workflow, push it, and run it.</p>
 
@@ -1593,14 +1611,13 @@ flowchart LR
       <table>
         <thead><tr><th>What</th><th>Today</th><th>Why</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">agk login<br>agk whoami<br>agk share<br>agk grants</td><td>Refused by v0.2, naming what is missing.</td><td>Principals arrive in <a href="roadmap/#m03">v0.3.0</a>, which serves all four.</td></tr>
           <tr><td class="wrapcell">agk brick init</td><td>Refused, naming what is missing.</td><td>Brick templates come from <code>agentiik/bricks</code>. <a href="roadmap/">The roadmap</a> says which release brings them.</td></tr>
           <tr><td>network: egress</td><td>Refused, not opened. <code>network: none</code> and <code>network: internal</code> run.</td><td>The proxy enforcing <code>egress.allow</code> is <a href="roadmap/#m09">v0.9.0</a> work, once it is designed, and an open network called filtered is worse than a refusal.</td></tr>
         </tbody>
       </table>
     </div>
 
-    <p>What a server does not do yet, users and the console among them, is in <a href="#server-not-yet">Install a server</a>.</p>
+    <p>What a server does not do yet, the console among them, is in <a href="#server-not-yet">Install a server</a>.</p>
   </div>
 </section>
 
@@ -1623,7 +1640,7 @@ flowchart LR
       </table>
     </div>
 
-    <p>Both keep one operator token that may do everything, since <code>v0.2</code> has no users (<a href="#server-not-yet">What v0.2 does not do yet</a>).</p>
+    <p>Both start with a bootstrap token, which administers the installation until the first administrator has signed in: its one lasting use is to create that administrator (<a href="#compose-first-admin">The first administrator</a>).</p>
 
     <h3 id="install-with-compose">On a Linux machine, with Docker Compose</h3>
 
@@ -1639,6 +1656,7 @@ flowchart LR
           <tr><td><code>curl</code>, <code>openssl</code>, <code>git</code>, <code>sudo</code></td><td>To download the file, make a token and commit a workflow; <code>sudo</code> only to back up and remove what the containers wrote as root.</td></tr>
           <tr><td>Ports 8443 and 4222 open</td><td>The API serves HTTPS on 8443 (<code>AGENTIIK_PORT</code>) and the bus listens on 4222 (<code>AGENTIIK_BUS_PORT</code>), both on every interface: open them to the machines that reach the installation, and nothing else. Behind a proxy, its 443 takes the place of 8443, which then listens on the loopback alone. Where 4222 is taken, <code>AGENTIIK_BUS_PORT</code> in <code>.env</code> moves the bus.</td></tr>
           <tr><td>Go 1.27, or Homebrew, where you run <code>agk</code></td><td>To install the command line. <code>agk push</code> also needs a Docker daemon, to resolve image tags to digests.</td></tr>
+          <tr><td>A browser</td><td>To register a passkey and sign in with <code>agk login</code>, in a browser that trusts the installation's certificate (<a href="#compose-first-admin">The first administrator</a>).</td></tr>
           <tr><td>Free space beside <code>data/postgres</code> for a second copy of the database, when upgrading to a release that moves PostgreSQL to a new major version</td><td><code>postgres-upgrade</code> copies the cluster rather than rewriting it, so that the old one stays whole as the way back (<a href="#compose-upgrade">Upgrade</a>). It asks for the cluster's size and 128 MiB more, and refuses with less, changing nothing, since a disk filled halfway through an upgrade is full for every other service on the host too.</td></tr>
         </tbody>
       </table>
@@ -1656,7 +1674,7 @@ flowchart LR
 <span class="p">$</span> <span class="cmd">docker compose up -d --wait</span></code></pre>
     </div>
 
-    <p><code>--wait</code> returns once every service is up and healthy, and fails naming the one that is not. <code>.env</code> holds the operator token, the one credential of a <code>v0.2</code> installation, which may do everything and which <code>agk</code> reads as <code>AGENTIIK_TOKEN</code>: <code>compose.yaml</code> refuses to start without it. Every other setting has its default in <code>compose.yaml</code>, and <a href="#compose-settings"><code>.env.example</code></a> lists them all. The state is kept in <code>data/</code> beside <code>compose.yaml</code>, or where <code>AGENTIIK_DATA</code> in <code>.env</code> says.</p>
+    <p><code>--wait</code> returns once every service is up and healthy, and fails naming the one that is not. <code>.env</code> holds the bootstrap token, which administers the installation until <a href="#compose-first-admin">the first administrator</a> has signed in and which <code>agk</code> reads as <code>AGENTIIK_TOKEN</code>: <code>compose.yaml</code> refuses to start without it. Every other setting has its default in <code>compose.yaml</code>, and <a href="#compose-settings"><code>.env.example</code></a> lists them all. The state is kept in <code>data/</code> beside <code>compose.yaml</code>, or where <code>AGENTIIK_DATA</code> in <code>.env</code> says.</p>
 
     <h4 id="compose-on-a-server">On a server</h4>
     <p>Where <code>agk</code> or a runner on another machine reaches the installation, <code>AGENTIIK_HOST</code> is the name or the address it reaches it at, which the certificate is issued to:</p>
@@ -1873,7 +1891,7 @@ volumes:
           <tr><td>The database</td><td>Migrated.</td><td>Migrated: what a new version adds.</td></tr>
           <tr><td><code>AGENTIIK_NAMESPACE</code></td><td>Created.</td><td>Created where it is new; a previous one stays.</td></tr>
           <tr><td>A join token for the runner</td><td>Issued for the pool <code>default</code>, valid an hour.</td><td>Issued again, since the runner may have to join again after a setting changed; it uses one only where it has to.</td></tr>
-          <tr><td>The operator token</td><td>The hash of <code>AGENTIIK_OPERATOR_TOKEN</code>.</td><td>The hash of <code>AGENTIIK_OPERATOR_TOKEN</code>, written where it differs.</td></tr>
+          <tr><td>The bootstrap token</td><td>The hash of <code>AGENTIIK_OPERATOR_TOKEN</code>, in the database.</td><td>The hash of <code>AGENTIIK_OPERATOR_TOKEN</code>, written where it differs, until <a href="#compose-first-admin">the first administrator</a> has signed in; from then on the line is ignored, and <code>init</code> says so.</td></tr>
         </tbody>
       </table>
     </div>
@@ -1919,12 +1937,36 @@ agentiik-runner-1             ghcr.io/agentiik/runner:v0.2.5             "/usr/l
     </div>
 
     <h4 id="agk-from-another-machine">From another machine</h4>
-    <p><code>AGENTIIK_HOST</code> in <code>.env</code> is the name the other machine reaches this one at. <code>AGENTIIK_SERVER</code> is then <code>https://</code> that name <code>:8443</code>, or <code>AGENTIIK_PROXY_URL</code> <a href="#behind-a-reverse-proxy">behind a reverse proxy</a>, and <code>AGENTIIK_TOKEN</code> the operator token in <code>.env</code>. The certificate is <code>trust/agentiik.pem</code>, which <code>docker compose cp</code> copied out above. Copy it to that machine and trust it: <code>SSL_CERT_DIR</code> naming its directory on Linux, and on macOS:</p>
+    <p><code>AGENTIIK_HOST</code> in <code>.env</code> is the name the other machine reaches this one at. <code>AGENTIIK_SERVER</code> is then <code>https://</code> that name <code>:8443</code>, or <code>AGENTIIK_PROXY_URL</code> <a href="#behind-a-reverse-proxy">behind a reverse proxy</a>, and <code>agk login</code> signs in there once <a href="#compose-first-admin">the first administrator</a> has a passkey. The certificate is <code>trust/agentiik.pem</code>, which <code>docker compose cp</code> copied out above. Copy it to that machine and trust it: <code>SSL_CERT_DIR</code> naming its directory on Linux, and on macOS:</p>
     <div class="block">
       <div class="note-label">macOS: agk trusts what the keychain trusts</div>
 <pre><code><span class="p">$</span> <span class="cmd">sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain agentiik.pem</span></code></pre>
     </div>
-    <p>From <a href="roadmap/#m03">v0.3.0</a>, a browser signing in with a passkey has to trust the certificate the same way, since it runs no passkey ceremony on a page clicked past a warning (<a href="#sign-in-page">The sign-in page</a>); a <a href="#behind-a-reverse-proxy">reverse proxy</a> with a certificate from a public authority spares the step.</p>
+    <p>A browser signing in with a passkey has to trust the certificate the same way, since it runs no passkey ceremony on a page clicked past a warning (<a href="#sign-in-page">The sign-in page</a>); a <a href="#behind-a-reverse-proxy">reverse proxy</a> with a certificate from a public authority spares the step.</p>
+
+    <h4 id="compose-first-admin">The first administrator</h4>
+    <p>The token in <code>.env</code> is the bootstrap token. It administers the installation and owns every namespace until the first administrator has signed in, and does nothing after, so its one lasting use is to create that administrator, <code>alice</code> here. An administrator holds a namespace only where a grant gives one, so the token gives <code>alice</code> the one <code>init</code> made too:</p>
+
+    <div class="block">
+      <div class="note-label">the first administrator, with the bootstrap token</div>
+<pre><code><span class="p">$</span> <span class="cmd">agk user create alice --admin</span>
+alice is an administrator with no credential yet. Open this link once, before 10:15 UTC, to enrol a passkey, or a password where the installation allows one:
+https://localhost:8443/auth/enrol#agkenrol_...
+the bootstrap token works until alice has signed in; then sign in as alice with agk login
+<span class="p">$</span> <span class="cmd">agk share demo --user alice --role owner</span>
+granted owner on demo to alice: grant 01M3EF3ZQ1V6D2N8KX4T7B9CWA</code></pre>
+    </div>
+
+    <p>Open the link, once and within the hour, in a browser that trusts the installation's certificate, since a browser runs no passkey ceremony on a page clicked past a certificate warning (<a href="#sign-in-page">The sign-in page</a>). Behind a <a href="#behind-a-reverse-proxy">reverse proxy</a> whose certificate is from a public authority, any browser does. Otherwise the certificate is in <code>trust/</code>. <code>proxy.pem</code>, the authority of a proxy with one of its own, goes in the browser's settings as an authority. <code>agentiik.pem</code> is one certificate rather than an authority, which the settings of a browser on Linux refuse as one: macOS trusts it as <a href="#agk-from-another-machine">above</a>, and Chrome or Chromium on Linux once <code>certutil -d sql:$HOME/.pki/nssdb -A -t P,, -n agentiik -i trust/agentiik.pem</code>, from libnss3-tools, has written it in their certificate database, as the same command does for Firefox with its profile's directory. With <code>AGENTIIK_HOST</code> left at <code>localhost</code>, the browser is on this machine. The page registers a passkey, or sets a password on an installation addressed by an IP address, where no browser runs a passkey ceremony. <code>agk user create alice --admin</code> again prints a fresh link, for one that lapsed. Then sign in here, and give <code>curl</code> below a token of alice's:</p>
+
+    <div class="block">
+      <div class="note-label">once the passkey is registered</div>
+<pre><code><span class="p">$</span> <span class="cmd">unset AGENTIIK_TOKEN</span>
+<span class="p">$</span> <span class="cmd">agk login</span>
+<span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(agk token create --label curl)"</span></code></pre>
+    </div>
+
+    <p><code>agk login</code> opens the sign-in page in a browser, or says what to do where this machine has none, and keeps alice's token for <code>agk</code>; <code>agk token create</code> mints her a second one, for 90 days, which <code>agk</code> presents too while <code>AGENTIIK_TOKEN</code> is set. From alice's first sign-in the bootstrap token is refused: a secret that administers everything, shared by whoever reads one file, is what users replace. Its line stays in <code>.env</code>, which <code>compose.yaml</code> requires, and <code>init</code> says at every start that it is ignored. A script is given a service account's token (<a href="#first-run">First run</a>). The CI of agentiik/deploy runs this but for the last block, having no browser: it checks the link and the page it opens, and that the bootstrap token works on until then.</p>
 
     <h4 id="compose-first-workflow">Run a first workflow</h4>
     <p>A workflow is a git repository with an <code>agentiik.yaml</code> at its root, with one line on standard error for <code>agk logs</code> to show and one file for <code>curl</code> to fetch:</p>
@@ -1973,7 +2015,7 @@ first-run succeeded in 0.6s: 1 step, 1 container
 greeting: 1 item
 run 01M3EF42G80SR9XW17YWGEYTTT: https://localhost:8443/api/v1/demo/runs/01M3EF42G80SR9XW17YWGEYTTT
 run 01M3EF42G80SR9XW17YWGEYTTT: demo/first-run@9d4e925, succeeded after 0.6s
-manual by operator at 2026-09-26T09:00:44Z
+manual by alice at 2026-09-26T09:00:44Z
 greet  succeeded, out 1 sha256:2ec2167f189f
 output greeting: 1 item
 greet | greet runs on x86_64
@@ -2055,7 +2097,7 @@ AGENTIIK_OPERATOR_TOKEN=
       <table>
         <thead><tr><th>Changed in .env</th><th>At the next docker compose up -d</th></tr></thead>
         <tbody>
-          <tr><td>AGENTIIK_OPERATOR_TOKEN</td><td>Required. The new token works and the previous one stops working.</td></tr>
+          <tr><td>AGENTIIK_OPERATOR_TOKEN</td><td>Required. Until the first administrator has signed in, the new bootstrap token works and the previous one stops working; after, the line is ignored, and <code>init</code> says so.</td></tr>
           <tr><td>AGENTIIK_DATA</td><td>The state is read and written there: a new, empty directory is a new installation. Move <code>data/</code> there first, with the installation stopped, to keep it.</td></tr>
           <tr><td>AGENTIIK_VERSION</td><td>Every image is that version's, and <code>init</code> migrates the database before the API and the controller start on them.</td></tr>
           <tr><td>AGENTIIK_HOST</td><td>A new certificate, which clients trust in place of the previous one. The runner, handed a new address, joins again as a new runner.</td></tr>
@@ -2068,15 +2110,13 @@ AGENTIIK_OPERATOR_TOKEN=
       </table>
     </div>
 
-    <p>A second namespace, and a new operator token, which stops the previous one working:</p>
+    <p>A second namespace, which <code>alice</code> is given as <code>demo</code> was:</p>
 
     <div class="block">
-      <div class="note-label">change two settings</div>
+      <div class="note-label">a second namespace</div>
 <pre><code><span class="p">$</span> <span class="cmd">echo 'AGENTIIK_NAMESPACE=team' &gt;&gt; .env</span>
-<span class="p">$</span> <span class="cmd">sed -i '/^AGENTIIK_OPERATOR_TOKEN=/d' .env</span>
-<span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt;&gt; .env</span>
 <span class="p">$</span> <span class="cmd">docker compose up -d --wait</span>
-<span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span></code></pre>
+<span class="p">$</span> <span class="cmd">agk share team --user alice --role owner</span></code></pre>
     </div>
 
     <p>A runner that joins again is a new runner, and the one it was stays registered until an administrator revokes it: the API checked the address and the labels against the token when they were claimed, so an identity cannot follow a change to either. <code>docker compose restart</code> does not read <code>.env</code> again, so it applies nothing. The token is <code>AGENTIIK_OPERATOR_TOKEN</code> rather than <code>AGENTIIK_TOKEN</code>, which <code>agk</code> reads, because Compose prefers a variable of the shell to the same one in <code>.env</code>: exported for <code>agk</code>, it would hide every change made in <code>.env</code>. Another namespace is also <code>docker compose run --rm --no-deps api namespace create NAME</code>, which leaves <code>.env</code> as it is.</p>
@@ -2094,7 +2134,7 @@ AGENTIIK_OPERATOR_TOKEN=
       <li>Where a release moves PostgreSQL to a new major version, as <a href="roadmap/#m03">v0.3.0</a> moves it from 17 to 18, <code>postgres-upgrade</code> upgrades <code>data/postgres</code> with <code>pg_upgrade</code> in copy mode before PostgreSQL starts, and keeps the previous cluster beside it as <code>data/postgres-17</code>, as the previous release left it: the way back, for you to remove once you no longer need it. A PostgreSQL the previous release left without shutting down, killed at the end of its grace, is recovered first. A failure at any step leaves <code>data/postgres</code> as it was, removes what was built beside it, and says why in <code>docker compose logs postgres-upgrade</code>; PostgreSQL then does not start, and the next <code>docker compose up</code> takes the upgrade up again. The same service carries every later major version.</li>
       <li>Upgrading to <a href="roadmap/#m03">v0.3.0</a> also settles what v0.2 left on the disk, with nothing to do by hand. A run v0.2 finished carries no expiry: migration 0038 gives its envelopes and logs its namespace's <code>max_retention_days</code> from its end. The artifact files v0.2 recorded nothing for, those of every output given no <code>retain</code>, are recorded by <code>init</code> from the envelopes of those runs, each expiring its namespace's <code>max_retention_days</code> after its run finished, and what <code>init</code> leaves the controller records. The <a href="#what-the-purges-act-on">purges</a> then retire them and the collection deletes them, so an upgraded installation's store shrinks on its own.</li>
       <li>From <code>v0.2.5</code>, a release starts on the state the one before it left, with <code>compose.yaml</code> and <code>.env</code> changed and nothing else: <code>init</code> applies every change at <code>docker compose up</code> (migrations, file layout, credentials), and a setting keeps its name or is still read under its old one. A check on every change of agentiik/deploy installs the latest release, runs a workflow, upgrades, and finds the old run and token still working and a new run succeeding; the same from <code>latest</code> to <code>dev</code>.</li>
-      <li>Upgrading to <a href="roadmap/#m03">v0.3.0</a> from v0.2.5's <code>compose.yaml</code>, which requires the token, keeps <code>AGENTIIK_OPERATOR_TOKEN</code> working, as the bootstrap token, until the first administrator has signed in (<a href="#first-run">First run</a>). It then stops, the line stays in <code>.env</code> and <code>init</code> says at every run that it is ignored, and a script moves to a service account's token. A run it started that has not been let in by then ends <code>cancelled</code>, naming the end; one already running goes on.</li>
+      <li>Upgrading to <a href="roadmap/#m03">v0.3.0</a> from v0.2.5's <code>compose.yaml</code>, which requires the token, keeps <code>AGENTIIK_OPERATOR_TOKEN</code> working, as the bootstrap token, until the first administrator has signed in, created as in <a href="#compose-first-admin">The first administrator</a>. It then stops, the line stays in <code>.env</code> and <code>init</code> says at every run that it is ignored, and a script moves to a service account's token. A run it started that has not been let in by then ends <code>cancelled</code>, naming the end; one already running goes on.</li>
       <li>An installation of <code>v0.2.4</code> kept its state in Docker volumes rather than <code>data/</code>, and one made with <code>setup</code>, up to <code>v0.2.3</code>, in <code>/srv/agentiik</code>: neither is upgraded in place. Remove it as its own guide said, then start anew.</li>
       <li>The bus credential of the API and the controller lasts 90 days. The API renews it itself from 14 days before its end, in <code>data/bus</code>, which it shares with the controller, and both take the new one with no restart; it warns daily only where it cannot. <code>init</code> renews it too at any <code>docker compose up</code> in that time.</li>
     </ul>
@@ -2362,6 +2402,7 @@ http:
     </div>
 
     <p><code>curl</code> reads its own list of authorities rather than the keychain, hence <code>--cacert</code>. The logs are in <code>$(brew --prefix)/var/log/agentiik</code>, one file per program.</p>
+    <p>The first administrator is created as for Compose (<a href="#compose-first-admin">The first administrator</a>), giving them the namespace <code>agentiik-setup</code> made, named after you, in place of <code>demo</code>, under a login other than that name, since logins and namespaces share one name space. Safari trusts the certificate already, through the System keychain.</p>
 
     <h4>Stop, restart, upgrade, back up, remove</h4>
     <div class="block">
@@ -2378,8 +2419,9 @@ http:
 <span class="p">$</span> <span class="cmd">"$(brew --prefix postgresql@17)/bin/pg_dump" -h /tmp -Fc agentiik &gt; agentiik.dump</span>
 <span class="p">$</span> <span class="cmd">tar -C "$(brew --prefix)" -czf agentiik-files.tar.gz etc/agentiik var/lib/agentiik</span>
 
-<span class="c"># another namespace</span>
+<span class="c"># another namespace, given to the administrator</span>
 <span class="p">$</span> <span class="cmd">agentiik-setup --namespace team</span>
+<span class="p">$</span> <span class="cmd">agk share team --user alice --role owner</span>
 
 <span class="c"># remove the database, the secrets and the keychain entry, then the programs</span>
 <span class="p">$</span> <span class="cmd">brew services stop agentiik/tap/agentiik</span>
@@ -2393,7 +2435,7 @@ http:
 
     <h3 id="add-a-runner">Add a runner on another machine</h3>
 
-    <p>Any Linux machine with Docker Engine 28 and Compose 2.24 can run steps for the <a href="#install-with-compose">Compose installation</a>, as long as it reaches <code>AGENTIIK_HOST</code> on 4222, and the API on 8443 or the proxy's 443; nothing connects to it. It joins a pool with a single-use token the operator issues, and takes the steps whose <code>runs_on</code> names its labels. It is one Compose file of its own and a <code>.env</code>. The CI of agentiik/deploy runs these commands, the other machine included.</p>
+    <p>Any Linux machine with Docker Engine 28 and Compose 2.24 can run steps for the <a href="#install-with-compose">Compose installation</a>, as long as it reaches <code>AGENTIIK_HOST</code> on 4222, and the API on 8443 or the proxy's 443; nothing connects to it. It joins a pool with a single-use token an administrator issues, and takes the steps whose <code>runs_on</code> names its labels. It is one Compose file of its own and a <code>.env</code>. The CI of agentiik/deploy runs these commands, the other machine included. On the installation's host, <code>AGENTIIK_TOKEN</code> is an administrator's token, as <a href="#compose-first-admin">The first administrator</a> mints one for <code>curl</code>.</p>
 
     <div class="block">
       <div class="note-label">on the installation's host: a pool for the new machine's label, and a join token for it, valid an hour</div>
@@ -2560,7 +2602,6 @@ EOF
       <table>
         <thead><tr><th>What</th><th>Today</th><th>When</th></tr></thead>
         <tbody>
-          <tr><td>Users, groups, sign-in</td><td>One operator token may do everything. Only its hash is kept; a new <code>AGENTIIK_OPERATOR_TOKEN</code> in <code>.env</code> replaces a lost one.</td><td><a href="roadmap/#m03">v0.3.0</a> brings principals, and the operator token becomes the bootstrap token that creates the first administrator (<a href="#first-run">First run</a>).</td></tr>
           <tr><td>The console</td><td>Not part of either installation. <code>agk</code> is the client.</td><td>Its own releases.</td></tr>
           <tr><td>Creating a namespace through the API</td><td><code>AGENTIIK_NAMESPACE</code>, or <code>docker compose run --rm --no-deps api namespace create team</code> on the installation's host, or <code>agentiik-setup --namespace team</code> on a Mac.</td><td><a href="roadmap/#m03">v0.3.0</a>: <code>POST /api/v1/namespaces</code> and <code>agk namespace create</code>, by an administrator, with an owner.</td></tr>
           <tr><td>Runners on macOS or Windows</td><td>Refused: the runner hands the Docker daemon paths on the host to bind, which the virtual machine of Docker Desktop cannot see.</td><td></td></tr>
@@ -15282,7 +15323,7 @@ post_task = [
 <span class="p">$</span> <span class="cmd">agk user create alice --admin</span>
 alice is an administrator with no credential yet. Open this link once, before 10:15 UTC, to enrol a passkey, or a password where the installation allows one:
 https://agentiik.example.com/auth/enrol#&lt;code&gt;
-the bootstrap token works until alice has enrolled; then sign in as alice with agk login</code></pre>
+the bootstrap token works until alice has signed in; then sign in as alice with agk login</code></pre>
   </div>
 
   <div class="prose">

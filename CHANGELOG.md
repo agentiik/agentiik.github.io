@@ -112,6 +112,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - Once the bootstrap has ended, a grant carrying a role or a group membership that would leave no administrator able to sign in is refused with 409 naming the setting; a password that could only ever enrol, a passkey required and `min_passkeys` held, is refused with 409 naming `passkey`.
 - agk talks to the installation `agk login` last signed in to where neither `--server` nor `AGENTIIK_SERVER` names one, never sending `AGENTIIK_TOKEN` there (exit 2); a refused exchange is recorded as `signin.fail`.
 - Install a server copies deploy's `compose.yaml` as it no longer gives the API `AGK_OPERATOR_TOKEN_FILE`, and its `.env` examples as they call the token in `.env` the bootstrap token and have an administrator issue join tokens.
+- Get started and Install a server create the first administrator with the bootstrap token, `agk user create alice --admin` and `agk share demo`, then sign in from a browser that trusts the certificate and with `agk login`; a new token in `.env` counts only until that sign-in, and an administrator issues join tokens.
 
 ## v0.2.5, 2026-09-26
 
