@@ -71,6 +71,11 @@ Every repository of the project carries the same version and is tagged at the sa
 - The web console's statistics: a workflow's runs, durations, queue wait, exit codes, hours and ports, a namespace against its quotas, and the pools and runners for administrators, one range driving a zoom, a readout, a comparison, CSV and JSON exports and a link to the runs counted; three mockups show them.
 - `GET /api/v1/{ns}/stats/runs`, `/stats/steps`, `/stats/ports` and `/stats/quotas`, and `GET /api/v1/stats/pools` for administrators, from v0.6.0, counting only what `run:read` reaches; `agk console` draws a histogram of a workflow's durations from the first.
 - The roadmap's console shell follows the look, and v0.6.0 gains Statistics and charts, thirteen tasks across agentiik, schemas and console with the chart library an open question, and `agk console`'s histogram; a milestone may hold eight groups, and the plan holds 668 tasks.
+- The user and group routes as merged: the display name defaults to the login, a repeat before enrolling answers 200 with a fresh link, groups take up to 1,024 first members, and a membership change answers the group.
+- A user's empty personal namespace goes with them, and the last administrator who can sign in is not removed once the bootstrap has ended.
+- The grant routes at both scopes: who may list, create and revoke, what each refuses, and the owners told of every grant an administrator writes or of any widening of their own access.
+- `GET /api/v1/me` and dismissing a notification, with a notification past 90 days removed on read; `agk whoami`, `agk share`, `agk grants`, `agk user` and `agk group`.
+- Bodies of users, groups, grants and service accounts are held to 64 KiB, and a route that reads no body refuses one.
 
 ## v0.2.5, 2026-09-26
 
