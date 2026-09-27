@@ -79,6 +79,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - Service accounts as merged: the routes and `agk service-account`, the built-in `NS/agentiik` given by `init` and `migrate` to every older namespace, and unattended runs written as its own.
 - A token may expire a minute past the year, a principal holds at most 100 live ones, a service account's own token mints none for that account, and none is minted for `NS/agentiik`.
 - `init` says so and goes on where a login holds `AGK_INIT_NAMESPACE`'s name.
+- The session cookie `__Host-agentiik_session`: 12 hours idle, 30 days at most, no expiry of its own; a request changing something needs the public URL's `Origin`, two credentials are 400, and a session that may only enrol is 403 elsewhere.
+- The passkey ceremonies: a 32-byte challenge good for 5 minutes, user verification asked wherever any policy requires it, a passkey added from a session, and the session a registration opens; an enrolment code opens no session of its own.
+- `signin.fail` is recorded by the address, bounded at 10 per address and 100 in all per 10 minutes; `installation` creates each personal namespace at its user's first sign-in.
+- Storage gains `webauthn_challenges`, and a session records only the credential that opened it.
 
 ## v0.2.5, 2026-09-26
 
