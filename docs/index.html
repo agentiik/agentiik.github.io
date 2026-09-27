@@ -1639,6 +1639,7 @@ flowchart LR
           <tr><td><code>curl</code>, <code>openssl</code>, <code>git</code>, <code>sudo</code></td><td>To download the file, make a token and commit a workflow; <code>sudo</code> only to back up and remove what the containers wrote as root.</td></tr>
           <tr><td>Ports 8443 and 4222 open</td><td>The API serves HTTPS on 8443 (<code>AGENTIIK_PORT</code>) and the bus listens on 4222 (<code>AGENTIIK_BUS_PORT</code>), both on every interface: open them to the machines that reach the installation, and nothing else. Behind a proxy, its 443 takes the place of 8443, which then listens on the loopback alone. Where 4222 is taken, <code>AGENTIIK_BUS_PORT</code> in <code>.env</code> moves the bus.</td></tr>
           <tr><td>Go 1.27, or Homebrew, where you run <code>agk</code></td><td>To install the command line. <code>agk push</code> also needs a Docker daemon, to resolve image tags to digests.</td></tr>
+          <tr><td>Free space beside <code>data/postgres</code> for a second copy of the database, when upgrading to a release that moves PostgreSQL to a new major version</td><td><code>postgres-upgrade</code> copies the cluster rather than rewriting it, so that the old one stays whole as the way back (<a href="#compose-upgrade">Upgrade</a>). It asks for the cluster's size and 128 MiB more, and refuses with less, changing nothing, since a disk filled halfway through an upgrade is full for every other service on the host too.</td></tr>
         </tbody>
       </table>
     </div>
@@ -1860,7 +1861,7 @@ volumes:
   socket:</code></pre>
     </div>
 
-    <p><code>init</code> runs first at every <code>docker compose up</code>, and the other services wait for it. It brings the installation in line with <code>.env</code>, so a setting changed is applied at the next start and none is read at the first start alone:</p>
+    <p><code>postgres-upgrade</code> and <code>init</code> run first at every <code>docker compose up</code>, and the other services wait for them. <code>postgres-upgrade</code> upgrades PostgreSQL's data where a release moves it to a new major version, and leaves it as it is otherwise (<a href="#compose-upgrade">Upgrade</a>). <code>init</code> brings the installation in line with <code>.env</code>, so a setting changed is applied at the next start and none is read at the first start alone:</p>
 
     <div class="tablewrap">
       <table>
@@ -1880,16 +1881,17 @@ volumes:
     <div class="block">
       <div class="note-label">docker compose ps --all</div>
 <pre><code><span class="p">$</span> <span class="cmd">docker compose ps --all</span>
-NAME                    IMAGE                                COMMAND                  SERVICE      STATUS
-agentiik-api-1          ghcr.io/agentiik/api:v0.2.5          "/agentiik-api serve"    api          Up (healthy)
-agentiik-controller-1   ghcr.io/agentiik/controller:v0.2.5   "/agentiik-controller"   controller   Up
-agentiik-init-1         ghcr.io/agentiik/api:v0.2.5          "/agentiik-api init"     init         Exited (0)
-agentiik-nats-1         nats:2-alpine                        "docker-entrypoint.s…"   nats         Up (healthy)
-agentiik-postgres-1     postgres:17-alpine                   "docker-entrypoint.s…"   postgres     Up (healthy)
-agentiik-runner-1       ghcr.io/agentiik/runner:v0.2.5       "/usr/local/bin/agk-…"   runner       Up</code></pre>
+NAME                          IMAGE                                      COMMAND                  SERVICE            STATUS
+agentiik-api-1                ghcr.io/agentiik/api:v0.2.5                "/agentiik-api serve"    api                Up (healthy)
+agentiik-controller-1         ghcr.io/agentiik/controller:v0.2.5         "/agentiik-controller"   controller         Up
+agentiik-init-1               ghcr.io/agentiik/api:v0.2.5                "/agentiik-api init"     init               Exited (0)
+agentiik-nats-1               nats:2-alpine                              "docker-entrypoint.s…"   nats               Up (healthy)
+agentiik-postgres-1           postgres:18-alpine                         "docker-entrypoint.s…"   postgres           Up (healthy)
+agentiik-postgres-upgrade-1   ghcr.io/agentiik/postgres-upgrade:v0.3.0   "/usr/local/bin/post…"   postgres-upgrade   Exited (0)
+agentiik-runner-1             ghcr.io/agentiik/runner:v0.2.5             "/usr/local/bin/agk-…"   runner             Up</code></pre>
     </div>
 
-    <p><code>init</code> has done its work when it has <code>Exited (0)</code>; <code>docker compose logs</code> and a service's name say what it did, or why a service is not up. Everything the installation keeps is in <code>data/</code>, one directory per service, and the one other path it uses on the host is <code>/var/lib/agentiik/work</code>, where the runner lays out each step's files for the daemon to bind. PostgreSQL's socket is the one Docker volume, since it is no data to keep and some file systems cannot hold a socket.</p>
+    <p><code>postgres-upgrade</code> and <code>init</code> have done their work when they have <code>Exited (0)</code>; <code>docker compose logs</code> and a service's name say what it did, or why a service is not up. Everything the installation keeps is in <code>data/</code>, one directory per service, and the one other path it uses on the host is <code>/var/lib/agentiik/work</code>, where the runner lays out each step's files for the daemon to bind. PostgreSQL's socket is the one Docker volume, since it is no data to keep and some file systems cannot hold a socket.</p>
 
     <h4 id="compose-point-agk">Point agk at it</h4>
 
@@ -2086,6 +2088,7 @@ AGENTIIK_OPERATOR_TOKEN=
 
     <ul class="plain">
       <li><code>init</code> migrates the database before the API and the controller start again on the new images. <code>agk</code> is upgraded the way it was installed.</li>
+      <li>Where a release moves PostgreSQL to a new major version, as <a href="roadmap/#m03">v0.3.0</a> moves it from 17 to 18, <code>postgres-upgrade</code> upgrades <code>data/postgres</code> with <code>pg_upgrade</code> in copy mode before PostgreSQL starts, and keeps the previous cluster beside it as <code>data/postgres-17</code>, as the previous release left it: the way back, for you to remove once you no longer need it. A PostgreSQL the previous release left without shutting down, killed at the end of its grace, is recovered first. A failure at any step leaves <code>data/postgres</code> as it was, removes what was built beside it, and says why in <code>docker compose logs postgres-upgrade</code>; PostgreSQL then does not start, and the next <code>docker compose up</code> takes the upgrade up again. The same service carries every later major version.</li>
       <li>Upgrading to <a href="roadmap/#m03">v0.3.0</a> also settles what v0.2 left on the disk, with nothing to do by hand. A run v0.2 finished carries no expiry: migration 0038 gives its envelopes and logs its namespace's <code>max_retention_days</code> from its end. The artifact files v0.2 recorded nothing for, those of every output given no <code>retain</code>, are recorded by <code>init</code> from the envelopes of those runs, each expiring its namespace's <code>max_retention_days</code> after its run finished, and what <code>init</code> leaves the controller records. The <a href="#what-the-purges-act-on">purges</a> then retire them and the collection deletes them, so an upgraded installation's store shrinks on its own.</li>
       <li>From <code>v0.2.5</code>, a release starts on the state the one before it left, with <code>compose.yaml</code> and <code>.env</code> changed and nothing else: <code>init</code> applies every change at <code>docker compose up</code> (migrations, file layout, credentials), and a setting keeps its name or is still read under its old one. A check on every change of agentiik/deploy installs the latest release, runs a workflow, upgrades, and finds the old run and token still working and a new run succeeding; the same from <code>latest</code> to <code>dev</code>.</li>
       <li>Upgrading to <a href="roadmap/#m03">v0.3.0</a> from v0.2.5's <code>compose.yaml</code>, which requires the token, keeps <code>AGENTIIK_OPERATOR_TOKEN</code> working, as the bootstrap token, until the first administrator can sign in to a full session, with a passkey or a password (<a href="#first-run">First run</a>). It then stops, the line stays in <code>.env</code> and <code>init</code> says at every run that it is ignored, and a script moves to a service account's token. A run it started that has not been let in by then ends <code>cancelled</code>, naming the end; one already running goes on.</li>
@@ -2099,10 +2102,10 @@ AGENTIIK_OPERATOR_TOKEN=
     <div class="block">
       <div class="note-label">back up</div>
 <pre><code><span class="p">$</span> <span class="cmd">docker compose exec -T postgres pg_dump -U postgres -Fc agentiik &gt; agentiik.dump</span>
-<span class="p">$</span> <span class="cmd">sudo tar -czf agentiik-data.tar.gz --exclude=data/postgres data</span></code></pre>
+<span class="p">$</span> <span class="cmd">sudo tar -czf agentiik-data.tar.gz --exclude='data/postgres*' data</span></code></pre>
     </div>
 
-    <p>The archive holds the master key, which opens every secret in the dump: keep the two apart, or encrypt them.</p>
+    <p>The archive leaves out <code>data/postgres</code>, which the dump holds in a form that restores, and a cluster an upgrade kept beside it, <code>data/postgres-17</code>. It holds the master key, which opens every secret in the dump: keep the two apart, or encrypt them.</p>
 
     <h4 id="compose-remove">Remove</h4>
     <p>Every container, image and key, and the state, which the containers wrote as root:</p>
@@ -2320,7 +2323,7 @@ http:
         <thead><tr><th>What</th><th>Why</th></tr></thead>
         <tbody>
           <tr><td>macOS with Homebrew</td><td>The formula builds the programs from the tagged source.</td></tr>
-          <tr><td>PostgreSQL 17 from Homebrew</td><td>The database. The service does not run it, so any PostgreSQL answering on <code>/tmp</code> will do.</td></tr>
+          <tr><td>PostgreSQL 17 from Homebrew</td><td>The database. The service does not run it, so any PostgreSQL answering on <code>/tmp</code> will do. The programs run on 17 and 18 alike; Homebrew's server stays on 17 in <a href="roadmap/#m03">v0.3.0</a>, where the Compose installation moves to 18, since moving a server's data from one <code>postgresql@</code> formula to the next is a piece of work of its own.</td></tr>
           <tr><td>Your password, once</td><td><code>agentiik-setup</code> adds the certificate's authority to the System keychain: the programs, <code>agk</code> included, trust what macOS trusts.</td></tr>
           <tr><td>Ports 8443 and 4222 free on the loopback</td><td>The API and the bus.</td></tr>
         </tbody>
@@ -14659,7 +14662,7 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
       <table>
         <thead><tr><th>Requirement</th><th>Why</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">Exactly one writable PostgreSQL</td><td>Leader election is a session-level advisory lock: a second writable primary breaks the election rather than adding availability.</td></tr>
+          <tr><td class="wrapcell">Exactly one writable PostgreSQL, 18 in the Compose installation from <a href="roadmap/#m03">v0.3.0</a>, and 17 still on Homebrew</td><td>Leader election is a session-level advisory lock: a second writable primary breaks the election rather than adding availability. The programs run on 17 and 18 alike; CI tests on 18.</td></tr>
           <tr><td class="wrapcell">A work queue with at-least-once delivery, one queue or subject per runner pool</td><td>A runner pulls only from its own pool's queue, and a step reaches it by the pool's labels.</td></tr>
           <tr><td class="wrapcell">An object store every runner can reach</td><td>Artifacts move by presigned URL and signed POST policy, never through the controller.</td></tr>
           <tr><td class="wrapcell">A secret store the API can read, and neither the controller nor the runners can</td><td><a href="#secrets">Secrets</a>. With <code>builtin</code> the sealed values sit in the PostgreSQL the controller shares, so the master key, held by the API alone, is what keeps them from it; a database role of the API's own is an open question.</td></tr>
@@ -14752,9 +14755,9 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
   </figure>
 
   <div class="prose">
-    <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: <a href="#install-with-compose">Install a server</a> shows its <code>compose.yaml</code>, and installs, operates, backs up and removes it. At <code>v0.2.5</code> it runs PostgreSQL, NATS, the API, the controller and one runner, prepared by <code>agentiik-api init</code> at every start: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet.</p>
+    <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: <a href="#install-with-compose">Install a server</a> shows its <code>compose.yaml</code>, and installs, operates, backs up and removes it. At <code>v0.2.5</code> it runs PostgreSQL, NATS, the API, the controller and one runner, prepared by <code>agentiik-api init</code> at every start: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet. From <a href="roadmap/#m03">v0.3.0</a> PostgreSQL is 18, and <code>postgres-upgrade</code> upgrades the data of an installation that ran 17 before PostgreSQL starts, keeping the old cluster beside it.</p>
     <p>The reverse proxy of the figure is optional: <a href="#behind-a-reverse-proxy">behind one</a>, <code>AGENTIIK_PROXY_URL</code> sets <code>AGK_PROXY_URL</code> to the proxy's <code>https</code> URL and the API serves plain HTTP on the loopback, while the bus keeps its own TLS on 4222.</p>
-    <p>The images are published on <code>ghcr.io</code> from <code>v0.2.1</code>, for linux/amd64 and linux/arm64: <code>ghcr.io/agentiik/api</code>, <code>controller</code> and <code>runner</code>, tagged with the version (<code>0.2.1</code> and <code>v0.2.1</code>) and <code>latest</code> at a release, and <code>dev</code> for every commit to <code>main</code>.</p>
+    <p>The images are published on <code>ghcr.io</code> from <code>v0.2.1</code>, for linux/amd64 and linux/arm64: <code>ghcr.io/agentiik/api</code>, <code>controller</code> and <code>runner</code>, and <code>postgres-upgrade</code> from v0.3.0, tagged with the version (<code>0.2.1</code> and <code>v0.2.1</code>) and <code>latest</code> at a release, and <code>dev</code> for every commit to <code>main</code>.</p>
     <ul class="plain">
       <li>Secrets: the built-in store, with its master key read from a file the API user alone can open, or from the host keyring.</li>
       <li>Backup: <code>pg_dump</code> and the <code>data/</code> directory beside <code>compose.yaml</code>, restored together, or runs point at artifacts that no longer exist (<a href="#install-with-compose">the commands</a>).</li>
@@ -15458,6 +15461,7 @@ the bootstrap token works until alice has enrolled; then sign in as alice with a
     <div class="note-label">What Agentiik 1.4.0 names</div>
 <pre><code>ghcr.io/agentiik/api:1.4.0          ghcr.io/agentiik/controller:1.4.0
 ghcr.io/agentiik/runner:1.4.0       ghcr.io/agentiik/console:1.4.0
+ghcr.io/agentiik/postgres-upgrade:1.4.0
 agentiik/ios            v1.4.0      agentiik/android        v1.4.0
 agentiik/schemas        v1.4.0      agentiik/bricks         v1.4.0
 https://agentiik.github.io/docs/v/1.4.0</code></pre>

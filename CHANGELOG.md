@@ -103,6 +103,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - The controller that leads runs the purges, the collection and the orphan sweep: a pass at the start of its term and every 10 minutes, batches of 1,000 rows or 100 runs, a line in its log per pass, and six counters; the collection's 24-hour grace is a constant, and a write holds its object a day past its policy.
 - Orphans go to the collection a day after they were written and are deleted a day later; the artifact files v0.2 left unrecorded are recorded by `init`, `migrate` given `AGK_OBJECTS_DIR`, and the controller, and v0.2 runs expire at their namespace's `max_retention_days`.
 - Storage lists `artifact_objects`, `artifact_uploads` and `artifact_room` and the new run columns, and says what an object's count counts; an envelope may outlive a one-shot output, whose file then answers 410.
+- PostgreSQL 18 in the Compose installation from v0.3.0: `postgres-upgrade` runs before PostgreSQL, upgrades a 17 cluster in copy mode and keeps it as `data/postgres-17`, needing the cluster's size and 128 MiB free; backups leave `data/postgres*` out; Homebrew stays on 17; `ghcr.io/agentiik/postgres-upgrade` is published with the other images.
 
 ## v0.2.5, 2026-09-26
 
