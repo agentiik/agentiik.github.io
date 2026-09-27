@@ -1207,6 +1207,14 @@ img{max-width:100%}
         </li>
         <li><a href="#ui">Web console</a>
         </li>
+        <li><a href="#terminal">Terminal console</a>
+          <ul class="subs">
+            <li><a href="#terminal-views">Views</a></li>
+            <li><a href="#terminal-keys">Keys</a></li>
+            <li><a href="#where-the-terminal-console-runs">Where it runs</a></li>
+            <li><a href="#what-the-terminal-console-leaves">What it leaves to the web console</a></li>
+          </ul>
+        </li>
         <li><a href="#mobile">Mobile applications</a>
           <ul class="subs">
             <li><a href="#common-scope">Common scope</a></li>
@@ -6874,6 +6882,7 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td>agk grants</td><td>Shows who can do what on a workflow, and which scope each permission comes from.</td></tr>
           <tr><td>agk logs</td><td>Follows the logs of a run, or of the steps named after it, history then live, each line behind its step, shard and attempt. A stream cut off, or silent past three keep-alives, is asked again from its last event, and nothing is printed twice.</td></tr>
           <tr><td>agk status</td><td>Shows how a run on an installation stands: its state, each step's verdict with the digest of each port, its inputs where <code>run:read_data</code> allows, its outputs and what failed. <code>-o json</code> writes the API's answer.</td></tr>
+          <tr><td>agk console</td><td>Opens the console in the terminal, full screen, over the routes the web console reads: runs, a run with its log, its graph, workflows, sharing and, for an administrator, runners. Not on a terminal, it prints the view once as plain lines (<a href="#terminal">Terminal console</a>).</td></tr>
           <tr><td>agk brick init</td><td>Scaffolds a brick in a chosen language, with its manifest and test harness.</td></tr>
           <tr><td>agk brick test</td><td>Runs the brick against a set of sample envelopes and compares against expected outputs.</td></tr>
         </tbody>
@@ -7895,6 +7904,7 @@ resource "agentiik_workflow" "search" {
       <li>A format-preserving YAML tree keeps the file's comments and key order, so a round trip through the editor leaves no spurious diff in review.</li>
       <li>Payload panes are hidden, not merely disabled, for a principal without <code>run:read_data</code>.</li>
       <li>Removing a credential is refused when it would drop the account below the policy's minimum.</li>
+      <li>The views a terminal serves well are also <code>agk console</code>, over the same routes: <a href="#terminal">Terminal console</a>.</li>
     </ul>
   </div>
 
@@ -8501,6 +8511,164 @@ resource "agentiik_workflow" "search" {
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>YAML stays the source of truth even when editing happens in the console. A graph store exporting YAML would make review in a Git repository illusory, and the two would diverge at the first feature with no visual equivalent. The sharing panel is the one part of the console with no YAML counterpart, by design.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TERMINAL ============ -->
+<section id="terminal">
+  <div class="sec-head"><span class="mark">§</span><h2>Terminal console</h2></div>
+  <div class="prose">
+    <p>The web console's views, in a terminal. <code>agk console</code> draws them full screen for whoever works over SSH or would rather not leave the shell, from <a href="roadmap/#m06">v0.6.0</a>, beside the web console.</p>
+
+    <div class="block">
+      <div class="note-label">agk console, the runs view: a sketch, since the verb arrives in v0.6.0</div>
+<pre><code>agentiik · finance · Runs                                          alice · live
+
+Needs attention   1 failed in the last hour
+  failed  monthly-invoicing  step invoice  exit 108 after 4 attempts    23m ago
+
+STATE      RUN           WORKFLOW           TRIGGER   STARTED   TOOK    BY
+failed     01JMZ8V1P9C4  monthly-invoicing  manual    05:41:03  1m 52s  alice
+running    01JMZ8S3H6X8  ledger-export      manual    05:28:44  6m 31s  bruno
+succeeded  01JMZ8Q6F1T7  monthly-invoicing  manual    04:58:31  3m 47s  bruno
+cancelled  01JMZ8N9J3W1  vat-reconcile      manual    04:12:55  2m 16s  alice
+
+enter Open  / Filter  g Graph  c Cancel run  1-4 Views  ? Keys  q Quit</code></pre>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td>server</td><td>None. <code>agk console</code> is <code>agk</code>, speaking to <code>/api/v1</code> as <code>agk logs</code> and <code>agk status</code> do: nothing to install, open or turn on at the installation.</td></tr>
+          <tr><td>routes</td><td>The ones the web console reads, and no other. Nothing is added to the API for it.</td></tr>
+          <tr><td>principal</td><td>The one <code>agk</code> is signed in as: the token <code>agk login</code> stored, or <code>AGENTIIK_TOKEN</code>, against <code>--server</code> or <code>AGENTIIK_SERVER</code> (<a href="#pointing-agk-at-an-installation">Pointing agk at an installation</a>).</td></tr>
+          <tr><td>permissions</td><td>None of its own. It shows what the principal holds, as <code>GET /api/v1/me</code> gives it, and hides the rest rather than disabling it, payload panes included without <code>run:read_data</code>. A token narrowed by a scope narrows the console with it.</td></tr>
+          <tr><td>opens on</td><td>The runs view of every namespace the principal reads; <code>--namespace NS</code> on one namespace; <code>agk console RUN</code> on that run.</td></tr>
+          <tr><td>exits</td><td>0 when quit. 2 for a wrong command line and 4 where the installation cannot be reached at start, as <a href="#command-line">every verb</a>. Once open, an installation that stops answering is said so in the top line and asked again, since somebody is watching.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A verb, <code>agk console</code>, rather than <code>agk --console</code>, which is how the idea first came. Everything <code>agk</code> does is a verb, as <code>agk logs</code> and <code>agk status</code> are, and a flag changes how a verb does it, as <code>--local</code> and <code>-o json</code> do. A flag standing for a verb would be a second grammar for the reader of <code>agk</code>'s help to learn, and it would leave the console's own flags, <code>--namespace</code> among them, nothing to belong to.</p>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The terminal console is a client of the API, not something an installation serves: no SSH server, no port, no route and no permission is added for it. Served by the installation, it would be a second way in with a sign-in of its own, and a rule it applied would be one the API does not enforce. As a client, it shows nothing the principal could not ask the API for, which is what makes it safe to add at all.</p>
+    </div>
+
+    <h3 id="terminal-views">Views</h3>
+    <p>The web console's views where a terminal serves them well, each reading what the web console reads.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>View</th><th>What it shows or does</th><th>Reads</th></tr></thead>
+        <tbody>
+          <tr><td>runs</td><td>Newest first and kept live: state, run, workflow, trigger, start, duration and principal. Failed runs, and from <a href="roadmap/#m08">v0.8.0</a> waiting ones, sit in a band above the list, since they are why it is opened. Filtered by namespace, workflow, state and time.</td><td class="wrapcell">GET /api/v1/runs</td></tr>
+          <tr><td>run</td><td>Each step with its state, duration and shard count. A step's exit code and its meaning, attempt, shard, image digest, runner name and labels, never the host. Each port's envelope with its item count, and its JSON under <code>run:read_data</code>, up to the <a href="#size-rules">size rules</a>. Its log, history then live, as <code>agk logs</code> follows it. Cancel, replay from a step and, from v0.8.0, approve or reject.</td><td class="wrapcell">GET /api/v1/runs/{id}, its steps' inputs, outputs and logs</td></tr>
+          <tr><td>graph</td><td>The resolved graph of a run or a version, each step's state live, as below.</td><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}</td></tr>
+          <tr><td>workflows</td><td>The workflows of a namespace the principal can read, each one's versions and declared triggers, and a version's graph.</td><td class="wrapcell">what the web console lists, and GET /api/v1/{ns}/workflows/{name}</td></tr>
+          <tr><td>sharing</td><td>What <code>agk grants</code> prints, kept live, for a workflow or a namespace: the grants as written, and resolved for one principal with the scope each permission comes from, a deny the only subtraction.</td><td class="wrapcell">GET /api/v1/{ns}/grants, GET /api/v1/{ns}/workflows/{name}/grants</td></tr>
+          <tr><td>runners</td><td>To an administrator alone: runners and pools, with labels, capacity, last heartbeat, state and concurrency, and who drained or revoked one and when, never a host.</td><td class="wrapcell">GET /api/v1/runners, GET /api/v1/runner-pools</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="block">
+      <div class="note-label">the graph view, a sketch: the example of The graph and its ports, mid-run</div>
+<pre><code>inputs      orders, customers  -&gt; normalize
+normalize   succeeded  1.2s
+  ok        -&gt; invoice   in
+  rejected  -&gt; archive   rejected
+invoice     running    3 of 8 shards done  fan_out: item
+  out       -&gt; archive   invoices
+  error     -&gt; output    errors
+archive     queued
+  out       -&gt; output    invoices</code></pre>
+    </div>
+    <p>The graph is written as a list in an order it runs in, ties broken by name, each edge under the step it leaves: the port, the step or workflow output it reaches, and that one's port. A step's <code>fan_out</code>, <code>merge</code> and <code>when</code> are written beside it. A drawing of boxes needs a window as wide as the graph's widest layer and tangles at the first fan-in; a list fits 80 columns at any size of graph, and each edge names both of its ends, so nothing is read off the direction of a line.</p>
+
+    <h3 id="terminal-keys">Keys</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Key</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td><code>↑</code> <code>↓</code> or <code>j</code> <code>k</code></td><td>Moves the selection.</td></tr>
+          <tr><td><code>enter</code></td><td>Opens what is selected: a run, a step, a workflow, a version.</td></tr>
+          <tr><td><code>esc</code></td><td>Goes back to the view before.</td></tr>
+          <tr><td><code>tab</code></td><td>Moves to the next pane of the view: in a run, steps, ports, then log.</td></tr>
+          <tr><td><code>1</code> to <code>4</code></td><td>Runs, workflows, sharing, and runners for an administrator.</td></tr>
+          <tr><td><code>/</code></td><td>Filters the list: <code>namespace=finance state=failed since=24h</code>, the names <code>GET /api/v1/runs</code> takes, with <code>since</code> also taking a duration back from now.</td></tr>
+          <tr><td><code>g</code></td><td>Opens the graph of the selected run or version.</td></tr>
+          <tr><td><code>c</code></td><td>Cancels the selected run, once a prompt naming it is answered <code>y</code>.</td></tr>
+          <tr><td><code>p</code></td><td>Replays the run from the selected step, once a prompt naming both is answered <code>y</code>.</td></tr>
+          <tr><td><code>a</code> <code>r</code></td><td>From v0.8.0, approves or rejects a waiting run, asking first for the approval's optional comment or the rejection's reason.</td></tr>
+          <tr><td><code>?</code></td><td>Lists every key of the view.</td></tr>
+          <tr><td><code>q</code></td><td>Quits, from any view.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plain">
+      <li>The bottom line shows the keys of the view, each named by its effect, as a control is in the web console (<a href="#voice">Voice</a>): <code>c Cancel run</code>, never <code>c OK</code>.</li>
+      <li>A key for what the principal does not hold is left out of that line and does nothing, as the web console hides a control rather than disabling it.</li>
+      <li>A prompt defaults to no, so a key pressed twice by mistake stops at the question.</li>
+    </ul>
+
+    <h3 id="where-the-terminal-console-runs">Where it runs</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Where</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">a terminal, local or over SSH</td><td>Draws on the terminal's alternate screen and hands the screen back as it found it on exit, an interrupt included. Needs 80 columns and 24 rows, what a terminal opens at, and uses more where there are more; a smaller window is told so rather than drawn cut. No mouse, no browser, no local port.</td></tr>
+          <tr><td class="wrapcell">a machine with no browser</td><td>Takes its token in <code>AGENTIIK_TOKEN</code>, made elsewhere with <code>agk token create</code>, since <code>agk login</code> needs a browser beside <code>agk</code> for its loopback redirect (<a href="#auth">Authentication</a>). On a host others use, a token narrowed with <code>--scope</code> opens only what it names.</td></tr>
+          <tr><td class="wrapcell"><code>NO_COLOR</code> set and not empty</td><td>No colour at all. Nothing is lost, since every state is a word.</td></tr>
+          <tr><td class="wrapcell">standard input or output not a terminal, or <code>TERM=dumb</code></td><td>No screen. The view it would have opened is printed once as plain lines, and it exits 0, so a script or a cron job never waits on a screen nobody sees. The runs view is one line per run, columns separated by tabs, no header, times in RFC 3339; a run is what <code>agk status</code> prints.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="block">
+      <div class="note-label">not a terminal: the runs view as lines</div>
+<pre><code><span class="p">$</span> <span class="cmd">agk console --namespace finance | grep ^failed</span>
+failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05:41:03Z	1m 52s	alice</code></pre>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>State</th><th>Terminal colour</th></tr></thead>
+        <tbody>
+          <tr><td>running</td><td>cyan, the accent's hue</td></tr>
+          <tr><td>succeeded</td><td>green</td></tr>
+          <tr><td>waiting</td><td>yellow</td></tr>
+          <tr><td>failed, timed_out</td><td>red</td></tr>
+          <tr><td>queued, skipped, cancelled</td><td>dim, the terminal's faint</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>It takes the design system's voice and its state words, not its tokens. Colours are the terminal's own sixteen rather than the palette's values, because a terminal's theme is chosen to read on its own background and a value from the palette is not; and as in the <a href="#colour-rules">colour rules</a>, no state is its colour alone.</p>
+
+    <h3 id="what-the-terminal-console-leaves">What it leaves to the web console</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Left to the web console</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td class="wrapcell">editing a workflow, in the graph or in its file</td><td>Editing is review and commit, and at a terminal the clone, the editor and <code>git</code> are already there. An editor inside <code>agk</code> would be the format-preserving one written a second time.</td></tr>
+          <tr><td class="wrapcell">the repository browser and the diff of two commits</td><td><code>git</code> does both in the clone.</td></tr>
+          <tr><td class="wrapcell">starting a run with inputs</td><td>A form drawn from a JSON Schema is a browser's. <code>agk run --namespace</code> takes the inputs from a file and follows the run, which appears in the runs view as it starts.</td></tr>
+          <tr><td class="wrapcell">passkeys and the credentials view</td><td>Signing in and enrolling are ceremonies a browser runs, which is why <code>agk login</code> hands its sign-in to one; the credentials they make are managed where they are made.</td></tr>
+          <tr><td class="wrapcell">fetching an artifact, or any payload written to disk</td><td>A host reached over SSH is often shared, and a payload left there is business data on a machine nobody audits. Envelopes are shown on screen, and a step's files listed by name, media type, size and digest.</td></tr>
+          <tr><td class="wrapcell">changing grants, and what an administrator manages</td><td>The console shows sharing and runners and changes neither, as the decision below says.</td></tr>
+          <tr><td class="wrapcell">the brick catalog and the MCP panel</td><td>Reference, read while writing a workflow, with the links and rendered schemas a browser gives.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The terminal console acts on runs and nothing else: cancel, replay from a step, and from v0.8.0 approve and reject, the moves of somebody watching runs at three in the morning. A key pressed in a list is a lighter act than a line typed, and a grant, a user or a quota deserves the sentence <code>agk share</code>, <code>agk user</code> and <code>agk namespace</code> make a person write, which a script can repeat and a review can read.</p>
     </div>
   </div>
 </section>
