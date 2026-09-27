@@ -45,6 +45,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - Storage lists the identity tables as migrated: no mail on users, and an AAGUID that may name a model nothing certifies.
 - The Relying Party Identifier is the host of the public URL; a domain shared with a console comes with the console.
 - The bootstrap token's hash is kept in the database from v0.3.0.
+- `max_runs_per_hour` is counted under a lock on the namespace, `Retry-After` gives the seconds until one more run fits, a refused `workflow:` call fails its step, and a 429 is not audited; `agk run` exits 1 for it.
+- `allowed_runner_pools` names pools that exist; a step only a pool outside it could take fails at dispatch with 125, and a redemption by such a pool is refused with 422.
 
 ## v0.2.5, 2026-09-26
 
