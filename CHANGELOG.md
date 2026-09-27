@@ -120,6 +120,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - A notification names its `act` and who did it, `by`; putting anybody in a group is told to the owners where it holds a role, the other administrators are told where nobody owns, and `GET /api/v1/me` leaves out a workflow its caller holds nothing in.
 - A deny of `grant:manage` on a workflow is refused with 422.
 - A runner joining is recorded as `runner.join`, by whoever issued its join token, and `group_member.add` names who was told wherever a user is put in a group holding a role.
+- At most 10,000 passkey challenges are open across the installation; past them the options answer 503 with `Retry-After`.
 
 ## v0.2.5, 2026-09-26
 
