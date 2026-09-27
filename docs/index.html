@@ -3041,7 +3041,7 @@ steps:
         <tbody>
           <tr><td><a href="#publishing-tools">mcp</a></td><td>One tool, <code>order_status</code>, whose <code>inputSchema</code> is the <code>query</code> input's schema as it stands and whose result is the <code>status</code> output.</td></tr>
           <tr><td><a href="#a-workflow-as-an-mcp-server">/mcp/support/order-status</a></td><td>The workflow is an MCP server of its own, listed and called with <code>workflow:run</code> alone, which reaches no step, no file and no endpoint behind it.</td></tr>
-          <tr><td><a href="#roles">operator</a></td><td>The role to grant the assistant's <a href="#principals">service account</a>: it runs the tool and reads nothing else.</td></tr>
+          <tr><td><a href="#roles">operator</a></td><td>The role to grant the assistant's <a href="#principals">service account</a>: it runs the tool and follows its runs, and reads neither the workflow nor their data.</td></tr>
           <tr><td><a href="#errors-and-obligations">input validation</a></td><td>An argument that does not match <code>^ORD-[0-9]{6}$</code> is refused as a protocol error before any run is created.</td></tr>
           <tr><td><a href="#publishing-tools">mode: sync</a></td><td>The answer comes back in the call, within the tool's 30 seconds.</td></tr>
           <tr><td><a href="#publishing-tools">annotations</a></td><td><code>readOnlyHint</code> lets a client call without asking first. It is a hint to the client, never a permission.</td></tr>
@@ -4989,37 +4989,62 @@ Authorization: Bearer &lt;an administrator's token&gt;
           <tr><td>workflow:read</td><td>See the YAML, the resolved graph, the version history and the schedule.</td></tr>
           <tr><td>workflow:run</td><td>Start a manual run, cancel it, replay it, approve or reject a waiting run.</td></tr>
           <tr><td>workflow:write</td><td>Register a new version, change triggers, rename, move between namespaces the principal owns on both sides.</td></tr>
-          <tr><td>workflow:delete</td><td>Delete the workflow and its versions.</td></tr>
+          <tr><td>workflow:delete</td><td>Delete the workflow and its versions. Only <code>owner</code> holds it.</td></tr>
           <tr><td>run:read</td><td>See run state, per-step state, timings and log lines.</td></tr>
           <tr><td>run:read_data</td><td>See a run's <code>inputs</code> and envelope contents and download artifacts, not only state and digests.</td></tr>
-          <tr><td>secret:use</td><td>Let a step reference a namespace secret. Never allows reading its value.</td></tr>
+          <tr><td>secret:use</td><td>Push a version that names a namespace secret, for its steps to mount. Checked at the push, against the principal pushing; running the workflow afterwards takes <code>workflow:run</code> alone. Never allows reading a value.</td></tr>
           <tr><td>secret:write</td><td>Declare, change and delete the namespace's secrets, and write a <code>builtin</code> value. Never allows reading one. Reading the declarations takes <code>workflow:read</code>. Both count at namespace scope only, since a declaration serves every workflow of the namespace.</td></tr>
           <tr><td>grant:manage</td><td>Grant and revoke access at this scope.</td></tr>
         </tbody>
       </table>
     </div>
 
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p><code>secret:use</code> is checked when a version is pushed, against whoever pushes it, and never when the workflow runs. Writing a secret's name into a workflow is what sends its value into a container, so the check sits with whoever put the reference there. An <code>operator</code> then runs a workflow that uses secrets without holding them, which is how a colleague launches a job without being trusted with its credentials. A version naming a secret, pushed by a principal without <code>secret:use</code> in the namespace, is refused with <code>403</code>. A version accepted stays runnable after its pusher loses the permission, since what was checked is the naming, which is done; the value behind a name is withdrawn at its declaration, under <code>secret:write</code>.</p>
+    </div>
+
     <h3 id="roles">Roles</h3>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Role</th><th>read</th><th>run</th><th>write</th><th>data</th><th>secret</th><th>grant</th></tr></thead>
+        <thead><tr><th>Role</th><th>read</th><th>run</th><th>write</th><th>data</th><th>secret</th><th>delete</th><th>grant</th></tr></thead>
         <tbody>
-          <tr><td>viewer</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
-          <tr><td>operator</td><td class="no">no</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
-          <tr><td>editor</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="no">no</td></tr>
-          <tr><td>owner</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td></tr>
+          <tr><td>viewer</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
+          <tr><td>operator</td><td class="no">no</td><td>yes</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
+          <tr><td>editor</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="no">no</td><td class="no">no</td></tr>
+          <tr><td>owner</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td>yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Column</th><th>Permissions</th></tr></thead>
+        <tbody>
+          <tr><td>read</td><td>workflow:read, run:read</td></tr>
+          <tr><td>run</td><td>workflow:run, run:read</td></tr>
+          <tr><td>write</td><td>workflow:write, secret:use</td></tr>
+          <tr><td>data</td><td>run:read_data</td></tr>
+          <tr><td>secret</td><td>secret:write</td></tr>
+          <tr><td>delete</td><td>workflow:delete</td></tr>
+          <tr><td>grant</td><td>grant:manage</td></tr>
         </tbody>
       </table>
     </div>
 
-    <p><code>viewer</code>, <code>operator</code> and <code>editor</code> are the read, run and edit roles; <code>owner</code> exists because someone has to be able to share. <code>operator</code> deliberately lacks <code>workflow:read</code>, so a colleague can launch a job without seeing the queries, endpoints and business rules inside it; someone who needs both holds both roles. The <code>secret</code> column is <code>secret:write</code>: <code>editor</code> holds it by default, and a deny takes it away where only owners should say where a value lives.</p>
+    <p><code>viewer</code>, <code>operator</code> and <code>editor</code> are the read, run and edit roles; <code>owner</code> exists because someone has to be able to share. A role holds every permission of each column it says yes to, so each of the nine sits in one column, <code>run:read</code> in two.</p>
+    <ul class="plain">
+      <li><code>operator</code> deliberately lacks <code>workflow:read</code>, so a colleague can launch a job without seeing the queries, endpoints and business rules inside it. It holds <code>run:read</code>, so it follows the runs of what it may run, the ones it starts among them: their state and log lines, and never <code>run:read_data</code>, so their payloads stay out of its reach. Someone who needs both holds both roles.</li>
+      <li><code>secret:use</code> sits with <code>workflow:write</code> because it is checked at the push, which is writing: <code>editor</code> and <code>owner</code> hold it.</li>
+      <li><code>workflow:delete</code> is the owner's alone. Every change an editor makes is a new version the history keeps; a deletion takes the versions with it, and nothing brings them back.</li>
+      <li>The <code>secret</code> column is <code>secret:write</code>: <code>editor</code> holds it by default, and a deny takes it away where only owners should say where a value lives.</li>
+    </ul>
 
     <h3 id="scopes-and-resolution">Scopes and resolution</h3>
   </div>
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 980 386" role="img" aria-label="Alice, a member of the team-finance group, receives the viewer role through a grant on the finance namespace and the operator role through a grant on the monthly-invoicing workflow; a deny entry on the same workflow removes the permission to read run data. The effective permission set is the union of the two grants minus the denied one.">
+      <svg viewBox="0 0 980 386" role="img" aria-label="Alice is a member of the team-finance group, which receives the editor role through a grant on the finance namespace, inherited by every workflow inside. A deny entry on the monthly-invoicing workflow removes from alice alone the permission to read run data, which the editor role holds. Her effective permissions there are the union of her grants minus the denied one: she reads, runs and changes the workflow, names its secrets and reads its runs, but not their data; workflow:delete stays with the owner role.">
         <defs>
           <marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
@@ -5032,52 +5057,59 @@ Authorization: Bearer &lt;an administrator's token&gt;
         <text x="108" y="192" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".7">user</text>
         <text x="108" y="212" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".7">member of team-finance</text>
 
-        <rect x="252" y="40" width="298" height="106" fill="none" stroke="currentColor" stroke-width="1.5"/>
-        <line x1="252" y1="68" x2="550" y2="68" stroke="currentColor" stroke-width="1"/>
-        <text x="266" y="60" font-family="Archivo, sans-serif" font-size="11.5" font-weight="600" fill="currentColor">scope: namespace finance</text>
-        <text x="266" y="94" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor">grant team-finance → viewer</text>
-        <text x="266" y="116" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".6">workflow:read, run:read</text>
-        <text x="266" y="134" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".6">inherited by every workflow inside</text>
+        <rect x="252" y="26" width="298" height="144" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="252" y1="54" x2="550" y2="54" stroke="currentColor" stroke-width="1"/>
+        <text x="266" y="46" font-family="Archivo, sans-serif" font-size="11.5" font-weight="600" fill="currentColor">scope: namespace finance</text>
+        <text x="266" y="80" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor">grant team-finance → editor</text>
+        <text x="266" y="100" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".6">workflow:read, workflow:run, workflow:write,</text>
+        <text x="266" y="115" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".6">run:read, run:read_data,</text>
+        <text x="266" y="130" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".6">secret:use, secret:write</text>
+        <text x="266" y="154" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".6">inherited by every workflow inside</text>
 
-        <rect x="252" y="200" width="298" height="146" fill="none" stroke="currentColor" stroke-width="1.5"/>
-        <line x1="252" y1="228" x2="550" y2="228" stroke="currentColor" stroke-width="1"/>
-        <text x="266" y="220" font-family="Archivo, sans-serif" font-size="11.5" font-weight="600" fill="currentColor">scope: workflow monthly-invoicing</text>
-        <text x="266" y="254" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor">grant alice → operator</text>
-        <text x="266" y="272" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".6">workflow:run</text>
-        <text x="266" y="304" font-family="JetBrains Mono, monospace" font-size="10.5" fill="var(--signal)">deny alice → run:read_data</text>
-        <text x="266" y="322" font-family="JetBrains Mono, monospace" font-size="9.5" fill="var(--signal)" opacity=".85">wins over any allow, at any scope</text>
+        <rect x="252" y="210" width="298" height="116" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="252" y1="238" x2="550" y2="238" stroke="currentColor" stroke-width="1"/>
+        <text x="266" y="230" font-family="Archivo, sans-serif" font-size="11.5" font-weight="600" fill="currentColor">scope: workflow monthly-invoicing</text>
+        <text x="266" y="266" font-family="JetBrains Mono, monospace" font-size="10.5" fill="var(--signal)">deny alice → run:read_data</text>
+        <text x="266" y="286" font-family="JetBrains Mono, monospace" font-size="9.5" fill="var(--signal)" opacity=".85">wins over any allow, at any scope</text>
+        <text x="266" y="308" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".6">alice alone: team-finance keeps it</text>
 
-        <path d="M 200 172 H 226 V 92 H 244" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#a6)"/>
-        <path d="M 200 204 H 226 V 272 H 244" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#a6)"/>
+        <path d="M 200 172 H 226 V 80 H 244" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#a6)"/>
+        <path d="M 200 204 H 226 V 266 H 244" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#a6)"/>
 
-        <path d="M 550 92 H 590 V 178" fill="none" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M 550 272 H 590 V 198" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M 550 80 H 590 V 174" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M 550 266 H 590 V 202" fill="none" stroke="currentColor" stroke-width="1.5"/>
         <circle cx="590" cy="188" r="14" fill="none" stroke="currentColor" stroke-width="1.5"/>
         <text x="590" y="192" text-anchor="middle" font-family="Archivo, sans-serif" font-size="12" font-weight="600" fill="currentColor">∪</text>
         <line x1="604" y1="188" x2="676" y2="188" stroke="currentColor" stroke-width="1.5" marker-end="url(#a6)"/>
         <text x="638" y="176" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".7">union,</text>
         <text x="638" y="206" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".7">then deny</text>
 
-        <rect x="684" y="96" width="280" height="184" fill="none" stroke="currentColor" stroke-width="2.5"/>
-        <line x1="684" y1="124" x2="964" y2="124" stroke="currentColor" stroke-width="1"/>
-        <text x="698" y="116" font-family="Archivo, sans-serif" font-size="11.5" font-weight="600" fill="currentColor">effective for alice here</text>
+        <rect x="684" y="68" width="280" height="240" fill="none" stroke="currentColor" stroke-width="2.5"/>
+        <line x1="684" y1="96" x2="964" y2="96" stroke="currentColor" stroke-width="1"/>
+        <text x="698" y="88" font-family="Archivo, sans-serif" font-size="11.5" font-weight="600" fill="currentColor">effective for alice here</text>
         <g font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor">
-          <text x="698" y="152">+ workflow:read</text>
-          <text x="698" y="178">+ run:read</text>
-          <text x="698" y="204">+ workflow:run</text>
-          <text x="698" y="234" fill="var(--signal)">− run:read_data</text>
-          <text x="698" y="262" opacity=".55">− workflow:write</text>
+          <text x="698" y="120">+ workflow:read</text>
+          <text x="698" y="142">+ workflow:run</text>
+          <text x="698" y="164">+ workflow:write</text>
+          <text x="698" y="186">+ run:read</text>
+          <text x="698" y="208">+ secret:use</text>
+          <text x="698" y="230">+ secret:write</text>
+          <text x="698" y="258" fill="var(--signal)">− run:read_data</text>
+          <text x="698" y="286" opacity=".55">− workflow:delete</text>
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".55" text-anchor="end">
-          <text x="950" y="152">namespace</text>
-          <text x="950" y="178">namespace</text>
-          <text x="950" y="204">workflow</text>
-          <text x="950" y="234" fill="var(--signal)" opacity=".85">denied</text>
-          <text x="950" y="262">never granted</text>
+          <text x="950" y="120">namespace</text>
+          <text x="950" y="142">namespace</text>
+          <text x="950" y="164">namespace</text>
+          <text x="950" y="186">namespace</text>
+          <text x="950" y="208">namespace</text>
+          <text x="950" y="230">namespace</text>
+          <text x="950" y="258" fill="var(--signal)" opacity=".85">denied</text>
+          <text x="950" y="286">owner only</text>
         </g>
       </svg>
     </div>
-    <figcaption><b>Grants add up; a deny is the only thing that subtracts.</b> The deny lets a team share a workflow while keeping the payloads of one sensitive run out of reach.</figcaption>
+    <figcaption><b>Grants add up; a deny is the only thing that subtracts.</b> team-finance edits every workflow of finance, and the deny takes <code>run:read_data</code>, which the editor role holds, from alice on monthly-invoicing alone: she maintains it, secrets included, without reading the invoices its runs carry.</figcaption>
   </figure>
 
   <div class="prose">
@@ -5085,6 +5117,8 @@ Authorization: Bearer &lt;an administrator's token&gt;
       <li>A grant binds one principal, one scope and either one role or a deny. The scope is written <code>NS</code> for a namespace or <code>NS/workflow</code> for a single workflow: <code>finance</code>, <code>finance/monthly-invoicing</code>. An optional expiry ends it without anyone remembering to revoke it.</li>
       <li>Effective permissions are the union of every applying grant: the principal's own and its groups', at both scopes.</li>
       <li>A workflow-scope grant only adds. Only an explicit <code>deny</code> removes, and it wins over any allow at any scope. A deny names one permission, never a role, since the payloads kept out of reach are <code>run:read_data</code> alone and no role is that.</li>
+      <li><code>secret:use</code> and <code>secret:write</code> come from namespace grants alone, since a declaration serves every workflow of the namespace: an editor or owner of one workflow holds neither, there or anywhere. A deny of either on one workflow still takes it away there.</li>
+      <li>A grant or a deny ends at the instant its expiry names: one ending at midnight holds until the last instant before it, and not at midnight. A deny that ends stops denying the same way.</li>
       <li>No matching grant means refusal: the same 404 whether the workflow is absent or merely invisible, so listing cannot discover names.</li>
       <li>Every user owns a personal namespace named after their login, created on first sign-in, which they cannot delete or rename.</li>
     </ul>
@@ -6607,9 +6641,9 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
           <tr><td class="wrapcell">DELETE /api/v1/{ns}/workflows/{name}/grants/{id}</td><td>Revokes one grant, from the next request and the next run creation. An open log stream asks again every 30 s, credential and <code>run:read</code>, and ends once either is gone.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/{ns}/workflows</td><td>An empty workflow repository, with default branch and protection settings.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}</td><td>Default branch head, resolved graph at that commit, commit history.</td></tr>
-          <tr><td class="wrapcell">GET, POST /{ns}/{name}.git/*</td><td>Git smart HTTP. Clone and fetch need <code>workflow:read</code>, push needs <code>workflow:write</code>; a pre-receive hook validates the entry point before any ref moves.</td></tr>
+          <tr><td class="wrapcell">GET, POST /{ns}/{name}.git/*</td><td>Git smart HTTP. Clone and fetch need <code>workflow:read</code>, push needs <code>workflow:write</code>, and <code>secret:use</code> in the namespace where a commit names a secret; a pre-receive hook validates the entry point before any ref moves.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/tree/{ref}</td><td>The tree at a ref, for the console and for review.</td></tr>
-          <tr><td class="wrapcell">PUT /api/v1/{ns}/workflows/{name}/versions/{commit}</td><td>Registers a commit as a version: its entry point, its includes and the files of its tree, refused if the graph cannot be built from them. A PUT because a commit pushed twice with the same files is one version; with other files it is refused with 409, since a commit names one tree. A tree above <a href="#until-the-repository-is-hosted">the limits</a> is refused with 413. Refused with 422, before any tree is stored, where an input's schema does not compile against the pushed tree, names a file it does not carry, or weighs more than 128 KiB in all, a file counted once per input naming it. What <code>agk push</code> sends until git hosting arrives. Requires <code>workflow:write</code>.</td></tr>
+          <tr><td class="wrapcell">PUT /api/v1/{ns}/workflows/{name}/versions/{commit}</td><td>Registers a commit as a version: its entry point, its includes and the files of its tree, refused if the graph cannot be built from them. A PUT because a commit pushed twice with the same files is one version; with other files it is refused with 409, since a commit names one tree. A tree above <a href="#until-the-repository-is-hosted">the limits</a> is refused with 413. Refused with 422, before any tree is stored, where an input's schema does not compile against the pushed tree, names a file it does not carry, or weighs more than 128 KiB in all, a file counted once per input naming it. Refused with 403, before any tree is stored, where the version names a secret and the caller holds no <code>secret:use</code> in the namespace (<a href="#permissions">Permissions</a>). What <code>agk push</code> sends until git hosting arrives. Requires <code>workflow:write</code>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/bricks, /bricks/{name}</td><td>The catalog, and a brick's manifest with its parameter schema, to discover what exists before writing a workflow. Any authenticated principal.</td></tr>
 
           <tr><th colspan="2">Runs and their data</th></tr>
@@ -6678,7 +6712,7 @@ Authorization: Bearer &lt;api token&gt;
       <table>
         <thead><tr><th>A cancellation answers</th><th>When</th></tr></thead>
         <tbody>
-          <tr><td><code>202</code></td><td>The request is written: <code>{"run": …}</code>, and <code>Location: /api/v1/{ns}/runs/{id}</code>, where the run is read. The same whether the run is going or has ended, since how it stands is for <code>run:read</code> to show, which <code>operator</code> does not hold.</td></tr>
+          <tr><td><code>202</code></td><td>The request is written: <code>{"run": …}</code>, and <code>Location: /api/v1/{ns}/runs/{id}</code>, where the run is read. The same whether the run is going or has ended, since how it stands is for <code>run:read</code> to show, and cancelling takes <code>workflow:run</code> alone.</td></tr>
           <tr><td><code>400</code></td><td>A body with a field in it, or one that is not a JSON object.</td></tr>
           <tr><td><code>404</code></td><td>No such run, or a run whose workflow the caller holds no <code>workflow:run</code> on.</td></tr>
           <tr><td><code>413</code></td><td>A body past 64 KiB.</td></tr>
@@ -7045,7 +7079,7 @@ flowchart LR
           <tr><td>workflow.schema</td><td>JSON Schema 2020-12 of the entry point, a brick manifest or an envelope, for local validation or type generation.</td><td>any authenticated principal</td></tr>
           <tr><td>workflow.validate</td><td>Validates a draft entry point and file set, committing nothing. The only authority on whether a draft is legal.</td><td><code>workflow:read</code></td></tr>
           <tr><td>workflow.create</td><td>Empty repository with its default branch.</td><td>namespace <code>owner</code></td></tr>
-          <tr><td>workflow.commit</td><td>Writes files and commits to a branch, through the pre-receive validation.</td><td><code>workflow:write</code></td></tr>
+          <tr><td>workflow.commit</td><td>Writes files and commits to a branch, through the pre-receive validation.</td><td><code>workflow:write</code>, and <code>secret:use</code> where the commit names a secret</td></tr>
           <tr><td>workflow.run</td><td>Starts a run, optionally on a ref other than the default branch.</td><td><code>workflow:run</code></td></tr>
           <tr><td>run.list, run.get</td><td>Run history and state; without <code>run:read_data</code>, a run names no inputs.</td><td><code>run:read</code></td></tr>
           <tr><td>run.logs</td><td>A step's log tail, secrets masked.</td><td><code>run:read</code></td></tr>
@@ -8254,8 +8288,8 @@ resource "agentiik_workflow" "search" {
 </g>
 <text x="273" y="300" class="f-text t-mono" font-size="12">alice</text>
 <text x="273" y="314" class="f-faint" font-size="10.5">Alice Meunier</text>
-<rect x="469.5" y="292.5" width="72" height="20" rx="4" class="f-sunken s-line-strong"/>
-<text x="505.5" y="306" class="f-text t-mono" font-size="11" text-anchor="middle">operator</text>
+<rect x="469.5" y="292.5" width="59" height="20" rx="4" class="f-sunken s-line-strong"/>
+<text x="499.0" y="306" class="f-text t-mono" font-size="11" text-anchor="middle">editor</text>
 <text x="641" y="307" class="f-muted t-mono" font-size="11.5">this workflow</text>
 <text x="793" y="307" class="f-muted" font-size="11">direct</text>
 <text x="881" y="307" class="f-muted t-mono" font-size="11.5">31 Dec 2026</text>
@@ -8337,7 +8371,7 @@ resource "agentiik_workflow" "search" {
 <text x="1063" y="594" class="f-faint" font-size="10.5" text-anchor="end">from the audit log</text>
 <text x="249" y="631" class="f-faint t-mono" font-size="10.5">2 hours ago</text>
 <text x="366" y="632" class="f-text t-mono" font-size="12">chloe</text>
-<text x="451" y="632" font-size="11"><tspan class="f-muted">granted </tspan><tspan class="f-text t-mono" font-size="11.5">alice</tspan><tspan class="f-muted"> the operator role on this workflow, expiring 31 Dec 2026</tspan></text>
+<text x="451" y="632" font-size="11"><tspan class="f-muted">granted </tspan><tspan class="f-text t-mono" font-size="11.5">alice</tspan><tspan class="f-muted"> the editor role on this workflow, expiring 31 Dec 2026</tspan></text>
 <text x="249" y="669" class="f-faint t-mono" font-size="10.5">2 hours ago</text>
 <text x="366" y="670" class="f-text t-mono" font-size="12">chloe</text>
 <text x="451" y="670" font-size="11"><tspan class="f-muted">added a deny on </tspan><tspan class="f-fail t-mono" font-size="11.5">run:read_data</tspan><tspan class="f-muted"> for </tspan><tspan class="f-text t-mono" font-size="11.5">alice</tspan></text>
@@ -8365,12 +8399,12 @@ resource "agentiik_workflow" "search" {
 <text x="1110" y="261" class="f-text t-mono" font-size="12">+</text>
 <text x="1131" y="261" class="f-text t-mono" font-size="11.5">workflow:run</text>
 <text x="1407" y="261" class="f-faint" font-size="10.5" text-anchor="end">this workflow</text>
-<text x="1110" y="291" class="f-fail t-mono" font-size="12">−</text>
-<text x="1131" y="291" class="f-fail t-mono" font-size="11.5">run:read_data</text>
-<text x="1407" y="291" class="f-faint" font-size="10.5" text-anchor="end">denied here</text>
-<text x="1110" y="321" class="f-faint t-mono" font-size="12">−</text>
-<text x="1131" y="321" class="f-faint t-mono" font-size="11.5">workflow:write</text>
-<text x="1407" y="321" class="f-faint" font-size="10.5" text-anchor="end">never granted</text>
+<text x="1110" y="291" class="f-text t-mono" font-size="12">+</text>
+<text x="1131" y="291" class="f-text t-mono" font-size="11.5">workflow:write</text>
+<text x="1407" y="291" class="f-faint" font-size="10.5" text-anchor="end">this workflow</text>
+<text x="1110" y="321" class="f-fail t-mono" font-size="12">−</text>
+<text x="1131" y="321" class="f-fail t-mono" font-size="11.5">run:read_data</text>
+<text x="1407" y="321" class="f-faint" font-size="10.5" text-anchor="end">denied here</text>
 <g stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" class="f-none">
 <path d="M1117.5 354.5l5.5 10h-11zM1117.5 358.5v2.5M1117.5 363v.2" class="f-none s-wait"/>
 </g>

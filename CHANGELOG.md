@@ -24,6 +24,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - A deny names one permission; a grant's scope is `NS` or `NS/workflow`; a token's scope is `{permissions, within}`.
 - Quotas are optional, `allowed_runner_pools` sits inside them and refuses an empty list; the Terraform example follows.
 - The roadmap's installer writes the bootstrap token to `.env` and prints none.
+- `operator` holds `run:read` to follow runs, and `workflow:delete` is `owner`'s alone; the roles table gains a `delete` column and names the permissions of each column.
+- `secret:use` is checked at the push, against the pusher, by the version `PUT`, a git push and `workflow.commit` alike: a version naming a secret is refused with 403 without it, and running it takes `workflow:run` alone.
+- The access figure and the console's access mock deny `run:read_data` to an `editor`, which holds it, rather than to roles that never did.
+- Secret permissions come from namespace grants alone, and a grant or a deny ends at the instant its expiry names.
 
 ## v0.2.5, 2026-09-26
 
