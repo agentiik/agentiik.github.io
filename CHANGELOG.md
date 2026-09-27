@@ -85,6 +85,9 @@ Every repository of the project carries the same version and is tagged at the sa
 - Storage gains `webauthn_challenges`, and a session records only the credential that opened it.
 - `POST /api/v1/auth/sign-out` and `GET /auth/assets/{name}`; what the sign-in and enrolment pages show, and their Content-Security-Policy.
 - The web console is served on the API's origin, at the root of the public URL, so the Relying Party Identifier stays the public URL's host; a page on another host of the same site is a threat the `Origin` check answers. The roadmap's console deployment tasks say so.
+- Password sign-in: 10 attempts per login and 30 per address in 15 minutes, then 429 with `Retry-After`; one hash per processor at once, and 503 after waiting 5 seconds; a TOTP code beside a password, RFC 6238, no code accepted twice.
+- Where a passkey is required, a password's session only enrols, whatever passkeys the account holds, read at every request; the passkey that reaches `min_passkeys` deletes the password.
+- Behind `AGENTIIK_PROXY_URL` the API reads a sign-in's address from the last `X-Forwarded-For` entry; nginx needs `proxy_set_header X-Forwarded-For $remote_addr;`, which the deploy `nginx.conf` does not carry yet.
 
 ## v0.2.5, 2026-09-26
 
