@@ -99,6 +99,41 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   -webkit-mask-image:linear-gradient(to bottom, #000 62%, transparent);
           mask-image:linear-gradient(to bottom, #000 62%, transparent);
 }
+/* Sketches of workflows drawing themselves on the canvas, running, and fading, behind the
+   opening: steps land on the grid's dots, edges route at right angles as the console draws
+   them, and each sketch stays clear of the text and the screenshot. The script places them;
+   without it, or where the reader asks for less motion, the canvas stays still. */
+.sketches{
+  position:absolute;
+  z-index:-1;
+  left:50%;
+  top:calc(-1 * var(--top));
+  bottom:38%;
+  width:100vw;
+  transform:translateX(-50%);
+  pointer-events:none;
+  overflow:hidden;
+  -webkit-mask-image:linear-gradient(to bottom, #000 62%, transparent);
+          mask-image:linear-gradient(to bottom, #000 62%, transparent);
+}
+/* An svg absolutely placed keeps its own height rather than stretching between top and
+   bottom, as a replaced element does, so a block holds the place and the drawing fills it. */
+.sketches svg{display:block;width:100%;height:100%}
+.sk-sketch{opacity:.9;transition:opacity 1.1s ease}
+.sk-sketch.out{opacity:0}
+.sk-node{opacity:0;transition:opacity .6s ease}
+.sk-node.on{opacity:1}
+.sk-box{fill:color-mix(in srgb, var(--surface) 84%, transparent);stroke:color-mix(in srgb, var(--accent) 42%, transparent);stroke-width:1.2;transition:stroke .3s ease}
+.sk-name{font:500 11px "JetBrains Mono",ui-monospace,monospace;fill:var(--muted)}
+.sk-dot{fill:color-mix(in srgb, var(--faint) 55%, transparent);transition:fill .3s ease}
+.sk-port{fill:var(--paper);stroke:color-mix(in srgb, var(--accent) 55%, transparent);stroke-width:1.2}
+.sk-edge{fill:none;stroke:color-mix(in srgb, var(--accent) 50%, transparent);stroke-width:1.4;stroke-linejoin:round;transition:stroke-dashoffset .75s cubic-bezier(.4,0,.2,1)}
+.sk-ring{fill:none;stroke:var(--accent);stroke-width:1.2;opacity:0;transform-box:fill-box;transform-origin:center}
+.sk-node.run .sk-box{stroke:var(--accent)}
+.sk-node.run .sk-dot,.sk-node.done .sk-dot{fill:var(--accent)}
+.sk-node.run .sk-ring{animation:sk-pulse 1.3s ease-out infinite}
+@keyframes sk-pulse{from{opacity:.55;transform:scale(1)}to{opacity:0;transform:scale(2.8)}}
+@media (prefers-reduced-motion:reduce){.sketches{display:none}}
 .lockup{
   --mark:clamp(30px,5.4vw,50px);
   display:inline-flex;
@@ -532,6 +567,7 @@ img{max-width:100%}
 <main>
 
 <div class="top">
+<div class="sketches" aria-hidden="true"><svg focusable="false"></svg></div>
 <div class="hero">
 <div class="lockup" data-rise data-par=".07" style="--delay:0s">
   <svg viewBox="0 0 16 14" aria-hidden="true" focusable="false">
@@ -2113,6 +2149,130 @@ run 01M3KR0WQGJ3DH4W8BXB9N7YGQ: .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ
       label.textContent = 'The player could not be loaded';
     });
   });
+})();
+</script>
+<script>
+// The opening's sketches: a few small workflows at a time, each drawn column by column,
+// run step by step, held, then faded, and another started where there is room. Steps
+// sit on the canvas's 22-pixel grid, the grid the dots behind them are drawn on.
+(function(){
+  var svg = document.querySelector('.sketches svg');
+  if (!svg || !window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var NS = 'http://www.w3.org/2000/svg', G = 22, W = 5 * G, H = 2 * G;
+  var NAMES = ['fetch', 'split', 'normalize', 'charge', 'invoice', 'score', 'merge', 'archive',
+    'notify', 'render', 'publish', 'enrich', 'dedupe', 'export', 'total', 'reconcile', 'resize', 'index'];
+  var SHAPES = [[1, 2, 1], [1, 3, 1], [2, 1, 1], [1, 1, 2], [1, 2], [2, 1], [1, 1, 1], [1, 1], [1, 3]];
+  var alive = [];
+
+  function make(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
+  function overlaps(a, b) { return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h; }
+
+  // What a sketch must stay clear of: the text of the opening, measured as the text itself
+  // rather than its boxes, which run the column's full width, and the screenshot.
+  function avoid(frame) {
+    var out = [], pad = G;
+    function add(b) { if (b.width && b.height) out.push({ x: b.left - frame.left - pad, y: b.top - frame.top - pad, w: b.width + 2 * pad, h: b.height + 2 * pad }); }
+    // Line by line: a text node's rectangles are its lines, where an element's box would be
+    // the column's whole width.
+    document.querySelectorAll('.hero .headline, .hero .sub').forEach(function (n) {
+      var walk = document.createTreeWalker(n, NodeFilter.SHOW_TEXT), t;
+      while ((t = walk.nextNode())) {
+        var r = document.createRange(); r.selectNodeContents(t);
+        Array.prototype.forEach.call(r.getClientRects(), add);
+      }
+    });
+    document.querySelectorAll('.hero .lockup svg, .hero .lockup h1, .hero .actions a, .shot.graph, .page-tools').forEach(function (n) { add(n.getBoundingClientRect()); });
+    return out.concat(alive.map(function (a) { return a.box; }));
+  }
+
+  function spawn() {
+    var frame = svg.getBoundingClientRect();
+    if (document.hidden || alive.length >= (frame.width > 1500 ? 3 : 2)) return later(1500);
+    var layers = pick(SHAPES), rows = Math.max.apply(null, layers);
+    var w = layers.length * W + (layers.length - 1) * 2 * G, h = rows * H + (rows - 1) * G;
+    // Every place on the grid the sketch fits, then one of them at random: drawing a place at
+    // random and testing it would almost never find the narrow room beside the text.
+    var bottom = frame.height * .56, blocked = avoid(frame), room = [];
+    for (var y = G + 1; y + h <= bottom; y += G) {
+      for (var x = G + 1; x + w <= frame.width - G; x += G) {
+        var box = { x: x - G, y: y - G, w: w + 2 * G, h: h + 2 * G };
+        if (!blocked.some(function (b) { return overlaps(box, b); })) room.push(box);
+      }
+    }
+    if (!room.length) return later(2500);
+    var at = pick(room);
+    draw(at.x + G, at.y + G, layers, rows, at);
+    later(900 + Math.random() * 1800);
+  }
+  function later(ms) { setTimeout(spawn, ms); }
+
+  function draw(x, y, layers, rows, box) {
+    var g = make('g', { 'class': 'sk-sketch' }, svg), used = {}, cols = [];
+    var record = { box: box };
+    alive.push(record);
+    layers.forEach(function (n, c) {
+      var col = [], off = G * Math.round((rows - n) * (H + G) / 2 / G);
+      for (var i = 0; i < n; i++) {
+        var name; do { name = pick(NAMES); } while (used[name]); used[name] = 1;
+        col.push({ x: x + c * (W + 2 * G), y: y + off + i * (H + G), name: name });
+      }
+      cols.push(col);
+    });
+    var edges = [];
+    for (var c = 0; c + 1 < cols.length; c++) {
+      var A = cols[c], B = cols[c + 1];
+      B.forEach(function (b, j) { edges.push([A[Math.min(A.length - 1, Math.floor(j * A.length / B.length))], b, c]); });
+      A.forEach(function (a, i) {
+        if (!edges.some(function (e) { return e[0] === a; })) edges.push([a, B[Math.min(B.length - 1, Math.floor(i * B.length / A.length))], c]);
+      });
+    }
+    edges = edges.map(function (e) {
+      var a = e[0], b = e[1], x1 = a.x + W, y1 = a.y + H / 2, x2 = b.x, y2 = b.y + H / 2, mx = x1 + G;
+      var p = make('path', { d: 'M' + x1 + ' ' + y1 + 'H' + mx + 'V' + y2 + 'H' + x2, 'class': 'sk-edge' }, g);
+      var len = p.getTotalLength();
+      p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+      return { p: p, c: e[2] };
+    });
+    cols.forEach(function (col) {
+      col.forEach(function (n) {
+        var ng = make('g', { 'class': 'sk-node' }, g);
+        make('rect', { x: n.x, y: n.y, width: W, height: H, rx: 5, 'class': 'sk-box' }, ng);
+        make('circle', { cx: n.x + 15, cy: n.y + H / 2, r: 5, 'class': 'sk-ring' }, ng);
+        make('circle', { cx: n.x + 15, cy: n.y + H / 2, r: 3, 'class': 'sk-dot' }, ng);
+        var t = make('text', { x: n.x + 26, y: n.y + H / 2 + 4, 'class': 'sk-name' }, ng);
+        t.textContent = n.name;
+        make('circle', { cx: n.x, cy: n.y + H / 2, r: 3, 'class': 'sk-port' }, ng);
+        make('circle', { cx: n.x + W, cy: n.y + H / 2, r: 3, 'class': 'sk-port' }, ng);
+        n.el = ng;
+      });
+    });
+    var step = 650, t = 60;
+    cols.forEach(function (col, c) {
+      setTimeout(function () { col.forEach(function (n) { n.el.classList.add('on'); }); }, t + c * step);
+      setTimeout(function () { edges.forEach(function (e) { if (e.c === c) e.p.style.strokeDashoffset = 0; }); }, t + c * step + step / 2);
+    });
+    t += cols.length * step + 400;
+    cols.forEach(function (col, c) {
+      setTimeout(function () { col.forEach(function (n) { n.el.classList.add('run'); }); }, t + c * 1100);
+      setTimeout(function () { col.forEach(function (n) { n.el.classList.remove('run'); n.el.classList.add('done'); }); }, t + c * 1100 + 1000);
+    });
+    t += cols.length * 1100 + 1600 + Math.random() * 1400;
+    setTimeout(function () { g.classList.add('out'); }, t);
+    setTimeout(function () {
+      g.remove();
+      alive.splice(alive.indexOf(record), 1);
+    }, t + 1200);
+  }
+
+  setTimeout(spawn, 500);
+  setTimeout(spawn, 1700);
+  setTimeout(spawn, 3100);
 })();
 </script>
 </body>
