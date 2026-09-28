@@ -412,7 +412,11 @@ body{overflow-x:clip}
 /* The screenshot and the recording take the screen's width, up to the 1440 the console is
    drawn at, and stop one gutter short of either edge. */
 .shot,.cast{width:min(1440px, calc(100vw - 2 * var(--gutter)))}
-.shot{border-radius:9px;overflow:hidden;box-shadow:0 1px 2px rgba(14,19,16,.06),0 18px 50px -18px rgba(14,19,16,.28)}
+/* The mockup draws its own window, rounded and bordered, so the frame around it draws
+   nothing: a border and a radius here would put a second corner outside the window's own.
+   The shadow follows the drawing's shape rather than a box's. */
+.shot{border:0;background:none;border-radius:0;overflow:visible;box-shadow:none}
+.shot .mock{filter:drop-shadow(0 1px 1px rgba(14,19,16,.06)) drop-shadow(0 16px 26px rgba(14,19,16,.16))}
 .shot .mock{display:block;width:100%;height:auto}
 .cast-frame{border-radius:7px;overflow:hidden}
 .cast pre{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}

@@ -25,6 +25,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Site
 
+- The home page's mockups keep the one rounded corner they draw: the frame around them no longer adds a border and a radius of its own, and their shadow follows the window's shape.
 - The home page's headline says the two things Agentiik is built on, a container per step and a commit per run, and its graph is the console's current mockup, drawn as vectors, so it stays sharp at any screen density.
 - The home page opens on the product: a headline and two ways in over the console's graph canvas, the graph view beside its agentiik.yaml, the three ideas the documentation opens on, then the runs view and the recording, each with a title.
 - The documentation and the roadmap lay everything in one column of one width, text, tables, code and figures alike, rather than prose at one measure and the rest wider; a table or a drawing wider than the column scrolls in its frame or opens in the viewer.
