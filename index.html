@@ -407,8 +407,10 @@ html.js.ready [data-rise]{
 }
 .cast figcaption b{color:var(--ink);font-weight:600}
 /* The player's own palette, set to this page's rather than left at its default black: a
-   terminal that does not belong to the page it sits on reads as an image somebody pasted. */
-.asciinema-player-theme-agentiik{
+   terminal that does not belong to the page it sits on reads as an image somebody pasted.
+   Two classes, because the player's stylesheet arrives after this one and sets its own
+   colours on one class, which would win the tie. */
+.ap-player.asciinema-player-theme-agentiik{
   --term-color-foreground:#17201C;
   --term-color-background:#FBFCF8;
   --term-color-0:#3A463F; --term-color-1:#A8481B; --term-color-2:#0E6A5F;
@@ -419,7 +421,7 @@ html.js.ready [data-rise]{
   --term-color-14:#189387; --term-color-15:#0B0F0D;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .asciinema-player-theme-agentiik{
+  :root:not([data-theme="light"]) .ap-player.asciinema-player-theme-agentiik{
     --term-color-foreground:#E5EAE3;
     --term-color-background:#181E1B;
     --term-color-0:#2A332E; --term-color-1:#E0834F; --term-color-2:#54C1AD;
@@ -430,7 +432,7 @@ html.js.ready [data-rise]{
     --term-color-14:#8AE2D3; --term-color-15:#FFFFFF;
   }
 }
-:root[data-theme="dark"] .asciinema-player-theme-agentiik{
+:root[data-theme="dark"] .ap-player.asciinema-player-theme-agentiik{
   --term-color-foreground:#E5EAE3;
   --term-color-background:#181E1B;
   --term-color-0:#2A332E; --term-color-1:#E0834F; --term-color-2:#54C1AD;
@@ -1531,9 +1533,9 @@ img{max-width:100%}
 
 <h2 class="section-title" data-rise>On a laptop, with no server</h2>
 <p class="section-lede" data-rise style="--delay:.04s">The same graph runs against the Docker daemon beside you, with nothing else installed.</p>
-<figure class="cast" data-rise data-par="-.03" style="--delay:.08s">
+<figure class="cast" data-cast="assets/agk-home.cast" data-rise data-par="-.03" style="--delay:.08s">
   <div class="cast-frame">
-<pre id="cast-poster"><code><span class="p">$</span> <span class="cmd">agk validate</span>
+<pre class="cast-poster"><code><span class="p">$</span> <span class="cmd">agk validate</span>
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
 this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
 ghcr.io/acme/agk-charge:0.1.0: charge-order 0.1.0, reads in, writes ok rejected
@@ -1561,13 +1563,61 @@ invoiced: 1 item in .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ/outputs/invoiced.json
 rejected: 1 item in .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ/outputs/rejected.json
 run 01M3KR0WQGJ3DH4W8BXB9N7YGQ: .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ
 </code></pre>
-    <div class="cast-player" id="cast-player" hidden></div>
-    <button class="cast-play" id="cast-play" type="button" aria-controls="cast-player">
+    <div class="cast-player" hidden></div>
+    <button class="cast-play" type="button">
       <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 1l9 5-9 5z"/></svg>
       <span>Play the recording</span>
     </button>
   </div>
   <figcaption><b>Four steps, six containers, 2.5 seconds.</b> A recording rather than a transcript written by hand. <code>agk validate</code> holds every step to the manifests of the images it names; <code>agk run --local</code> then runs the whole graph against the Docker daemon of a laptop, with no controller, no bus and no database. The machine says what it gives up before it starts anything. <a href="assets/agk-home.cast">The recording itself</a> plays with <code>asciinema play</code>.</figcaption>
+</figure>
+
+<h2 class="section-title" data-rise>On a server your team shares</h2>
+<p class="section-lede" data-rise style="--delay:.04s">The same command line against an installation: <code>agk push</code> registers the workflow, <code>agk run</code> starts it and follows it, <code>agk status</code> and <code>agk logs</code> read it back.</p>
+<figure class="cast" data-cast="assets/agk-server-run.cast" data-rise data-par="-.03" style="--delay:.08s">
+  <div class="cast-frame">
+<pre class="cast-poster"><code><span class="p">$</span> <span class="cmd">agk push --namespace demo</span>
+user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+python:3.13-alpine resolved to python@sha256:79e7a9b9ff1cbceff819f856fb374477792a5967759d94df266de7b7b4120e6f
+alpine:3.21 resolved to alpine@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507
+demo/pi@eae62ef pushed to https://localhost:8443
+3 steps, 1 file, 0 included files, 0 manifests, 2 tags resolved to their digests
+<span class="p">$</span> <span class="cmd">agk run --namespace demo --input darts=1000000</span>
+run 01M3M2K9369AKDP89DAGVA742X of demo/pi@eae62ef started at https://localhost:8443
+    0.4s  players  succeeded, out 4
+    0.4s  throw    running
+    1.6s  average  running
+    1.6s  throw    succeeded, out 4
+    2.0s  average  succeeded, out 1
+pi succeeded in 2.0s: 3 steps, 6 containers
+estimates: 4 items
+pi: 1 item
+run 01M3M2K9369AKDP89DAGVA742X: https://localhost:8443/api/v1/demo/runs/01M3M2K9369AKDP89DAGVA742X
+<span class="p">$</span> <span class="cmd">agk status 01M3M2K9369AKDP89DAGVA742X</span>
+run 01M3M2K9369AKDP89DAGVA742X: demo/pi@eae62ef, succeeded after 2.0s
+manual by operator at 2026-09-28T13:17:18Z
+average  succeeded, out 1 sha256:3fcca2c4ebd2
+players  succeeded, out 4 sha256:03038c707673
+throw    succeeded, out 4 sha256:fafc99e008a2
+inputs: darts
+output estimates: 4 items
+output pi: 1 item
+<span class="p">$</span> <span class="cmd">agk logs 01M3M2K9369AKDP89DAGVA742X throw</span>
+throw 1/4 | ada threw 1000000 darts, pi is about 3.143692
+throw 1/4 | driver: the container exited 0: the output envelopes are published
+throw 2/4 | grace threw 1000000 darts, pi is about 3.142316
+throw 2/4 | driver: the container exited 0: the output envelopes are published
+throw 3/4 | linus threw 1000000 darts, pi is about 3.140164
+throw 3/4 | driver: the container exited 0: the output envelopes are published
+throw 4/4 | alan threw 1000000 darts, pi is about 3.141888
+throw 4/4 | driver: the container exited 0: the output envelopes are published</code></pre>
+    <div class="cast-player" hidden></div>
+    <button class="cast-play" type="button">
+      <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 1l9 5-9 5z"/></svg>
+      <span>Play the recording</span>
+    </button>
+  </div>
+  <figcaption><b>Four players estimate pi, in parallel, on a server.</b> A fan-out runs one container per player, and each writes its estimate to its log. Recorded against an installation the deploy repository's CI stands up from its README, so the session is what a server answers rather than a transcript written by hand. <a href="assets/agk-server-run.cast">The recording itself</a> plays with <code>asciinema play</code>.</figcaption>
 </figure>
 
 <nav class="docs">
@@ -2106,20 +2156,16 @@ run 01M3KR0WQGJ3DH4W8BXB9N7YGQ: .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ
 })();
 </script>
 <script>
-// The player is fetched when somebody presses play, and never before. Until then the
+// The player is fetched when somebody presses play, and never before. Until then each
 // session is the text already on the page, which is readable, selectable and there with
-// no JavaScript at all.
+// no JavaScript at all. One player serves every recording on the page, loaded once.
 (function(){
-  var button = document.getElementById('cast-play');
-  var mount = document.getElementById('cast-player');
-  var poster = document.getElementById('cast-poster');
-  if(!button || !mount || !poster) return;
-
   var BASE = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.10.0/dist/bundle/';
-  var label = button.querySelector('span');
+  var loading = null;
 
   function load(){
-    return new Promise(function(resolve, reject){
+    if (loading) return loading;
+    loading = new Promise(function(resolve, reject){
       var css = document.createElement('link');
       css.rel = 'stylesheet';
       css.href = BASE + 'asciinema-player.css';
@@ -2127,30 +2173,39 @@ run 01M3KR0WQGJ3DH4W8BXB9N7YGQ: .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ
       var js = document.createElement('script');
       js.src = BASE + 'asciinema-player.min.js';
       js.onload = resolve;
-      js.onerror = reject;
+      js.onerror = function(){ loading = null; reject(); };
       document.head.appendChild(js);
     });
+    return loading;
   }
 
-  button.addEventListener('click', function(){
-    button.disabled = true;
-    label.textContent = 'Loading the player';
-    load().then(function(){
-      poster.hidden = true;
-      mount.hidden = false;
-      button.hidden = true;
-      window.AsciinemaPlayer.create('assets/agk-home.cast', mount, {
-        autoPlay: true,
-        idleTimeLimit: 1.5,
-        fit: 'width',
-        theme: 'agentiik',
-        terminalFontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+  document.querySelectorAll('figure.cast[data-cast]').forEach(function(figure){
+    var button = figure.querySelector('.cast-play');
+    var mount = figure.querySelector('.cast-player');
+    var poster = figure.querySelector('.cast-poster');
+    if(!button || !mount || !poster) return;
+    var label = button.querySelector('span');
+
+    button.addEventListener('click', function(){
+      button.disabled = true;
+      label.textContent = 'Loading the player';
+      load().then(function(){
+        poster.hidden = true;
+        mount.hidden = false;
+        button.hidden = true;
+        window.AsciinemaPlayer.create(figure.getAttribute('data-cast'), mount, {
+          autoPlay: true,
+          idleTimeLimit: 1.5,
+          fit: 'width',
+          theme: 'agentiik',
+          terminalFontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+        });
+      }).catch(function(){
+        // The CDN is somebody else's machine. Where it is not there the page keeps the
+        // text it already had, and the button says why it did nothing.
+        button.disabled = false;
+        label.textContent = 'The player could not be loaded';
       });
-    }).catch(function(){
-      // The CDN is somebody else's machine. Where it is not there the page keeps the
-      // text it already had, and the button says why it did nothing.
-      button.disabled = false;
-      label.textContent = 'The player could not be loaded';
     });
   });
 })();

@@ -25,6 +25,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Site
 
+- The home page shows the command line against a server as well as on a laptop: a recording of agk push, agk run, agk status and agk logs against an installation, made by the deploy repository's CI; one player serves both recordings, and it now takes the page's colours rather than its own black.
 - The home page's logo is larger again, the first thing the opening shows.
 - The home page's headline says plainly what Agentiik is, open source workflow orchestration, and the line under it keeps what sets it apart.
 - The home page's opening offers the organisation on GitHub beside Get started and the roadmap.
