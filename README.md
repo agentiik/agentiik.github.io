@@ -106,7 +106,7 @@ is current.
 | [homebrew-tap](https://github.com/agentiik/homebrew-tap) | The Homebrew formulae: `agk`, and the server programs with it. |
 | [.github](https://github.com/agentiik/.github) | Security policy, code of conduct, contribution guide, licensing and trademark notes. |
 
-All thirteen are public, and six of them hold a README and a licence and nothing else yet. The roadmap says which release fills each one.
+All thirteen are public, and six of them hold no code yet. The roadmap says which release fills each one.
 
 ## Where the rest will come from
 
