@@ -18,6 +18,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - A version is any commit a push leaves a branch or a tag pointing at, and `workflow_versions` records its pusher and its `source`.
 - `grant:manage` names and protects a workflow's default branch, `workflow:write` creates a workflow, and `workflow:delete` takes the runs with it.
 - The audit log records `workflow.create`, `workflow.update`, `workflow.delete` and `ref.protect` from v0.4.0.
+- A port or a workflow output past 250 characters is refused by `agk validate`, `agk run --local`, `agk push` and the push, 422, and a version stored before v0.4.0 naming one is read back as it was accepted.
+- The push refuses a secret the namespace does not declare, 422, naming the secret and each step mounting it, once the pusher holds `secret:use`.
+- A commit already stored, pushed again with the same files, is answered as that version and not judged by a rule added after it was stored.
+- `agk run --local` says before its first step that it executes the working tree, uncommitted changes included, in the transcripts and in both recordings, re-recorded, which ran in 2.5 seconds.
 
 ## v0.3.0, 2026-09-28
 
