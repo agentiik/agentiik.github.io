@@ -26,6 +26,7 @@ Every repository of the project carries the same version and is tagged at the sa
 ### Site
 
 - The home page's headline says plainly what Agentiik is, open source workflow orchestration, and the line under it keeps what sets it apart.
+- The home page's opening offers the organisation on GitHub beside Get started and the roadmap.
 - The home page's canvas draws small workflows on its grid, a few at a time where there is room beside the text: steps appear column by column, edges route to them at right angles, each step runs, then the sketch fades and another starts elsewhere. Nothing moves where the reader asks for less motion.
 - The home page's mockups keep the one rounded corner they draw: the frame around them no longer adds a border and a radius of its own, and their shadow follows the window's shape.
 - The home page's headline says the two things Agentiik is built on, a container per step and a commit per run, and its graph is the console's current mockup, drawn as vectors, so it stays sharp at any screen density.
