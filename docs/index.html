@@ -1380,6 +1380,7 @@ demo/first-run is valid: 1 step, 0 edges, 0 declared inputs, 1 declared output
 the daemon at /Users/you/.docker/run/docker.sock speaks API 1.56 and runs linux/aarch64
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
 this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
+this run executes the working tree in the current directory, uncommitted changes included, and no commit describes it: it is labelled local, so that no history takes it for a run that can be reproduced
     0.0s  greet  running
     0.4s  greet  succeeded, out 1
 demo/first-run succeeded in 0.4s: 1 step, 1 container
@@ -1387,7 +1388,7 @@ greeting: 1 item in .agk/runs/01M3EPQAM9D02NX7A8820CA903/outputs/greeting.json
 run 01M3EPQAM9D02NX7A8820CA903: .agk/runs/01M3EPQAM9D02NX7A8820CA903</code></pre>
     </div>
 
-    <p>The second and third lines are what your machine gives up: Docker Desktop does not remap user namespaces (<a href="#three-tiers-of-containment">Three tiers of containment</a>), and it applies neither AppArmor nor SELinux (<a href="#settings-applied-to-every-container">Settings applied to every container</a>). <code>--require-userns-remap</code> holds the first floor instead, and a run on a laptop then refuses to start.</p>
+    <p>The second and third lines are what your machine gives up: Docker Desktop does not remap user namespaces (<a href="#three-tiers-of-containment">Three tiers of containment</a>), and it applies neither AppArmor nor SELinux (<a href="#settings-applied-to-every-container">Settings applied to every container</a>). <code>--require-userns-remap</code> holds the first floor instead, and a run on a laptop then refuses to start. The fourth says what ran is the directory as it is, which no commit describes (<a href="#the-workflow-repository">The workflow repository</a>).</p>
 
     <h3 id="read-the-result">Read what came out</h3>
 
@@ -1454,7 +1455,7 @@ EOF</code></pre>
     <div class="block">
       <div class="note-label">agk run --local, again</div>
 <pre><code><span class="p">$</span> <span class="cmd">agk run --local</span>
-<span class="c"># the three lines about the daemon, as above</span>
+<span class="c"># the three lines about the daemon and the one about the working tree, as above</span>
     0.0s  greet  running
     0.3s  greet  succeeded, out 1
     0.3s  count  running
@@ -3999,7 +4000,7 @@ spec:
           <tr><td class="wrapcell">metadata.name</td><td><code>^[a-z0-9]+(?:-[a-z0-9]+)*$</code>, narrower than a workflow name: a person types it and the catalog files a page under it. Refused: <code>http_request</code>, <code>HttpRequest</code>.</td></tr>
           <tr><td class="wrapcell">metadata.version</td><td>Semantic Versioning 2.0.0, pre-releases included as <a href="#versioning">Versioning</a> spells them, as the bare number <code>1.4.0</code>. Refused: <code>v1.4.0</code>, <code>1.4</code>, a date.</td></tr>
           <tr><td class="wrapcell">spec.runtime.user</td><td>Never root. Refused: <code>root</code>, <code>0</code>, <code>0:0</code>. The group half is not read, so <code>nonroot:0</code> is accepted.</td></tr>
-          <tr><td class="wrapcell">a port name</td><td><code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>: the name becomes a directory under <code>/agk/in/</code>, the file <code>&lt;port&gt;.json</code> under <code>/agk/out/ports/</code>, which holds it to 250 characters, and an entry of the comma-separated <code>AGK_OUT_PORTS</code>. Refused: <code>in.raw</code>, <code>my port</code>.</td></tr>
+          <tr><td class="wrapcell">a port name</td><td><code>^[A-Za-z0-9][A-Za-z0-9_-]*$</code>: the name becomes a directory under <code>/agk/in/</code>, the file <code>&lt;port&gt;.json</code> under <code>/agk/out/ports/</code>, which holds it to 250 characters, and an entry of the comma-separated <code>AGK_OUT_PORTS</code>. Refused: <code>in.raw</code>, <code>my port</code>. A port past 250 characters, inputs and outputs alike, is refused by <code>agk validate</code>, <code>agk run --local</code>, <code>agk brick test</code> and the push; the manifest of a version stored before <code>v0.4.0</code> is read as it was accepted.</td></tr>
           <tr><td class="wrapcell">a port entry</td><td><code>schema</code> and nothing else, and <code>schema</code> is optional: a port declared with no schema accepts whatever arrives, which is what a passthrough brick says. Refused: a title or a description beside it.</td></tr>
           <tr><td class="wrapcell">a parameter name</td><td><code>^[A-Za-z_][A-Za-z0-9_]*$</code>, with no hyphen, because the parameter becomes a key of <code>/agk/params.json</code> for the container to read. Refused: <code>max-retries</code>.</td></tr>
           <tr><td class="wrapcell">spec.params.&lt;name&gt;.sensitive</td><td>Boolean. Marks a parameter that may carry a secret value, the only way a <a href="#secrets">secret</a> reaches a brick other than as a mounted file.</td></tr>
@@ -4221,9 +4222,13 @@ steps:
         <tbody>
           <tr><td class="wrapcell">past 255, in a workflow</td><td><code>agk validate</code>, <code>agk run --local</code>, and a push before any of its tree is stored: 400 for the workflow's own name, 422 for one its files write</td></tr>
           <tr><td class="wrapcell">past 255, in the database</td><td>the <code>identifier</code> domain every column storing a workflow, step, port or secret name is typed with</td></tr>
-          <tr><td class="wrapcell">a port or a workflow output of 251 to 255</td><td>nothing yet, a <a href="roadmap/#m04">v0.4.0</a> task: it is accepted, every run of a step publishing on such a port fails, and so does every <code>agk run --local</code> of a workflow declaring such an output, once it writes the output down</td></tr>
+          <tr><td class="wrapcell">a port or a workflow output of 251 to 255</td><td><code>agk validate</code>, <code>agk run --local</code> and <code>agk push</code>, before anything is sent, and the push, with 422 before any of its tree is stored, wherever the workflow file, a file it includes or a <a href="#brick-manifest">brick manifest</a> names one. A version stored before <code>v0.4.0</code> naming one is read back as it was accepted: it starts and replays as before, and a step publishing on such a port still fails.</td></tr>
         </tbody>
       </table>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A bound added after a version could be stored is refused where a version is made, and never where one is read back. A version is a commit, and an upgrade asks nothing of what an installation already holds, so a version pushed before the bound keeps rebuilding, starting and replaying as it was accepted, and pushing it again with the same files is answered as the version it is.</p>
     </div>
 
     <h4>Durations</h4>
@@ -4447,7 +4452,7 @@ certs/
       <p>A file in the tree is bytes, never a template: no interpolation, no expression evaluation, no per-run rendering. Substitution belongs in <code>params</code>, which the script reads. Rendering per run would make the commit stop describing what actually executed.</p>
     </div>
 
-    <p><code>agk run --local</code> is the one run no commit describes: it executes the working tree, uncommitted changes included, and is labelled so that no history mistakes it for something reproducible.</p>
+    <p><code>agk run --local</code> is the one run no commit describes: it executes the working tree, uncommitted changes included, and is labelled so that no history mistakes it for something reproducible. It says so before its first step, <code>this run executes the working tree in the current directory, uncommitted changes included, and no commit describes it: it is labelled local, so that no history takes it for a run that can be reproduced</code>, naming another directory by its path where <code>-f</code> points there, and its <code>run.json</code> carries <code>"local": true</code> and no commit.</p>
 
     <h4 id="until-the-repository-is-hosted">Until the repository is hosted</h4>
     <p>Git hosting arrives in <code>v0.4.0</code>. Until then <code>agk push</code> carries the tree itself, read out of the commit and never off the working copy, because a version is a commit. What travels is the commit's tree at the entry point's directory. That directory becomes <code>/agk/repo</code> and the root includes resolve against, as it is for <code>agk run --local</code>, so the entry point is at the root as above and nothing outside its directory reaches a step.</p>
@@ -6743,7 +6748,7 @@ steps:
 
   <div class="prose">
     <ul class="plain">
-      <li>A secret belongs to a namespace. A workflow can name only secrets its own namespace declares, so moving it elsewhere breaks the reference rather than carrying access along. The push is to refuse an undeclared name from <a href="roadmap/#m04">v0.4.0</a>; until then the redemption refuses it, naming the secret, and the task ends with no container run (<a href="#the-task-message">The task message</a>).</li>
+      <li>A secret belongs to a namespace. A workflow can name only secrets its own namespace declares, so moving it elsewhere breaks the reference rather than carrying access along. The push refuses an undeclared name with 422, naming the secret and each step that mounts it, once the pusher holds <code>secret:use</code>, so that only someone allowed to write a secret's name into a workflow learns whether the namespace declares it. A version stored before <code>v0.4.0</code>, or whose secret was undeclared since, is not judged again: the redemption refuses the secret, naming it, and the task ends with no container run (<a href="#the-task-message">The task message</a>).</li>
       <li>Mounted at <code>/agk/secrets/&lt;name&gt;</code> on a tmpfs volume of the task's own, which no directory of the host names, never an environment variable by default, because a process environment is readable by its children and ends up in diagnostic dumps.</li>
       <li>The runner obtains the value by redeeming at the API the per-task grant the controller issued for that one task and that one secret, before it acknowledges the message and pulls the image (<a href="#task-bus">Task bus</a>), and writes it down only as the container is prepared. The API is the only component that opens a value; the controller names which secret a task may have and never sees its value. With <code>builtin</code> the controller's database connection can read the sealed rows, but holds no master key to open them.</li>
       <li>Secret values are masked in collected logs by literal match against the values known to the task, before anything is written to the store. A redelivered task whose container is still running is masked with the values on its volume, which the container holds for as long as it runs, as well as with those of its own redemption. One limit: a redelivered task whose container has already exited has only its own redemption, given what the store holds by then, so after a rotation it masks the new value while the log may hold the old one, which reaches the store in clear. Whether a grant should keep the values its first redemption read is not decided.</li>
@@ -6949,7 +6954,7 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
           <tr><td class="wrapcell">DELETE /api/v1/{ns}/workflows/{name}</td><td>Deletes the workflow with its runs: answered as absent from then on, its runs still going cancelled and the data of every run expiring at once; the leading controller purges the runs, then removes the versions, the refs and the packs, and the name is free once that is done. <code>202</code>, since the purge follows the answer. Requires <code>workflow:delete</code>. Audited as <code>workflow.delete</code>.</td></tr>
           <tr><td class="wrapcell">GET, POST /{ns}/{name}.git/*</td><td>Git smart HTTP. Clone and fetch need <code>workflow:read</code>, push needs <code>workflow:write</code>, and <code>secret:use</code> in the namespace where a commit names a secret; a pre-receive hook validates the entry point before any ref moves.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}/tree/{ref}</td><td>The tree at a ref, for the console and for review: every file with its path, mode, size and SHA-256, or with <code>?path=</code> that one file's bytes. The ref is a branch or a tag, by its short name or in full, or a whole commit that is a version; a name a branch and a tag both hold is <code>400</code>, and a commit that is no version <code>404</code>. Requires <code>workflow:read</code>.</td></tr>
-          <tr><td class="wrapcell">PUT /api/v1/{ns}/workflows/{name}/versions/{commit}</td><td>Registers a commit as a version: its entry point, its includes and the files of its tree, refused if the graph cannot be built from them. A PUT because a commit pushed twice with the same files is one version; with other files it is refused with 409, since a commit names one tree. A tree above <a href="#until-the-repository-is-hosted">the limits</a> is refused with 413. Refused with 422, before any tree is stored, where an input's schema does not compile against the pushed tree, names a file it does not carry, or weighs more than 128 KiB in all, a file counted once per input naming it. Refused with 403, before any tree is stored, where the version names a secret and the caller holds no <code>secret:use</code> in the namespace (<a href="#permissions">Permissions</a>). What <code>agk push</code> sends until git hosting arrives. Requires <code>workflow:write</code>.</td></tr>
+          <tr><td class="wrapcell">PUT /api/v1/{ns}/workflows/{name}/versions/{commit}</td><td>Registers a commit as a version: its entry point, its includes and the files of its tree, refused if the graph cannot be built from them. A PUT because a commit pushed twice with the same files is one version; with other files it is refused with 409, since a commit names one tree. A tree above <a href="#until-the-repository-is-hosted">the limits</a> is refused with 413. Refused with 422, before any tree is stored, where an input's schema does not compile against the pushed tree, names a file it does not carry, or weighs more than 128 KiB in all, a file counted once per input naming it. Refused with 403, before any tree is stored, where the version names a secret and the caller holds no <code>secret:use</code> in the namespace (<a href="#permissions">Permissions</a>). Refused with 422, before any tree is stored, where the entry point, a file it includes or a manifest names a port or a workflow output past 250 characters (<a href="#yaml">Names</a>), and, once the caller holds <code>secret:use</code>, where the version names a secret the namespace does not declare, naming the secret and each step that mounts it (<a href="#secrets">Secrets</a>). A commit already stored, pushed again with the same files, is answered as that version and judged by neither, since both arrived after it was stored. What <code>agk push</code> sends until git hosting arrives. Requires <code>workflow:write</code>.</td></tr>
           <tr><td class="wrapcell">GET /api/v1/bricks, /bricks/{name}</td><td>The catalog, and a brick's manifest with its parameter schema, to discover what exists before writing a workflow. Any authenticated principal.</td></tr>
 
           <tr><th colspan="2">Runs and their data</th></tr>
@@ -7181,7 +7186,7 @@ Authorization: Bearer &lt;api token&gt;
     </div>
 
     <h4>A local run, from the file to the envelopes</h4>
-    <p>A recording, not a hand-written transcript: a fan-out over three orders, a merge waiting for both its edges, a script step reading items through the helper. Six containers, 3.1 seconds. <a href="../assets/agk-local-run.cast"><code>agk-local-run.cast</code></a> replays it with <code>asciinema play</code>.</p>
+    <p>A recording, not a hand-written transcript: a fan-out over three orders, a merge waiting for both its edges, a script step reading items through the helper. Six containers, 2.5 seconds. <a href="../assets/agk-local-run.cast"><code>agk-local-run.cast</code></a> replays it with <code>asciinema play</code>.</p>
 
     <div class="block">
       <div class="note-label">finance/monthly-invoicing, on a laptop</div>
@@ -7197,22 +7202,23 @@ finance/monthly-invoicing is valid: 4 steps, 4 edges, 2 declared inputs, 4 decla
 the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.56 and runs linux/aarch64
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
 this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
+this run executes the working tree in the current directory, uncommitted changes included, and no commit describes it: it is labelled local, so that no history takes it for a run that can be reproduced
     0.0s  split    running
-    0.6s  split    succeeded, ok 3
-    0.6s  charge   running
-    2.1s  charge   succeeded, ok 2, rejected 1
-    2.1s  total    running
-    2.5s  total    succeeded, ok 1
-    2.5s  archive  running
-    3.1s  archive  succeeded, out 1
-finance/monthly-invoicing succeeded in 3.1s: 4 steps, 6 containers
-archived: 1 item in .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA/outputs/archived.json
-charged: 2 items in .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA/outputs/charged.json
-invoiced: 1 item in .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA/outputs/invoiced.json
-rejected: 1 item in .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA/outputs/rejected.json
-run 01M3FQ0RJV72MAVRR10JPYYZAA: .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA
-<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M3FQ0RJV72MAVRR10JPYYZAA/outputs/invoiced.json</span>
-{"id":"invoice-2026-01","data":{"charged_count":2,"charged_total":4600,"cycle":"2026-01","receipts_seen":3,"rejected_count":1},"files":[{"name":"summary.txt","uri":"agk://run/01M3FQ0RJV72MAVRR10JPYYZAA/total/ok/summary.txt","media_type":"text/plain","size":57,"sha256":"a7e1875aa928e8a32bed8728639b06e8f8e2e297df096da697c85caffd34075a"}]}
+    0.5s  split    succeeded, ok 3
+    0.5s  charge   running
+    1.5s  charge   succeeded, ok 2, rejected 1
+    1.5s  total    running
+    2.0s  total    succeeded, ok 1
+    2.0s  archive  running
+    2.5s  archive  succeeded, out 1
+finance/monthly-invoicing succeeded in 2.5s: 4 steps, 6 containers
+archived: 1 item in .agk/runs/01M3KR0GNGCVCXNMA3JEA74T4V/outputs/archived.json
+charged: 2 items in .agk/runs/01M3KR0GNGCVCXNMA3JEA74T4V/outputs/charged.json
+invoiced: 1 item in .agk/runs/01M3KR0GNGCVCXNMA3JEA74T4V/outputs/invoiced.json
+rejected: 1 item in .agk/runs/01M3KR0GNGCVCXNMA3JEA74T4V/outputs/rejected.json
+run 01M3KR0GNGCVCXNMA3JEA74T4V: .agk/runs/01M3KR0GNGCVCXNMA3JEA74T4V
+<span class="p">$</span> <span class="cmd">jq -c .items[0] .agk/runs/01M3KR0GNGCVCXNMA3JEA74T4V/outputs/invoiced.json</span>
+{"id":"invoice-2026-01","data":{"charged_count":2,"charged_total":4600,"cycle":"2026-01","receipts_seen":3,"rejected_count":1},"files":[{"name":"summary.txt","uri":"agk://run/01M3KR0GNGCVCXNMA3JEA74T4V/total/ok/summary.txt","media_type":"text/plain","size":57,"sha256":"a7e1875aa928e8a32bed8728639b06e8f8e2e297df096da697c85caffd34075a"}]}
 </code></pre>
     </div>
 
@@ -7249,7 +7255,7 @@ runs/&lt;run&gt;/logs/&lt;step&gt;/               <span class="c"># what each co
     <ul class="plain">
       <li>Under <code>runs/&lt;run&gt;/logs/&lt;step&gt;/</code>, standard output is kept beside standard error up to <code>envelope_max_bytes</code> and <code>log_max_lines</code>, counted apart, with a line of the driver's where it stops.</li>
       <li>A task's own working directory is created outside this tree and removed with the container, because the tree is bound read-only into every container and no task may read another's directory through it.</li>
-      <li>A run carries a ULID and is labelled local, so a history that later holds server runs cannot mistake one for the other.</li>
+      <li>A run carries a ULID and is labelled local, in <code>run.json</code> and in the line it starts with, so a history that later holds server runs cannot mistake one for the other.</li>
     </ul>
 
     <h4 id="pointing-agk-at-an-installation">Pointing agk at an installation</h4>
