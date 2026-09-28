@@ -10,6 +10,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Documentation
 
+- A new workflow repository's default branch is unprotected unless created otherwise: whoever holds `workflow:write` pushes to it, as before v0.4.0, and an owner protects it when wanted.
 - The route table describes creating, reading, renaming, moving, protecting and deleting a workflow repository, and the tree at a ref, with their statuses and permissions.
 - Creating a workflow takes `workflow:write` at namespace scope, as in v0.3, and the platform tool `workflow.create` says so.
 - The include layer is what included files bring, hidden blocks and defaults, and a step written in an included file keeps its own values above `defaults`, the entry point overriding it keyword by keyword.
