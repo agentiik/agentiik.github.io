@@ -116,10 +116,15 @@ Every repository of the project carries the same version and is tagged at the sa
 - An administrator the bootstrap token creates is given the `owner` role on every namespace no record names an owner of, recorded as `grant.create` by `operator`, so the first administrator owns the installation's namespaces with nothing shared by hand.
 - Install a server copies deploy's `compose.yaml` as it no longer gives the API `AGK_OPERATOR_TOKEN_FILE`, and its `.env` examples as they call the token in `.env` the bootstrap token and have an administrator issue join tokens.
 - Get started and Install a server create the first administrator with the bootstrap token, `agk user create alice --admin`, which hands them `demo`, then sign in from a browser that trusts the certificate and with `agk login`; a new token in `.env` counts only until that sign-in, and an administrator issues join tokens.
-- Every table naming a namespace is under row level security, the audit log, the policy, the notifications and the service accounts included; a refusal asks what an allowed request would, so that how long it takes discovers nothing either, and a run names its runner by identifier alone.
-- A notification names its `act` and who did it, `by`; putting anybody in a group is told to the owners where it holds a role, the other administrators are told where nobody owns, and `GET /api/v1/me` leaves out a workflow its caller holds nothing in.
+- Every table naming a namespace is under row level security, the audit log, the policy, the notifications and the service accounts included.
+- A refusal asks what an allowed request would ask, so that how long it takes discovers nothing either.
+- A run names its runner by identifier alone, and a presigned URL lasts 5 minutes, signed over the namespace, the digest and the run.
+- A notification names its `act` and who did it, `by`.
+- Putting anybody in a group is told to the owners where it holds a role, and where nobody owns, the other administrators are told as well.
+- `GET /api/v1/me` leaves out a workflow its caller holds nothing in.
 - A deny of `grant:manage` on a workflow is refused with 422.
-- A runner joining is recorded as `runner.join`, by whoever issued its join token, and `group_member.add` names who was told wherever a user is put in a group holding a role.
+- A runner joining is recorded as `runner.join`, by whoever issued its join token.
+- `group_member.add` names who was told wherever a user is put in a group holding a role.
 - At most 10,000 passkey challenges are open across the installation; past them the options answer 503 with `Retry-After`.
 - The roadmap's v0.3.0 tasks for the sign-in page, the purges, the collection of what v0.2 left and the access fixture say what was built, each under its issue's title, and a task publishes the image that upgrades PostgreSQL between major versions; the plan holds 673 tasks.
 
