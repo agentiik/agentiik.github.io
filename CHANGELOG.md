@@ -6,6 +6,19 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+### Documentation
+
+- The route table describes creating, reading, renaming, moving, protecting and deleting a workflow repository, and the tree at a ref, with their statuses and permissions.
+- Creating a workflow takes `workflow:write` at namespace scope, as in v0.3, and the platform tool `workflow.create` says so.
+- The include layer is what included files bring, hidden blocks and defaults, and a step written in an included file keeps its own values above `defaults`, the entry point overriding it keyword by keyword.
+- An included file is validated against `workflow.schema.json#/$defs/fragment` and refuses what makes an entry point; a path include resolves against the file naming it; a workflow include reads a library repository's root `agentiik.yaml`.
+- `files` says what a glob matches, `**` included, how a directory or a glob is relocated, and that `to` is absolute.
+- A version is any commit a push leaves a branch or a tag pointing at, and `workflow_versions` records its pusher and its `source`.
+- `grant:manage` names and protects a workflow's default branch, `workflow:write` creates a workflow, and `workflow:delete` takes the runs with it.
+- The audit log records `workflow.create`, `workflow.update`, `workflow.delete` and `ref.protect` from v0.4.0.
+
 ## v0.3.0, 2026-09-28
 
 ### Documentation
