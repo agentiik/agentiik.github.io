@@ -114,6 +114,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - `stats` is reserved as a namespace name from v0.3.0, for v0.6.0's `GET /api/v1/stats/pools`, served at that path alone; a namespace of that name made before keeps every route, with nothing to do.
 - Removing a TOTP generator takes a code it shows now, and no sign-in of the last 10 minutes, which starting and confirming one need.
 - An administrator the bootstrap token creates is given the `owner` role on every namespace no record names an owner of, recorded as `grant.create` by `operator`, so the first administrator owns the installation's namespaces with nothing shared by hand.
+- Install a server copies deploy's `compose.yaml` as it no longer gives the API `AGK_OPERATOR_TOKEN_FILE`, and its `.env` examples as they call the token in `.env` the bootstrap token and have an administrator issue join tokens.
+- Get started and Install a server create the first administrator with the bootstrap token, `agk user create alice --admin`, which hands them `demo`, then sign in from a browser that trusts the certificate and with `agk login`; a new token in `.env` counts only until that sign-in, and an administrator issues join tokens.
 
 ## v0.2.5, 2026-09-26
 
