@@ -6,19 +6,21 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
-## Unreleased
+## v0.3.0, 2026-09-28
 
 ### Documentation
 
-- The v0.2.5 operator token becomes v0.3.0's bootstrap token, working until the first administrator, made with `agk user create LOGIN --admin`, can sign in; enrolment links last an hour.
+- Every version on the page is v0.3.0's, and the copies of deploy's files are its release's.
+- Install a server says what v0.3 does not do yet, leaving out creating a namespace through the API and purging, which v0.3.0 does.
+- Homebrew's `agentiik-setup` makes the namespace `demo`, as Compose does, never one named after whoever installs it, and a v0.2 server keeps its namespace, which the first administrator is given like any other; the Homebrew passages describe the tap as released rather than from v0.3.0, and its CI as creating the first administrator and upgrading a server the previous release set up.
+- The recordings' captions give the durations they recorded, 2.6 and 3.1 seconds.
+- The README counts six repositories holding no code yet.
+- The v0.2.5 operator token becomes v0.3.0's bootstrap token, working until the first administrator, made with `agk user create LOGIN --admin`, has signed in; enrolment links last an hour.
 - Upgrades change `compose.yaml` and `.env` and nothing else, as CI checks.
 - The authentication policy's defaults and routes, the API's sign-in page, `agk login`'s loopback exchange, and passkeys unavailable on an IP address.
 - Passkeys verified with the standard library and no attestation.
 - How a principal is written; logins and namespaces share one name space; `NS/agentiik` holds no grant by default.
 - API tokens expire after 90 days by default, a year at most.
-- `max_runs_per_hour` counts a sliding hour and answers 429 with `Retry-After`.
-- An administrator widening their own access notifies the owners in `GET /api/v1/me`.
-- A run its principal may no longer start ends `cancelled`, naming the lapsed grant.
 - The v0.3.0 routes for users, groups, service accounts, namespaces, namespace grants, tokens and the policy.
 - The identity and access audit actions of v0.3.0.
 - A deny names one permission; a grant's scope is `NS` or `NS/workflow`; a token's scope is `{permissions, within}`.
@@ -28,7 +30,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - `secret:use` is checked at the push, against the pusher, by the version `PUT`, a git push and `workflow.commit` alike: a version naming a secret is refused with 403 without it, and running it takes `workflow:run` alone.
 - The access figure and the console's access mock deny `run:read_data` to an `editor`, which holds it, rather than to roles that never did.
 - Secret permissions come from namespace grants alone, and a grant or a deny ends at the instant its expiry names.
-- Logins and principal names follow the namespace grammar, 255 characters at most; `installation` is refused as a login, and `operator` also marks the bootstrap token's writes.
+- Logins and principal names follow the namespace grammar, 255 characters at most; `installation` is refused as a login.
 - Removing a principal removes what it holds, and is refused while a namespace's record names it as owner.
 - A namespace's policy applies at sign-in to every account holding a grant in it, and the installation's is stored whole.
 - A passkey's kind comes from Backup Eligibility alone, which never changes.
@@ -36,16 +38,16 @@ Every repository of the project carries the same version and is tagged at the sa
 - An installation addressed by IP signs in with passwords without rewriting its stored policy.
 - What passkey verification refuses, and a stalled signature counter refusing the sign-in, audited and told to the user, with no lock.
 - Removing a workflow or a namespace removes its grants.
-- A self-granting administrator notifies the namespace's owner, or every holder of `owner` where there is none; owning a namespace means holding `owner` there.
-- Notifications are kept 90 days, or dismissed with `DELETE /api/v1/me/notifications/{id}`.
+- An administrator widening their own access notifies the namespace's owner in `GET /api/v1/me`, or every holder of `owner` where there is none.
+- Notifications are kept 90 days, removed when read past them, or dismissed with `DELETE /api/v1/me/notifications/{id}`.
 - `max_concurrent_tasks` and `max_retention_days` default to 20 and 90; the other quotas bound nothing until set.
 - A token carries an administrator's powers only where its scope does not narrow them away.
 - `DELETE /api/v1/me/credentials/{id}`, and a single read and a delete for users, groups and namespaces.
 - Group, membership and service account changes are audited.
 - Storage lists the identity tables as migrated: no mail on users, and an AAGUID that may name a model nothing certifies.
 - The Relying Party Identifier is the host of the public URL.
-- The bootstrap token's hash is kept in the database from v0.3.0.
-- `max_runs_per_hour` is counted under a lock on the namespace, `Retry-After` gives the seconds until one more run fits, a refused `workflow:` call fails its step, and a 429 is not audited; `agk run` exits 1 for it.
+- The bootstrap token's hash is kept in the database.
+- `max_runs_per_hour` counts a sliding hour under a lock on the namespace and answers 429 with `Retry-After`, the seconds until one more run fits; a refused `workflow:` call fails its step, and a 429 is not audited; `agk run` exits 1 for it.
 - `allowed_runner_pools` names pools that exist; a step only a pool outside it could take fails at dispatch with 125, and a redemption by such a pool is refused with 422.
 - `operator` marks everything the bootstrap token writes, and `installation` what `init` and `agentiik-api namespace` do.
 - Administering is `grant:manage` at the installation, through a token with no scope; an administrator may grant in any namespace, its owner told.
@@ -64,17 +66,16 @@ Every repository of the project carries the same version and is tagged at the sa
 - A token's value is `agktoken_` and 43 base64url characters; token bodies are held to 64 KiB and 1,024 permissions or places.
 - `api_token.create` and `api_token.revoke` record whose token, its expiry, label and scope, in a service account's namespace.
 - `init` creates `AGK_INIT_NAMESPACE` again at every run where it is missing, with no owner.
-- `agk console`, the console in a terminal: runs, a run, its graph, workflows, sharing and runners over the web console's routes, as the signed-in principal, with no server and no permission of its own.
-- `agk console` is drawn with Bubble Tea, Lip Gloss and Bubbles, confined to `cmd/agk`: panes that resize and stack at 80 by 24, the graph as boxes and edges, the design system's palette falling back to 256 and 16 colours and `NO_COLOR`, spinners, progress and sparklines, the mouse, a filter as you type, a command palette on `:` and toasts from `GET /api/v1/me`; eight mockups show it.
-- The roadmap plans `agk console` in v0.6.0, a seventh group of twenty-three tasks, and its approvals with the wait step in v0.8.0; the plan holds 654 tasks.
+- The documentation specifies `agk console`, v0.6.0's console in a terminal: runs, a run, its graph, workflows, sharing and runners over the web console's routes, as the signed-in principal, with no server and no permission of its own, drawn with Bubble Tea, Lip Gloss and Bubbles, confined to `cmd/agk`: panes that resize and stack at 80 by 24, the graph as boxes and edges, the design system's palette falling back to 256 and 16 colours and `NO_COLOR`, spinners, progress and sparklines, the mouse, a filter as you type, a command palette on `:` and toasts from `GET /api/v1/me`; eight mockups show it.
+- The roadmap plans `agk console` in v0.6.0, a seventh group of twenty-three tasks, and its approvals with the wait step in v0.8.0.
 - The web console takes `agk console`'s design language: a top bar with the namespace switcher and the principal and no sidebar, panes with rounded borders, state badges, monospaced identifiers, the graph as boxes and edges, toasts and a key line, keeping the browser's mouse, forms, visual editor and passkeys. Its four mockups and the home page's are redrawn as browser windows, scheduled runs by `finance/agentiik`.
 - The web console's statistics: a workflow's runs, durations, queue wait, exit codes, hours and ports, a namespace against its quotas, and the pools and runners for administrators, one range driving a zoom, a readout, a comparison, CSV and JSON exports and a link to the runs counted; three mockups show them.
 - `GET /api/v1/{ns}/stats/runs`, `/stats/steps`, `/stats/ports` and `/stats/quotas`, and `GET /api/v1/stats/pools` for administrators, from v0.6.0, counting only what `run:read` reaches; `agk console` draws a histogram of a workflow's durations from the first.
-- The roadmap's console shell follows the look, and v0.6.0 gains Statistics and charts, thirteen tasks across agentiik, schemas and console with the chart library an open question, and `agk console`'s histogram; a milestone may hold eight groups, and the plan holds 668 tasks.
+- The roadmap's console shell follows the look, and v0.6.0 gains Statistics and charts, thirteen tasks across agentiik, schemas and console with the chart library an open question, and `agk console`'s histogram; a milestone may hold eight groups.
 - The user and group routes as merged: the display name defaults to the login, a repeat before enrolling answers 200 with a fresh link, groups take up to 1,024 first members, and a membership change answers the group.
 - A user's empty personal namespace goes with them, and the last administrator who can sign in is not removed once the bootstrap has ended.
 - The grant routes at both scopes: who may list, create and revoke, what each refuses, and the owners told of every grant an administrator writes or of any widening of their own access.
-- `GET /api/v1/me` and dismissing a notification, with a notification past 90 days removed on read; `agk whoami`, `agk share`, `agk grants`, `agk user` and `agk group`.
+- `GET /api/v1/me`, `agk whoami`, `agk share`, `agk grants`, `agk user` and `agk group`.
 - Bodies of users, groups, grants and service accounts are held to 64 KiB, and a route that reads no body refuses one.
 - Service accounts as merged: the routes and `agk service-account`, the built-in `NS/agentiik` given by `init` and `migrate` to every older namespace, and unattended runs written as its own.
 - A token may expire a minute past the year, a principal holds at most 100 live ones, a service account's own token mints none for that account, and none is minted for `NS/agentiik`.
@@ -87,11 +88,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - The web console is served on the API's origin, at the root of the public URL, so the Relying Party Identifier stays the public URL's host; a page on another host of the same site is a threat the `Origin` check answers. The roadmap's console deployment tasks say so.
 - Password sign-in: 10 attempts per login and 30 per address in 15 minutes, then 429 with `Retry-After`; one hash per processor at once, and 503 after waiting 5 seconds; a TOTP code beside a password, RFC 6238, no code accepted twice.
 - Where a passkey is required, a password's session only enrols, whatever passkeys the account holds, read at every request; the passkey that reaches `min_passkeys` deletes the password.
-- Behind `AGENTIIK_PROXY_URL` the API reads a sign-in's address from the last `X-Forwarded-For` entry; nginx needs `proxy_set_header X-Forwarded-For $remote_addr;`, which the deploy `nginx.conf` does not carry yet.
+- Behind `AGENTIIK_PROXY_URL` the API reads a sign-in's address from the last `X-Forwarded-For` entry; nginx needs `proxy_set_header X-Forwarded-For $remote_addr;`, which deploy's `nginx.conf` carries.
 - Setting a password from an enrolment link, a recovery code or a session, and a TOTP generator from a session: `POST /api/v1/auth/password/enrol`, `PUT` and `DELETE /api/v1/me/password`, `/api/v1/me/totp` and its confirmation; 12 characters to 1,024 bytes, not the login, no composition rule.
 - An enrolment link sets a password where the policy allows one, the only way in on an installation addressed by an IP address; `agk user create` says so, and storage gains `totp_enrolments`.
 - Recovery codes from another administrator, `agk user recover`, never for oneself, enrolling a passkey or a password; `agentiik-api recover` on the host for an administrator, told to every administrator in `GET /api/v1/me` as `break_glass_recovery`.
-- The bootstrap token ends when an administrator it created can sign in to a full session, with a passkey, or with a password where the policy requires none; its recovery codes end with it, and a first link opens nothing once its user holds a credential.
 - Forbidding passwords acts when they come to be forbidden, deleting passwords and their TOTP generators and suspending the accounts with no passkey the policy accepts; a passkey enrolled, or a password set, from a code lifts that suspension.
 - A policy change that would leave no administrator able to sign in is refused with 409; the policy routes replace the whole policy, and `agk auth policy` reads it first, sets what is named and takes `--inherit`.
 - Adding a way in from a session takes a sign-in in the last 10 minutes, else 403 with RFC 9470's challenge; the credential routes and `policy.change`, `credential.remove` and `credential.enrol` say what they record.
@@ -103,12 +103,12 @@ Every repository of the project carries the same version and is tagged at the sa
 - The controller that leads runs the purges, the collection and the orphan sweep: a pass at the start of its term and every 10 minutes, batches of 1,000 rows or 100 runs, a line in its log per pass, and six counters; the collection's 24-hour grace is a constant, and a write holds its object a day past its policy.
 - Orphans go to the collection a day after they were written and are deleted a day later; the artifact files v0.2 left unrecorded are recorded by `init`, `migrate` given `AGK_OBJECTS_DIR`, and the controller, and v0.2 runs expire at their namespace's `max_retention_days`.
 - Storage lists `artifact_objects`, `artifact_uploads` and `artifact_room` and the new run columns, and says what an object's count counts; an envelope may outlive a one-shot output, whose file then answers 410.
-- PostgreSQL 18 in the Compose installation from v0.3.0: `postgres-upgrade` runs before PostgreSQL, upgrades a 17 cluster in copy mode and keeps it as `data/postgres-17`, needing the cluster's size and 128 MiB free; backups leave `data/postgres*` out; Homebrew stays on 17; `ghcr.io/agentiik/postgres-upgrade` is published with the other images.
-- The roadmap plans in v0.3.0 the sign-in and enrolment page and setting a password and a TOTP under Passkeys, passwords and recovery, and the purges and the collection of what v0.2 left under Quotas, isolation and what stays invisible; the plan holds 672 tasks.
+- PostgreSQL 18 in the Compose installation: `postgres-upgrade` runs before PostgreSQL, upgrades a 17 cluster in copy mode and keeps it as `data/postgres-17`, needing the cluster's size and 128 MiB free; backups leave `data/postgres*` out; Homebrew stays on 17; `ghcr.io/agentiik/postgres-upgrade` is published with the other images.
+- The roadmap plans in v0.3.0 the sign-in and enrolment page and setting a password and a TOTP under Passkeys, passwords and recovery, and the purges and the collection of what v0.2 left under Quotas, isolation and what stays invisible.
 - An enrolment link or recovery code refused is recorded as `signin.fail`, naming its account and never the code, within the same bound; each password a policy change takes is a `credential.remove` by whoever changed it.
 - An administrator putting themselves in a group, taking themselves out, or removing a group they are in tells the owners where that widens their own access, and the entry names who was told.
 - The audit log says what changes something and is not recorded, and why: a push, a TOTP generator started, a sign-out, a notification dismissed, a runner's own traffic, an upload, a 429, and a wrong guess from a signed-in session.
-- The bootstrap token ends when the first administrator has signed in: at their first passkey, or at the first request of a full session their password opens, the policy relaxed since included; `GET /api/v1/users/{login}` answers `suspended_for`, and a password set from a code where passwords are allowed also lifts a `no_passkey` suspension.
+- The bootstrap token ends when the first administrator has signed in: at their first passkey, or at the first request of a full session their password opens, the policy relaxed since included; its recovery codes end with it, and a first link opens nothing once its user holds a credential; `GET /api/v1/users/{login}` answers `suspended_for`.
 - Once the bootstrap has ended, a grant carrying a role or a group membership that would leave no administrator able to sign in is refused with 409 naming the setting; a password that could only ever enrol, a passkey required and `min_passkeys` held, is refused with 409 naming `passkey`.
 - agk talks to the installation `agk login` last signed in to where neither `--server` nor `AGENTIIK_SERVER` names one, never sending `AGENTIIK_TOKEN` there (exit 2); a refused exchange is recorded as `signin.fail`.
 - `stats` is reserved as a namespace name from v0.3.0, for v0.6.0's `GET /api/v1/stats/pools`, served at that path alone; a namespace of that name made before keeps every route, with nothing to do.
@@ -120,11 +120,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - A refusal asks what an allowed request would ask, so that how long it takes discovers nothing either.
 - A run names its runner by identifier alone, and a presigned URL lasts 5 minutes, signed over the namespace, the digest and the run.
 - A notification names its `act` and who did it, `by`.
-- Putting anybody in a group is told to the owners where it holds a role, and where nobody owns, the other administrators are told as well.
+- Putting anybody in a group is told to the owners where it holds a role, and where nobody owns, to the other administrators as well; `group_member.add` names who was told.
 - `GET /api/v1/me` leaves out a workflow its caller holds nothing in.
 - A deny of `grant:manage` on a workflow is refused with 422.
 - A runner joining is recorded as `runner.join`, by whoever issued its join token.
-- `group_member.add` names who was told wherever a user is put in a group holding a role.
 - At most 10,000 passkey challenges are open across the installation; past them the options answer 503 with `Retry-After`.
 - The roadmap's v0.3.0 tasks for the sign-in page, the purges, the collection of what v0.2 left and the access fixture say what was built, each under its issue's title, and a task publishes the image that upgrades PostgreSQL between major versions; the plan holds 673 tasks.
 
