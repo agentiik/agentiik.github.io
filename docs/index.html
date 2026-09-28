@@ -36,10 +36,11 @@
   --nav-w:272px;
   --rail-w:236px;
   --gutter:clamp(16px,3vw,32px);
-  /* Prose keeps a measure of about seventy characters however wide the screen is. What is
-     laid out in columns (tables, figures, code) may use the width the screen has. */
-  --measure:44rem;
-  --measure-wide:58rem;
+  /* One width for everything in the column, text, tables, code and figures alike, so the
+     page reads as one column rather than as blocks of four widths. It holds the widest
+     terminal output the page prints; what is wider still scrolls in its own frame, or opens
+     in the viewer. */
+  --measure:58rem;
   --wide:1440px;
   --radius:6px;
   --control:5px;
@@ -219,6 +220,7 @@ main{
   padding-block:clamp(28px,4vw,52px) 96px;
 }
 .opening{
+  max-width:var(--measure);
   border-bottom:2px solid var(--ink);
   padding-bottom:clamp(20px,3vw,30px);
   margin-bottom:clamp(28px,4vw,44px);
@@ -274,7 +276,7 @@ a:hover{text-decoration-thickness:2px}
   max-width:var(--measure);
 }
 
-/* What reads as text keeps the measure; tables, figures and code take the width. */
+/* Text keeps the column's width, as tables, figures and code do. */
 main :where(section, .prose) > :where(p, ul, ol, dl, h3, h4, .decision, .gate, .makes, .where, blockquote){
   max-width:var(--measure);
 }
@@ -451,7 +453,7 @@ section:first-of-type{border-top:0;margin-top:0;padding-top:0}
   gap:16px;
   align-items:baseline;
   margin-bottom:1.4em;
-  max-width:var(--measure-wide);
+  max-width:var(--measure);
 }
 .sec-head .mark{
   font-family:var(--mono);
@@ -521,7 +523,7 @@ code{
 .block{
   position:relative;
   margin:1.4em 0 1.8em;
-  max-width:min(100%,72rem);
+  max-width:min(100%,var(--measure));
   border:1px solid var(--line);
   border-radius:var(--radius);
   background:var(--sunken);
@@ -597,16 +599,15 @@ code{
 .block pre{--cue-bg:var(--sunken)}
 
 /* ---------- Tables ---------- */
-/* Every table sits in its own scroller. A table of two or three columns keeps near the
-   measure of the text around it; one of four or more may take the whole width. */
+/* Every table sits in its own scroller, as wide as the column: one too wide for it scrolls
+   there rather than widening the page. */
 .tablewrap{
   overflow-x:auto;
   margin:1.4em 0 1.8em;
-  max-width:var(--measure-wide);
+  max-width:var(--measure);
   border:1px solid var(--line);
   border-radius:var(--radius);
 }
-.tablewrap:has(tr > :nth-child(4)){max-width:100%}
 table{border-collapse:collapse;width:100%;min-width:520px;font-size:.88rem;line-height:1.55}
 th{
   text-align:left;
@@ -645,7 +646,7 @@ td code{overflow-wrap:normal}
 figure{
   position:relative;
   margin:2em 0 2.4em;
-  max-width:min(100%,76rem);
+  max-width:min(100%,var(--measure));
   border:1px solid var(--line);
   border-radius:var(--radius);
   background:var(--surface);
@@ -675,7 +676,7 @@ figure img + figcaption,figure img + img + figcaption{margin-top:0}
 :root[data-theme="dark"] .shot-light{display:none}
 
 /* The console mockups: drawn at 1440 by 900, as wide as the column allows. */
-figure.console{max-width:100%}
+figure.console{max-width:min(100%,var(--measure))}
 figure.console .mock{min-width:0}
 figure.console figcaption{margin-top:0}
 
@@ -765,7 +766,7 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
 /* ---------- Tabs ---------- */
 /* Files that are alternatives to one another. With no script they are simply one after
    the other; with it, one at a time behind a row of tabs. */
-.tabset{margin:1.4em 0 1.8em;max-width:min(100%,72rem)}
+.tabset{margin:1.4em 0 1.8em;max-width:min(100%,var(--measure))}
 .tabset.is-tabbed .block{margin:0;border-top-left-radius:0;border-top-right-radius:0}
 .tabset.is-tabbed .block + .block{margin-top:14px;border-radius:var(--radius)}
 .tablist{
@@ -822,7 +823,7 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
   margin-bottom:4px;
 }
 .decision p:last-child{margin-bottom:0}
-.endrule{margin-top:72px;border-top:2px solid var(--ink);padding-top:16px;font-size:.8rem;color:var(--faint);font-family:var(--sans);max-width:var(--measure-wide)}
+.endrule{margin-top:72px;border-top:2px solid var(--ink);padding-top:16px;font-size:.8rem;color:var(--faint);font-family:var(--sans);max-width:var(--measure)}
 
 /* ---------- Narrow screens ---------- */
 @media (max-width:1023px){

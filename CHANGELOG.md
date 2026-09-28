@@ -23,6 +23,10 @@ Every repository of the project carries the same version and is tagged at the sa
 - A commit already stored, pushed again with the same files, is answered as that version and not judged by a rule added after it was stored.
 - `agk run --local` says before its first step that it executes the working tree, uncommitted changes included, in the transcripts and in both recordings, re-recorded, which ran in 2.5 seconds.
 
+### Site
+
+- The documentation and the roadmap lay everything in one column of one width, text, tables, code and figures alike, rather than prose at one measure and the rest wider; a table or a drawing wider than the column scrolls in its frame or opens in the viewer.
+
 ## v0.3.0, 2026-09-28
 
 ### Documentation
