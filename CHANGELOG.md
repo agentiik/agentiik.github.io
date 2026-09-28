@@ -22,6 +22,14 @@ Every repository of the project carries the same version and is tagged at the sa
 - The push refuses a secret the namespace does not declare, 422, naming the secret and each step mounting it, once the pusher holds `secret:use`.
 - A commit already stored, pushed again with the same files, is answered as that version and not judged by a rule added after it was stored.
 - `agk run --local` says before its first step that it executes the working tree, uncommitted changes included, in the transcripts and in both recordings, re-recorded, which ran in 2.5 seconds.
+- Includes and inheritance says how each keyword meets across files and layers: `before_script` and `after_script` keep every layer's commands, outwards in; `vars` and `params` merge by name, `defaults` keyword by keyword, `secrets` each once; a hidden block written again is replaced whole, and a file included twice is applied once.
+- An include that leaves the tree, names a file the commit does not hold or comes back to a file still being resolved is refused, and a hidden block needs no pin and no manifest until a step extends it.
+- `after_script` merges as `before_script` does, and `shell`, `before_script` and `after_script` are carried by a script step alone.
+- The entry point is `agentiik.yaml` at the repository's root and `metadata` names the repository; `agk push` pushes the whole tree, refusing an entry point below the root, naming `git subtree split`, and a `metadata.namespace` other than `--namespace`.
+- The version route refuses a `metadata.name` or `metadata.namespace` other than its path's with 422, a refusal names `file:line:column` and its rule, and the version records only what it was judged over.
+- The storage tables give `workflows` its repository key and creator, `workflow_refs` its rows and their 1,024-byte bound, `git_packs` its states, and `workflow_versions` what it holds today and its `source`; a repository's packs are kept under `<namespace>/git/`, which the orphan sweep never walks.
+- The default branch is never deleted: another branch is named the default first.
+- A decision says why git is served by an implementation on the standard library, and how it is tested against git.
 
 ### Site
 
