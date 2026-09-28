@@ -25,6 +25,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Site
 
+- The home page's logo is larger again, the first thing the opening shows.
 - The home page's headline says plainly what Agentiik is, open source workflow orchestration, and the line under it keeps what sets it apart.
 - The home page's opening offers the organisation on GitHub beside Get started and the roadmap.
 - The home page's canvas draws small workflows on its grid, a few at a time where there is room beside the text: steps appear column by column, edges route to them at right angles, each step runs, then the sketch fades and another starts elsewhere. Nothing moves where the reader asks for less motion.
