@@ -109,14 +109,15 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 }
 .headline{
   margin:0 auto;
-  max-width:18ch;
-  font-size:clamp(2.2rem,6.2vw,4.1rem);
+  font-size:clamp(1.9rem,4.4vw,3.25rem);
   font-weight:700;
   line-height:1.04;
   letter-spacing:-.035em;
   text-wrap:balance;
 }
 .headline em{font-style:normal;color:var(--accent)}
+/* One sentence a line where the screen holds it, each wrapping on its own where it does not. */
+.headline span,.headline em{display:block}
 .sub{
   margin:clamp(18px,2.4vw,26px) auto 0;
   max-width:38rem;
@@ -194,32 +195,6 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 }
 .section-lede{margin:0 0 22px;color:var(--muted);font-size:.98rem;line-height:1.6;max-width:44rem}
 
-/* The screenshot's window: a bar with the address, since the image is the page and not the
-   browser around it. */
-.window{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  padding:10px 14px;
-  border-bottom:1px solid var(--line);
-  background:var(--raised);
-}
-.window .dots{display:flex;gap:6px}
-.window .dots i{width:10px;height:10px;border-radius:50%;background:var(--line-strong)}
-.window .url{
-  flex:1;
-  max-width:460px;
-  margin:0 auto;
-  padding:5px 12px;
-  border-radius:6px;
-  background:var(--sunken);
-  color:var(--muted);
-  font-size:.76rem;
-  text-align:center;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
 .shot.graph{margin-bottom:14px}
 .shot-note{
   max-width:46rem;
@@ -565,8 +540,8 @@ img{max-width:100%}
   </svg>
   <h1>agentiik</h1>
 </div>
-<p class="headline" data-rise data-par=".09" style="--delay:.05s">Workflows are <em>graphs of containers</em>, kept in git.</p>
-<p class="sub" data-rise data-par=".1" style="--delay:.1s">Write an <code>agentiik.yaml</code>, push it, and every step runs in a container of its own, on a laptop or on one server a whole team shares.</p>
+<p class="headline" data-rise data-par=".09" style="--delay:.05s"><span>Every step in its own container.</span> <em>Every run pinned to a commit.</em></p>
+<p class="sub" data-rise data-par=".1" style="--delay:.1s">Describe the graph in <code>agentiik.yaml</code> and <code>git push</code> it: each step runs in a fresh container, on your laptop or on a server your whole team shares, and a replay months later runs the very same commit.</p>
 <div class="actions" data-rise data-par=".11" style="--delay:.14s">
   <a class="primary" href="docs/#get-started">Get started
     <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -576,18 +551,374 @@ img{max-width:100%}
 </div>
 
 <div class="shot graph" data-rise data-par="-.04" style="--delay:.2s">
-  <div class="window" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="url">agentiik.example.com/finance/workflows/monthly-invoicing</span></div>
-  <img class="shot-light" src="assets/console-graph-light.png" width="1440" height="900" alt="The web console's graph view of finance/monthly-invoicing: on the left the graph, the workflow inputs orders and customers feeding normalize, invoice sharded three of eight with its error port running to errors, archive waiting, and the workflow output invoices; on the right its agentiik.yaml, the file the graph is drawn from.">
-  <img class="shot-dark" src="assets/console-graph-dark.png" width="1440" height="900" alt="" aria-hidden="true">
+  <svg class="mock web" viewBox="0 0 1440 946" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mockup of the web console&#x27;s workflow view of finance/monthly-invoicing, the visual editor, in a browser window at agentiik.example.com/finance/workflows/monthly-invoicing, seen by chloe. A bar under the top bar names the workflow, its Graph, Runs, Sharing and Versions tabs, the version main at a3f9c1e, and History, Share and Run buttons. On the left, the graph pane, in focus, over a dotted canvas: the live run 01JMZ8W4K2R7 with a Cancel run button, then the graph top to bottom as boxes and edges, the inputs orders and customers into normalize, succeeded; its ok port into invoice, selected, running as a fan-out with a strip of eight shard cells and a progress bar at three of eight; its rejected port as an amber dashed edge around invoice to archive, queued; invoice&#x27;s error port in red to the output errors, with the pointer on it and a tooltip saying it can be dragged onto a port to connect it. Ports are accent dots named beside them; a zoom and legend bar runs along the bottom. On the right, agentiik.yaml with line numbers and coloured keys and values, the invoice block highlighted because invoice is selected, and max_parallel marked as the one unsaved change beside Format and Save version.">
+<rect x=".5" y=".5" width="1439" height="945" rx="10" class="f-bg"/>
+<path d="M.5 46V10.5a10 10 0 0 1 10-10h1419a10 10 0 0 1 10 10V46z" class="f-raised"/>
+<path d="M.5 45.5H1439.5" class="f-none s-line"/>
+<circle cx="20" cy="23.0" r="5.5" class="f-line-strong"/>
+<circle cx="38" cy="23.0" r="5.5" class="f-line-strong"/>
+<circle cx="56" cy="23.0" r="5.5" class="f-line-strong"/>
+<path transform="translate(80 15)" d="M2.5 3.5h11v9h-11zM6.5 3.5v9" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(112 15)" d="M10 3.5 5.5 8l4.5 4.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(136 15)" d="M6 3.5l4.5 4.5L6 12.5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="440.5" y="8.5" width="559" height="29" rx="8" class="f-bg s-line" stroke-width="1"/>
+<path transform="translate(530.8 15) scale(0.94)" d="M4.5 7.5h7v6h-7zM6 7.5V5.5a2 2 0 0 1 4 0v2" class="f-none s-muted" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="551.8" y="27.73" font-size="13.5" class="f-text" font-weight="500">agentiik.example.com</text>
+<text x="686.39" y="27.73" font-size="13.5" class="f-muted">/finance/workflows/monthly-invoicing</text>
+<path transform="translate(973 15)" d="M12.8 8a4.8 4.8 0 1 1-1.4-3.4M12.8 2.8v2.6h-2.6" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1348 15)" d="M8 2.5v8M5 5.5 8 2.5l3 3M4 8.5v5h8v-5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1378 15)" d="M8 3v10M3 8h10" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path transform="translate(1406 15)" d="M3.5 3.5h9v9h-9zM6 1.8h7.7v7.7" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(0 46)">
+<rect x="0" y="0" width="1440" height="52" class="f-surface"/>
+<path d="M0 51.5H1440" class="f-none s-line" stroke-width="1"/>
+<rect x="20" y="18" width="18" height="4.5" rx="1" class="f-accent"/><rect x="20" y="24.5" width="8" height="4.5" rx="1" class="f-accent" opacity=".62"/><rect x="30" y="24.5" width="8" height="4.5" rx="1" class="f-accent" opacity=".62"/><rect x="20" y="31" width="18" height="2.5" rx="1" class="f-accent" opacity=".3"/>
+<text x="46" y="31.77" font-size="16.5" class="f-text" font-weight="700" letter-spacing="-.33">agentiik</text>
+<rect x="134.5" y="11.5" width="95.7" height="29" rx="5" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="145" y="30.73" font-size="13.5" class="f-accent t-mono" font-weight="600" textLength="56.7">finance</text>
+<path transform="translate(207.7 18)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="252.7" y="30.9" font-size="14" class="f-muted" font-weight="500">Runs</text>
+<rect x="304.52" y="11.5" width="91.74" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="316.02" y="30.9" font-size="14" class="f-text" font-weight="600">Workflows</text>
+<text x="414.76" y="30.9" font-size="14" class="f-muted" font-weight="500">Statistics</text>
+<text x="503.56" y="30.9" font-size="14" class="f-muted" font-weight="500">Bricks</text>
+<text x="573.74" y="30.9" font-size="14" class="f-muted" font-weight="500">Sharing</text>
+<text x="653.02" y="30.9" font-size="14" class="f-muted" font-weight="500">Settings</text>
+<path transform="translate(1408 18)" d="M4.5 6.5 8 10l3.5-3.5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1402" y="30.73" font-size="13.5" class="f-text t-mono" font-weight="600" text-anchor="end" textLength="40.5">chloe</text>
+<circle cx="1341.5" cy="26" r="12" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<text x="1341.5" y="30.38" font-size="12.5" class="f-accent" font-weight="600" text-anchor="middle">C</text>
+<path transform="translate(1297.5 18)" d="M4 11V7.5a4 4 0 0 1 8 0V11l1.2 1.5H2.8zM6.5 14h3" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1273.5" y="30.73" font-size="13.5" class="f-ok" font-weight="500" text-anchor="end">live</text>
+<circle cx="1243.58" cy="26" r="3.4" class="f-ok"/>
+<rect x="933.08" y="10.5" width="289" height="31" rx="5" class="f-bg s-line-strong" stroke-width="1"/>
+<path transform="translate(942.58 18)" d="M7 2.5a4.5 4.5 0 1 1 0 9a4.5 4.5 0 1 1 0-9zM10.4 10.4 13.5 13.5" class="f-none s-faint" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="966.58" y="30.73" font-size="13.5" class="f-faint">Search runs and workflows</text>
+<rect x="1197.17" y="16.5" width="16.9" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="1202.17" y="30.02" font-size="11.5" class="f-muted t-mono">/</text>
+<rect x="0" y="52" width="1440" height="48" class="f-bg"/>
+<path d="M0 99.5H1440" class="f-none s-line" stroke-width="1"/>
+<text x="22" y="80.9" font-size="14" class="f-accent t-mono" font-weight="500" textLength="58.8">finance</text>
+<text x="88.8" y="80.9" font-size="14" class="f-faint">/</text>
+<text x="100.86" y="80.9" font-size="14" class="f-text t-mono" font-weight="700" textLength="142.8">monthly-invoicing</text>
+<text x="277.66" y="80.9" font-size="14" class="f-text" font-weight="600">Graph</text>
+<rect x="275.66" y="97" width="44.32" height="2.5" rx="1" class="f-accent"/>
+<text x="345.98" y="80.9" font-size="14" class="f-muted" font-weight="500">Runs</text>
+<text x="407.3" y="80.9" font-size="14" class="f-muted" font-weight="500">Statistics</text>
+<text x="494.1" y="80.9" font-size="14" class="f-muted" font-weight="500">Sharing</text>
+<text x="571.38" y="80.9" font-size="14" class="f-muted" font-weight="500">Versions</text>
+<rect x="1347.39" y="61.5" width="72.11" height="29" rx="5" class="f-accent s-accent" stroke-width="1"/>
+<path transform="translate(1357.89 68)" d="M5 3.5v9l7-4.5z" class="f-none s-on-accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1381.89" y="80.72" font-size="13.5" class="f-on-accent" font-weight="500">Run</text>
+<rect x="1255.08" y="61.5" width="83.31" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(1265.58 68)" d="M8 2.5v8M5 5.5 8 2.5l3 3M4 8.5v5h8v-5" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1289.58" y="80.72" font-size="13.5" class="f-text" font-weight="500">Share</text>
+<rect x="1155.2" y="61.5" width="90.88" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(1165.7 68)" d="M8 2.8a5.2 5.2 0 1 1-5.2 5.2M8 5v3.2l2.2 1.4M2.8 3.5v3h3" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1189.7" y="80.72" font-size="13.5" class="f-text" font-weight="500">History</text>
+<rect x="973.2" y="65.5" width="165" height="21" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="980.7" y="80.38" font-size="12.5" class="f-muted t-mono" textLength="150">main · v14 · a3f9c1e</text>
+<rect x="12" y="112" width="760" height="744" rx="7" class="f-surface"/>
+<path d="M765 112A7 7 0 0 1 772 119V849A7 7 0 0 1 765 856H19A7 7 0 0 1 12 849V119A7 7 0 0 1 19 112M19 112H26M78.32 112H626M758 112H765" class="f-none s-accent" stroke-width="1"/>
+<text x="32" y="116.9" font-size="14" class="f-accent" font-weight="600">Graph</text>
+<text x="752" y="116.38" font-size="12.5" class="f-faint t-mono" text-anchor="end" textLength="120">run 01JMZ8W4K2R7</text>
+<rect x="32.5" y="131.5" width="78.5" height="21" rx="3" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<circle cx="43" cy="142" r="4.8" class="f-none s-accent-line" stroke-width="1.8"/>
+<circle cx="43" cy="142" r="4.8" class="f-none s-accent" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="9.05 21.11" transform="rotate(-70 43 142)"/>
+<text x="52" y="146.38" font-size="12.5" class="f-accent t-mono" textLength="52.5">running</text>
+<text x="123.5" y="146.72" font-size="13.5" class="f-text t-mono" font-weight="600" textLength="97.2">01JMZ8W4K2R7</text>
+<text x="230.7" y="146.55" font-size="13" class="f-faint t-mono" textLength="358.8">schedule · finance/agentiik · started 06:00:12</text>
+<rect x="660.75" y="128.5" width="90.75" height="27" rx="5" class="f-raised s-fail-line" stroke-width="1"/>
+<text x="673.25" y="146.72" font-size="13.5" class="f-fail" font-weight="500">Cancel run</text>
+<text x="646.25" y="146.55" font-size="13" class="f-accent t-mono" text-anchor="end" textLength="46.8">3m 02s</text>
+<path d="M13 164H771" class="f-none s-line" stroke-width="1"/>
+<defs><pattern id="wl-graph-dots" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse"><rect x="10" y="10" width="2" height="2" rx="1" class="f-line-strong" opacity=".6"/></pattern></defs>
+<rect x="13" y="165" width="758" height="646" fill="url(#wl-graph-dots)"/>
+<rect x="650.1" y="178.5" width="101.41" height="27" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(660.6 184)" d="M8 3v10M3 8h10" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="684.6" y="196.72" font-size="13.5" class="f-text" font-weight="500">Add step</text>
+<text x="32" y="207.85" font-size="11" class="f-faint" font-weight="600" letter-spacing="0.99">WORKFLOW INPUTS</text>
+<rect x="327" y="192.5" width="66" height="23" rx="12" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="360" y="208.38" font-size="12.5" class="f-muted t-mono" text-anchor="middle" textLength="45">orders</text>
+<rect x="445.75" y="192.5" width="88.5" height="23" rx="12" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="490" y="208.38" font-size="12.5" class="f-muted t-mono" text-anchor="middle" textLength="67.5">customers</text>
+<path d="M360 216L360 229" class="f-none s-muted" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M360 236L355.8 228L364.2 228z" class="f-muted"/>
+<path d="M490 216L490 229" class="f-none s-muted" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M490 236L485.8 228L494.2 228z" class="f-muted"/>
+<rect x="290" y="242" width="280" height="84" rx="6" class="f-raised"/>
+<path d="M564 242A6 6 0 0 1 570 248V320A6 6 0 0 1 564 326H296A6 6 0 0 1 290 320V248A6 6 0 0 1 296 242M296 242H564" class="f-none s-ok-line" stroke-width="1.5"/>
+<circle cx="307" cy="263" r="3.4" class="f-ok"/>
+<text x="319" y="267.9" font-size="14" class="f-text t-mono" font-weight="700" textLength="75.6">normalize</text>
+<text x="556" y="267.55" font-size="13" class="f-muted t-mono" text-anchor="end" textLength="31.2">1.2s</text>
+<text x="319" y="290.38" font-size="12.5" class="f-ok t-mono" textLength="67.5">succeeded</text>
+<text x="394" y="290.38" font-size="12.5" class="f-faint t-mono" textLength="60">· 214 in</text>
+<text x="319" y="312.2" font-size="12" class="f-faint t-mono" textLength="129.6">acme/agk-normalize</text>
+<path d="M440 330L440 391" class="f-none s-muted" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M440 398L435.8 390L444.2 390z" class="f-muted"/>
+<text x="432" y="368.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="64.8">211 items</text>
+<path d="M330 330L330 340Q330 348 322 348L220 348Q212 348 212 356L212 580Q212 588 220 588L322 588Q330 588 330 596L330 597" class="f-none s-wait" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 4"/>
+<path d="M330 604L325.8 596L334.2 596z" class="f-wait"/>
+<text x="202" y="444.2" font-size="12" class="f-wait t-mono" text-anchor="end" textLength="50.4">3 items</text>
+<text x="202" y="466.38" font-size="12.5" class="f-faint" text-anchor="end">rejected items</text>
+<text x="202" y="484.38" font-size="12.5" class="f-faint" text-anchor="end">bypass invoicing</text>
+<rect x="285.75" y="399.75" width="328.5" height="132.5" rx="9.5" class="f-none s-accent" stroke-width="2.5"/>
+<rect x="290" y="404" width="320" height="124" rx="6" class="f-raised"/>
+<path d="M604 404A6 6 0 0 1 610 410V522A6 6 0 0 1 604 528H296A6 6 0 0 1 290 522V410A6 6 0 0 1 296 404M296 404H604" class="f-none s-accent" stroke-width="1.5"/>
+<circle cx="307" cy="425" r="4.8" class="f-none s-accent-line" stroke-width="1.8"/>
+<circle cx="307" cy="425" r="4.8" class="f-none s-accent" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="9.05 21.11" transform="rotate(-70 307 425)"/>
+<text x="319" y="429.9" font-size="14" class="f-text t-mono" font-weight="700" textLength="58.8">invoice</text>
+<text x="596" y="429.55" font-size="13" class="f-accent t-mono" text-anchor="end" textLength="46.8">2m 58s</text>
+<text x="319" y="452.2" font-size="12" class="f-faint t-mono" textLength="223.2">fan_out: item · max_parallel: 8</text>
+<rect x="319" y="465.5" width="9" height="13" rx="2" class="f-ok"/>
+<rect x="331" y="465.5" width="9" height="13" rx="2" class="f-ok"/>
+<rect x="343" y="465.5" width="9" height="13" rx="2" class="f-ok"/>
+<rect x="355" y="465.5" width="9" height="13" rx="2" class="f-accent" opacity=".55"/>
+<rect x="367" y="465.5" width="9" height="13" rx="2" class="f-accent" opacity=".55"/>
+<rect x="379" y="465.5" width="9" height="13" rx="2" class="f-accent" opacity=".55"/>
+<rect x="391" y="465.5" width="9" height="13" rx="2" class="f-accent" opacity=".55"/>
+<rect x="403" y="465.5" width="9" height="13" rx="2" class="f-accent" opacity=".55"/>
+<rect x="424" y="469" width="124" height="6" rx="3" class="f-line"/>
+<rect x="424" y="469" width="46.5" height="6" rx="3" class="f-ok"/>
+<text x="558" y="476.38" font-size="12.5" class="f-muted t-mono" textLength="45">3 of 8</text>
+<text x="319" y="501.2" font-size="12" class="f-accent t-mono" textLength="64.8">5 running</text>
+<text x="391" y="501.2" font-size="12" class="f-faint t-mono" textLength="129.6">· acme/agk-invoice</text>
+<path d="M440 532L440 597" class="f-none s-muted" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M440 604L435.8 596L444.2 596z" class="f-muted"/>
+<rect x="290" y="610" width="280" height="76" rx="6" class="f-raised"/>
+<path d="M564 610A6 6 0 0 1 570 616V680A6 6 0 0 1 564 686H296A6 6 0 0 1 290 680V616A6 6 0 0 1 296 610M296 610H564" class="f-none s-line-strong" stroke-width="1.5"/>
+<circle cx="307" cy="631" r="3.4" class="f-none s-faint" stroke-width="1.4"/>
+<text x="319" y="635.9" font-size="14" class="f-text t-mono" font-weight="700" textLength="58.8">archive</text>
+<text x="556" y="635.38" font-size="12.5" class="f-faint t-mono" text-anchor="end" textLength="60">wait_all</text>
+<text x="319" y="657.38" font-size="12.5" class="f-faint t-mono" textLength="45">queued</text>
+<text x="371.5" y="657.38" font-size="12.5" class="f-faint t-mono" textLength="97.5">· cache: true</text>
+<text x="319" y="677.2" font-size="12" class="f-faint t-mono" textLength="115.2">acme/agk-archive</text>
+<path d="M440 690L440 739" class="f-none s-muted" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M440 746L435.8 738L444.2 738z" class="f-muted"/>
+<path d="M580 532L580 739" class="f-none s-fail" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M580 746L575.8 738L584.2 738z" class="f-fail"/>
+<text x="32" y="761.85" font-size="11" class="f-faint" font-weight="600" letter-spacing="0.99">WORKFLOW OUTPUTS</text>
+<rect x="399.5" y="746.5" width="81" height="23" rx="12" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="440" y="762.38" font-size="12.5" class="f-muted t-mono" text-anchor="middle" textLength="60">invoices</text>
+<rect x="547" y="746.5" width="66" height="23" rx="12" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="580" y="762.38" font-size="12.5" class="f-muted t-mono" text-anchor="middle" textLength="45">errors</text>
+<text x="590" y="632.38" font-size="12.5" class="f-fail" text-anchor="start">error port</text>
+<text x="590" y="650.38" font-size="12.5" class="f-faint">run continues</text>
+<circle cx="360" cy="242" r="4.2" class="f-accent s-surface" stroke-width="1.6"/>
+<circle cx="490" cy="242" r="4.2" class="f-accent s-surface" stroke-width="1.6"/>
+<circle cx="330" cy="326" r="4.2" class="f-accent s-surface" stroke-width="1.6"/>
+<text x="339" y="341.2" font-size="12" class="f-muted t-mono" textLength="57.6">rejected</text>
+<circle cx="440" cy="326" r="4.2" class="f-accent s-surface" stroke-width="1.6"/>
+<text x="449" y="341.2" font-size="12" class="f-muted t-mono" textLength="14.4">ok</text>
+<circle cx="440" cy="404" r="4.2" class="f-accent s-surface" stroke-width="1.6"/>
+<text x="449" y="397.2" font-size="12" class="f-muted t-mono" textLength="14.4">in</text>
+<circle cx="440" cy="528" r="4.2" class="f-accent s-surface" stroke-width="1.6"/>
+<text x="449" y="543.2" font-size="12" class="f-muted t-mono" textLength="21.6">out</text>
+<circle cx="580" cy="528" r="9" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<circle cx="580" cy="528" r="4.2" class="f-accent s-surface" stroke-width="1.6"/>
+<circle cx="330" cy="610" r="4.2" class="f-accent s-surface" stroke-width="1.6"/>
+<text x="339" y="603.2" font-size="12" class="f-muted t-mono" textLength="57.6">rejected</text>
+<circle cx="440" cy="610" r="4.2" class="f-accent s-surface" stroke-width="1.6"/>
+<text x="449" y="603.2" font-size="12" class="f-muted t-mono" textLength="57.6">invoices</text>
+<circle cx="440" cy="686" r="4.2" class="f-accent s-surface" stroke-width="1.6"/>
+<text x="449" y="701.2" font-size="12" class="f-muted t-mono" textLength="21.6">out</text>
+<path d="M13 812H771" class="f-none s-line" stroke-width="1"/>
+<rect x="28.5" y="821.5" width="47" height="25" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(39 826)" d="M3 8h10" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="86" y="838.38" font-size="12.5" class="f-muted t-mono" textLength="30">100%</text>
+<rect x="126.5" y="821.5" width="47" height="25" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(137 826)" d="M8 3v10M3 8h10" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="182.5" y="821.5" width="62.66" height="25" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(193 826)" d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="217" y="838.73" font-size="13.5" class="f-text" font-weight="500">Fit</text>
+<rect x="268.16" y="823.5" width="93.5" height="21" rx="3" class="f-ok-bg s-ok-line" stroke-width="1"/>
+<circle cx="278.66" cy="834" r="3.4" class="f-ok"/>
+<text x="287.66" y="838.38" font-size="12.5" class="f-ok t-mono" textLength="67.5">succeeded</text>
+<rect x="370.66" y="823.5" width="78.5" height="21" rx="3" class="f-accent-dim s-accent-line" stroke-width="1"/>
+<circle cx="381.16" cy="834" r="4.8" class="f-none s-accent-line" stroke-width="1.8"/>
+<circle cx="381.16" cy="834" r="4.8" class="f-none s-accent" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="9.05 21.11" transform="rotate(-70 381.16 834)"/>
+<text x="390.16" y="838.38" font-size="12.5" class="f-accent t-mono" textLength="52.5">running</text>
+<rect x="458.16" y="823.5" width="71" height="21" rx="3" class="f-sunken s-line-strong" stroke-width="1"/>
+<circle cx="468.66" cy="834" r="3.4" class="f-none s-faint" stroke-width="1.4"/>
+<text x="477.66" y="838.38" font-size="12.5" class="f-faint t-mono" textLength="45">queued</text>
+<rect x="538.16" y="823.5" width="71" height="21" rx="3" class="f-fail-bg s-fail-line" stroke-width="1"/>
+<circle cx="548.66" cy="834" r="3.4" class="f-fail"/>
+<text x="557.66" y="838.38" font-size="12.5" class="f-fail t-mono" textLength="45">failed</text>
+<rect x="618.16" y="823.5" width="78.5" height="21" rx="3" class="f-sunken s-line-strong" stroke-width="1"/>
+<circle cx="628.66" cy="834" r="3.4" class="f-none s-faint" stroke-width="1.4"/>
+<text x="637.66" y="838.38" font-size="12.5" class="f-faint t-mono" textLength="52.5">skipped</text>
+<rect x="784" y="112" width="644" height="744" rx="7" class="f-surface"/>
+<path d="M1421 112A7 7 0 0 1 1428 119V849A7 7 0 0 1 1421 856H791A7 7 0 0 1 784 849V119A7 7 0 0 1 791 112M791 112H798M915.3 112H1297M1414 112H1421" class="f-none s-line-strong" stroke-width="1"/>
+<text x="804" y="116.72" font-size="13.5" class="f-text t-mono" font-weight="600" textLength="105.3">agentiik.yaml</text>
+<text x="1408" y="116.38" font-size="12.5" class="f-faint t-mono" text-anchor="end" textLength="105">main · a3f9c1e</text>
+<text x="804" y="146.72" font-size="13.5" class="f-ok" font-weight="600">Valid</text>
+<circle cx="798" cy="142" r="3" class="f-ok"/>
+<text x="842.16" y="146.72" font-size="13.5" class="f-muted">· 3 steps, no cycle</text>
+<rect x="961.44" y="131.5" width="117.12" height="21" rx="4" class="f-wait-bg s-wait-line" stroke-width="1"/>
+<text x="968.94" y="146.38" font-size="12.5" class="f-wait" font-weight="500">1 unsaved change</text>
+<rect x="1303.8" y="128.5" width="103.7" height="27" rx="5" class="f-accent s-accent" stroke-width="1"/>
+<text x="1316.3" y="146.72" font-size="13.5" class="f-on-accent" font-weight="500">Save version</text>
+<rect x="1225.79" y="128.5" width="69.01" height="27" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="1238.29" y="146.72" font-size="13.5" class="f-text" font-weight="500">Format</text>
+<path d="M785 164H1427" class="f-none s-line" stroke-width="1"/>
+<rect x="796" y="174" width="620" height="670" rx="6" class="f-sunken"/>
+<rect x="797" y="519" width="618" height="198" rx="3" class="f-accent-dim"/>
+<rect x="840" y="520" width="2.5" height="196" rx="1.25" class="f-accent"/>
+<rect x="800" y="665" width="3" height="14" rx="1.5" class="f-wait"/>
+<text x="832" y="190.2" font-size="12" class="f-faint t-mono" text-anchor="end">1</text>
+<text x="852" y="190.55" font-size="13" class="f-faint t-mono" textLength="288.6"># finance/monthly-invoicing @ a3f9c1e</text>
+<text x="832" y="208.2" font-size="12" class="f-faint t-mono" text-anchor="end">2</text>
+<text x="852" y="208.55" font-size="13" class="f-graph-key t-mono" textLength="85.8">apiVersion:</text>
+<text x="945.6" y="208.55" font-size="13" class="f-graph-value t-mono" textLength="117">agentiik.dev/v1</text>
+<text x="832" y="226.2" font-size="12" class="f-faint t-mono" text-anchor="end">3</text>
+<text x="852" y="226.55" font-size="13" class="f-graph-key t-mono" textLength="39">kind:</text>
+<text x="898.8" y="226.55" font-size="13" class="f-graph-value t-mono" textLength="62.4">Workflow</text>
+<text x="832" y="244.2" font-size="12" class="f-faint t-mono" text-anchor="end">4</text>
+<text x="832" y="262.2" font-size="12" class="f-faint t-mono" text-anchor="end">5</text>
+<text x="852" y="262.55" font-size="13" class="f-graph-key t-mono" textLength="70.2">metadata:</text>
+<text x="832" y="280.2" font-size="12" class="f-faint t-mono" text-anchor="end">6</text>
+<text x="867.6" y="280.55" font-size="13" class="f-graph-key t-mono" textLength="39">name:</text>
+<text x="914.4" y="280.55" font-size="13" class="f-graph-value t-mono" textLength="132.6">monthly-invoicing</text>
+<text x="832" y="298.2" font-size="12" class="f-faint t-mono" text-anchor="end">7</text>
+<text x="867.6" y="298.55" font-size="13" class="f-graph-key t-mono" textLength="78">namespace:</text>
+<text x="953.4" y="298.55" font-size="13" class="f-graph-value t-mono" textLength="54.6">finance</text>
+<text x="832" y="316.2" font-size="12" class="f-faint t-mono" text-anchor="end">8</text>
+<text x="832" y="334.2" font-size="12" class="f-faint t-mono" text-anchor="end">9</text>
+<text x="852" y="334.55" font-size="13" class="f-graph-key t-mono" textLength="23.4">on:</text>
+<text x="832" y="352.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">10</text>
+<text x="867.6" y="352.55" font-size="13" class="f-graph-key t-mono" textLength="70.2">schedule:</text>
+<text x="832" y="370.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">11</text>
+<text x="883.2" y="370.55" font-size="13" class="f-faint t-mono">-</text>
+<text x="898.8" y="370.55" font-size="13" class="f-graph-key t-mono" textLength="39">cron:</text>
+<text x="945.6" y="370.55" font-size="13" class="f-graph-value t-mono" textLength="85.8">"0 6 1 * *"</text>
+<text x="832" y="388.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">12</text>
+<text x="898.8" y="388.55" font-size="13" class="f-graph-key t-mono" textLength="70.2">timezone:</text>
+<text x="976.8" y="388.55" font-size="13" class="f-graph-value t-mono" textLength="93.6">Europe/Paris</text>
+<text x="832" y="406.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">13</text>
+<text x="832" y="424.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">14</text>
+<text x="852" y="424.55" font-size="13" class="f-graph-key t-mono" textLength="46.8">steps:</text>
+<text x="832" y="442.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">15</text>
+<text x="832" y="460.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">16</text>
+<text x="867.6" y="460.55" font-size="13" class="f-graph-key t-mono" textLength="78">normalize:</text>
+<text x="832" y="478.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">17</text>
+<text x="883.2" y="478.55" font-size="13" class="f-graph-key t-mono" textLength="46.8">image:</text>
+<text x="937.8" y="478.55" font-size="13" class="f-graph-value t-mono" textLength="319.8">ghcr.io/acme/agk-normalize@sha256:9f2c1d…</text>
+<text x="832" y="496.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">18</text>
+<text x="883.2" y="496.55" font-size="13" class="f-graph-key t-mono" textLength="62.4">outputs:</text>
+<text x="953.4" y="496.55" font-size="13" class="f-faint t-mono">[</text>
+<text x="961.2" y="496.55" font-size="13" class="f-graph-value t-mono" textLength="15.6">ok</text>
+<text x="976.8" y="496.55" font-size="13" class="f-faint t-mono">,</text>
+<text x="992.4" y="496.55" font-size="13" class="f-graph-value t-mono" textLength="62.4">rejected</text>
+<text x="1054.8" y="496.55" font-size="13" class="f-faint t-mono">]</text>
+<text x="832" y="514.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">19</text>
+<text x="832" y="532.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">20</text>
+<text x="867.6" y="532.55" font-size="13" class="f-graph-key t-mono" textLength="62.4">invoice:</text>
+<text x="832" y="550.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">21</text>
+<text x="883.2" y="550.55" font-size="13" class="f-graph-key t-mono" textLength="62.4">extends:</text>
+<text x="953.4" y="550.55" font-size="13" class="f-graph-value t-mono" textLength="78">.api-brick</text>
+<text x="832" y="568.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">22</text>
+<text x="883.2" y="568.55" font-size="13" class="f-graph-key t-mono" textLength="46.8">image:</text>
+<text x="937.8" y="568.55" font-size="13" class="f-graph-value t-mono" textLength="304.2">ghcr.io/acme/agk-invoice@sha256:1ab74e…</text>
+<text x="832" y="586.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">23</text>
+<text x="883.2" y="586.55" font-size="13" class="f-graph-key t-mono" textLength="46.8">needs:</text>
+<text x="832" y="604.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">24</text>
+<text x="898.8" y="604.55" font-size="13" class="f-faint t-mono">-</text>
+<text x="914.4" y="604.55" font-size="13" class="f-faint t-mono">{</text>
+<text x="930" y="604.55" font-size="13" class="f-graph-key t-mono" textLength="39">step:</text>
+<text x="976.8" y="604.55" font-size="13" class="f-graph-value t-mono" textLength="70.2">normalize</text>
+<text x="1047" y="604.55" font-size="13" class="f-faint t-mono">,</text>
+<text x="1062.6" y="604.55" font-size="13" class="f-graph-key t-mono" textLength="39">port:</text>
+<text x="1109.4" y="604.55" font-size="13" class="f-graph-value t-mono" textLength="15.6">ok</text>
+<text x="1125" y="604.55" font-size="13" class="f-faint t-mono">,</text>
+<text x="1140.6" y="604.55" font-size="13" class="f-graph-key t-mono" textLength="23.4">as:</text>
+<text x="1171.8" y="604.55" font-size="13" class="f-graph-value t-mono" textLength="15.6">in</text>
+<text x="1195.2" y="604.55" font-size="13" class="f-faint t-mono">}</text>
+<text x="832" y="622.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">25</text>
+<text x="883.2" y="622.55" font-size="13" class="f-graph-key t-mono" textLength="23.4">if:</text>
+<text x="914.4" y="622.55" font-size="13" class="f-accent t-mono" textLength="202.8">${{ inputs.in.count &gt; 0 }}</text>
+<text x="832" y="640.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">26</text>
+<text x="883.2" y="640.55" font-size="13" class="f-graph-key t-mono" textLength="70.2">strategy:</text>
+<text x="832" y="658.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">27</text>
+<text x="898.8" y="658.55" font-size="13" class="f-graph-key t-mono" textLength="62.4">fan_out:</text>
+<text x="969" y="658.55" font-size="13" class="f-graph-value t-mono" textLength="31.2">item</text>
+<text x="832" y="676.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">28</text>
+<text x="898.8" y="676.55" font-size="13" class="f-graph-key t-mono" textLength="101.4">max_parallel:</text>
+<text x="1008" y="676.55" font-size="13" class="f-graph-value t-mono">8</text>
+<rect x="1016.8" y="664" width="1.5" height="16" class="f-accent"/>
+<text x="832" y="694.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">29</text>
+<text x="883.2" y="694.55" font-size="13" class="f-graph-key t-mono" textLength="62.4">secrets:</text>
+<text x="953.4" y="694.55" font-size="13" class="f-faint t-mono">[</text>
+<text x="961.2" y="694.55" font-size="13" class="f-graph-value t-mono" textLength="54.6">billing</text>
+<text x="1015.8" y="694.55" font-size="13" class="f-faint t-mono">]</text>
+<text x="832" y="712.2" font-size="12" class="f-accent t-mono" text-anchor="end" textLength="14.4">30</text>
+<text x="883.2" y="712.55" font-size="13" class="f-graph-key t-mono" textLength="62.4">outputs:</text>
+<text x="953.4" y="712.55" font-size="13" class="f-faint t-mono">[</text>
+<text x="961.2" y="712.55" font-size="13" class="f-graph-value t-mono" textLength="23.4">out</text>
+<text x="984.6" y="712.55" font-size="13" class="f-faint t-mono">,</text>
+<text x="1000.2" y="712.55" font-size="13" class="f-graph-value t-mono" textLength="39">error</text>
+<text x="1039.2" y="712.55" font-size="13" class="f-faint t-mono">]</text>
+<text x="832" y="730.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">31</text>
+<text x="832" y="748.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">32</text>
+<text x="867.6" y="748.55" font-size="13" class="f-graph-key t-mono" textLength="62.4">archive:</text>
+<text x="832" y="766.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">33</text>
+<text x="883.2" y="766.55" font-size="13" class="f-graph-key t-mono" textLength="46.8">needs:</text>
+<text x="832" y="784.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">34</text>
+<text x="898.8" y="784.55" font-size="13" class="f-faint t-mono">-</text>
+<text x="914.4" y="784.55" font-size="13" class="f-faint t-mono">{</text>
+<text x="930" y="784.55" font-size="13" class="f-graph-key t-mono" textLength="39">step:</text>
+<text x="976.8" y="784.55" font-size="13" class="f-graph-value t-mono" textLength="54.6">invoice</text>
+<text x="1031.4" y="784.55" font-size="13" class="f-faint t-mono">,</text>
+<text x="1062.6" y="784.55" font-size="13" class="f-graph-key t-mono" textLength="39">port:</text>
+<text x="1109.4" y="784.55" font-size="13" class="f-graph-value t-mono" textLength="23.4">out</text>
+<text x="1132.8" y="784.55" font-size="13" class="f-faint t-mono">,</text>
+<text x="1187.4" y="784.55" font-size="13" class="f-graph-key t-mono" textLength="23.4">as:</text>
+<text x="1218.6" y="784.55" font-size="13" class="f-graph-value t-mono" textLength="62.4">invoices</text>
+<text x="1288.8" y="784.55" font-size="13" class="f-faint t-mono">}</text>
+<text x="832" y="802.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">35</text>
+<text x="898.8" y="802.55" font-size="13" class="f-faint t-mono">-</text>
+<text x="914.4" y="802.55" font-size="13" class="f-faint t-mono">{</text>
+<text x="930" y="802.55" font-size="13" class="f-graph-key t-mono" textLength="39">step:</text>
+<text x="976.8" y="802.55" font-size="13" class="f-graph-value t-mono" textLength="70.2">normalize</text>
+<text x="1047" y="802.55" font-size="13" class="f-faint t-mono">,</text>
+<text x="1062.6" y="802.55" font-size="13" class="f-graph-key t-mono" textLength="39">port:</text>
+<text x="1109.4" y="802.55" font-size="13" class="f-graph-value t-mono" textLength="62.4">rejected</text>
+<text x="1171.8" y="802.55" font-size="13" class="f-faint t-mono">,</text>
+<text x="1187.4" y="802.55" font-size="13" class="f-graph-key t-mono" textLength="23.4">as:</text>
+<text x="1218.6" y="802.55" font-size="13" class="f-graph-value t-mono" textLength="62.4">rejected</text>
+<text x="1288.8" y="802.55" font-size="13" class="f-faint t-mono">}</text>
+<text x="832" y="820.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">36</text>
+<text x="883.2" y="820.55" font-size="13" class="f-graph-key t-mono" textLength="46.8">merge:</text>
+<text x="937.8" y="820.55" font-size="13" class="f-graph-value t-mono" textLength="62.4">wait_all</text>
+<text x="832" y="838.2" font-size="12" class="f-faint t-mono" text-anchor="end" textLength="14.4">37</text>
+<text x="883.2" y="838.55" font-size="13" class="f-graph-key t-mono" textLength="46.8">cache:</text>
+<text x="937.8" y="838.55" font-size="13" class="f-graph-value t-mono" textLength="31.2">true</text>
+<path d="M0 868H1440V891a9 9 0 0 1-9 9H9a9 9 0 0 1-9-9z" class="f-surface"/>
+<path d="M0 868.5H1440" class="f-none s-line" stroke-width="1"/>
+<rect x="18.5" y="874.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="24" y="888.2" font-size="12" class="f-text t-mono" font-weight="700">/</text>
+<text x="44.2" y="888.55" font-size="13" class="f-muted">Search</text>
+<rect x="104.04" y="874.5" width="47" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="109.54" y="888.2" font-size="12" class="f-text t-mono" font-weight="700" textLength="36">enter</text>
+<text x="158.54" y="888.55" font-size="13" class="f-muted">Open step</text>
+<rect x="236.97" y="874.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="242.47" y="888.2" font-size="12" class="f-text t-mono" font-weight="700">?</text>
+<text x="262.67" y="888.55" font-size="13" class="f-muted">Keys</text>
+<text x="1422" y="888.38" font-size="12.5" class="f-faint t-mono" text-anchor="end" textLength="112.5">agentiik v0.6.0</text>
+<rect x="598" y="543" width="137" height="26" rx="5" class="f-text"/>
+<text x="608" y="560.38" font-size="12.5" class="f-bg">Drag to connect error</text>
+<path transform="translate(583 531)" d="M0 0V17.5L4.6 13.3L7.7 20.2L10.6 18.9L7.6 12.2H13.6Z" class="f-text s-raised" stroke-width="1.4" stroke-linejoin="round"/>
+</g>
+<rect x=".5" y=".5" width="1439" height="945" rx="10" class="f-none s-line-strong"/>
+</svg>
 </div>
 </div>
-<p class="shot-note" data-rise style="--delay:.24s"><b>The graph beside the file it is drawn from.</b> The console as the documentation draws it: it arrives in v0.6.0, and every workflow it shows is the <code>agentiik.yaml</code> of a git repository the installation serves.</p>
+<p class="shot-note" data-rise style="--delay:.24s"><b>The graph and the file are one object.</b> Ports sit where the YAML declares them, and selecting a step selects its block. The console as the documentation draws it, arriving in v0.6.0.</p>
 
 <section class="ideas">
   <div data-rise style="--delay:.06s">
     <span class="tag">brick</span>
-    <h2>Every step is a container</h2>
-    <p>An OCI image with a manifest, or a script in any image. Each runs in a container of its own that nothing outlives but what it wrote to its ports.</p>
+    <h2>Any image, any language</h2>
+    <p>A brick is an OCI image with a manifest, and a script step runs in any image at all. Nothing outlives a step but what it wrote to its ports.</p>
   </div>
   <div data-rise style="--delay:.12s">
     <span class="tag">repository</span>
