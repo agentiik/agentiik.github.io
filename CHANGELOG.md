@@ -107,7 +107,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - The roadmap plans in v0.3.0 the sign-in and enrolment page and setting a password and a TOTP under Passkeys, passwords and recovery, and the purges and the collection of what v0.2 left under Quotas, isolation and what stays invisible; the plan holds 672 tasks.
 - An enrolment link or recovery code refused is recorded as `signin.fail`, naming its account and never the code, within the same bound; each password a policy change takes is a `credential.remove` by whoever changed it.
 - An administrator putting themselves in a group, taking themselves out, or removing a group they are in tells the owners where that widens their own access, and the entry names who was told.
-- The audit log says what changes something and is not recorded, and why: a push, a TOTP generator started, a sign-out, a notification dismissed, a runner joining and its own traffic, an upload, a 429, and a wrong guess from a signed-in session.
+- The audit log says what changes something and is not recorded, and why: a push, a TOTP generator started, a sign-out, a notification dismissed, a runner's own traffic, an upload, a 429, and a wrong guess from a signed-in session.
 - The bootstrap token ends when the first administrator has signed in: at their first passkey, or at the first request of a full session their password opens, the policy relaxed since included; `GET /api/v1/users/{login}` answers `suspended_for`, and a password set from a code where passwords are allowed also lifts a `no_passkey` suspension.
 - Once the bootstrap has ended, a grant carrying a role or a group membership that would leave no administrator able to sign in is refused with 409 naming the setting; a password that could only ever enrol, a passkey required and `min_passkeys` held, is refused with 409 naming `passkey`.
 - agk talks to the installation `agk login` last signed in to where neither `--server` nor `AGENTIIK_SERVER` names one, never sending `AGENTIIK_TOKEN` there (exit 2); a refused exchange is recorded as `signin.fail`.
@@ -116,6 +116,17 @@ Every repository of the project carries the same version and is tagged at the sa
 - An administrator the bootstrap token creates is given the `owner` role on every namespace no record names an owner of, recorded as `grant.create` by `operator`, so the first administrator owns the installation's namespaces with nothing shared by hand.
 - Install a server copies deploy's `compose.yaml` as it no longer gives the API `AGK_OPERATOR_TOKEN_FILE`, and its `.env` examples as they call the token in `.env` the bootstrap token and have an administrator issue join tokens.
 - Get started and Install a server create the first administrator with the bootstrap token, `agk user create alice --admin`, which hands them `demo`, then sign in from a browser that trusts the certificate and with `agk login`; a new token in `.env` counts only until that sign-in, and an administrator issues join tokens.
+- Every table naming a namespace is under row level security, the audit log, the policy, the notifications and the service accounts included.
+- A refusal asks what an allowed request would ask, so that how long it takes discovers nothing either.
+- A run names its runner by identifier alone, and a presigned URL lasts 5 minutes, signed over the namespace, the digest and the run.
+- A notification names its `act` and who did it, `by`.
+- Putting anybody in a group is told to the owners where it holds a role, and where nobody owns, the other administrators are told as well.
+- `GET /api/v1/me` leaves out a workflow its caller holds nothing in.
+- A deny of `grant:manage` on a workflow is refused with 422.
+- A runner joining is recorded as `runner.join`, by whoever issued its join token.
+- `group_member.add` names who was told wherever a user is put in a group holding a role.
+- At most 10,000 passkey challenges are open across the installation; past them the options answer 503 with `Retry-After`.
+- The roadmap's v0.3.0 tasks for the sign-in page, the purges, the collection of what v0.2 left and the access fixture say what was built, each under its issue's title, and a task publishes the image that upgrades PostgreSQL between major versions; the plan holds 673 tasks.
 
 ## v0.2.5, 2026-09-26
 
