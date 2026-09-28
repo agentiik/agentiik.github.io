@@ -21,6 +21,7 @@
   --line:#DCE2D7;
   --line-strong:#C0CABB;
   --accent:#0E6A5F;
+  --on-accent:#FFFFFF;
   --scrim:rgba(14,19,16,.42);
   --shadow:none;
   --gutter:clamp(16px,3vw,28px);
@@ -37,6 +38,7 @@
     --line:#26312B;
     --line-strong:#35423A;
     --accent:#4FBFAC;
+    --on-accent:#0E1310;
     --scrim:rgba(0,0,0,.6);
   }
 }
@@ -51,6 +53,7 @@
   --line:#26312B;
   --line-strong:#35423A;
   --accent:#4FBFAC;
+  --on-accent:#0E1310;
   --scrim:rgba(0,0,0,.6);
 }
 :root[data-theme="light"]{color-scheme:light}
@@ -64,52 +67,91 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 main{
+  --top:clamp(72px,11vw,150px);
   max-width:880px;
   margin:0 auto;
   padding-inline:clamp(16px,3vw,28px);
-  padding-block:clamp(96px,16vw,224px) 144px;
+  padding-block:var(--top) 144px;
 }
 a{color:var(--accent)}
 a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
 
 .hero{
   text-align:center;
-  margin-bottom:clamp(76px,12vw,140px);
+  margin-bottom:clamp(44px,6vw,72px);
+}
+/* The band behind the opening: the console's graph canvas, its dotted grid and a glow of the
+   accent, running the screen's width and fading into the paper halfway down the screenshot,
+   so the page opens on the product's own ground rather than on grey. */
+.top{position:relative}
+.top::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:50%;
+  top:calc(-1 * var(--top));
+  bottom:38%;
+  width:100vw;
+  transform:translateX(-50%);
+  background:
+    radial-gradient(70% 60% at 50% 0%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 72%),
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--accent) 26%, transparent) 1px, transparent 1.4px) 0 0 / 22px 22px;
+  -webkit-mask-image:linear-gradient(to bottom, #000 62%, transparent);
+          mask-image:linear-gradient(to bottom, #000 62%, transparent);
 }
 .lockup{
-  --mark:clamp(44px,12vw,104px);
-  display:flex;
+  --mark:clamp(30px,5.4vw,50px);
+  display:inline-flex;
   align-items:center;
   justify-content:center;
   gap:calc(var(--mark) * 9 / 14);
-  margin-bottom:clamp(46px,7vw,76px);
+  margin-bottom:clamp(26px,4vw,40px);
 }
-/* The one thing the page asks a reader to do. Under the lockup, the size of a
-   sentence rather than of a button: the page is quiet and a loud control in the
-   middle of it would be the only thing anybody saw. */
-.hero .start{
+.headline{
+  margin:0 auto;
+  max-width:18ch;
+  font-size:clamp(2.2rem,6.2vw,4.1rem);
+  font-weight:700;
+  line-height:1.04;
+  letter-spacing:-.035em;
+  text-wrap:balance;
+}
+.headline em{font-style:normal;color:var(--accent)}
+.sub{
+  margin:clamp(18px,2.4vw,26px) auto 0;
+  max-width:38rem;
+  color:var(--muted);
+  font-size:clamp(1.02rem,1.7vw,1.2rem);
+  line-height:1.55;
+  text-wrap:balance;
+}
+.sub code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.88em;color:var(--ink)}
+.actions{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:12px;
+  margin-top:clamp(26px,3.6vw,38px);
+}
+.actions a{
   display:inline-flex;
   align-items:center;
   gap:8px;
-  padding:13px 20px 13px 24px;
-  border:1px solid var(--line);
+  padding:12px 20px 12px 22px;
+  border:1px solid var(--line-strong);
   border-radius:999px;
   background:var(--surface);
-  box-shadow:var(--shadow);
   color:var(--ink);
-  font-size:clamp(1rem,1.6vw,1.12rem);
+  font-size:1rem;
   font-weight:500;
-  letter-spacing:-.015em;
+  letter-spacing:-.01em;
   text-decoration:none;
+  transition:border-color .12s ease,color .12s ease,background-color .12s ease;
 }
-.hero .start:hover{border-color:var(--accent);color:var(--accent)}
-.hero .start svg{
-  display:block;
-  width:14px;
-  height:14px;
-  color:var(--accent);
-}
-.hero .start:hover svg{color:inherit}
+.actions a:hover{border-color:var(--accent);color:var(--accent)}
+.actions a.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.actions a.primary:hover{background:color-mix(in srgb, var(--accent) 86%, var(--ink));color:var(--on-accent)}
+.actions svg{display:block;width:14px;height:14px}
 .lockup svg{
   flex:none;
   width:calc(var(--mark) * 16 / 14);
@@ -124,6 +166,70 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   margin:0;
 }
 
+/* The three sentences the documentation opens on, set as the page's one run of text. */
+.ideas{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(20px,3vw,36px);
+  margin:0 0 clamp(76px,11vw,128px);
+}
+.ideas > div{border-top:2px solid var(--accent);padding-top:16px}
+.ideas .tag{
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.72rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--accent);
+}
+.ideas h2{margin:8px 0 8px;font-size:1.12rem;font-weight:600;letter-spacing:-.015em;line-height:1.3}
+.ideas p{margin:0;color:var(--muted);font-size:.94rem;line-height:1.6}
+.ideas code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.86em;color:var(--ink)}
+@media (max-width:760px){.ideas{grid-template-columns:1fr}}
+
+.section-title{
+  margin:0 0 6px;
+  font-size:clamp(1.3rem,2.6vw,1.7rem);
+  font-weight:700;
+  letter-spacing:-.025em;
+}
+.section-lede{margin:0 0 22px;color:var(--muted);font-size:.98rem;line-height:1.6;max-width:44rem}
+
+/* The screenshot's window: a bar with the address, since the image is the page and not the
+   browser around it. */
+.window{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--line);
+  background:var(--raised);
+}
+.window .dots{display:flex;gap:6px}
+.window .dots i{width:10px;height:10px;border-radius:50%;background:var(--line-strong)}
+.window .url{
+  flex:1;
+  max-width:460px;
+  margin:0 auto;
+  padding:5px 12px;
+  border-radius:6px;
+  background:var(--sunken);
+  color:var(--muted);
+  font-size:.76rem;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.shot.graph{margin-bottom:14px}
+.shot-note{
+  max-width:46rem;
+  margin:0 auto clamp(64px,9vw,112px);
+  text-align:center;
+  color:var(--muted);
+  font-size:.86rem;
+  line-height:1.6;
+}
+.shot-note b{color:var(--ink);font-weight:600}
 .shot{
   /* Wider than the text column: the screenshot breaks out of the 880 and stops
      one gutter short of the viewport, so it never brings a horizontal scrollbar. */
@@ -331,7 +437,7 @@ body{overflow-x:clip}
 /* The screenshot and the recording take the screen's width, up to the 1440 the console is
    drawn at, and stop one gutter short of either edge. */
 .shot,.cast{width:min(1440px, calc(100vw - 2 * var(--gutter)))}
-.shot{border-radius:7px;overflow:hidden}
+.shot{border-radius:9px;overflow:hidden;box-shadow:0 1px 2px rgba(14,19,16,.06),0 18px 50px -18px rgba(14,19,16,.28)}
 .shot .mock{display:block;width:100%;height:auto}
 .cast-frame{border-radius:7px;overflow:hidden}
 .cast pre{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
@@ -446,6 +552,7 @@ img{max-width:100%}
 
 <main>
 
+<div class="top">
 <div class="hero">
 <div class="lockup" data-rise data-par=".07" style="--delay:0s">
   <svg viewBox="0 0 16 14" aria-hidden="true" focusable="false">
@@ -458,12 +565,44 @@ img{max-width:100%}
   </svg>
   <h1>agentiik</h1>
 </div>
-<a class="start" href="docs/#get-started" data-rise data-par=".12" style="--delay:.08s">
-  Get started
-  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-</a>
+<p class="headline" data-rise data-par=".09" style="--delay:.05s">Workflows are <em>graphs of containers</em>, kept in git.</p>
+<p class="sub" data-rise data-par=".1" style="--delay:.1s">Write an <code>agentiik.yaml</code>, push it, and every step runs in a container of its own, on a laptop or on one server a whole team shares.</p>
+<div class="actions" data-rise data-par=".11" style="--delay:.14s">
+  <a class="primary" href="docs/#get-started">Get started
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+  <a href="docs/roadmap/index.html">The roadmap</a>
+</div>
 </div>
 
+<div class="shot graph" data-rise data-par="-.04" style="--delay:.2s">
+  <div class="window" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="url">agentiik.example.com/finance/workflows/monthly-invoicing</span></div>
+  <img class="shot-light" src="assets/console-graph-light.png" width="1440" height="900" alt="The web console's graph view of finance/monthly-invoicing: on the left the graph, the workflow inputs orders and customers feeding normalize, invoice sharded three of eight with its error port running to errors, archive waiting, and the workflow output invoices; on the right its agentiik.yaml, the file the graph is drawn from.">
+  <img class="shot-dark" src="assets/console-graph-dark.png" width="1440" height="900" alt="" aria-hidden="true">
+</div>
+</div>
+<p class="shot-note" data-rise style="--delay:.24s"><b>The graph beside the file it is drawn from.</b> The console as the documentation draws it: it arrives in v0.6.0, and every workflow it shows is the <code>agentiik.yaml</code> of a git repository the installation serves.</p>
+
+<section class="ideas">
+  <div data-rise style="--delay:.06s">
+    <span class="tag">brick</span>
+    <h2>Every step is a container</h2>
+    <p>An OCI image with a manifest, or a script in any image. Each runs in a container of its own that nothing outlives but what it wrote to its ports.</p>
+  </div>
+  <div data-rise style="--delay:.12s">
+    <span class="tag">repository</span>
+    <h2>Every workflow is a repository</h2>
+    <p><code>agentiik.yaml</code> at its root describes the graph. A push is validated before any branch moves, and a run keeps the commit it started from.</p>
+  </div>
+  <div data-rise style="--delay:.18s">
+    <span class="tag">namespace</span>
+    <h2>One installation, many people</h2>
+    <p>Namespaces, groups and four roles decide who reads, runs and edits what, and a namespace you hold nothing in answers as one that does not exist.</p>
+  </div>
+</section>
+
+<h2 class="section-title" data-rise>Every run, as it happens</h2>
+<p class="section-lede" data-rise style="--delay:.04s">What needs you first, each step's time in one strip, a replay one key away. Drawn from the documentation, like the graph above.</p>
 <div class="shot" data-rise data-par="-.045" style="--delay:.16s">
   <svg class="mock web" viewBox="0 0 1440 946" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mockup of the web console&#x27;s runs view, the screen it opens on, in a browser window at agentiik.example.com/finance/runs, drawn in the terminal console&#x27;s design language. The top bar holds the mark, the namespace switcher on finance, the views, a search field, a live indicator, three notifications and the principal, alice. One pane with rounded borders holds round filter chips, New run and Export buttons, then a band of runs needing attention: an approval requested at invoice with Approve, keyboard focus on it, and Reject buttons, and a failed run of monthly-invoicing, exit 108, with Replay from invoice and Open. Below, a table of twelve runs, each with a state badge, a spinner on the running ones, its identifier, workflow, trigger, principal, a strip of steps weighted by duration, times and a sparkline of the workflow&#x27;s last twenty runs; scheduled, webhook and event runs are by finance/agentiik. The pointer hovers the failed run&#x27;s strip, and a tooltip names the step, its exit code and duration. A key line runs along the foot of the window.">
 <rect x=".5" y=".5" width="1439" height="945" rx="10" class="f-bg"/>
@@ -1015,7 +1154,9 @@ img{max-width:100%}
 </svg>
 </div>
 
-<figure class="cast" data-rise data-par="-.03" style="--delay:.22s">
+<h2 class="section-title" data-rise>On a laptop, with no server</h2>
+<p class="section-lede" data-rise style="--delay:.04s">The same graph runs against the Docker daemon beside you, with nothing else installed.</p>
+<figure class="cast" data-rise data-par="-.03" style="--delay:.08s">
   <div class="cast-frame">
 <pre id="cast-poster"><code><span class="p">$</span> <span class="cmd">agk validate</span>
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
