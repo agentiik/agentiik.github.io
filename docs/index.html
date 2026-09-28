@@ -1031,7 +1031,7 @@ img{max-width:100%}
             <li><a href="#behind-a-reverse-proxy">Behind a reverse proxy</a></li>
             <li><a href="#install-with-homebrew">On a Mac, with Homebrew</a></li>
             <li><a href="#add-a-runner">Add a runner on another machine</a></li>
-            <li><a href="#server-not-yet">What v0.2 does not do yet</a></li>
+            <li><a href="#server-not-yet">What v0.3 does not do yet</a></li>
           </ul>
         </li>
         <li><a href="#use-cases">Use cases</a>
@@ -1291,7 +1291,7 @@ img{max-width:100%}
 <section id="get-started">
   <div class="sec-head"><span class="mark">§</span><h2>Get started</h2></div>
   <div class="prose">
-    <p>A workflow runs on your machine with <code>agk run --local</code>, and on a server with <code>agk push</code> and <code>agk run --namespace</code>. This chapter does both: a first workflow on your machine, then <a href="#run-on-a-server">the same workflow on a server</a> started with Docker Compose. Every output below is what a terminal answered at <code>v0.2.5</code>, not what the rest of this documentation promises.</p>
+    <p>A workflow runs on your machine with <code>agk run --local</code>, and on a server with <code>agk push</code> and <code>agk run --namespace</code>. This chapter does both: a first workflow on your machine, then <a href="#run-on-a-server">the same workflow on a server</a> started with Docker Compose. Every output below is what a terminal answered at <code>v0.3.0</code>, not what the rest of this documentation promises.</p>
 
     <h3 id="what-you-need">What you need</h3>
     <div class="tablewrap">
@@ -1316,7 +1316,7 @@ img{max-width:100%}
 agk v0.2.5, d2f1e8ba6a0dceec92962ae00de1f0d1c15e5bf4, go1.27.1</code></pre>
     </div>
 
-    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.2.5</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
+    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.3.0</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
 
     <p><code>agk</code> alone prints its verbs, the table in <a href="#command-line">Command line</a>.</p>
 
@@ -1546,7 +1546,7 @@ flowchart LR
     <div class="block">
       <div class="note-label">start a server</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.2.5/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.3.0/single-host/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>
 <span class="p">$</span> <span class="cmd">docker compose up -d --wait</span></code></pre>
@@ -1624,7 +1624,7 @@ flowchart LR
 <section id="install-a-server">
   <div class="sec-head"><span class="mark">§</span><h2>Install a server</h2></div>
   <div class="prose">
-    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.2.5</code>:</p>
+    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.3.0</code>:</p>
 
     <div class="tablewrap">
       <table>
@@ -1667,7 +1667,7 @@ flowchart LR
     <div class="block">
       <div class="note-label">start</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.2.5/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.3.0/single-host/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>
 <span class="p">$</span> <span class="cmd">docker compose up -d --wait</span></code></pre>
@@ -1681,7 +1681,7 @@ flowchart LR
     <div class="block">
       <div class="note-label">start, reached as agentiik.example.com</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.2.5/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.3.0/single-host/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">echo 'AGENTIIK_HOST=agentiik.example.com' &gt;&gt; .env</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>
@@ -1750,7 +1750,7 @@ services:
   # bootstrap token's hash in the database until the first administrator has signed in, and a join
   # token for the runner. Its log says what it did.
   init:
-    image: ghcr.io/agentiik/api:${AGENTIIK_VERSION:-v0.2.5}
+    image: ghcr.io/agentiik/api:${AGENTIIK_VERSION:-v0.3.0}
     command: [init]
     user: "0:0" # to give each service's directory to the account that service runs as
     network_mode: none
@@ -1789,7 +1789,7 @@ services:
 
   api:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/api:${AGENTIIK_VERSION:-v0.2.5}
+    image: ghcr.io/agentiik/api:${AGENTIIK_VERSION:-v0.3.0}
     depends_on: { &lt;&lt;: *after-init, nats: { condition: service_healthy } }
     environment:
       AGK_DATABASE_URL: postgres://agentiik@/agentiik?host=/run/postgresql
@@ -1817,7 +1817,7 @@ services:
 
   controller:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/controller:${AGENTIIK_VERSION:-v0.2.5}
+    image: ghcr.io/agentiik/controller:${AGENTIIK_VERSION:-v0.3.0}
     depends_on: { &lt;&lt;: *after-init, nats: { condition: service_healthy } }
     environment:
       AGK_DATABASE_URL: postgres://agentiik@/agentiik?host=/run/postgresql
@@ -1836,7 +1836,7 @@ services:
   # the pool default with the token init wrote where it has no identity yet, or where AGK_API changed.
   runner:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.2.5}
+    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.3.0}
     depends_on: { &lt;&lt;: *after-init, api: { condition: service_healthy } }
     cap_drop: [ALL]
     cap_add: [CHOWN, FOWNER, DAC_OVERRIDE, SETUID, SETGID]
@@ -1899,13 +1899,13 @@ volumes:
       <div class="note-label">docker compose ps --all</div>
 <pre><code><span class="p">$</span> <span class="cmd">docker compose ps --all</span>
 NAME                          IMAGE                                      COMMAND                  SERVICE            STATUS
-agentiik-api-1                ghcr.io/agentiik/api:v0.2.5                "/agentiik-api serve"    api                Up (healthy)
-agentiik-controller-1         ghcr.io/agentiik/controller:v0.2.5         "/agentiik-controller"   controller         Up
-agentiik-init-1               ghcr.io/agentiik/api:v0.2.5                "/agentiik-api init"     init               Exited (0)
+agentiik-api-1                ghcr.io/agentiik/api:v0.3.0                "/agentiik-api serve"    api                Up (healthy)
+agentiik-controller-1         ghcr.io/agentiik/controller:v0.3.0         "/agentiik-controller"   controller         Up
+agentiik-init-1               ghcr.io/agentiik/api:v0.3.0                "/agentiik-api init"     init               Exited (0)
 agentiik-nats-1               nats:2-alpine                              "docker-entrypoint.s…"   nats               Up (healthy)
 agentiik-postgres-1           postgres:18-alpine                         "docker-entrypoint.s…"   postgres           Up (healthy)
 agentiik-postgres-upgrade-1   ghcr.io/agentiik/postgres-upgrade:v0.3.0   "/usr/local/bin/post…"   postgres-upgrade   Exited (0)
-agentiik-runner-1             ghcr.io/agentiik/runner:v0.2.5             "/usr/local/bin/agk-…"   runner             Up</code></pre>
+agentiik-runner-1             ghcr.io/agentiik/runner:v0.3.0             "/usr/local/bin/agk-…"   runner             Up</code></pre>
     </div>
 
     <p><code>postgres-upgrade</code> and <code>init</code> have done their work when they have <code>Exited (0)</code>; <code>docker compose logs</code> and a service's name say what it did, or why a service is not up. Everything the installation keeps is in <code>data/</code>, one directory per service, and the one other path it uses on the host is <code>/var/lib/agentiik/work</code>, where the runner lays out each step's files for the daemon to bind. PostgreSQL's socket is the one Docker volume, since it is no data to keep and some file systems cannot hold a socket.</p>
@@ -1914,7 +1914,7 @@ agentiik-runner-1             ghcr.io/agentiik/runner:v0.2.5             "/usr/l
 
     <div class="block">
       <div class="note-label">install agk, and trust the certificate init made</div>
-<pre><code><span class="p">$</span> <span class="cmd">go install github.com/agentiik/agentiik/cmd/agk@v0.2.5</span>
+<pre><code><span class="p">$</span> <span class="cmd">go install github.com/agentiik/agentiik/cmd/agk@v0.3.0</span>
 <span class="p">$</span> <span class="cmd">export PATH="$PATH:$(go env GOPATH)/bin"</span>
 <span class="p">$</span> <span class="cmd">mkdir -p trust</span>
 <span class="p">$</span> <span class="cmd">docker compose cp api:/agentiik/trust/agentiik.pem trust/</span>
@@ -2034,7 +2034,7 @@ a file from greet</code></pre>
     </div>
 
     <h4 id="compose-settings">Change a setting</h4>
-    <p>Every setting but the operator token has its default in <code>compose.yaml</code>. This file says what each one is for; uncomment a line in <code>.env</code>, then run <code>docker compose up -d</code> again:</p>
+    <p>Every setting but the bootstrap token, <code>AGENTIIK_OPERATOR_TOKEN</code>, has its default in <code>compose.yaml</code>. This file says what each one is for; uncomment a line in <code>.env</code>, then run <code>docker compose up -d</code> again:</p>
 
     <!-- Verbatim copy of single-host/.env.example in https://github.com/agentiik/deploy, HTML-escaped: a check compares the two, so edit that file and copy it here, never the other way. -->
     <div class="block">
@@ -2055,7 +2055,7 @@ AGENTIIK_OPERATOR_TOKEN=
 #AGENTIIK_DATA=./data
 
 # The version of Agentiik, one for every image; compose.yaml names its own release. To upgrade, download the new release's compose.yaml rather than changing this alone, since a release may change the services too.
-#AGENTIIK_VERSION=v0.2.5
+#AGENTIIK_VERSION=v0.3.0
 
 # The name agk and every runner reach the installation at: a DNS name or an IPv4 address, which the
 # certificate init makes is issued to. localhost is enough on one machine; a runner on another machine
@@ -2182,8 +2182,8 @@ AGENTIIK_OPERATOR_TOKEN=
     <div class="block">
       <div class="note-label">Caddy in front</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.2.5/single-host/compose.yaml</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.2.5/single-host/proxy/Caddyfile</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.3.0/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.3.0/single-host/proxy/Caddyfile</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">echo 'AGENTIIK_HOST=agentiik.example.com' &gt;&gt; .env</span>
 <span class="p">$</span> <span class="cmd">echo 'AGENTIIK_PROXY_URL=https://agentiik.example.com' &gt;&gt; .env</span>
@@ -2386,20 +2386,20 @@ http:
 <span class="p">$</span> <span class="cmd">brew services start agentiik/tap/agentiik</span></code></pre>
     </div>
 
-    <p><code>agentiik-setup</code> writes the secrets, the certificate, the database, a namespace named after you with <code>agentiik-api namespace create</code> (<code>--namespace</code> to choose) and the bus identity, then prints the two lines that point <code>agk</code> at the server, <code>export AGENTIIK_SERVER=https://localhost:8443</code> and <code>export AGENTIIK_TOKEN=</code> the operator token, shown this once. From v0.3.0 that is the <a href="#first-run">bootstrap token</a>, which it keeps in <code>operator-token.env</code>, readable by you alone, as <code>.env</code> keeps it for Compose, and a later run prints a line reading it from there. Run again, it keeps all of that and repairs what is missing. <code>brew services start</code> runs the bus, the API and the controller, and again at every login; from v0.3.0 it first runs <code>agentiik-api migrate</code>, at every start, which applies the release's migrations and keeps the bootstrap token's hash, as <code>init</code> does for Compose, and, given <code>AGK_OBJECTS_DIR</code> from <code>api.env</code>, records the artifact files a v0.2 server left unrecorded, for the purges to expire and collect.</p>
+    <p><code>agentiik-setup</code> writes the secrets, the certificate, the <a href="#first-run">bootstrap token</a> in <code>operator-token.env</code>, readable by you alone, as <code>.env</code> keeps it for Compose, the database, the namespace <code>demo</code> with <code>agentiik-api namespace create</code> where the server holds none (<code>--namespace</code> to create another), and the bus identity, then prints the two lines that point <code>agk</code> at the server, <code>export AGENTIIK_SERVER=https://localhost:8443</code> and <code>export AGENTIIK_TOKEN=</code> the bootstrap token; a later run prints a line reading it from <code>operator-token.env</code>. The namespace is <code>demo</code>, as for Compose, and never one named after you, since logins and namespaces share one name space and it would take the login you want. Run again, it keeps all of that and repairs what is missing. <code>brew services start</code> runs the bus, the API and the controller, and again at every login; it first runs <code>agentiik-api migrate</code>, at every start, which applies the release's migrations and keeps the bootstrap token's hash, as <code>init</code> does for Compose, and, given <code>AGK_OBJECTS_DIR</code> from <code>api.env</code>, records the artifact files a v0.2 server left unrecorded, for the purges to expire and collect.</p>
 
     <h4>Check it is up</h4>
     <div class="block">
-      <div class="note-label">the API answers the operator</div>
+      <div class="note-label">the API answers the bootstrap token</div>
 <pre><code><span class="p">$</span> <span class="cmd">export AGENTIIK_SERVER=https://localhost:8443</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN=&lt;the token agentiik-setup printed&gt;</span>
 <span class="p">$</span> <span class="cmd">curl --cacert "$(brew --prefix)/etc/agentiik/tls/ca.pem" -H "Authorization: Bearer $AGENTIIK_TOKEN" "$AGENTIIK_SERVER/api/v1/runner-pools"</span>
-<span class="p">$</span> <span class="cmd">agk push --namespace &lt;the namespace it named&gt;</span>
+<span class="p">$</span> <span class="cmd">agk push --namespace demo</span>
 <span class="c"># from a workflow's repository</span></code></pre>
     </div>
 
     <p><code>curl</code> reads its own list of authorities rather than the keychain, hence <code>--cacert</code>. The logs are in <code>$(brew --prefix)/var/log/agentiik</code>, one file per program.</p>
-    <p>The first administrator is created as for Compose (<a href="#compose-first-admin">The first administrator</a>), and is given the namespace <code>agentiik-setup</code> made, named after you, in place of <code>demo</code>; pick a login other than that name, since logins and namespaces share one name space. Safari trusts the certificate already, through the System keychain.</p>
+    <p>The first administrator is created as for Compose (<a href="#compose-first-admin">The first administrator</a>), and is given <code>demo</code> as there. Safari trusts the certificate already, through the System keychain.</p>
 
     <h4>Stop, restart, upgrade, back up, remove</h4>
     <div class="block">
@@ -2408,7 +2408,7 @@ http:
 <span class="p">$</span> <span class="cmd">brew services stop agentiik/tap/agentiik</span>
 <span class="p">$</span> <span class="cmd">brew services restart agentiik/tap/agentiik</span>
 
-<span class="c"># upgrade, to v0.3.0 and after: the service migrates at every start</span>
+<span class="c"># upgrade: the service migrates at every start</span>
 <span class="p">$</span> <span class="cmd">brew upgrade agentiik/tap/agentiik</span>
 <span class="p">$</span> <span class="cmd">brew services restart agentiik/tap/agentiik</span>
 
@@ -2427,8 +2427,8 @@ http:
 <span class="p">$</span> <span class="cmd">rm -rf "$(brew --prefix)/etc/agentiik" "$(brew --prefix)/var/log/agentiik"</span></code></pre>
     </div>
 
-    <p>The settings are files in <code>$(brew --prefix)/etc/agentiik</code>, <code>api.env</code>, <code>controller.env</code>, <code>nats-server.conf</code> and, from v0.3.0, <code>operator-token.env</code>, the bootstrap token as <code>AGK_OPERATOR_TOKEN=</code>, mode 0600, which the service hands to <code>migrate</code> alone since every other program refuses it. Homebrew keeps them across upgrades; <a href="#configuration">Configuration</a> says what each setting is.</p>
-    <p>A server set up by v0.2 has no <code>operator-token.env</code>: its token's hash is in <code>secrets/operator-token.sha256</code>, which <code>api.env</code> names in <code>AGK_OPERATOR_TOKEN_FILE</code>, and the first start of v0.3.0 imports it once, so the token <code>agentiik-setup</code> printed then works on as the bootstrap token with <code>brew upgrade</code> and a restart alone, until the first administrator has signed in.</p>
+    <p>The settings are files in <code>$(brew --prefix)/etc/agentiik</code>, <code>api.env</code>, <code>controller.env</code>, <code>nats-server.conf</code> and <code>operator-token.env</code>, the bootstrap token as <code>AGK_OPERATOR_TOKEN=</code>, mode 0600, which the service hands to <code>migrate</code> alone since every other program refuses it. Homebrew keeps them across upgrades; <a href="#configuration">Configuration</a> says what each setting is.</p>
+    <p>A server set up by v0.2 has no <code>operator-token.env</code>: its token's hash is in <code>secrets/operator-token.sha256</code>, which <code>api.env</code> names in <code>AGK_OPERATOR_TOKEN_FILE</code>, and the first start of v0.3.0 imports it once, so the token <code>agentiik-setup</code> printed then works on as the bootstrap token with <code>brew upgrade</code> and a restart alone, until the first administrator has signed in; its namespace, named after you, stays, and is given to the first administrator like any other namespace nobody owns.</p>
 
     <h3 id="add-a-runner">Add a runner on another machine</h3>
 
@@ -2467,7 +2467,7 @@ services:
   # Started as root, it takes the group of the Docker socket, drops to uid 65532 and serves. Where
   # it has no identity yet, or where AGENTIIK_API or AGENTIIK_LABELS changed, it joins with the token.
   runner:
-    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.2.5}
+    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.3.0}
     network_mode: host # the API and the bus at the addresses this machine reaches them at; the runner listens on nothing
     userns_mode: host
     restart: unless-stopped
@@ -2539,7 +2539,7 @@ AGENTIIK_CA="-----BEGIN CERTIFICATE-----
 #AGENTIIK_DATA=./data
 
 # The version of Agentiik, which is the installation's.
-#AGENTIIK_VERSION=v0.2.5
+#AGENTIIK_VERSION=v0.3.0
 
 # How many tasks this machine holds at once.
 #AGENTIIK_RUNNER_CONCURRENCY=2
@@ -2551,7 +2551,7 @@ AGENTIIK_CA="-----BEGIN CERTIFICATE-----
 
     <div class="block">
       <div class="note-label">on the other machine: download, write the .env, start</div>
-<pre><code><span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.2.5/runner/compose.yaml</span>
+<pre><code><span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.3.0/runner/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">cat &gt; .env &lt;&lt;EOF</span>
 AGENTIIK_API=$AGENTIIK_SERVER
 AGENTIIK_JOIN_TOKEN=$JOIN_TOKEN
@@ -2594,17 +2594,15 @@ EOF
 
     <p>The Mac installation takes no runner from another machine: it listens on the loopback alone.</p>
 
-    <h3 id="server-not-yet">What v0.2 does not do yet</h3>
+    <h3 id="server-not-yet">What v0.3 does not do yet</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>What</th><th>Today</th><th>When</th></tr></thead>
         <tbody>
           <tr><td>The console</td><td>Not part of either installation. <code>agk</code> is the client.</td><td>Its own releases.</td></tr>
-          <tr><td>Creating a namespace through the API</td><td><code>AGENTIIK_NAMESPACE</code>, or <code>docker compose run --rm --no-deps api namespace create team</code> on the installation's host, or <code>agentiik-setup --namespace team</code> on a Mac.</td><td><a href="roadmap/#m03">v0.3.0</a>: <code>POST /api/v1/namespaces</code> and <code>agk namespace create</code>, by an administrator, with an owner.</td></tr>
           <tr><td>Runners on macOS or Windows</td><td>Refused: the runner hands the Docker daemon paths on the host to bind, which the virtual machine of Docker Desktop cannot see.</td><td></td></tr>
           <tr><td>A runner for the Mac installation</td><td>None: it listens on the loopback alone, and a runner is a Linux host.</td><td></td></tr>
           <tr><td>An object store</td><td>On disk, in <code>data/objects</code>, not MinIO or S3.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
-          <tr><td>Purging what has expired</td><td>Nothing runs the purges or the collection: an expired artifact is refused with <code>410</code>, but no byte leaves <code>data/objects</code>, and the files of an output given no <code>retain</code> are recorded by nothing.</td><td><a href="roadmap/#m03">v0.3.0</a>: the controller that leads <a href="#what-the-purges-act-on">purges</a>, and the upgrade records what v0.2 left.</td></tr>
           <tr><td>network: egress</td><td>Refused rather than opened.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
           <tr><td>A certificate from a public authority</td><td><code>init</code> signs its own, unless <a href="#behind-a-reverse-proxy">a reverse proxy</a> in front serves the API with its own; the bus keeps <code>init</code>'s. Yours goes in with <code>docker compose cp</code> to <code>init:/init/api/tls/server.pem</code> and <code>server.key</code>, then <code>docker compose up -d --force-recreate</code>. <code>init</code> keeps it while it names <code>AGENTIIK_HOST</code>, has not expired and is its key's, and never replaces a certificate it did not issue: where yours no longer serves, <code>init</code> refuses to start and says what to do.</td><td></td></tr>
         </tbody>
@@ -4924,7 +4922,7 @@ concurrency:
     </ul>
 
     <div class="block">
-      <div class="note-label">the installation's policy, from v0.3.0</div>
+      <div class="note-label">the installation's policy</div>
 <pre><code><span class="p">&gt;</span> <span class="cmd">PUT /api/v1/auth/policy</span>
 Authorization: Bearer &lt;an administrator's token&gt;
 
@@ -5443,7 +5441,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
   </div>
 
   <div class="block">
-    <div class="note-label">a token that only starts one workflow, from v0.3.0</div>
+    <div class="note-label">a token that only starts one workflow</div>
 <pre><code>{ "scope": { "permissions": ["workflow:run"], "within": ["finance/monthly-invoicing"] } }</code></pre>
   </div>
 
@@ -5452,7 +5450,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
   </div>
 
   <div class="block">
-    <div class="note-label">a run refused at creation, from v0.3.0</div>
+    <div class="note-label">a run refused at creation</div>
 <pre><code>cancelled: finance/agentiik no longer holds workflow:run on finance/monthly-invoicing: grant 01JQ3M8T (operator on the namespace finance) expired at 2026-10-01T00:00:00Z</code></pre>
   </div>
 
@@ -7156,7 +7154,7 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td>agk-runner serve</td><td>The agent: heartbeats, pulls, runs, publishes. What the systemd unit and the container run. Given a join token in <code>AGK_RUNNER_JOIN_TOKEN</code> or <code>AGK_RUNNER_JOIN_TOKEN_FILE</code>, it joins on its own where it has to (<a href="#registering-a-runner">Registering a runner</a>). Started as root, it drops to <code>agentiik</code> before it serves.</td></tr>
           <tr><td>agk-runner version</td><td>Prints the agent version join sends.</td></tr>
           <tr><td>agentiik-api serve</td><td>Serves every route, the built-in object store and the secret providers, and makes every runner pool's queue ready as it starts, refusing to start where the bus refuses one. At SIGTERM it finishes the requests being answered for up to 30 s, and a second signal ends it. Without a verb the program exits 2.</td></tr>
-          <tr><td>agentiik-api init</td><td>Prepares an installation in <code>AGK_INIT_DIR</code>, one subdirectory per service, and brings it in line with its settings at every run: the certificate for <code>AGK_INIT_HOST</code>, marked <code>O=agentiik-api init</code> and replaced only where init issued it; the master key, the presign key, the database password and the bus identity, made once and kept; the migration; the namespace <code>AGK_INIT_NAMESPACE</code>, or a line saying a login holds its name; from v0.3.0 the built-in identity of every namespace made before it, and a line for each named after a word <a href="#scopes-and-resolution">reserved</a> since it was made, saying it is served as before with nothing to do; a fresh one-hour join token of the pool <code>default</code> for the runner beside it; from v0.3.0 the artifact files of the runs v0.2 finished, read from their envelopes in <code>objects</code> and recorded each expiring its namespace's <code>max_retention_days</code> after its run finished, leaving what it cannot record to the controller rather than failing; and the operator token's hash, last, into the database from v0.3.0. Prints the certificate at every run. A certificate a person put there that no longer names the host, has expired or is not its key's refuses the start, saying what to do.</td></tr>
+          <tr><td>agentiik-api init</td><td>Prepares an installation in <code>AGK_INIT_DIR</code>, one subdirectory per service, and brings it in line with its settings at every run: the certificate for <code>AGK_INIT_HOST</code>, marked <code>O=agentiik-api init</code> and replaced only where init issued it; the master key, the presign key, the database password and the bus identity, made once and kept; the migration; the namespace <code>AGK_INIT_NAMESPACE</code>, or a line saying a login holds its name; from v0.3.0 the built-in identity of every namespace made before it, and a line for each named after a word <a href="#scopes-and-resolution">reserved</a> since it was made, saying it is served as before with nothing to do; a fresh one-hour join token of the pool <code>default</code> for the runner beside it; from v0.3.0 the artifact files of the runs v0.2 finished, read from their envelopes in <code>objects</code> and recorded each expiring its namespace's <code>max_retention_days</code> after its run finished, leaving what it cannot record to the controller rather than failing; and the bootstrap token's hash, last, into the database. Prints the certificate at every run. A certificate a person put there that no longer names the host, has expired or is not its key's refuses the start, saying what to do.</td></tr>
           <tr><td>agentiik-api migrate</td><td>Applies the migrations as a privileged role, and creates the <code>NOSUPERUSER NOBYPASSRLS</code> role the API and the controller connect as. From v0.3.0 it then gives every namespace made before it its built-in identity, as <code>init</code> does, says which is named after a word <a href="#scopes-and-resolution">reserved</a> since it was made and served as before, and keeps the bootstrap token's hash as <code>init</code> does, signed in as that role, for Homebrew's server and one built by hand, which run it at every start: <code>AGK_OPERATOR_TOKEN</code> set replaces the hash, and with none set and none kept it imports the v0.2 hash from the file <code>AGK_OPERATOR_TOKEN_FILE</code> names, once. It also records the artifact files of the runs v0.2 finished, as <code>init</code> does, where <code>AGK_OBJECTS_DIR</code> is set, which it reads and never writes; unset, it records none and says so, and the controller that leads records them (<a href="#configuration">Configuration</a>).</td></tr>
           <tr><td>agentiik-api namespace create NAME</td><td>Creates a namespace with no owner, for an installation script and for <code>init</code>, which create one before anybody could ask the API; from <a href="roadmap/#m03">v0.3.0</a> an administrator uses <code>POST /api/v1/namespaces</code>, and the namespace comes with its built-in <code>NAME/agentiik</code> either way. Lowercase words joined by hyphens, at most 255 characters, none of the reserved words, as the API holds a name. Creating one that exists changes nothing and says so, so that a script run twice succeeds twice. Reads <code>AGK_DATABASE_URL</code> and <code>AGK_DATABASE_PASSWORD_FILE</code>, so it runs where the API runs, and records <code>namespace.create</code> by <code>installation</code>.</td></tr>
           <tr><td>agentiik-api namespace remove NAME</td><td>Removes a namespace that holds no workflow, run, secret, stored object or service account but its built-in identity, which goes first, and refuses one that does, saying what it holds, as <code>DELETE /api/v1/namespaces/{ns}</code> does; a user's personal namespace is refused too. Records <code>namespace.delete</code> by <code>installation</code>.</td></tr>
@@ -7180,7 +7178,7 @@ Authorization: Bearer &lt;api token&gt;
     </div>
 
     <h4>A local run, from the file to the envelopes</h4>
-    <p>A recording, not a hand-written transcript: a fan-out over three orders, a merge waiting for both its edges, a script step reading items through the helper. Six containers, 2.2 seconds. <a href="../assets/agk-local-run.cast"><code>agk-local-run.cast</code></a> replays it with <code>asciinema play</code>.</p>
+    <p>A recording, not a hand-written transcript: a fan-out over three orders, a merge waiting for both its edges, a script step reading items through the helper. Six containers, 3.1 seconds. <a href="../assets/agk-local-run.cast"><code>agk-local-run.cast</code></a> replays it with <code>asciinema play</code>.</p>
 
     <div class="block">
       <div class="note-label">finance/monthly-invoicing, on a laptop</div>
@@ -14815,7 +14813,7 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
   </figure>
 
   <div class="prose">
-    <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: <a href="#install-with-compose">Install a server</a> shows its <code>compose.yaml</code>, and installs, operates, backs up and removes it. At <code>v0.2.5</code> it runs PostgreSQL, NATS, the API, the controller and one runner, prepared by <code>agentiik-api init</code> at every start: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet. From <a href="roadmap/#m03">v0.3.0</a> PostgreSQL is 18, and <code>postgres-upgrade</code> upgrades the data of an installation that ran 17 before PostgreSQL starts, keeping the old cluster beside it.</p>
+    <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: <a href="#install-with-compose">Install a server</a> shows its <code>compose.yaml</code>, and installs, operates, backs up and removes it. At <code>v0.3.0</code> it runs PostgreSQL, NATS, the API, the controller and one runner, prepared by <code>agentiik-api init</code> at every start: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet. From <a href="roadmap/#m03">v0.3.0</a> PostgreSQL is 18, and <code>postgres-upgrade</code> upgrades the data of an installation that ran 17 before PostgreSQL starts, keeping the old cluster beside it.</p>
     <p>The reverse proxy of the figure is optional: <a href="#behind-a-reverse-proxy">behind one</a>, <code>AGENTIIK_PROXY_URL</code> sets <code>AGK_PROXY_URL</code> to the proxy's <code>https</code> URL and the API serves plain HTTP on the loopback, while the bus keeps its own TLS on 4222.</p>
     <p>The images are published on <code>ghcr.io</code> from <code>v0.2.1</code>, for linux/amd64 and linux/arm64: <code>ghcr.io/agentiik/api</code>, <code>controller</code> and <code>runner</code>, and <code>postgres-upgrade</code> from v0.3.0, tagged with the version (<code>0.2.1</code> and <code>v0.2.1</code>) and <code>latest</code> at a release, and <code>dev</code> for every commit to <code>main</code>.</p>
     <ul class="plain">
@@ -15257,7 +15255,7 @@ post_task = [
           <tr><td class="wrapcell">AGK_INIT_DIR</td><td>init</td><td>required</td><td>An absolute path to a directory whose subdirectories <code>api</code>, <code>controller</code>, <code>nats</code>, <code>bus</code>, <code>runner</code> and <code>objects</code> are the directories each service mounts: each is given its own copy of what it reads, so the controller never mounts the master key and the runner nothing of the control plane's but the certificate. From v0.3.0 <code>init</code> also reads, in <code>objects</code>, the envelopes of the runs v0.2 finished, to record the artifact files they name.</td></tr>
           <tr><td class="wrapcell">AGK_INIT_HOST</td><td>init</td><td>required</td><td>A DNS name or an IPv4 address, with no scheme and no port: the name runners reach the bus at, and clients the API where no proxy is in front, which the certificate is issued to. Changed, init issues the certificate again.</td></tr>
           <tr><td class="wrapcell">AGK_INIT_NAMESPACE</td><td>init</td><td>required</td><td>The namespace init creates, where workflows are pushed and run, held to what the API holds a namespace name to. A previous one stays, and so does one named after a word <a href="#scopes-and-resolution">reserved</a> since it was created, such as <code>stats</code>, which is served as before with nothing to do. It is created at every run where it is missing, since <code>.env</code> names it, so one removed while the line stays comes back at the next start; with no owner, as <code>agentiik-api namespace create</code> makes one. Where a user's login holds the name, which logins and namespace names share, or where the name is a reserved word no namespace carries, as <code>stats</code> on a new installation, <code>init</code> says so at every run, asking for another name, and goes on without it: the installation is no less ready, and every service waits on <code>init</code>.</td></tr>
-          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN</td><td>init, and migrate from v0.3.0</td><td>none: the stored hash is kept. Until v0.3.0, init makes a token and prints it once where none was stored; from v0.3.0 neither prints one, and with none set and none stored each says that nobody can create the first administrator. The <code>compose.yaml</code> of agentiik/deploy refuses to start without <code>AGENTIIK_OPERATOR_TOKEN</code>, and from v0.3.0 Homebrew's <code>agentiik-setup</code> writes it to <code>operator-token.env</code>.</td><td>The one secret taken as a value, since a person writes it once in the file Docker Compose reads, or in Homebrew's settings; init and migrate write its SHA-256 alone, so the plaintext never reaches a disk they write. 32 characters or more, of those a bearer token may hold. Every other program refuses it. From v0.3.0 it is the bootstrap token, whose SHA-256 goes to the database's <code>bootstrap</code> table rather than a file, so that the hash and the token's end are one row the API reads. <code>migrate</code> takes it too, because Homebrew's server and one built by hand run <code>migrate</code> at every start where a Compose file runs <code>init</code>. A changed token replaces the hash at the next run; once the first administrator has signed in, which ends the bootstrap token, neither writes anything for it, and each says at every run that the line is ignored (<a href="#first-run">First run</a>).</td></tr>
+          <tr><td class="wrapcell">AGK_OPERATOR_TOKEN</td><td>init, and migrate from v0.3.0</td><td>none: the stored hash is kept. Until v0.3.0, init makes a token and prints it once where none was stored; from v0.3.0 neither prints one, and with none set and none stored each says that nobody can create the first administrator. The <code>compose.yaml</code> of agentiik/deploy refuses to start without <code>AGENTIIK_OPERATOR_TOKEN</code>, and Homebrew's <code>agentiik-setup</code> writes it to <code>operator-token.env</code>.</td><td>The one secret taken as a value, since a person writes it once in the file Docker Compose reads, or in Homebrew's settings; init and migrate write its SHA-256 alone, so the plaintext never reaches a disk they write. 32 characters or more, of those a bearer token may hold. Every other program refuses it. From v0.3.0 it is the bootstrap token, whose SHA-256 goes to the database's <code>bootstrap</code> table rather than a file, so that the hash and the token's end are one row the API reads. <code>migrate</code> takes it too, because Homebrew's server and one built by hand run <code>migrate</code> at every start where a Compose file runs <code>init</code>. A changed token replaces the hash at the next run; once the first administrator has signed in, which ends the bootstrap token, neither writes anything for it, and each says at every run that the line is ignored (<a href="#first-run">First run</a>).</td></tr>
           <tr><th colspan="4">The runner</th></tr>
           <tr><td class="wrapcell">AGK_API</td><td>agk-runner</td><td>required; join writes it</td><td>The one address a runner is given; the API hands out the rest. <code>https</code>, or <code>http</code> to a loopback address alone, with no user, query or fragment: every call carries the runner's credential.</td></tr>
           <tr><td class="wrapcell">AGK_RUNNER_LABELS</td><td>agk-runner</td><td>optional; join writes it where the runner claims labels</td><td>Claimed at join, within what the token permits; none is a runner of the pool <code>default</code>.</td></tr>
@@ -15325,7 +15323,7 @@ post_task = [
   </div>
 
   <div class="block">
-    <div class="note-label">the first administrator, from v0.3.0</div>
+    <div class="note-label">the first administrator</div>
 <pre><code><span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>   <span class="c"># the bootstrap token</span>
 <span class="p">$</span> <span class="cmd">agk user create alice --admin</span>
 alice is an administrator with no credential yet. Open this link once, before 10:15 UTC, to enrol a passkey, or a password where the installation allows one:
@@ -15357,11 +15355,11 @@ the bootstrap token works until alice has signed in; then sign in as alice with 
   </div>
 
   <div class="prose">
-    <p><code>agentiik-api init</code> does all of this in the <a href="#install-with-compose">Compose installation</a>, at every start. In <a href="#install-with-homebrew">Homebrew</a>, <code>agentiik-setup</code> does it once and, from v0.3.0, the service runs <code>agentiik-api migrate</code> at every start, which keeps the bootstrap token's hash as <code>init</code> does. Below is the same for an installation put together by hand, from v0.3.0.</p>
+    <p><code>agentiik-api init</code> does all of this in the <a href="#install-with-compose">Compose installation</a>, at every start. In <a href="#install-with-homebrew">Homebrew</a>, <code>agentiik-setup</code> does it once and the service runs <code>agentiik-api migrate</code> at every start, which keeps the bootstrap token's hash as <code>init</code> does. Below is the same for an installation put together by hand.</p>
   </div>
 
   <div class="block">
-    <div class="note-label">by hand, the first time, from v0.3.0</div>
+    <div class="note-label">by hand, the first time</div>
 <pre><code><span class="c"># the bootstrap token: keep it, and give migrate alone the token itself</span>
 <span class="p">$</span> <span class="cmd">token=$(openssl rand -hex 32)</span>
 <span class="p">$</span> <span class="cmd">AGK_OPERATOR_TOKEN=$token agentiik-api migrate</span>   <span class="c"># keeps its hash in the database</span>
