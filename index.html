@@ -1165,29 +1165,29 @@ run 01M3KR0WQGJ3DH4W8BXB9N7YGQ: .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ
 user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
 python:3.13-alpine resolved to python@sha256:79e7a9b9ff1cbceff819f856fb374477792a5967759d94df266de7b7b4120e6f
 alpine:3.21 resolved to alpine@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507
-demo/pi@eae62ef pushed to https://localhost:8443
+demo/pi@da25005 pushed to https://localhost:8443 as refs/heads/main
 3 steps, 1 file, 0 included files, 0 manifests, 2 tags resolved to their digests
 <span class="p">$</span> <span class="cmd">agk run --namespace demo --input darts=1000000</span>
-run 01M3M2K9369AKDP89DAGVA742X of demo/pi@eae62ef started at https://localhost:8443
-    0.4s  players  succeeded, out 4
-    0.4s  throw    running
-    1.6s  average  running
-    1.6s  throw    succeeded, out 4
-    2.0s  average  succeeded, out 1
-pi succeeded in 2.0s: 3 steps, 6 containers
+run 01M3QMZT1JXPND8A4FN7TXR4YP of demo/pi@da25005 started at https://localhost:8443
+    0.2s  players  succeeded, out 4
+    0.2s  throw    running
+    1.7s  average  running
+    1.7s  throw    succeeded, out 4
+    2.2s  average  succeeded, out 1
+pi succeeded in 2.2s: 3 steps, 6 containers
 estimates: 4 items
 pi: 1 item
-run 01M3M2K9369AKDP89DAGVA742X: https://localhost:8443/api/v1/demo/runs/01M3M2K9369AKDP89DAGVA742X
-<span class="p">$</span> <span class="cmd">agk status 01M3M2K9369AKDP89DAGVA742X</span>
-run 01M3M2K9369AKDP89DAGVA742X: demo/pi@eae62ef, succeeded after 2.0s
-manual by operator at 2026-09-28T13:17:18Z
-average  succeeded, out 1 sha256:3fcca2c4ebd2
-players  succeeded, out 4 sha256:03038c707673
-throw    succeeded, out 4 sha256:fafc99e008a2
+run 01M3QMZT1JXPND8A4FN7TXR4YP: https://localhost:8443/api/v1/demo/runs/01M3QMZT1JXPND8A4FN7TXR4YP
+<span class="p">$</span> <span class="cmd">agk status 01M3QMZT1JXPND8A4FN7TXR4YP</span>
+run 01M3QMZT1JXPND8A4FN7TXR4YP: demo/pi@da25005, succeeded after 2.2s
+manual by operator at 2026-09-29T22:36:26Z
+average  succeeded, out 1 sha256:30e682da6b0a
+players  succeeded, out 4 sha256:1e9d2456c201
+throw    succeeded, out 4 sha256:e94cf537ec62
 inputs: darts
 output estimates: 4 items
 output pi: 1 item
-<span class="p">$</span> <span class="cmd">agk logs 01M3M2K9369AKDP89DAGVA742X throw</span>
+<span class="p">$</span> <span class="cmd">agk logs 01M3QMZT1JXPND8A4FN7TXR4YP throw</span>
 throw 1/4 | ada threw 1000000 darts, pi is about 3.143692
 throw 1/4 | driver: the container exited 0: the output envelopes are published
 throw 2/4 | grace threw 1000000 darts, pi is about 3.142316

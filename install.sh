@@ -18,7 +18,7 @@
 # to ask on, in a CI job for instance, takes the default of every question it is left:
 #
 #   AGK_METHOD    brew, go or docker
-#   AGK_VERSION   the release to build, v0.3.0 for instance; the latest release otherwise,
+#   AGK_VERSION   the release to build, v0.4.0 for instance; the latest release otherwise,
 #                 and the formula's own for Homebrew
 #   AGK_BIN_DIR   where a build puts agk; /usr/local/bin where it is writable, ~/.local/bin otherwise
 #   AGK_YES=1     ask nothing
