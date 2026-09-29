@@ -10,6 +10,10 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Documentation
 
+- A workflow repository keeps image pins and brick manifests, which a git push is judged against since it carries neither and its hook reaches no registry: `agk push` records them before it pushes with git and the tree push with each version, and a plain `git push` is refused as `image-not-pinned` for a tag no pin holds and as `manifest-missing` for a brick image no manifest is recorded for.
+- The route table describes `GET` and `POST /api/v1/{ns}/workflows/{name}/images`, and the version route recording a new version's pins and manifests, refusing with 409 a manifest its repository keeps another document for; the audit log records `image.pin` from v0.4.0, and a manifest recorded is not audited, as a version pushed is not.
+- The storage tables give `image_pins` its 384-byte bound on a reference and `brick_manifests` its 256 KiB bound on a manifest, kept as the JSON document it reads as.
+- Two decisions say why the pins and manifests are the repository's rather than the namespace's, and why a pin moves while a manifest never changes.
 - A new workflow repository's default branch is unprotected unless created otherwise: whoever holds `workflow:write` pushes to it, as before v0.4.0, and an owner protects it when wanted.
 - The route table describes creating, reading, renaming, moving, protecting and deleting a workflow repository, and the tree at a ref, with their statuses and permissions.
 - Creating a workflow takes `workflow:write` at namespace scope, as in v0.3, and the platform tool `workflow.create` says so.
