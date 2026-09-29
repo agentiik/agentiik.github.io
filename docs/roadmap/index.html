@@ -1756,7 +1756,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.4.0 ============ -->
 <section id="m04">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.4.0: The workflow is a repository</h2><span class="tally">49 of 55 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.4.0: The workflow is a repository</h2><span class="tally">55 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a workflow is a git repository Agentiik serves, pushed to with any git client, and a run resolves a commit.</p>
 
@@ -1820,7 +1820,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
     </figure>
 
     <div class="work">
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The schemas</h4>
           <span class="work-repo">schemas</span>
@@ -1829,12 +1829,12 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Ship the schema for include, extends, defaults and files, each keyword with a description and examples. <a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a><a class="ref" href="../#step-keywords">step-keywords</a> <span class="tick">done</span></li>
           <li class="done">Describe the resolved graph a version records, as the one shape the hook, the API and the console read. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#api">api</a> <span class="tick">done</span></li>
           <li class="done">Describe the repository objects the API returns: repository, ref with protection, version with commit. <a class="ref" href="../#api">api</a><a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
-          <li>Add conformance fixtures for the resolution order and for every pre-receive refusal. <a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Add conformance fixtures for the resolution order and for every pre-receive refusal. <a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
           <li class="done">Write every name's bound into the workflow and brick schemas as maxLength, 255 for an identifier and 250 for a port or a workflow output, so the language reference states it. <a class="ref" href="../#yaml">yaml</a><a class="ref" href="../#brick-manifest">brick-manifest</a> <span class="tick">done</span></li>
           <li class="done">Cut the schemas release v0.4.0 depends on before the engine reads it. <a class="ref" href="../#versioning">versioning</a> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The repository, served</h4>
           <span class="work-repo">agentiik</span>
@@ -1843,19 +1843,19 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Store git objects as packfiles in the object store, keyed under the namespace that owns the workflow. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
           <li class="done">Keep refs in workflow_refs in PostgreSQL (ref name, commit, protection, who moved it and when), so a ref update is an ordinary transaction. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#the-workflow-repository">the-workflow-repository</a> <span class="tick">done</span></li>
           <li class="done">Serve git smart HTTP at GET, POST /{ns}/{name}.git/*, so a plain git client clones, fetches and pushes. <a class="ref" href="../#api">api</a><a class="ref" href="../#the-workflow-repository">the-workflow-repository</a> <span class="tick">done</span></li>
-          <li>Authenticate a git client with the command line's API token, and refuse any other credential. <a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Authenticate a git client with the command line's API token, and refuse any other credential. <a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
           <li class="done">Answer a git request for an unreadable repository with the 404 an absent one gets. <a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a> <span class="tick">done</span></li>
           <li class="done">Create an empty repository with its default branch and protection through POST /api/v1/{ns}/workflows. <a class="ref" href="../#api">api</a> <span class="tick">done</span></li>
           <li class="done">Return the default branch head, its resolved graph and history from GET /api/v1/{ns}/workflows/{name}. <a class="ref" href="../#api">api</a> <span class="tick">done</span></li>
           <li class="done">Serve the tree at a ref from GET /api/v1/{ns}/workflows/{name}/tree/{ref}. <a class="ref" href="../#api">api</a> <span class="tick">done</span></li>
           <li class="done">Record a default branch per workflow, and resolve it when a run names no ref. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
-          <li>Repack and garbage-collect a repository's packfiles without interrupting a clone in progress. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Repack and garbage-collect a repository's packfiles without interrupting a clone in progress. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
           <li class="done">Delete a workflow with its refs, versions and objects under workflow:delete. <a class="ref" href="../#permissions">permissions</a><a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
           <li class="done">Rename or move a workflow between namespaces the principal owns, re-keying its objects and failing on secrets that cannot follow. <a class="ref" href="../#permissions">permissions</a><a class="ref" href="../#secrets">secrets</a> <span class="tick">done</span></li>
-          <li>Migrate the database for workflows, workflow_refs and workflow_versions. <a class="ref" href="../#storage">storage</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Migrate the database for workflows, workflow_refs and workflow_versions. <a class="ref" href="../#storage">storage</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The push is where a workflow is refused</h4>
           <span class="work-repo">agentiik</span>
@@ -1869,7 +1869,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Check declared ports against the referenced bricks' manifests, and reject a cycle before registration. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#scheduling-semantics">scheduling-semantics</a> <span class="tick">done</span></li>
           <li class="done">Refuse a port or a workflow output past 250 characters in agk validate, the manifest reader and the push, since each is written as the file &lt;name&gt;.json. <a class="ref" href="../#yaml">yaml</a><a class="ref" href="../#brick-manifest">brick-manifest</a> <span class="tick">done</span></li>
           <li class="done">Reject a step referencing a secret the owning namespace does not declare. <a class="ref" href="../#secrets">secrets</a> <span class="tick">done</span></li>
-          <li>Refuse a push on the git error stream, naming the file, the location and the rule. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Refuse a push on the git error stream, naming the file, the location and the rule. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
           <li class="done">Write one workflow_versions row per accepted commit: commit, parent, resolved graph, author, timestamp. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#concepts">concepts</a> <span class="tick">done</span></li>
           <li class="done">Audit ref moves, protection changes and refused pushes with the principal behind each. <a class="ref" href="../#observability">observability</a><a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
           <li class="done">Register a workflow in a namespace on a server with agk push. <a class="ref" href="../#command-line">command-line</a> <span class="tick">done</span></li>
@@ -1906,7 +1906,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Label an agk run --local run as executing the working tree, uncommitted changes included, so no history takes it as reproducible. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>A run pins a commit, and a replay keeps it</h4>
           <span class="work-repo">agentiik</span>
@@ -1920,7 +1920,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Store cache entries beside their envelope digests, refusing a hit whose artifact expired or was collected. <a class="ref" href="../#memoisation-and-replay">memoisation-and-replay</a><a class="ref" href="../#artifact-expiry">artifact-expiry</a> <span class="tick">done</span></li>
           <li class="done">Replay from a named step via POST /api/v1/runs/{id}/replay, reusing upstream envelopes and artifacts. <a class="ref" href="../#api">api</a><a class="ref" href="../#memoisation-and-replay">memoisation-and-replay</a> <span class="tick">done</span></li>
           <li class="done">Mark a run replayable only from the start once a restartable step's input has expired, saying so in its place. <a class="ref" href="../#artifact-expiry">artifact-expiry</a> <span class="tick">done</span></li>
-          <li>Replay the commit the run pinned, not the branch head, and test it after the branch has moved on. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Replay the commit the run pinned, not the branch head, and test it after the branch has moved on. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
     </div>
