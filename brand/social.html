@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Social card</title>
+<meta name="robots" content="noindex">
+<!-- The image a link to the site shows when it is shared: 1200 by 630 pixels, the size Open
+     Graph and X's large card both ask for. One page draws every card; the part after # names
+     which one, and README.md says how each is rendered into assets/. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap">
+<style>
+:root{
+  --paper:#EFF2ED;
+  --surface:#FBFCF9;
+  --ink:#16201B;
+  --muted:#5A6961;
+  --faint:#7E8C84;
+  --accent:#0E6A5F;
+  --wait:#96660A;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:1200px;height:630px;overflow:hidden}
+body{
+  position:relative;
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(80% 90% at 30% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%),
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--accent) 26%, transparent) 1.2px, transparent 1.7px) 0 0 / 26px 26px,
+    var(--paper);
+}
+.text{position:absolute;left:84px;top:0;bottom:0;width:640px;display:flex;flex-direction:column;justify-content:center}
+.lockup{display:flex;align-items:center;gap:26px}
+.lockup svg{width:73px;height:64px;fill:var(--accent)}
+.lockup .mid{fill:color-mix(in srgb, var(--accent) 62%, var(--paper))}
+.lockup .low{fill:color-mix(in srgb, var(--accent) 30%, var(--paper))}
+.lockup span{font-size:68px;font-weight:700;letter-spacing:-.02em;line-height:1}
+h1{margin:56px 0 0;font-size:64px;font-weight:700;letter-spacing:-.035em;line-height:1.02;color:var(--accent)}
+p{margin:22px 0 0;max-width:560px;font-size:27px;line-height:1.35;color:var(--muted)}
+.url{position:absolute;left:84px;bottom:52px;font:500 20px "JetBrains Mono",ui-monospace,monospace;color:var(--faint)}
+.sketch{position:absolute;right:70px;top:50%;transform:translateY(-50%)}
+.sk-title{font:500 13px "JetBrains Mono",ui-monospace,monospace;fill:var(--faint)}
+.sk-box{fill:var(--surface);stroke:color-mix(in srgb, var(--accent) 45%, transparent);stroke-width:1.3}
+.run .sk-box{stroke:var(--accent);stroke-width:1.6}
+.wait .sk-box{stroke:var(--wait);stroke-width:1.6}
+.skip{opacity:.4}
+.skip .sk-box{stroke-dasharray:3 3}
+.sk-name{font:500 13px "JetBrains Mono",ui-monospace,monospace;fill:var(--muted)}
+.sk-dot{fill:color-mix(in srgb, var(--faint) 55%, transparent)}
+.done .sk-dot,.run .sk-dot{fill:var(--accent)}
+.wait .sk-dot{fill:var(--wait)}
+.sk-ring{fill:none;stroke:var(--accent);stroke-width:1.3;opacity:.45}
+.sk-port{fill:var(--paper);stroke:color-mix(in srgb, var(--accent) 55%, transparent);stroke-width:1.3}
+.sk-edge{fill:none;stroke:color-mix(in srgb, var(--accent) 55%, transparent);stroke-width:1.6;stroke-linejoin:round}
+.sk-edge.rej{stroke:color-mix(in srgb, var(--wait) 60%, transparent);stroke-dasharray:5 4}
+.sk-cell{fill:color-mix(in srgb, var(--faint) 30%, transparent)}
+.sk-cell.on{fill:var(--accent)}
+</style>
+</head>
+<body>
+<div class="text">
+  <div class="lockup">
+    <svg viewBox="0 0 16 14" aria-hidden="true">
+      <rect width="16" height="4" rx="1"/>
+      <rect class="mid" y="6" width="7" height="4" rx="1"/>
+      <rect class="mid" x="9" y="6" width="7" height="4" rx="1"/>
+      <rect class="low" y="12" width="16" height="2" rx="1"/>
+    </svg>
+    <span>agentiik</span>
+  </div>
+  <h1 id="title"></h1>
+  <p id="line"></p>
+</div>
+<div class="url" id="url"></div>
+<svg class="sketch" id="sketch" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+// The cards, by the name after #. Each says what the page is in a few words, and draws one
+// workflow in the style of the home page's canvas, caught mid-run.
+var CARDS = {
+  home: {
+    title: 'Workflow orchestration',
+    line: 'Each step in its own container, each workflow a git repository.',
+    url: 'agentiik.github.io'
+  },
+  docs: {
+    title: 'Documentation',
+    line: 'The workflow language, the brick contract, access, the runtime, deployment and MCP.',
+    url: 'agentiik.github.io/docs'
+  },
+  roadmap: {
+    title: 'Roadmap',
+    line: 'Ten milestones, in the order they are built, each defined by what it makes possible.',
+    url: 'agentiik.github.io/docs/roadmap'
+  }
+};
+var card = CARDS[location.hash.slice(1)] || CARDS.home;
+document.getElementById('title').textContent = card.title;
+document.getElementById('line').textContent = card.line;
+document.getElementById('url').textContent = card.url;
+
+// finance/monthly-invoicing, top to bottom: the inputs and normalize done, invoice fanned out
+// over eight shards with five finished, nothing on the rejected port, approval still to come.
+var G = 26, H = 2 * G, W = 5 * G, NS = 'http://www.w3.org/2000/svg';
+var steps = [
+  ['orders', 0, 0, 'done'], ['customers', 0, 1, 'done'], ['normalize', 1, .5, 'done'],
+  ['invoice', 2, 0, 'run', 8, 5], ['archive', 2, 1, 'skip'], ['approve', 3, 0, ''], ['send', 4, 0, '']
+];
+var edges = [[0, 2], [1, 2], [2, 3], [2, 4, 'rej'], [3, 5], [5, 6]];
+var svg = document.getElementById('sketch');
+function make(tag, attrs, parent) {
+  var e = document.createElementNS(NS, tag);
+  for (var k in attrs) e.setAttribute(k, attrs[k]);
+  parent.appendChild(e);
+  return e;
+}
+var at = steps.map(function (s) { return { x: Math.round(s[2] * (W + G)), y: G + s[1] * (H + 2 * G) }; });
+var width = 2 * W + G + 2, height = G + 4 * (H + 2 * G) + H + 2;
+svg.setAttribute('viewBox', '-1 -1 ' + width + ' ' + height);
+svg.setAttribute('width', width);
+svg.setAttribute('height', height);
+make('text', { x: 0, y: 13, 'class': 'sk-title' }, svg).textContent = 'finance/monthly-invoicing';
+edges.forEach(function (e) {
+  var a = at[e[0]], b = at[e[1]], x1 = a.x + W / 2, y1 = a.y + H, x2 = b.x + W / 2, y2 = b.y;
+  var d = 'M' + x1 + ' ' + y1 + (x1 === x2 ? '' : 'V' + (y1 + G) + 'H' + x2) + 'V' + y2;
+  make('path', { d: d, 'class': 'sk-edge' + (e[2] ? ' rej' : '') }, svg);
+});
+steps.forEach(function (s, i) {
+  var x = at[i].x, y = at[i].y, cy = s[4] ? y + 20 : y + H / 2;
+  var g = make('g', { 'class': s[3] }, svg);
+  make('rect', { x: x, y: y, width: W, height: H, rx: 6, 'class': 'sk-box' }, g);
+  if (s[3] === 'run') make('circle', { cx: x + 18, cy: cy, r: 7, 'class': 'sk-ring' }, g);
+  make('circle', { cx: x + 18, cy: cy, r: 3.6, 'class': 'sk-dot' }, g);
+  make('text', { x: x + 31, y: cy + 4.5, 'class': 'sk-name' }, g).textContent = s[0];
+  make('circle', { cx: x + W / 2, cy: y, r: 3.6, 'class': 'sk-port' }, g);
+  make('circle', { cx: x + W / 2, cy: y + H, r: 3.6, 'class': 'sk-port' }, g);
+  if (s[4]) {
+    var n = s[4], cw = (W - 45 - (n - 1) * 3) / n;
+    for (var c = 0; c < n; c++) make('rect', { x: x + 31 + c * (cw + 3), y: y + 32, width: cw, height: 6, rx: 1.5, 'class': 'sk-cell' + (c < s[5] ? ' on' : '') }, g);
+  }
+});
+</script>
+</body>
+</html>

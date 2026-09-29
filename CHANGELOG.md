@@ -10,6 +10,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Documentation
 
+- Get started offers the installer in one command beside Homebrew and `go install`.
 - A fetch negotiates with `multi_ack_detailed`, every common commit answered `ACK <id> common`, since git's client over HTTP keeps no state but the commits it was told are common, and without it a fetch of a history longer than sixteen commits failed; a client not asking for it gets git's single `ACK`.
 - A fetch may want any commit or tag a ref reaches, as git's own `upload-pack` serves over HTTP, so that a fetch racing a push is not refused; an object no ref reaches is still `not our ref`.
 - A POST to `git-upload-pack` or `git-receive-pack` of another type than the one git sends is refused with 415, as git's `http-backend` refuses it, since neither type may be sent cross-site without a preflight and a browser that cached a token as Basic's password cannot be made to fetch or push.
@@ -54,6 +55,14 @@ Every repository of the project carries the same version and is tagged at the sa
 - A decision says why git is served by an implementation on the standard library, and how it is tested against git.
 
 ### Site
+
+- The home page opens on its headline, workflow orchestration, with Documentation between Get started and Roadmap, more room between its parts, and the command that installs `agk` under the buttons, with a button to copy it and a link to the script.
+- `install.sh`, served at `/install.sh`, builds `agk` from the latest release's tag, helper included, with Homebrew, with Go 1.21 or later, which fetches the Go release the module names, or in Docker's `golang` image, asking which, where to install and whether to go ahead; `AGK_METHOD`, `AGK_VERSION`, `AGK_BIN_DIR` and `AGK_YES` answer ahead for a run with no terminal.
+- The home page puts MCP first among four things Agentiik is, and shows the command line on a laptop, the command line against a server and an MCP client's calls as three tabs; the MCP tab is drawn from the documentation and says it arrives in v0.7.0.
+- The home page's text is shorter and says what each part shows.
+- The sketches behind the opening are eighteen workflows of different trades, a transcode, a rollout, an alert triage, a nightly load and more, each under its namespace and name, laid out left to right or top to bottom, with shards filling, approvals waiting, a flaky step retried, steps skipped and a verdict when the run ends.
+- The mark on the home page has solid lighter bars, so the canvas no longer shows through them.
+- A shared link to the home page, the documentation, the roadmap or the legal notice shows a card, drawn in `brand/social.html` and rendered into `assets/`, with the page's title and a sentence.
 
 - The home page shows the command line against a server as well as on a laptop: a recording of agk push, agk run, agk status and agk logs against an installation, made by the deploy repository's CI; one player serves both recordings, and it now takes the page's colours rather than its own black.
 - The home page's logo is larger again, the first thing the opening shows.
