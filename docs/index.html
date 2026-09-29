@@ -6,6 +6,17 @@
 <script>(function(){var r=document.documentElement;r.className+=" js";try{localStorage.removeItem("agentiik-theme")}catch(e){}})()</script>
 <title>Documentation · Agentiik</title>
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<!-- What a link to this page shows where it is shared: its title, a sentence, and a card drawn from brand/social.html. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Agentiik">
+<meta property="og:title" content="Documentation · Agentiik">
+<meta property="og:description" content="The Agentiik documentation: the workflow language, the brick contract, access control, the runtime, security, deployment and MCP.">
+<meta property="og:image" content="https://agentiik.github.io/assets/social-docs.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Agentiik documentation, beside a workflow drawn mid-run.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="/brand/agentiik-mark-512-light.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
 <style>
 /* The design system's tokens, as the Design system chapter lists them: bg for the page,
@@ -1318,6 +1329,15 @@ agk v0.3.0, 4e6d3b020b94b119b5e2405e1f22619db3b397ca, go1.27.1</code></pre>
     </div>
 
     <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.3.0</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
+
+    <p>Or in one command, on Linux or macOS:</p>
+
+    <div class="block">
+      <div class="note-label">install, in one command</div>
+<pre><code><span class="p">$</span> <span class="cmd">curl -fsSL https://agentiik.github.io/install.sh | sh</span></code></pre>
+    </div>
+
+    <p>The script builds <code>agk</code> from the latest release's tag, helper included, with whichever of Homebrew, Go 1.21 or later and Docker the machine has: Go fetches the release <code>agk</code> needs by itself, and Docker builds it in the <code>golang</code> image, since <code>agk run --local</code> needs a daemon anyway. It asks which to use and where to install, and changes nothing before it is answered yes. <code>AGK_METHOD</code>, <code>AGK_VERSION</code>, <code>AGK_BIN_DIR</code> and <code>AGK_YES=1</code> answer its questions ahead, for a run with nobody at the keyboard; <a href="https://agentiik.github.io/install.sh">the script</a> says what each takes.</p>
 
     <p><code>agk</code> alone prints its verbs, the table in <a href="#command-line">Command line</a>.</p>
 

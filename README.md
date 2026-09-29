@@ -13,12 +13,13 @@ open in a browser without a build step or a server.
 
 ```
 index.html             the home page, one file, styles inline
+install.sh             the installer of agk the home page offers, served at /install.sh
 docs/                  the documentation
   index.html           what Agentiik is
   roadmap/index.html   in what order it gets built
 legal/                 the legal notice, as legal/index.html
 assets/                the images the documents reference
-brand/                 square exports of the mark, for avatars and slides
+brand/                 square exports of the mark, for avatars and slides, and the social cards' page
 .github/workflows/     the workflow that publishes the site
 .github/build-site.py  assembles the Pages artifact: the tree, plus one copy of docs/
                        per released tag, plus the list the version selector reads
@@ -35,6 +36,8 @@ README.md
 | Workflow and graph | `console-graph-light.png` | `console-graph-dark.png` |
 | Run inspector | `console-inspector-light.png` | `console-inspector-dark.png` |
 | Access and sharing | `console-sharing-light.png` | `console-sharing-dark.png` |
+
+`social-home.png`, `social-docs.png` and `social-roadmap.png` are the cards a shared link to the home page, the documentation and the roadmap shows, rendered from `brand/social.html`, which `brand/README.md` says how to render again.
 
 It also holds `logo.svg`, the mark the console wears: the documents draw it inline in
 their header so that it follows the reader's theme, and the file exists so the site has

@@ -6,6 +6,17 @@
 <title>Agentiik</title>
 <meta name="description" content="Agentiik, open source workflow orchestration: every step runs in an ephemeral OCI container, every workflow is a git repository, and one installation serves a whole team.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<!-- What a link to this page shows where it is shared: its title, a sentence, and a card drawn from brand/social.html. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Agentiik">
+<meta property="og:title" content="Agentiik">
+<meta property="og:description" content="Agentiik, open source workflow orchestration: every step runs in an ephemeral OCI container, every workflow is a git repository, and one installation serves a whole team.">
+<meta property="og:image" content="https://agentiik.github.io/assets/social-home.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Agentiik, workflow orchestration, beside a workflow drawn mid-run.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="/brand/agentiik-mark-512-light.png">
 <script>(function(){var r=document.documentElement;r.className+=" js";try{localStorage.removeItem("agentiik-theme")}catch(e){}})()</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
 <style>
@@ -22,6 +33,8 @@
   --line-strong:#C0CABB;
   --accent:#0E6A5F;
   --on-accent:#FFFFFF;
+  --wait:#96660A;
+  --fail:#B23C1E;
   --scrim:rgba(14,19,16,.42);
   --shadow:none;
   --gutter:clamp(16px,3vw,28px);
@@ -39,6 +52,8 @@
     --line-strong:#35423A;
     --accent:#4FBFAC;
     --on-accent:#0E1310;
+    --wait:#D9A441;
+    --fail:#E0705A;
     --scrim:rgba(0,0,0,.6);
   }
 }
@@ -54,6 +69,8 @@
   --line-strong:#35423A;
   --accent:#4FBFAC;
   --on-accent:#0E1310;
+  --wait:#D9A441;
+  --fail:#E0705A;
   --scrim:rgba(0,0,0,.6);
 }
 :root[data-theme="light"]{color-scheme:light}
@@ -67,7 +84,7 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 main{
-  --top:clamp(72px,11vw,150px);
+  --top:clamp(88px,12vw,168px);
   max-width:880px;
   margin:0 auto;
   padding-inline:clamp(16px,3vw,28px);
@@ -78,7 +95,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 
 .hero{
   text-align:center;
-  margin-bottom:clamp(44px,6vw,72px);
+  margin-bottom:clamp(72px,9vw,120px);
 }
 /* The band behind the opening: the console's graph canvas, its dotted grid and a glow of the
    accent, running the screen's width and fading into the paper halfway down the screenshot,
@@ -100,9 +117,11 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
           mask-image:linear-gradient(to bottom, #000 62%, transparent);
 }
 /* Sketches of workflows drawing themselves on the canvas, running, and fading, behind the
-   opening: steps land on the grid's dots, edges route at right angles as the console draws
-   them, and each sketch stays clear of the text and the screenshot. The script places them;
-   without it, or where the reader asks for less motion, the canvas stays still. */
+   opening: a transcode, a rollout, an alert triage, an invoicing run and a dozen more, each
+   under its namespace and name. Steps land on the grid's dots, edges route at right angles as
+   the console draws them, shards fill, approvals wait in amber, a flaky step fails and is
+   retried, and each sketch stays clear of the text and the screenshot. The script places
+   them; without it, or where the reader asks for less motion, the canvas stays still. */
 .sketches{
   position:absolute;
   z-index:-1;
@@ -121,17 +140,35 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 .sketches svg{display:block;width:100%;height:100%}
 .sk-sketch{opacity:.9;transition:opacity 1.1s ease}
 .sk-sketch.out{opacity:0}
+.sk-title{font:500 10.5px "JetBrains Mono",ui-monospace,monospace;fill:var(--faint);opacity:0;transition:opacity .6s ease}
+.sk-title.on{opacity:1}
+.sk-ok{fill:var(--accent)}
+.sk-bad{fill:var(--fail)}
 .sk-node{opacity:0;transition:opacity .6s ease}
 .sk-node.on{opacity:1}
+.sk-node.skip{opacity:.38}
 .sk-box{fill:color-mix(in srgb, var(--surface) 84%, transparent);stroke:color-mix(in srgb, var(--accent) 42%, transparent);stroke-width:1.2;transition:stroke .3s ease}
+.sk-node.skip .sk-box{stroke-dasharray:3 3}
 .sk-name{font:500 11px "JetBrains Mono",ui-monospace,monospace;fill:var(--muted)}
 .sk-dot{fill:color-mix(in srgb, var(--faint) 55%, transparent);transition:fill .3s ease}
 .sk-port{fill:var(--paper);stroke:color-mix(in srgb, var(--accent) 55%, transparent);stroke-width:1.2}
 .sk-edge{fill:none;stroke:color-mix(in srgb, var(--accent) 50%, transparent);stroke-width:1.4;stroke-linejoin:round;transition:stroke-dashoffset .75s cubic-bezier(.4,0,.2,1)}
+/* A rejected port's edge is dashed, so it fades in rather than drawing itself. */
+.sk-edge.rej{stroke:color-mix(in srgb, var(--wait) 60%, transparent);stroke-dasharray:4 3;opacity:0;transition:opacity .6s ease}
+.sk-edge.rej.on{opacity:1}
+.sk-cell{fill:color-mix(in srgb, var(--faint) 28%, transparent);transition:fill .25s ease}
+.sk-cell.on{fill:var(--accent)}
+.sk-token{fill:var(--accent)}
+.sk-token.rej{fill:var(--wait)}
 .sk-ring{fill:none;stroke:var(--accent);stroke-width:1.2;opacity:0;transform-box:fill-box;transform-origin:center}
 .sk-node.run .sk-box{stroke:var(--accent)}
 .sk-node.run .sk-dot,.sk-node.done .sk-dot{fill:var(--accent)}
 .sk-node.run .sk-ring{animation:sk-pulse 1.3s ease-out infinite}
+.sk-node.wait .sk-box{stroke:var(--wait)}
+.sk-node.wait .sk-dot{fill:var(--wait)}
+.sk-node.wait .sk-ring{stroke:var(--wait);animation:sk-pulse 1.3s ease-out infinite}
+.sk-node.fail .sk-box{stroke:var(--fail)}
+.sk-node.fail .sk-dot{fill:var(--fail)}
 @keyframes sk-pulse{from{opacity:.55;transform:scale(1)}to{opacity:0;transform:scale(2.8)}}
 @media (prefers-reduced-motion:reduce){.sketches{display:none}}
 .lockup{
@@ -140,7 +177,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   align-items:center;
   justify-content:center;
   gap:calc(var(--mark) * 9 / 14);
-  margin-bottom:clamp(26px,4vw,40px);
+  margin-bottom:clamp(36px,5.5vw,64px);
 }
 .headline{
   margin:0 auto;
@@ -151,23 +188,12 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   text-wrap:balance;
 }
 .headline em{font-style:normal;color:var(--accent)}
-/* One sentence a line where the screen holds it, each wrapping on its own where it does not. */
-.headline span,.headline em{display:block}
-.sub{
-  margin:clamp(18px,2.4vw,26px) auto 0;
-  max-width:38rem;
-  color:var(--muted);
-  font-size:clamp(1.02rem,1.7vw,1.2rem);
-  line-height:1.55;
-  text-wrap:balance;
-}
-.sub code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.88em;color:var(--ink)}
 .actions{
   display:flex;
   flex-wrap:wrap;
   justify-content:center;
   gap:12px;
-  margin-top:clamp(26px,3.6vw,38px);
+  margin-top:clamp(40px,5.2vw,60px);
 }
 .actions a{
   display:inline-flex;
@@ -194,6 +220,10 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   height:var(--mark);
   fill:var(--accent);
 }
+/* The mark's lighter bars are the accent mixed with the paper rather than the accent made
+   see-through, so the canvas's dots do not show through them. */
+.lockup svg .mid{fill:color-mix(in srgb, var(--accent) 62%, var(--paper))}
+.lockup svg .low{fill:color-mix(in srgb, var(--accent) 30%, var(--paper))}
 .lockup h1{
   font-size:calc(var(--mark) * 15 / 14);
   font-weight:700;
@@ -202,11 +232,59 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   margin:0;
 }
 
-/* The three sentences the documentation opens on, set as the page's one run of text. */
+/* The install command, under the buttons: the one line to paste, a button to copy it, and
+   a link to the script it runs, since piping a script into a shell is a request to trust it. */
+.install{margin-top:clamp(32px,4vw,48px)}
+.install-line{
+  display:inline-flex;
+  align-items:center;
+  max-width:100%;
+  border:1px solid var(--line-strong);
+  border-radius:8px;
+  background:var(--surface);
+  text-align:left;
+}
+.install pre{
+  margin:0;
+  padding:12px 16px;
+  min-width:0;
+  overflow-x:auto;
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:clamp(.78rem,1.3vw,.9rem);
+  line-height:1.5;
+  color:var(--ink);
+}
+.install pre .p{color:var(--accent);user-select:none}
+.install-copy{
+  flex:none;
+  align-self:stretch;
+  padding:0 16px;
+  border:0;
+  border-left:1px solid var(--line);
+  border-radius:0 7px 7px 0;
+  background:none;
+  color:var(--muted);
+  font:inherit;
+  font-size:.82rem;
+  font-weight:500;
+  cursor:pointer;
+}
+.install-copy:hover{color:var(--accent)}
+.install p{
+  margin:14px auto 0;
+  max-width:36rem;
+  text-wrap:balance;
+  color:var(--muted);
+  font-size:.86rem;
+  line-height:1.6;
+}
+.install p code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.92em;color:var(--ink)}
+
+/* Four things Agentiik is, two by two, MCP first. */
 .ideas{
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:clamp(20px,3vw,36px);
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(28px,4vw,44px) clamp(20px,3vw,36px);
   margin:0 0 clamp(76px,11vw,128px);
 }
 .ideas > div{border-top:2px solid var(--accent);padding-top:16px}
@@ -229,6 +307,54 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   letter-spacing:-.025em;
 }
 .section-lede{margin:0 0 22px;color:var(--muted);font-size:.98rem;line-height:1.6;max-width:44rem}
+.section-lede code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.88em;color:var(--ink)}
+
+/* The ways to use it, a tab each. Without scripting the three panels follow one another,
+   each under its own heading, which the tabs replace once they are built. */
+.usage{margin:18px 0 clamp(76px,11vw,128px)}
+.usage .tab-title{margin:32px 0 8px;font-size:1.05rem;font-weight:600;letter-spacing:-.015em}
+.usage.is-tabbed .tab-title{display:none}
+.tablist{display:flex;gap:4px;margin:0 0 20px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tablist [role="tab"]{
+  margin-bottom:-1px;
+  padding:10px 14px 11px;
+  border:0;
+  border-bottom:2px solid transparent;
+  background:none;
+  color:var(--muted);
+  font:inherit;
+  font-size:.95rem;
+  font-weight:500;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.tablist [role="tab"]:hover{color:var(--ink)}
+.tablist [role="tab"][aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.usage .section-lede{margin-bottom:18px}
+/* Inside a tab the recordings keep to the column rather than breaking out of it. */
+.usage .cast{position:static;left:auto;transform:none;width:auto;margin:0}
+/* The MCP exchange: what was asked, then one line per tool call, the tool and what it did
+   side by side, stacked where the screen is too narrow for both. */
+.cast.transcript .cast-frame{
+  padding:20px clamp(14px,2vw,22px);
+  font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:clamp(.72rem,1.15vw,.78rem);
+  line-height:1.75;
+}
+.cast.transcript .cast-frame::after{display:none}
+.transcript .ask{margin:0 0 14px}
+.transcript .who{margin-right:.8em;color:var(--accent);font-weight:700;user-select:none}
+.transcript .calls{margin:0;padding:0 0 0 3.6em;list-style:none}
+.transcript .calls li{display:grid;grid-template-columns:15em minmax(0,1fr);gap:0 1.2em}
+.transcript .calls code{font:inherit;color:var(--accent);font-weight:500}
+.transcript .calls span{color:var(--ink);overflow-wrap:anywhere}
+.transcript .bad{color:var(--fail);font-weight:500}
+@media (max-width:600px){
+  .transcript .calls{padding-left:0}
+  .transcript .calls li{grid-template-columns:1fr;margin-bottom:6px}
+  .transcript .calls span{padding-left:1.2em;color:var(--muted)}
+}
+.cast figcaption code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.88em;color:var(--ink);white-space:nowrap}
 
 .shot.graph{margin-bottom:14px}
 .shot-note{
@@ -574,25 +700,30 @@ img{max-width:100%}
 <div class="lockup" data-rise data-par=".07" style="--delay:0s">
   <svg viewBox="0 0 16 14" aria-hidden="true" focusable="false">
     <rect width="16" height="4" rx="1"/>
-    <g opacity=".62">
-      <rect y="6" width="7" height="4" rx="1"/>
-      <rect x="9" y="6" width="7" height="4" rx="1"/>
-    </g>
-    <rect y="12" width="16" height="2" rx="1" opacity=".3"/>
+    <rect class="mid" y="6" width="7" height="4" rx="1"/>
+    <rect class="mid" x="9" y="6" width="7" height="4" rx="1"/>
+    <rect class="low" y="12" width="16" height="2" rx="1"/>
   </svg>
   <h1>agentiik</h1>
 </div>
-<p class="headline" data-rise data-par=".09" style="--delay:.05s"><span>Open source</span> <em>workflow orchestration</em></p>
-<p class="sub" data-rise data-par=".1" style="--delay:.1s">Describe the graph in <code>agentiik.yaml</code> and <code>git push</code> it: each step runs in a fresh container, on your laptop or on a server your whole team shares, and a replay months later runs the very same commit.</p>
+<p class="headline" data-rise data-par=".09" style="--delay:.05s"><em>Workflow orchestration</em></p>
 <div class="actions" data-rise data-par=".11" style="--delay:.14s">
   <a class="primary" href="docs/#get-started">Get started
     <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </a>
-  <a href="docs/roadmap/index.html">The roadmap</a>
+  <a href="docs/index.html">Documentation</a>
+  <a href="docs/roadmap/index.html">Roadmap</a>
   <a href="https://github.com/agentiik">
     <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
     GitHub
   </a>
+</div>
+<div class="install" data-rise data-par=".12" style="--delay:.18s">
+  <div class="install-line">
+    <pre><code><span class="p">$</span> curl -fsSL https://agentiik.github.io/install.sh | sh</code></pre>
+    <button class="install-copy" type="button" aria-label="Copy the install command" hidden>Copy</button>
+  </div>
+  <p>Installs <code>agk</code>, the command line, with Homebrew, Go or Docker, and asks before it changes anything. <a href="install.sh">Read the script</a></p>
 </div>
 </div>
 
@@ -958,28 +1089,144 @@ img{max-width:100%}
 </svg>
 </div>
 </div>
-<p class="shot-note" data-rise style="--delay:.24s"><b>The graph and the file are one object.</b> Ports sit where the YAML declares them, and selecting a step selects its block. The console as the documentation draws it, arriving in v0.6.0.</p>
+<p class="shot-note" data-rise style="--delay:.24s"><b>The web console&#x27;s workflow view.</b> The graph beside its <code>agentiik.yaml</code>: selecting a step selects its block. A mockup: the console arrives in v0.6.0.</p>
 
 <section class="ideas">
   <div data-rise style="--delay:.06s">
-    <span class="tag">brick</span>
-    <h2>Any image, any language</h2>
-    <p>A brick is an OCI image with a manifest, and a script step runs in any image at all. Nothing outlives a step but what it wrote to its ports.</p>
+    <span class="tag">mcp</span>
+    <h2>Native MCP</h2>
+    <p>An AI assistant connected to <code>/mcp</code> writes, validates, commits and runs workflows, with its user&#x27;s permissions. A workflow can also be published as an MCP tool. From v0.7.0.</p>
   </div>
   <div data-rise style="--delay:.12s">
-    <span class="tag">repository</span>
-    <h2>Every workflow is a repository</h2>
-    <p><code>agentiik.yaml</code> at its root describes the graph. A push is validated before any branch moves, and a run keeps the commit it started from.</p>
+    <span class="tag">brick</span>
+    <h2>Any image, any language</h2>
+    <p>Each step runs in a fresh container, from any OCI image. A brick is an image with a manifest that declares its ports and parameters.</p>
   </div>
   <div data-rise style="--delay:.18s">
+    <span class="tag">repository</span>
+    <h2>Every workflow is a repository</h2>
+    <p><code>agentiik.yaml</code> at its root describes the graph. A push is validated before any branch moves, and each run records the commit it ran.</p>
+  </div>
+  <div data-rise style="--delay:.24s">
     <span class="tag">namespace</span>
     <h2>One installation, many people</h2>
-    <p>Namespaces, groups and four roles decide who reads, runs and edits what, and a namespace you hold nothing in answers as one that does not exist.</p>
+    <p>Namespaces, groups and four roles decide who can read, run and edit each workflow.</p>
   </div>
 </section>
 
-<h2 class="section-title" data-rise>Every run, as it happens</h2>
-<p class="section-lede" data-rise style="--delay:.04s">What needs you first, each step's time in one strip, a replay one key away. Drawn from the documentation, like the graph above.</p>
+<h2 class="section-title" data-rise>From the command line or over MCP</h2>
+<div class="tabset usage" aria-label="Ways to use Agentiik" data-rise style="--delay:.06s">
+<h3 class="tab-title" data-tab="Local CLI">Local CLI</h3>
+<p class="section-lede" data-tab="Local CLI"><code>agk</code> runs the workflow against the Docker daemon of your machine. No server, no account.</p>
+<figure class="cast" data-tab="Local CLI" data-cast="assets/agk-home.cast">
+  <div class="cast-frame">
+<pre class="cast-poster"><code><span class="p">$</span> <span class="cmd">agk validate</span>
+user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
+ghcr.io/acme/agk-charge:0.1.0: charge-order 0.1.0, reads in, writes ok rejected
+ghcr.io/acme/agk-split:0.1.0: split-orders 0.1.0, reads orders, writes ok
+ghcr.io/acme/agk-total:0.1.0: total-charges 0.1.0, reads charges, writes ok
+finance/monthly-invoicing is valid: 4 steps, 4 edges, 2 declared inputs, 4 declared outputs
+4 steps held to the manifests of 3 referenced images
+<span class="p">$</span> <span class="cmd">agk run --local --inputs inputs.json --secret-file billing_api=billing.key</span>
+the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.56 and runs linux/aarch64
+user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
+this run executes the working tree in the current directory, uncommitted changes included, and no commit describes it: it is labelled local, so that no history takes it for a run that can be reproduced
+    0.0s  split    running
+    0.4s  split    succeeded, ok 3
+    0.4s  charge   running
+    1.5s  charge   succeeded, ok 2, rejected 1
+    1.5s  total    running
+    1.9s  total    succeeded, ok 1
+    1.9s  archive  running
+    2.5s  archive  succeeded, out 1
+finance/monthly-invoicing succeeded in 2.5s: 4 steps, 6 containers
+archived: 1 item in .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ/outputs/archived.json
+charged: 2 items in .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ/outputs/charged.json
+invoiced: 1 item in .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ/outputs/invoiced.json
+rejected: 1 item in .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ/outputs/rejected.json
+run 01M3KR0WQGJ3DH4W8BXB9N7YGQ: .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ
+</code></pre>
+    <div class="cast-player" hidden></div>
+    <button class="cast-play" type="button">
+      <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 1l9 5-9 5z"/></svg>
+      <span>Play the recording</span>
+    </button>
+  </div>
+  <figcaption><b>Four steps, six containers, 2.5 seconds.</b> <code>agk validate</code> checks each step against the manifest of its image, then <code>agk run --local</code> runs the graph. A recording, not a transcript written by hand: <a href="assets/agk-home.cast">the file</a> plays with <code>asciinema play</code>.</figcaption>
+</figure>
+
+<h3 class="tab-title" data-tab="Remote CLI">Remote CLI</h3>
+<p class="section-lede" data-tab="Remote CLI">The same command line against a server: <code>agk push</code> sends the workflow, <code>agk run</code> starts it and follows it, <code>agk status</code> and <code>agk logs</code> read it back.</p>
+<figure class="cast" data-tab="Remote CLI" data-cast="assets/agk-server-run.cast">
+  <div class="cast-frame">
+<pre class="cast-poster"><code><span class="p">$</span> <span class="cmd">agk push --namespace demo</span>
+user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
+python:3.13-alpine resolved to python@sha256:79e7a9b9ff1cbceff819f856fb374477792a5967759d94df266de7b7b4120e6f
+alpine:3.21 resolved to alpine@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507
+demo/pi@eae62ef pushed to https://localhost:8443
+3 steps, 1 file, 0 included files, 0 manifests, 2 tags resolved to their digests
+<span class="p">$</span> <span class="cmd">agk run --namespace demo --input darts=1000000</span>
+run 01M3M2K9369AKDP89DAGVA742X of demo/pi@eae62ef started at https://localhost:8443
+    0.4s  players  succeeded, out 4
+    0.4s  throw    running
+    1.6s  average  running
+    1.6s  throw    succeeded, out 4
+    2.0s  average  succeeded, out 1
+pi succeeded in 2.0s: 3 steps, 6 containers
+estimates: 4 items
+pi: 1 item
+run 01M3M2K9369AKDP89DAGVA742X: https://localhost:8443/api/v1/demo/runs/01M3M2K9369AKDP89DAGVA742X
+<span class="p">$</span> <span class="cmd">agk status 01M3M2K9369AKDP89DAGVA742X</span>
+run 01M3M2K9369AKDP89DAGVA742X: demo/pi@eae62ef, succeeded after 2.0s
+manual by operator at 2026-09-28T13:17:18Z
+average  succeeded, out 1 sha256:3fcca2c4ebd2
+players  succeeded, out 4 sha256:03038c707673
+throw    succeeded, out 4 sha256:fafc99e008a2
+inputs: darts
+output estimates: 4 items
+output pi: 1 item
+<span class="p">$</span> <span class="cmd">agk logs 01M3M2K9369AKDP89DAGVA742X throw</span>
+throw 1/4 | ada threw 1000000 darts, pi is about 3.143692
+throw 1/4 | driver: the container exited 0: the output envelopes are published
+throw 2/4 | grace threw 1000000 darts, pi is about 3.142316
+throw 2/4 | driver: the container exited 0: the output envelopes are published
+throw 3/4 | linus threw 1000000 darts, pi is about 3.140164
+throw 3/4 | driver: the container exited 0: the output envelopes are published
+throw 4/4 | alan threw 1000000 darts, pi is about 3.141888
+throw 4/4 | driver: the container exited 0: the output envelopes are published</code></pre>
+    <div class="cast-player" hidden></div>
+    <button class="cast-play" type="button">
+      <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 1l9 5-9 5z"/></svg>
+      <span>Play the recording</span>
+    </button>
+  </div>
+  <figcaption><b>Four players estimate pi in parallel, on a server.</b> The fan-out runs one container per player. Recorded against an installation started by the deploy repository&#x27;s CI: <a href="assets/agk-server-run.cast">the file</a> plays with <code>asciinema play</code>.</figcaption>
+</figure>
+
+<h3 class="tab-title" data-tab="MCP">MCP</h3>
+<p class="section-lede" data-tab="MCP">Connect an MCP client to your server&#x27;s <code>/mcp</code> endpoint. The model learns the language, writes the workflow, validates it, commits it and runs it, as you.</p>
+<figure class="cast transcript" data-tab="MCP">
+  <div class="cast-frame">
+    <p class="ask"><span class="who">you</span> Read data/orders.csv, keep the orders over 100 euros, and run it.</p>
+    <ol class="calls">
+      <li><code>workflow.language</code><span>learns the shape of agentiik.yaml</span></li>
+      <li><code>brick.list, brick.get</code><span>picks the csv and jq bricks, and reads their parameters</span></li>
+      <li><code>workflow.validate</code><span><b class="bad">invalid</b>: /steps/filter/needs/0/port is not a port of parse; topic needs</span></li>
+      <li><code>workflow.validate</code><span>valid</span></li>
+      <li><code>workflow.commit</code><span>commits agentiik.yaml to demo/big-orders, as you</span></li>
+      <li><code>workflow.run</code><span>starts a run of that commit</span></li>
+      <li><code>run.get</code><span>succeeded</span></li>
+      <li><code>run.output</code><span>the orders it kept</span></li>
+    </ol>
+  </div>
+  <figcaption><b>Arrives in v0.7.0.</b> Drawn from the documentation, not recorded. Each call runs with your permissions, and of these tools only <code>workflow.commit</code> and <code>workflow.run</code> change anything. A workflow can also be served as a tool of its own, at <code>/mcp/{namespace}/{workflow}</code>: see <a href="docs/#mcp">Native MCP</a>.</figcaption>
+</figure>
+</div>
+
+<h2 class="section-title" data-rise>Runs, in the web console</h2>
+<p class="section-lede" data-rise style="--delay:.04s">Runs waiting on you come first: an approval to give, a failure to replay. Below, every run with its steps drawn to the time each took. A mockup: the console arrives in v0.6.0.</p>
 <div class="shot" data-rise data-par="-.045" style="--delay:.16s">
   <svg class="mock web" viewBox="0 0 1440 946" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mockup of the web console&#x27;s runs view, the screen it opens on, in a browser window at agentiik.example.com/finance/runs, drawn in the terminal console&#x27;s design language. The top bar holds the mark, the namespace switcher on finance, the views, a search field, a live indicator, three notifications and the principal, alice. One pane with rounded borders holds round filter chips, New run and Export buttons, then a band of runs needing attention: an approval requested at invoice with Approve, keyboard focus on it, and Reject buttons, and a failed run of monthly-invoicing, exit 108, with Replay from invoice and Open. Below, a table of twelve runs, each with a state badge, a spinner on the running ones, its identifier, workflow, trigger, principal, a strip of steps weighted by duration, times and a sparkline of the workflow&#x27;s last twenty runs; scheduled, webhook and event runs are by finance/agentiik. The pointer hovers the failed run&#x27;s strip, and a tooltip names the step, its exit code and duration. A key line runs along the foot of the window.">
 <rect x=".5" y=".5" width="1439" height="945" rx="10" class="f-bg"/>
@@ -1531,95 +1778,6 @@ img{max-width:100%}
 </svg>
 </div>
 
-<h2 class="section-title" data-rise>On a laptop, with no server</h2>
-<p class="section-lede" data-rise style="--delay:.04s">The same graph runs against the Docker daemon beside you, with nothing else installed.</p>
-<figure class="cast" data-cast="assets/agk-home.cast" data-rise data-par="-.03" style="--delay:.08s">
-  <div class="cast-frame">
-<pre class="cast-poster"><code><span class="p">$</span> <span class="cmd">agk validate</span>
-user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
-this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
-ghcr.io/acme/agk-charge:0.1.0: charge-order 0.1.0, reads in, writes ok rejected
-ghcr.io/acme/agk-split:0.1.0: split-orders 0.1.0, reads orders, writes ok
-ghcr.io/acme/agk-total:0.1.0: total-charges 0.1.0, reads charges, writes ok
-finance/monthly-invoicing is valid: 4 steps, 4 edges, 2 declared inputs, 4 declared outputs
-4 steps held to the manifests of 3 referenced images
-<span class="p">$</span> <span class="cmd">agk run --local --inputs inputs.json --secret-file billing_api=billing.key</span>
-the daemon at /Users/francois/.docker/run/docker.sock speaks API 1.56 and runs linux/aarch64
-user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
-this daemon applies neither an AppArmor profile nor an SELinux label to a container, which is the host's to offer, so a container is held by its namespaces, its dropped capabilities and its seccomp profile with no mandatory access control behind them.
-this run executes the working tree in the current directory, uncommitted changes included, and no commit describes it: it is labelled local, so that no history takes it for a run that can be reproduced
-    0.0s  split    running
-    0.4s  split    succeeded, ok 3
-    0.4s  charge   running
-    1.5s  charge   succeeded, ok 2, rejected 1
-    1.5s  total    running
-    1.9s  total    succeeded, ok 1
-    1.9s  archive  running
-    2.5s  archive  succeeded, out 1
-finance/monthly-invoicing succeeded in 2.5s: 4 steps, 6 containers
-archived: 1 item in .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ/outputs/archived.json
-charged: 2 items in .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ/outputs/charged.json
-invoiced: 1 item in .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ/outputs/invoiced.json
-rejected: 1 item in .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ/outputs/rejected.json
-run 01M3KR0WQGJ3DH4W8BXB9N7YGQ: .agk/runs/01M3KR0WQGJ3DH4W8BXB9N7YGQ
-</code></pre>
-    <div class="cast-player" hidden></div>
-    <button class="cast-play" type="button">
-      <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 1l9 5-9 5z"/></svg>
-      <span>Play the recording</span>
-    </button>
-  </div>
-  <figcaption><b>Four steps, six containers, 2.5 seconds.</b> A recording rather than a transcript written by hand. <code>agk validate</code> holds every step to the manifests of the images it names; <code>agk run --local</code> then runs the whole graph against the Docker daemon of a laptop, with no controller, no bus and no database. The machine says what it gives up before it starts anything. <a href="assets/agk-home.cast">The recording itself</a> plays with <code>asciinema play</code>.</figcaption>
-</figure>
-
-<h2 class="section-title" data-rise>On a server your team shares</h2>
-<p class="section-lede" data-rise style="--delay:.04s">The same command line against an installation: <code>agk push</code> registers the workflow, <code>agk run</code> starts it and follows it, <code>agk status</code> and <code>agk logs</code> read it back.</p>
-<figure class="cast" data-cast="assets/agk-server-run.cast" data-rise data-par="-.03" style="--delay:.08s">
-  <div class="cast-frame">
-<pre class="cast-poster"><code><span class="p">$</span> <span class="cmd">agk push --namespace demo</span>
-user namespace remapping is off on this daemon and this runner does not require it, so the floor is lifted: a task's files are owned by a real uid on the host, root inside a container is the host's own root, and a process that escapes a container is that account rather than an unprivileged high-numbered one that maps to no real user.
-python:3.13-alpine resolved to python@sha256:79e7a9b9ff1cbceff819f856fb374477792a5967759d94df266de7b7b4120e6f
-alpine:3.21 resolved to alpine@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507
-demo/pi@eae62ef pushed to https://localhost:8443
-3 steps, 1 file, 0 included files, 0 manifests, 2 tags resolved to their digests
-<span class="p">$</span> <span class="cmd">agk run --namespace demo --input darts=1000000</span>
-run 01M3M2K9369AKDP89DAGVA742X of demo/pi@eae62ef started at https://localhost:8443
-    0.4s  players  succeeded, out 4
-    0.4s  throw    running
-    1.6s  average  running
-    1.6s  throw    succeeded, out 4
-    2.0s  average  succeeded, out 1
-pi succeeded in 2.0s: 3 steps, 6 containers
-estimates: 4 items
-pi: 1 item
-run 01M3M2K9369AKDP89DAGVA742X: https://localhost:8443/api/v1/demo/runs/01M3M2K9369AKDP89DAGVA742X
-<span class="p">$</span> <span class="cmd">agk status 01M3M2K9369AKDP89DAGVA742X</span>
-run 01M3M2K9369AKDP89DAGVA742X: demo/pi@eae62ef, succeeded after 2.0s
-manual by operator at 2026-09-28T13:17:18Z
-average  succeeded, out 1 sha256:3fcca2c4ebd2
-players  succeeded, out 4 sha256:03038c707673
-throw    succeeded, out 4 sha256:fafc99e008a2
-inputs: darts
-output estimates: 4 items
-output pi: 1 item
-<span class="p">$</span> <span class="cmd">agk logs 01M3M2K9369AKDP89DAGVA742X throw</span>
-throw 1/4 | ada threw 1000000 darts, pi is about 3.143692
-throw 1/4 | driver: the container exited 0: the output envelopes are published
-throw 2/4 | grace threw 1000000 darts, pi is about 3.142316
-throw 2/4 | driver: the container exited 0: the output envelopes are published
-throw 3/4 | linus threw 1000000 darts, pi is about 3.140164
-throw 3/4 | driver: the container exited 0: the output envelopes are published
-throw 4/4 | alan threw 1000000 darts, pi is about 3.141888
-throw 4/4 | driver: the container exited 0: the output envelopes are published</code></pre>
-    <div class="cast-player" hidden></div>
-    <button class="cast-play" type="button">
-      <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 1l9 5-9 5z"/></svg>
-      <span>Play the recording</span>
-    </button>
-  </div>
-  <figcaption><b>Four players estimate pi, in parallel, on a server.</b> A fan-out runs one container per player, and each writes its estimate to its log. Recorded against an installation the deploy repository's CI stands up from its README, so the session is what a server answers rather than a transcript written by hand. <a href="assets/agk-server-run.cast">The recording itself</a> plays with <code>asciinema play</code>.</figcaption>
-</figure>
-
 <nav class="docs">
   <a href="docs/index.html" data-rise data-par=".03" style="--delay:.26s">Documentation</a>
   <a href="docs/roadmap/index.html" data-rise data-par=".03" style="--delay:.32s">Roadmap</a>
@@ -1962,6 +2120,23 @@ throw 4/4 | driver: the container exited 0: the output envelopes are published</
     }
   });
 
+  // ---------- The install command: a button to copy it as it would be typed ----------
+  $all('.install-copy').forEach(function(btn){
+    var pre = btn.parentNode.querySelector('pre');
+    var timer = null;
+    btn.hidden = false;
+    btn.addEventListener('click', function(){
+      writeClipboard(copyText(pre)).then(function(){
+        btn.textContent = 'Copied';
+      }, function(){
+        btn.textContent = 'Select and copy';
+      }).then(function(){
+        clearTimeout(timer);
+        timer = setTimeout(function(){ btn.textContent = 'Copy'; }, 1800);
+      });
+    });
+  });
+
   // ---------- Tabs: files that are alternatives to one another ----------
   $all('.tabset').forEach(function(set, n){
     var panels = [], byName = {};
@@ -2211,17 +2386,59 @@ throw 4/4 | driver: the container exited 0: the output envelopes are published</
 })();
 </script>
 <script>
-// The opening's sketches: a few small workflows at a time, each drawn column by column,
-// run step by step, held, then faded, and another started where there is room. Steps
-// sit on the canvas's 22-pixel grid, the grid the dots behind them are drawn on.
+// The opening's sketches: workflows of every kind, a few at a time, each drawn level by level,
+// run the way the engine runs one, held, then faded, and another started where there is room.
+// Steps sit on the canvas's 22-pixel grid, the grid the dots behind them are drawn on, and a
+// sketch lays itself out left to right or top to bottom, whichever fits beside the text.
 (function(){
   var svg = document.querySelector('.sketches svg');
   if (!svg || !window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var NS = 'http://www.w3.org/2000/svg', G = 22, W = 5 * G, H = 2 * G;
-  var NAMES = ['fetch', 'split', 'normalize', 'charge', 'invoice', 'score', 'merge', 'archive',
-    'notify', 'render', 'publish', 'enrich', 'dedupe', 'export', 'total', 'reconcile', 'resize', 'index'];
-  var SHAPES = [[1, 2, 1], [1, 3, 1], [2, 1, 1], [1, 1, 2], [1, 2], [2, 1], [1, 1, 1], [1, 1], [1, 3]];
-  var alive = [];
+  var NS = 'http://www.w3.org/2000/svg', G = 22, H = 2 * G;
+
+  // Each workflow is its namespace and name, its steps, and its edges. A step is written
+  // "name level lane flags": the level orders the graph, the lane places a step beside the
+  // others of its level. Flags: fanN runs N shards, wait holds for an approval, flaky fails its
+  // first attempt and is retried, maybe is skipped when its condition is false. An edge a>b
+  // leaves a's ok port, a~b its rejected port, which carries items only some of the time.
+  var WORKFLOWS = [
+    ['media/transcode', 'upload 0 1 | probe 1 1 | transcode 2 0 fan6 | thumbnails 2 2 | package 3 1 | publish 4 1',
+      'upload>probe probe>transcode probe>thumbnails transcode>package thumbnails>package package>publish'],
+    ['finance/monthly-invoicing', 'orders 0 0 | customers 0 1 | normalize 1 .5 | invoice 2 0 fan8 | archive 2 1 | approve 3 0 wait | send 4 0',
+      'orders>normalize customers>normalize normalize>invoice normalize~archive invoice>approve approve>send'],
+    ['devops/rollout', 'build 0 .5 | unit-tests 1 0 | e2e-tests 1 1 flaky | push-image 2 .5 | deploy-eu 3 .5 | deploy-us 4 .5 | smoke-test 5 .5',
+      'build>unit-tests build>e2e-tests unit-tests>push-image e2e-tests>push-image push-image>deploy-eu deploy-eu>deploy-us deploy-us>smoke-test'],
+    ['security/alert-triage', 'alert 0 1 | enrich-ip 1 0 | lookup-hash 1 1 | whois 1 2 | score 2 1 | block-ip 3 0 maybe | open-ticket 3 2',
+      'alert>enrich-ip alert>lookup-hash alert>whois enrich-ip>score lookup-hash>score whois>score score>block-ip score>open-ticket'],
+    ['data/nightly-etl', 'extract-pg 0 0 | extract-s3 0 1 | clean 1 .5 | dedupe 2 0 | quarantine 2 1 | load 3 0 | refresh-bi 4 0',
+      'extract-pg>clean extract-s3>clean clean>dedupe clean~quarantine dedupe>load load>refresh-bi'],
+    ['home/night-check', 'windows 0 0 | doors 0 1 | garage 0 2 | find-open 1 1 | notify 2 1 maybe',
+      'windows>find-open doors>find-open garage>find-open find-open>notify'],
+    ['ml/retrain', 'fetch-data 0 .5 | split 1 .5 | train 2 0 fan4 | baseline 2 1 | evaluate 3 .5 | promote 4 0 | alert-team 4 1',
+      'fetch-data>split split>train split>baseline train>evaluate baseline>evaluate evaluate>promote evaluate~alert-team'],
+    ['research/variants', 'fetch-reads 0 0 | qc 1 0 | align 2 0 fan8 | merge-bam 3 0 | call-variants 4 0 | report 5 0',
+      'fetch-reads>qc qc>align align>merge-bam merge-bam>call-variants call-variants>report'],
+    ['support/refunds', 'fetch-order 0 .5 | check-policy 1 .5 | approve 2 0 wait | deny 2 1 | refund 3 0 | email-customer 4 .5',
+      'fetch-order>check-policy check-policy>approve check-policy~deny approve>refund refund>email-customer deny>email-customer'],
+    ['retail/restock', 'stock 0 0 | sales 0 1 | forecast 1 .5 | reorder 2 .5 fan5 | notify-buyers 3 .5',
+      'stock>forecast sales>forecast forecast>reorder reorder>notify-buyers'],
+    ['iot/sensor-rollup', 'collect 0 .5 | validate 1 .5 | aggregate 2 0 | dead-letter 2 1 | detect-spike 3 0 | page-oncall 4 0 maybe',
+      'collect>validate validate>aggregate validate~dead-letter aggregate>detect-spike detect-spike>page-oncall'],
+    ['astro/night-stack', 'fetch-frames 0 0 | calibrate 1 0 fan6 | align 2 0 | stack 3 0 | transients 4 0 | alert 5 0 maybe',
+      'fetch-frames>calibrate calibrate>align align>stack stack>transients transients>alert'],
+    ['docs/publish', 'checkout 0 1 | lint-links 1 0 flaky | spellcheck 1 1 | build-html 1 2 | deploy 2 1 | purge-cdn 3 1',
+      'checkout>lint-links checkout>spellcheck checkout>build-html lint-links>deploy spellcheck>deploy build-html>deploy deploy>purge-cdn'],
+    ['marketing/newsletter', 'contacts 0 0 | unsubscribes 0 1 | segment 1 .5 | render 2 .5 fan4 | send 3 .5 fan4 | track-opens 4 .5',
+      'contacts>segment unsubscribes>segment segment>render render>send send>track-opens'],
+    ['hr/onboarding', 'new-hire 0 .5 | create-account 1 0 | order-laptop 1 1 | grant-access 2 0 wait | ship-laptop 2 1 | welcome-mail 3 .5',
+      'new-hire>create-account new-hire>order-laptop create-account>grant-access order-laptop>ship-laptop grant-access>welcome-mail ship-laptop>welcome-mail'],
+    ['weather/forecast', 'fetch-grib 0 .5 | downscale 1 .5 fan6 | render-maps 2 0 | warnings 2 1 maybe | publish 3 .5',
+      'fetch-grib>downscale downscale>render-maps downscale>warnings render-maps>publish warnings>publish'],
+    ['games/leaderboard', 'ingest-scores 0 .5 | validate 1 .5 | rank 2 0 | cheat-review 2 1 wait | publish 3 0',
+      'ingest-scores>validate validate>rank validate~cheat-review rank>publish'],
+    ['backup/postgres', 'dump 0 .5 | checksum 1 .5 | encrypt 2 .5 | upload-s3 3 0 | upload-gcs 3 1 | verify 4 .5',
+      'dump>checksum checksum>encrypt encrypt>upload-s3 encrypt>upload-gcs upload-s3>verify upload-gcs>verify']
+  ];
+  var alive = [], deck = [];
 
   function make(tag, attrs, parent) {
     var e = document.createElementNS(NS, tag);
@@ -2230,103 +2447,227 @@ throw 4/4 | driver: the container exited 0: the output envelopes are published</
     return e;
   }
   function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
+  function after(ms, fn) { setTimeout(fn, ms); }
   function overlaps(a, b) { return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h; }
+  // Every workflow once, in a new order, before any of them comes back.
+  function next() {
+    if (!deck.length) {
+      deck = WORKFLOWS.slice();
+      for (var i = deck.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = deck[i]; deck[i] = deck[j]; deck[j] = t; }
+    }
+    return deck.pop();
+  }
+
+  function parse(w) {
+    var byName = {}, steps = [];
+    w[1].split('|').forEach(function (s) {
+      var f = s.trim().split(/\s+/), n = { name: f[0], level: +f[1], lane: +f[2], ins: [], outs: [] };
+      f.slice(3).forEach(function (flag) { if (/^fan\d+$/.test(flag)) n.fan = +flag.slice(3); else n[flag] = true; });
+      byName[n.name] = n;
+      steps.push(n);
+    });
+    var edges = w[2].split(/\s+/).map(function (e) {
+      var p = e.split(/[>~]/), edge = { from: byName[p[0]], to: byName[p[1]], rej: e.indexOf('~') > 0 };
+      edge.from.outs.push(edge);
+      edge.to.ins.push(edge);
+      return edge;
+    });
+    return { id: w[0], steps: steps, edges: edges };
+  }
+
+  // Where each step sits, relative to the sketch, with a row above for the workflow's name.
+  // Every box of a sketch is as wide as its longest name needs, so the lanes line up.
+  function layout(wf, down) {
+    var longest = Math.max.apply(null, wf.steps.map(function (n) { return n.name.length; }));
+    var W = G * Math.max(5, Math.ceil((36 + longest * 6.6) / G)), w = 0, h = 0;
+    var at = wf.steps.map(function (n) {
+      var x = down ? G * Math.round(n.lane * (W + G) / G) : n.level * (W + 2 * G);
+      var y = G + (down ? n.level * (H + 2 * G) : G * Math.round(n.lane * (H + G) / G));
+      w = Math.max(w, x + W);
+      h = Math.max(h, y + H);
+      return { x: x, y: y };
+    });
+    return { W: W, w: w, h: h, at: at, down: down };
+  }
 
   // What a sketch must stay clear of: the text of the opening, measured as the text itself
-  // rather than its boxes, which run the column's full width, and the screenshot.
+  // rather than its boxes, which run the column's full width, the buttons, the command, the
+  // screenshot, and the sketches already there.
   function avoid(frame) {
     var out = [], pad = G;
     function add(b) { if (b.width && b.height) out.push({ x: b.left - frame.left - pad, y: b.top - frame.top - pad, w: b.width + 2 * pad, h: b.height + 2 * pad }); }
-    // Line by line: a text node's rectangles are its lines, where an element's box would be
-    // the column's whole width.
-    document.querySelectorAll('.hero .headline, .hero .sub').forEach(function (n) {
+    document.querySelectorAll('.hero .headline, .hero .install p').forEach(function (n) {
       var walk = document.createTreeWalker(n, NodeFilter.SHOW_TEXT), t;
       while ((t = walk.nextNode())) {
         var r = document.createRange(); r.selectNodeContents(t);
         Array.prototype.forEach.call(r.getClientRects(), add);
       }
     });
-    document.querySelectorAll('.hero .lockup svg, .hero .lockup h1, .hero .actions a, .shot.graph, .page-tools').forEach(function (n) { add(n.getBoundingClientRect()); });
+    document.querySelectorAll('.hero .lockup svg, .hero .lockup h1, .hero .actions a, .hero .install-line, .shot.graph, .page-tools').forEach(function (n) { add(n.getBoundingClientRect()); });
     return out.concat(alive.map(function (a) { return a.box; }));
+  }
+
+  // Every place on the grid the sketch fits, so that one can be drawn at random: drawing a
+  // place at random and testing it would almost never find the narrow room beside the text.
+  function places(L, frame, blocked) {
+    var room = [], bottom = frame.height * .56;
+    for (var y = G + 1; y + L.h <= bottom; y += G) {
+      for (var x = G + 1; x + L.w <= frame.width - G; x += G) {
+        var box = { x: x - G, y: y - G, w: L.w + 2 * G, h: L.h + 2 * G };
+        if (!blocked.some(function (b) { return overlaps(box, b); })) room.push(box);
+      }
+    }
+    return room;
   }
 
   function spawn() {
     var frame = svg.getBoundingClientRect();
     if (document.hidden || alive.length >= (frame.width > 1500 ? 3 : 2)) return later(1500);
-    var layers = pick(SHAPES), rows = Math.max.apply(null, layers);
-    var w = layers.length * W + (layers.length - 1) * 2 * G, h = rows * H + (rows - 1) * G;
-    // Every place on the grid the sketch fits, then one of them at random: drawing a place at
-    // random and testing it would almost never find the narrow room beside the text.
-    var bottom = frame.height * .56, blocked = avoid(frame), room = [];
-    for (var y = G + 1; y + h <= bottom; y += G) {
-      for (var x = G + 1; x + w <= frame.width - G; x += G) {
-        var box = { x: x - G, y: y - G, w: w + 2 * G, h: h + 2 * G };
-        if (!blocked.some(function (b) { return overlaps(box, b); })) room.push(box);
+    var blocked = avoid(frame);
+    for (var tries = 0; tries < 6; tries++) {
+      var w = next();
+      if (alive.some(function (a) { return a.id === w[0]; })) continue;
+      var wf = parse(w), ways = Math.random() < .5 ? [false, true] : [true, false];
+      for (var i = 0; i < 2; i++) {
+        var L = layout(wf, ways[i]), room = places(L, frame, blocked);
+        if (room.length) {
+          var box = pick(room);
+          draw(wf, L, box.x + G, box.y + G, box);
+          return later(1400 + Math.random() * 2000);
+        }
       }
     }
-    if (!room.length) return later(2500);
-    var at = pick(room);
-    draw(at.x + G, at.y + G, layers, rows, at);
-    later(900 + Math.random() * 1800);
+    later(2500);
   }
   function later(ms) { setTimeout(spawn, ms); }
 
-  function draw(x, y, layers, rows, box) {
-    var g = make('g', { 'class': 'sk-sketch' }, svg), used = {}, cols = [];
-    var record = { box: box };
+  function draw(wf, L, ox, oy, box) {
+    var g = make('g', { 'class': 'sk-sketch' }, svg), record = { box: box, id: wf.id }, W = L.W;
     alive.push(record);
-    layers.forEach(function (n, c) {
-      var col = [], off = G * Math.round((rows - n) * (H + G) / 2 / G);
-      for (var i = 0; i < n; i++) {
-        var name; do { name = pick(NAMES); } while (used[name]); used[name] = 1;
-        col.push({ x: x + c * (W + 2 * G), y: y + off + i * (H + G), name: name });
+    var title = make('text', { x: ox, y: oy + 12, 'class': 'sk-title' }, g);
+    title.textContent = wf.id;
+    var verdict = make('tspan', { dx: 10 }, title);
+    // Edges first, so the boxes sit over their ends; routed at right angles, turning halfway
+    // between two levels.
+    wf.edges.forEach(function (e) {
+      var a = L.at[wf.steps.indexOf(e.from)], b = L.at[wf.steps.indexOf(e.to)], x1, y1, x2, y2, d;
+      if (L.down) {
+        x1 = ox + a.x + W / 2; y1 = oy + a.y + H; x2 = ox + b.x + W / 2; y2 = oy + b.y;
+        d = 'M' + x1 + ' ' + y1 + (x1 === x2 ? '' : 'V' + (y1 + G) + 'H' + x2) + 'V' + y2;
+      } else {
+        x1 = ox + a.x + W; y1 = oy + a.y + H / 2; x2 = ox + b.x; y2 = oy + b.y + H / 2;
+        d = 'M' + x1 + ' ' + y1 + (y1 === y2 ? '' : 'H' + (x1 + G) + 'V' + y2) + 'H' + x2;
       }
-      cols.push(col);
+      e.path = make('path', { d: d, 'class': 'sk-edge' + (e.rej ? ' rej' : '') }, g);
+      e.len = e.path.getTotalLength();
+      if (!e.rej) { e.path.style.strokeDasharray = e.len; e.path.style.strokeDashoffset = e.len; }
     });
-    var edges = [];
-    for (var c = 0; c + 1 < cols.length; c++) {
-      var A = cols[c], B = cols[c + 1];
-      B.forEach(function (b, j) { edges.push([A[Math.min(A.length - 1, Math.floor(j * A.length / B.length))], b, c]); });
-      A.forEach(function (a, i) {
-        if (!edges.some(function (e) { return e[0] === a; })) edges.push([a, B[Math.min(B.length - 1, Math.floor(i * B.length / A.length))], c]);
+    wf.steps.forEach(function (n, i) {
+      var p = L.at[i], x = ox + p.x, y = oy + p.y, cy = n.fan ? y + 17 : y + H / 2;
+      var ng = make('g', { 'class': 'sk-node' }, g);
+      make('rect', { x: x, y: y, width: W, height: H, rx: 5, 'class': 'sk-box' }, ng);
+      make('circle', { cx: x + 15, cy: cy, r: 5, 'class': 'sk-ring' }, ng);
+      make('circle', { cx: x + 15, cy: cy, r: 3, 'class': 'sk-dot' }, ng);
+      make('text', { x: x + 26, y: cy + 4, 'class': 'sk-name' }, ng).textContent = n.name;
+      var ports = L.down ? [[x + W / 2, y], [x + W / 2, y + H]] : [[x, y + H / 2], [x + W, y + H / 2]];
+      ports.forEach(function (q) { make('circle', { cx: q[0], cy: q[1], r: 3, 'class': 'sk-port' }, ng); });
+      if (n.fan) {
+        var cw = (W - 38 - (n.fan - 1) * 3) / n.fan;
+        n.cells = [];
+        for (var c = 0; c < n.fan; c++) n.cells.push(make('rect', { x: x + 26 + c * (cw + 3), y: y + 27, width: cw, height: 5, rx: 1.5, 'class': 'sk-cell' }, ng));
+      }
+      n.el = ng;
+    });
+
+    var levels = 1 + Math.max.apply(null, wf.steps.map(function (n) { return n.level; })), step = 320;
+    after(60, function () { title.classList.add('on'); });
+    for (var l = 0; l < levels; l++) (function (l) {
+      after(60 + l * step, function () { wf.steps.forEach(function (n) { if (n.level === l) n.el.classList.add('on'); }); });
+      after(60 + l * step + step / 2, function () {
+        wf.edges.forEach(function (e) { if (e.from.level !== l) return; if (e.rej) e.path.classList.add('on'); else e.path.style.strokeDashoffset = 0; });
+      });
+    })(l);
+    after(60 + levels * step + 500, function () {
+      run(wf, function (ok) {
+        verdict.textContent = ok ? 'succeeded' : 'failed';
+        verdict.setAttribute('class', ok ? 'sk-ok' : 'sk-bad');
+        var hold = 1800 + Math.random() * 1600;
+        after(hold, function () { g.classList.add('out'); });
+        after(hold + 1200, function () { g.remove(); alive.splice(alive.indexOf(record), 1); });
+      });
+    });
+  }
+
+  // A run as the engine makes one: a step starts once every step it reads from has finished,
+  // what it publishes travels along its edges, and a step whose inputs all came to nothing is
+  // skipped, as is one whose condition is false.
+  function run(wf, end) {
+    var left = wf.steps.length, failed = false;
+    wf.steps.forEach(function (n) { n.waiting = n.ins.length; n.live = false; });
+    function state(n, s) { n.el.classList.remove('run', 'wait', 'fail'); if (s) n.el.classList.add(s); }
+    function settle() { if (--left === 0) end(!failed); }
+    function exec(n) {
+      if (n.maybe && Math.random() < .45) return skip(n);
+      if (n.wait) { state(n, 'wait'); return after(1300 + Math.random() * 900, function () { work(n, 1); }); }
+      work(n, 1);
+    }
+    function work(n, attempt) {
+      state(n, 'run');
+      var ms = n.fan ? shards(n) : 600 + Math.random() * 700;
+      var fails = n.flaky && Math.random() < (attempt === 1 ? .75 : .2);
+      after(ms, function () {
+        if (!fails) return done(n, true);
+        state(n, 'fail');
+        if (attempt === 2) { failed = true; return done(n, false); }
+        after(700, function () { work(n, 2); });
       });
     }
-    edges = edges.map(function (e) {
-      var a = e[0], b = e[1], x1 = a.x + W, y1 = a.y + H / 2, x2 = b.x, y2 = b.y + H / 2, mx = x1 + G;
-      var p = make('path', { d: 'M' + x1 + ' ' + y1 + 'H' + mx + 'V' + y2 + 'H' + x2, 'class': 'sk-edge' }, g);
-      var len = p.getTotalLength();
-      p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
-      return { p: p, c: e[2] };
-    });
-    cols.forEach(function (col) {
-      col.forEach(function (n) {
-        var ng = make('g', { 'class': 'sk-node' }, g);
-        make('rect', { x: n.x, y: n.y, width: W, height: H, rx: 5, 'class': 'sk-box' }, ng);
-        make('circle', { cx: n.x + 15, cy: n.y + H / 2, r: 5, 'class': 'sk-ring' }, ng);
-        make('circle', { cx: n.x + 15, cy: n.y + H / 2, r: 3, 'class': 'sk-dot' }, ng);
-        var t = make('text', { x: n.x + 26, y: n.y + H / 2 + 4, 'class': 'sk-name' }, ng);
-        t.textContent = n.name;
-        make('circle', { cx: n.x, cy: n.y + H / 2, r: 3, 'class': 'sk-port' }, ng);
-        make('circle', { cx: n.x + W, cy: n.y + H / 2, r: 3, 'class': 'sk-port' }, ng);
-        n.el = ng;
+    // Three shards at a time, as max_parallel would hold them.
+    function shards(n) {
+      var total = 0;
+      n.cells.forEach(function (c, i) {
+        var at = 250 + (i % 3) * 180 + Math.floor(i / 3) * 420 + Math.random() * 260;
+        total = Math.max(total, at);
+        after(at, function () { c.classList.add('on'); });
       });
-    });
-    var step = 650, t = 60;
-    cols.forEach(function (col, c) {
-      setTimeout(function () { col.forEach(function (n) { n.el.classList.add('on'); }); }, t + c * step);
-      setTimeout(function () { edges.forEach(function (e) { if (e.c === c) e.p.style.strokeDashoffset = 0; }); }, t + c * step + step / 2);
-    });
-    t += cols.length * step + 400;
-    cols.forEach(function (col, c) {
-      setTimeout(function () { col.forEach(function (n) { n.el.classList.add('run'); }); }, t + c * 1100);
-      setTimeout(function () { col.forEach(function (n) { n.el.classList.remove('run'); n.el.classList.add('done'); }); }, t + c * 1100 + 1000);
-    });
-    t += cols.length * 1100 + 1600 + Math.random() * 1400;
-    setTimeout(function () { g.classList.add('out'); }, t);
-    setTimeout(function () {
-      g.remove();
-      alive.splice(alive.indexOf(record), 1);
-    }, t + 1200);
+      return total + 150;
+    }
+    function done(n, ok) {
+      if (ok) { state(n); n.el.classList.add('done'); }
+      settle();
+      n.outs.forEach(function (e) {
+        if (ok && (!e.rej || Math.random() < .6)) travel(e, function () { arrive(e.to, true); });
+        else arrive(e.to, false);
+      });
+    }
+    function skip(n) {
+      state(n);
+      n.el.classList.add('skip');
+      settle();
+      n.outs.forEach(function (e) { arrive(e.to, false); });
+    }
+    function arrive(n, live) {
+      n.live = n.live || live;
+      if (--n.waiting === 0) (n.live ? exec : skip)(n);
+    }
+    wf.steps.forEach(function (n) { if (!n.ins.length) exec(n); });
+  }
+
+  // An envelope on its way: a dot along the edge, amber on a rejected port.
+  function travel(e, arrived) {
+    var dot = make('circle', { r: 2.6, 'class': 'sk-token' + (e.rej ? ' rej' : '') }, e.path.parentNode);
+    var start = null, ms = 380 + e.len * 1.2;
+    function frame(now) {
+      if (start === null) start = now;
+      var k = Math.min(1, (now - start) / ms), eased = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      var p = e.path.getPointAtLength(e.len * eased);
+      dot.setAttribute('cx', p.x);
+      dot.setAttribute('cy', p.y);
+      if (k < 1) return requestAnimationFrame(frame);
+      dot.remove();
+      arrived();
+    }
+    requestAnimationFrame(frame);
   }
 
   setTimeout(spawn, 500);
