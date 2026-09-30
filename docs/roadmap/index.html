@@ -2125,7 +2125,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 </section>
 <!-- ============ v0.6.0 ============ -->
 <section id="m06">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.6.0: A console to watch it</h2><span class="tally">0 of 110 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.6.0: A console to watch it</h2><span class="tally">0 of 118 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a run is read end to end without leaving the browser or the terminal, and a workflow edited without leaving the browser.</p>
 
@@ -2137,6 +2137,8 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
     </ul>
 
     <p>The same views reach a terminal as <code>agk console</code>, for whoever works over SSH. It reads the routes the web console reads, as the principal <code>agk</code> is signed in as, and adds no route, no permission and nothing an installation serves, so it can decide no rule either. It acts on runs alone and leaves to the browser what needs one (<a href="../#terminal">Terminal console</a>).</p>
+
+    <p>The web console is built in <code>agentiik/agentiik</code> and served by <code>agentiik-api</code> from its own binary, so every installation serves it as it serves the API, a Homebrew service and a Compose file with no proxy among them. The control plane becomes one image, <code>ghcr.io/agentiik/agentiik</code>, holding the API with the console and MCP, and the controller, each run as its own container; the runner keeps its own image, since it runs on other hosts and at another scale (<a href="../#ui">Web console</a>, <a href="../#repos">Repositories</a>).</p>
 
     <div class="work">
       <div class="work-group">
@@ -2161,7 +2163,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <div class="work-group">
         <div class="work-head">
           <h4>The console shell</h4>
-          <span class="work-repo">console · schemas</span>
+          <span class="work-repo">agentiik · schemas</span>
         </div>
         <ul>
           <li>Build the console shell from the design tokens in agk console's design language (a top bar holding the namespace switcher, the views and the principal, with no sidebar; panes bordered with rounded corners; sub-navigation, filter bars and a key line; both grounds) for windows of 1280px and up. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#density-and-rhythm">density-and-rhythm</a></li>
@@ -2177,14 +2179,30 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Draw every state as an outlined pill with dot and word (queued, running, waiting, succeeded, failed, cancelled and timed_out for a run, plus skipped for a step), queued, skipped and cancelled in faint, not a ramp colour. <a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#colour-rules">colour-rules</a></li>
           <li>Build live updates over SSE for the run list, graph and log tail, instead of polling, reconnecting without losing history. <a class="ref" href="../#observability">observability</a><a class="ref" href="../#api">api</a></li>
           <li>Browse the brick catalog from GET /api/v1/bricks: manifest, ports, parameter schema and examples per brick. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#api">api</a><a class="ref" href="../#brick-manifest">brick-manifest</a></li>
-          <li>Serve the console at the root of the public URL, on the API's origin beside /api/v1 and /auth, from the API or a console container behind the same proxy path, and publish it as ghcr.io/agentiik/console at the project version, in the shared release and with the same OCI annotations. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#repos">repos</a><a class="ref" href="../#conventions-across-repositories">conventions-across-repositories</a></li>
           <li>Test every console screen on recorded API fixtures, with no controller, runner or database. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
       </div>
       <div class="work-group">
         <div class="work-head">
+          <h4>One image, and the console in every installation</h4>
+          <span class="work-repo">agentiik · deploy · homebrew-tap</span>
+        </div>
+        <ul>
+          <li>Move the web console into agentiik/agentiik, in a console directory holding its sources beside the Go package that embeds its build, with ./console/node_modules ignored in go.mod, and archive agentiik/console once v0.5.0 is tagged. <a class="ref" href="../#repos">repos</a></li>
+          <li>Embed the console's build in agentiik-api and serve it at the root of the public URL, on the API's origin beside /api/v1 and /auth, a build that skipped the console's stage serving none, as one that skipped the helper's carries no helper. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#repos">repos</a></li>
+          <li>Turn the console off with AGK_CONSOLE=off, every other route still served, /auth among them, and refuse at start any value of AGK_CONSOLE but on and off. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#configuration">configuration</a></li>
+          <li>Publish the console's files with each release as an archive at the project version, for an operator who serves them elsewhere on the API's origin with AGK_CONSOLE=off. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#conventions-across-repositories">conventions-across-repositories</a></li>
+          <li>Publish ghcr.io/agentiik/agentiik at the project version, holding agentiik-api and agentiik-controller, each run as its own container by its command, and stop publishing ghcr.io/agentiik/api and ghcr.io/agentiik/controller. <a class="ref" href="../#deployment">deployment</a><a class="ref" href="../#versioning">versioning</a><a class="ref" href="../#conventions-across-repositories">conventions-across-repositories</a></li>
+          <li>Run the API and the controller of the single-host compose.yaml from ghcr.io/agentiik/agentiik, each with its own mounts and the controller never the master key's, upgrading an installation of v0.5.0 with compose.yaml and .env alone. <a class="ref" href="../#profile-a-a-single-host">profile-a-a-single-host</a><a class="ref" href="../#configuration">configuration</a></li>
+          <li>Build the console in the agentiik formula, with Node as a build dependency, so that the API a Mac runs serves it. <a class="ref" href="../#install-with-homebrew">install-with-homebrew</a><a class="ref" href="../#ui">ui</a></li>
+          <li>Fail the build when the console calls a route the OpenAPI document does not describe, so that living in the core never lets it reach past /api/v1. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li>Test the console at the root of the public URL of a Compose installation, with and without a proxy, and of a Homebrew one, and its absence under AGK_CONSOLE=off while /auth still answers. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+        </ul>
+      </div>
+      <div class="work-group">
+        <div class="work-head">
           <h4>Reading a run, end to end</h4>
-          <span class="work-repo">console</span>
+          <span class="work-repo">agentiik</span>
         </div>
         <ul>
           <li>Build the run list on GET /api/v1/runs: state, id, workflow, trigger, Steps strip, times and principal, identifiers and durations in JetBrains Mono. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#api">api</a><a class="ref" href="../#typography">typography</a></li>
@@ -2207,7 +2225,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <div class="work-group">
         <div class="work-head">
           <h4>The workflow and its graph</h4>
-          <span class="work-repo">console</span>
+          <span class="work-repo">agentiik</span>
         </div>
         <ul>
           <li>Draw the resolved graph from GET /api/v1/{ns}/workflows/{name}: a node per step, ports as declared, an edge per needs entry, no implicit stage or file order. <a class="ref" href="../#api">api</a><a class="ref" href="../#graph">graph</a></li>
@@ -2226,7 +2244,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <div class="work-group">
         <div class="work-head">
           <h4>The repository browser and the format-preserving editor</h4>
-          <span class="work-repo">console · schemas</span>
+          <span class="work-repo">agentiik · schemas</span>
         </div>
         <ul>
           <li>Browse the tree at any ref via GET /api/v1/{ns}/workflows/{name}/tree/{ref}, code in JetBrains Mono on the sunken surface. <a class="ref" href="../#api">api</a><a class="ref" href="../#ui">ui</a><a class="ref" href="../#typography">typography</a></li>
@@ -2245,7 +2263,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <div class="work-group">
         <div class="work-head">
           <h4>The sharing panel, and what an administrator manages</h4>
-          <span class="work-repo">console</span>
+          <span class="work-repo">agentiik</span>
         </div>
         <ul>
           <li>List the applicable grants as written (principal, role, scope, expiry) from GET /api/v1/{ns}/workflows/{name}/grants. <a class="ref" href="../#api">api</a><a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a></li>
@@ -2263,7 +2281,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <div class="work-group">
         <div class="work-head">
           <h4>Statistics and charts</h4>
-          <span class="work-repo">agentiik · schemas · console</span>
+          <span class="work-repo">agentiik · schemas</span>
         </div>
         <ul>
           <li>Describe the aggregate routes in the OpenAPI document, with their range, bucket, compare and histogram parameters and their JSON and CSV answers, so that the console's client is generated rather than written. <a class="ref" href="../#console-statistics">console-statistics</a><a class="ref" href="../#api">api</a></li>
@@ -2319,13 +2337,13 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <span class="note-label">Done when</span>
       <p>A failed run is diagnosed in the console alone, in a browser or with <code>agk console</code> over SSH (the step, the exit code, what was refused), and a workflow edited in the browser comes back as a YAML diff of only the edit.</p>
     </div>
-    <p class="where"><span>Repositories</span> <code>design</code> · <code>console</code> · <code>schemas</code> · <code>agentiik</code></p>
+    <p class="where"><span>Repositories</span> <code>design</code> · <code>agentiik</code> · <code>schemas</code> · <code>deploy</code> · <code>homebrew-tap</code></p>
   </div>
 </section>
 
 <!-- ============ v0.7.0 ============ -->
 <section id="m07">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2><span class="tally">0 of 51 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2><span class="tally">0 of 52 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a model-driven client discovers Agentiik, learns the language, writes a valid workflow and runs it, and a workflow appears to such a client as a server of tools.</p>
 
@@ -2376,6 +2394,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Read the trusted issuer, audience and key set from installation configuration, refreshing keys without restarting the API. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
           <li>Execute every call as the presenting principal, neither endpoint holding authority of its own, and re-authorise at run creation like any trigger. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a></li>
           <li>Serve both endpoints from the API process, with no new component, no new port and no deployment profile change. <a class="ref" href="../#mcp">mcp</a></li>
+          <li>Turn both endpoints off with AGK_MCP=off, each answering 404 as a route the installation does not serve, the push still accepting and checking an mcp block and the console's MCP panel saying the installation serves none, and refuse at start any value of AGK_MCP but on and off. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#configuration">configuration</a></li>
           <li>Run both servers against a conformance client: initialisation, server/discover, tools/list, tools/call and resources/read, over HTTP and its session. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
       </div>
@@ -2596,7 +2615,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <div class="work-group">
         <div class="work-head">
           <h4>What the engine owes a brick author</h4>
-          <span class="work-repo">agentiik · console</span>
+          <span class="work-repo">agentiik</span>
         </div>
         <ul>
           <li>Implement agk brick init: scaffold a brick in Go, Python or TypeScript with its manifest, example envelopes and test harness. <a class="ref" href="../#command-line">command-line</a></li>
@@ -2661,7 +2680,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Offer the re-enrolment flow the installer proposes in place of changing the Relying Party Identifier. <a class="ref" href="../#what-every-profile-must-provide">what-every-profile-must-provide</a><a class="ref" href="../#auth">auth</a></li>
           <li>Show that no profile needs a shared filesystem for workflow repositories: objects in the object store, refs in the database, both already dependencies. <a class="ref" href="../#what-every-profile-must-provide">what-every-profile-must-provide</a><a class="ref" href="../#storage">storage</a></li>
           <li>Verify the controller's session-level advisory lock and fencing counter across a primary failover (a promoted synchronous standby, an RDS Multi-AZ failover), re-acquired by the same code path as a restart. <a class="ref" href="../#profile-b-on-premise-redundant">profile-b-on-premise-redundant</a><a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#how-the-api-and-the-controller-stay-in-step">how-the-api-and-the-controller-stay-in-step</a></li>
-          <li>Publish the console image to ghcr.io/agentiik/console at the project version, and sign every image the release publishes (api, controller and runner have been published unsigned since v0.2.1), each carrying the OCI annotations required of any brick. <a class="ref" href="../#conventions-across-repositories">conventions-across-repositories</a></li>
+          <li>Sign every image the release publishes (agentiik, runner and postgres-upgrade, published unsigned until then, as api, controller and runner were from v0.2.1), each carrying the OCI annotations required of any brick. <a class="ref" href="../#conventions-across-repositories">conventions-across-repositories</a></li>
           <li>Accept terraform as a trigger_kind: attributed to the token's principal, listed with every other run, subject to the namespace quota and the workflow's concurrency group. <a class="ref" href="../#running-a-workflow-from-terraform">running-a-workflow-from-terraform</a></li>
           <li>Have the installer write the bootstrap token as <code>AGENTIIK_OPERATOR_TOKEN</code> in the installation's <code>.env</code>, from the person's value or one it makes there, and print no token. <a class="ref" href="../#first-run">first-run</a></li>
           <li>Have the installer's walkthrough create the first administrator from that token with <code>agk user create LOGIN --admin</code>, the token ending once that administrator has enrolled a passkey. <a class="ref" href="../#first-run">first-run</a><a class="ref" href="../#administrators">administrators</a></li>
@@ -2692,8 +2711,8 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <span class="work-repo">deploy</span>
         </div>
         <ul>
-          <li>Ship the single-host compose.yaml: postgres, nats running JetStream, minio, api, controller, console and a colocated runner. <a class="ref" href="../#profile-a-a-single-host">profile-a-a-single-host</a></li>
-          <li>Put a TLS-terminating reverse proxy in front, serving the console from the API's origin, documented for Caddy and Traefik. <a class="ref" href="../#profile-a-a-single-host">profile-a-a-single-host</a><a class="ref" href="../#what-every-profile-must-provide">what-every-profile-must-provide</a></li>
+          <li>Ship the single-host compose.yaml: postgres, nats running JetStream, minio, the API and the controller from ghcr.io/agentiik/agentiik, the API serving the console, and a colocated runner. <a class="ref" href="../#profile-a-a-single-host">profile-a-a-single-host</a></li>
+          <li>Put a TLS-terminating reverse proxy in front, forwarding the whole public URL to the API, which serves the console, documented for Caddy and Traefik. <a class="ref" href="../#profile-a-a-single-host">profile-a-a-single-host</a><a class="ref" href="../#what-every-profile-must-provide">what-every-profile-must-provide</a></li>
           <li>Cap AGK_RUNNER_CONCURRENCY on the colocated runner so a fan-out cannot evict the database's page cache, and justify the default. <a class="ref" href="../#profile-a-a-single-host">profile-a-a-single-host</a><a class="ref" href="../#sizing">sizing</a></li>
           <li>Mount /var/run/docker.sock read-only into the runner, so only the runner sees the daemon, and the work root and a secrets tmpfs at the same paths as on the host, since the daemon resolves bind sources there. <a class="ref" href="../#profile-a-a-single-host">profile-a-a-single-host</a><a class="ref" href="../#further-rules">further-rules</a></li>
           <li>Wire the built-in encrypted store as profile A's secret store, its master key held outside the compose file. <a class="ref" href="../#profile-a-a-single-host">profile-a-a-single-host</a><a class="ref" href="../#secrets">secrets</a></li>
@@ -2714,7 +2733,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <span class="work-repo">deploy</span>
         </div>
         <ul>
-          <li>Lay out three failure domains, each with API and controller, behind one TLS-terminating load balancer whose virtual IP also serves the console. <a class="ref" href="../#profile-b-on-premise-redundant">profile-b-on-premise-redundant</a></li>
+          <li>Lay out three failure domains, each with API and controller from ghcr.io/agentiik/agentiik, behind one TLS-terminating load balancer, each API serving the console. <a class="ref" href="../#profile-b-on-premise-redundant">profile-b-on-premise-redundant</a></li>
           <li>Configure PostgreSQL as a primary, a synchronous standby and an asynchronous replica, one per domain, promoting the synchronous standby. <a class="ref" href="../#profile-b-on-premise-redundant">profile-b-on-premise-redundant</a></li>
           <li>Configure a NATS cluster of three with streams at R3. <a class="ref" href="../#profile-b-on-premise-redundant">profile-b-on-premise-redundant</a></li>
           <li>Configure MinIO erasure sets across the three domains at parity EC:4. <a class="ref" href="../#profile-b-on-premise-redundant">profile-b-on-premise-redundant</a></li>
@@ -2732,7 +2751,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
         <ul>
           <li>Run the API as an ECS Fargate service across three Availability Zones behind a TLS-terminating Application Load Balancer. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
           <li>Run the controller as a two-task Fargate service with one active, the third zone left without a controller task. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
-          <li>Serve the console from S3 behind CloudFront on the API's origin, so one Relying Party Identifier, one session cookie and one Origin check cover both. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#what-every-profile-must-provide">what-every-profile-must-provide</a></li>
+          <li>Serve the console from the API's Fargate service behind the load balancer, on the API's origin, so one Relying Party Identifier, one session cookie and one Origin check cover both. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a><a class="ref" href="../#what-every-profile-must-provide">what-every-profile-must-provide</a></li>
           <li>Back the installation with RDS PostgreSQL Multi-AZ, S3 for artifacts and logs, Secrets Manager for workflow secrets and push credentials, and ECR for brick images pulled by digest. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
           <li>Create one SQS standard queue per runner pool, since SQS has no server-side subject filtering to replace it. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
           <li>Run each runner pool as an EC2 Auto Scaling group across the three zones, bricks running as containers under Docker on the instances, not as Fargate tasks. <a class="ref" href="../#profile-c-aws-with-managed-resources">profile-c-aws-with-managed-resources</a></li>
@@ -2867,8 +2886,8 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Sign every image published to ghcr.io/agentiik/&lt;name&gt; (api, controller, runner, console), each carrying the OCI annotations required of any brick. <a class="ref" href="../#conventions-across-repositories">conventions-across-repositories</a><a class="ref" href="../#supply-chain">supply-chain</a></li>
-          <li>Publish an SBOM per api, controller, runner and console image as an OCI referrer, so a dependency question is answered from an attestation, not an unpacked filesystem. <a class="ref" href="../#supply-chain">supply-chain</a><a class="ref" href="../#disclosure">disclosure</a></li>
+          <li>Sign every image published to ghcr.io/agentiik/&lt;name&gt; (agentiik, runner, postgres-upgrade), each carrying the OCI annotations required of any brick. <a class="ref" href="../#conventions-across-repositories">conventions-across-repositories</a><a class="ref" href="../#supply-chain">supply-chain</a></li>
+          <li>Publish an SBOM per agentiik and runner image as an OCI referrer, so a dependency question is answered from an attestation, not an unpacked filesystem. <a class="ref" href="../#supply-chain">supply-chain</a><a class="ref" href="../#disclosure">disclosure</a></li>
           <li>Publish build provenance and hold the release build to SLSA Build Level 3: runs isolated from one another, and no secret material reachable from a user-defined build step. <a class="ref" href="../#supply-chain">supply-chain</a></li>
           <li>Enforce signature verification in the runner before the container is created, under a per-namespace policy naming which identities may sign. <a class="ref" href="../#supply-chain">supply-chain</a><a class="ref" href="../#further-rules">further-rules</a></li>
           <li>Resolve every production image reference to a digest and refuse a mutable tag wherever a run resolves one. <a class="ref" href="../#supply-chain">supply-chain</a><a class="ref" href="../#further-rules">further-rules</a></li>
@@ -2890,7 +2909,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Carry the shared code of conduct, contribution guide, and issue and pull request templates from agentiik/.github into every repository. <a class="ref" href="../#repos">repos</a><a class="ref" href="../#conventions-across-repositories">conventions-across-repositories</a></li>
           <li>Require the Developer Certificate of Origin 1.1: a Signed-off-by line on every contribution, checked in CI, and no contributor licence agreement. <a class="ref" href="../#licensing">licensing</a></li>
           <li>Publish agentiik/.github/LICENSING.md, stating that a brick is not a derivative work of the engine, and the trademark policy separating the right to fork from the right to call the fork Agentiik. <a class="ref" href="../#licensing">licensing</a></li>
-          <li>Set each repository's licence to the documented split: AGPL-3.0-or-later on agentiik, console, ios and android; Apache-2.0 on schemas, brick-sdk, bricks, deploy, .github and terraform-provider-agentiik; Apache-2.0 for code and CC BY 4.0 for assets and prose on design and agentiik.github.io. <a class="ref" href="../#licensing">licensing</a></li>
+          <li>Set each repository's licence to the documented split: AGPL-3.0-or-later on agentiik, ios and android; Apache-2.0 on schemas, brick-sdk, bricks, deploy, .github and terraform-provider-agentiik; Apache-2.0 for code and CC BY 4.0 for assets and prose on design and agentiik.github.io. <a class="ref" href="../#licensing">licensing</a></li>
           <li>Run the pre-release sequence to 1.0.0 (alpha, beta, rc), each channel promising what the documentation says, an rc that survives a week with nothing blocking becoming the release unchanged but for its tag. <a class="ref" href="../#versioning">versioning</a></li>
           <li>Tag 1.0.0 on every repository on the same commit day, including those with nothing to ship, and keep latest and the rolling 1 and 1.0 tags off every pre-release. <a class="ref" href="../#versioning">versioning</a></li>
           <li>Freeze the list of what the version promises, and state in the release that breaking any line of it is a major for every repository. <a class="ref" href="../#versioning">versioning</a></li>

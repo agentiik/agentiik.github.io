@@ -18,8 +18,8 @@ import subprocess
 import sys
 
 ROADMAP = "docs/roadmap/index.html"
-REPOS = ["agentiik", "schemas", "bricks", "brick-sdk", "design", "console", "ios",
-         "android", "deploy", "terraform-provider-agentiik", "agentiik.github.io", ".github",
+REPOS = ["agentiik", "schemas", "bricks", "brick-sdk", "design", "ios", "android",
+         "deploy", "terraform-provider-agentiik", "agentiik.github.io", ".github",
          "homebrew-tap"]
 
 
