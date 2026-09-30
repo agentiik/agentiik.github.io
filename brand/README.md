@@ -8,8 +8,8 @@ renderings of the same shape.
 | File | Ground |
 | --- | --- |
 | `agentiik-mark-1024.png`, `agentiik-mark-512.png` | transparent, light accent |
-| `agentiik-mark-1024-light.png`, `agentiik-mark-512-light.png` | paper `#FBFCF8` |
-| `agentiik-mark-1024-dark.png` | `#111614`, dark accent |
+| `agentiik-mark-1024-light.png`, `agentiik-mark-512-light.png` | the light `surface`, `#FBFBFB`, light accent |
+| `agentiik-mark-1024-dark.png` | the dark `bg`, `#121212`, dark accent |
 
 `agentiik-mark-square.svg` is what they are rendered from: the mark on a 24-unit square,
 which is the clear space the design system asks for: one bar, four units, on every side.

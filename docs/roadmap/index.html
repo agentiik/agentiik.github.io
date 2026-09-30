@@ -23,24 +23,24 @@
    surface for panels and rails, sunken for code, raised for controls. The older names the
    pages were written with (paper, ink) stay as aliases so nothing else has to change. */
 :root{
-  --bg:#EFF2ED;
-  --surface:#FBFCF9;
-  --sunken:#E7EBE3;
+  --bg:#F1F1F1;
+  --surface:#FBFBFB;
+  --sunken:#E9E9E9;
   --raised:#FFFFFF;
-  --ink:#16201B;
-  --muted:#5A6961;
-  --faint:#7E8C84;
-  --line:#DCE2D7;
-  --line-strong:#C0CABB;
-  --accent:#0E6A5F;
-  --accent-soft:#DBE9E4;
+  --ink:#1D1D1D;
+  --muted:#656565;
+  --faint:#888888;
+  --line:#DFDFDF;
+  --line-strong:#C6C6C6;
+  --accent:#015DA2;
+  --accent-soft:#D7E7F9;
   --on-accent:#FFFFFF;
   --signal:#B23C1E;
   --paper:var(--bg);
   /* The edge of something that scrolls sideways. Not elevation, which the system draws
      with a ground and a hairline; a cue that the content goes on past the edge. */
-  --cue:rgba(22,32,27,.28);
-  --scrim:rgba(14,19,16,.42);
+  --cue:rgba(29,29,29,.28);
+  --scrim:rgba(18,18,18,.42);
   --shadow:none;
 
   --header-h:56px;
@@ -60,36 +60,36 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0E1310;
-    --surface:#151C18;
-    --sunken:#0A0F0C;
-    --raised:#1B2420;
-    --ink:#E4EAE3;
-    --muted:#94A29A;
-    --faint:#6D7B73;
-    --line:#26312B;
-    --line-strong:#35423A;
-    --accent:#4FBFAC;
-    --accent-soft:#12302A;
-    --on-accent:#0E1310;
+    --bg:#121212;
+    --surface:#1A1A1A;
+    --sunken:#0E0E0E;
+    --raised:#222222;
+    --ink:#E8E8E8;
+    --muted:#9E9E9E;
+    --faint:#777777;
+    --line:#2E2E2E;
+    --line-strong:#3E3E3E;
+    --accent:#68AEF5;
+    --accent-soft:#0F2B46;
+    --on-accent:#121212;
     --signal:#E0705A;
     --cue:rgba(0,0,0,.55);
     --scrim:rgba(0,0,0,.6);
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0E1310;
-  --surface:#151C18;
-  --sunken:#0A0F0C;
-  --raised:#1B2420;
-  --ink:#E4EAE3;
-  --muted:#94A29A;
-  --faint:#6D7B73;
-  --line:#26312B;
-  --line-strong:#35423A;
-  --accent:#4FBFAC;
-  --accent-soft:#12302A;
-  --on-accent:#0E1310;
+  --bg:#121212;
+  --surface:#1A1A1A;
+  --sunken:#0E0E0E;
+  --raised:#222222;
+  --ink:#E8E8E8;
+  --muted:#9E9E9E;
+  --faint:#777777;
+  --line:#2E2E2E;
+  --line-strong:#3E3E3E;
+  --accent:#68AEF5;
+  --accent-soft:#0F2B46;
+  --on-accent:#121212;
   --signal:#E0705A;
   --cue:rgba(0,0,0,.55);
   --scrim:rgba(0,0,0,.6);

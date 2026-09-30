@@ -23,24 +23,24 @@
    surface for panels and rails, sunken for code, raised for controls. The older names the
    pages were written with (paper, ink) stay as aliases so nothing else has to change. */
 :root{
-  --bg:#EFF2ED;
-  --surface:#FBFCF9;
-  --sunken:#E7EBE3;
+  --bg:#F1F1F1;
+  --surface:#FBFBFB;
+  --sunken:#E9E9E9;
   --raised:#FFFFFF;
-  --ink:#16201B;
-  --muted:#5A6961;
-  --faint:#7E8C84;
-  --line:#DCE2D7;
-  --line-strong:#C0CABB;
-  --accent:#0E6A5F;
-  --accent-soft:#DBE9E4;
+  --ink:#1D1D1D;
+  --muted:#656565;
+  --faint:#888888;
+  --line:#DFDFDF;
+  --line-strong:#C6C6C6;
+  --accent:#015DA2;
+  --accent-soft:#D7E7F9;
   --on-accent:#FFFFFF;
   --signal:#B23C1E;
   --paper:var(--bg);
   /* The edge of something that scrolls sideways. Not elevation, which the system draws
      with a ground and a hairline; a cue that the content goes on past the edge. */
-  --cue:rgba(22,32,27,.28);
-  --scrim:rgba(14,19,16,.42);
+  --cue:rgba(29,29,29,.28);
+  --scrim:rgba(18,18,18,.42);
   --shadow:none;
 
   --header-h:56px;
@@ -60,36 +60,36 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0E1310;
-    --surface:#151C18;
-    --sunken:#0A0F0C;
-    --raised:#1B2420;
-    --ink:#E4EAE3;
-    --muted:#94A29A;
-    --faint:#6D7B73;
-    --line:#26312B;
-    --line-strong:#35423A;
-    --accent:#4FBFAC;
-    --accent-soft:#12302A;
-    --on-accent:#0E1310;
+    --bg:#121212;
+    --surface:#1A1A1A;
+    --sunken:#0E0E0E;
+    --raised:#222222;
+    --ink:#E8E8E8;
+    --muted:#9E9E9E;
+    --faint:#777777;
+    --line:#2E2E2E;
+    --line-strong:#3E3E3E;
+    --accent:#68AEF5;
+    --accent-soft:#0F2B46;
+    --on-accent:#121212;
     --signal:#E0705A;
     --cue:rgba(0,0,0,.55);
     --scrim:rgba(0,0,0,.6);
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0E1310;
-  --surface:#151C18;
-  --sunken:#0A0F0C;
-  --raised:#1B2420;
-  --ink:#E4EAE3;
-  --muted:#94A29A;
-  --faint:#6D7B73;
-  --line:#26312B;
-  --line-strong:#35423A;
-  --accent:#4FBFAC;
-  --accent-soft:#12302A;
-  --on-accent:#0E1310;
+  --bg:#121212;
+  --surface:#1A1A1A;
+  --sunken:#0E0E0E;
+  --raised:#222222;
+  --ink:#E8E8E8;
+  --muted:#9E9E9E;
+  --faint:#777777;
+  --line:#2E2E2E;
+  --line-strong:#3E3E3E;
+  --accent:#68AEF5;
+  --accent-soft:#0F2B46;
+  --on-accent:#121212;
   --signal:#E0705A;
   --cue:rgba(0,0,0,.55);
   --scrim:rgba(0,0,0,.6);
@@ -913,9 +913,9 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
   .tabpanel[hidden]{display:block!important}
 }
 /* Console mockups: one markup, both themes, from the design system's tokens. */
-.mock{--m-bg:#EFF2ED;--m-surface:#FBFCF9;--m-pane:#F4F6F1;--m-sunken:#E7EBE3;--m-raised:#FFFFFF;--m-line:#DCE2D7;--m-line-strong:#C0CABB;--m-text:#16201B;--m-muted:#5A6961;--m-faint:#7E8C84;--m-accent:#0E6A5F;--m-accent-dim:#DBE9E4;--m-accent-line:#ABC9C2;--m-on-accent:#FFFFFF;--m-ok:#2E7D4F;--m-ok-bg:#DCEBE0;--m-ok-line:#ADCDB9;--m-wait:#96660A;--m-wait-bg:#F4EAD3;--m-wait-line:#DBC69D;--m-fail:#B23C1E;--m-fail-bg:#F6E1D9;--m-fail-line:#E3B5A7;display:block;width:100%;height:auto}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-bg:#0E1310;--m-surface:#151C18;--m-pane:#0A0F0C;--m-sunken:#0A0F0C;--m-raised:#1B2420;--m-line:#26312B;--m-line-strong:#35423A;--m-text:#E4EAE3;--m-muted:#94A29A;--m-faint:#6D7B73;--m-accent:#4FBFAC;--m-accent-dim:#12302A;--m-accent-line:#21473F;--m-on-accent:#0E1310;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}}
-:root[data-theme="dark"] .mock{--m-bg:#0E1310;--m-surface:#151C18;--m-pane:#0A0F0C;--m-sunken:#0A0F0C;--m-raised:#1B2420;--m-line:#26312B;--m-line-strong:#35423A;--m-text:#E4EAE3;--m-muted:#94A29A;--m-faint:#6D7B73;--m-accent:#4FBFAC;--m-accent-dim:#12302A;--m-accent-line:#21473F;--m-on-accent:#0E1310;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}
+.mock{--m-bg:#F1F1F1;--m-surface:#FBFBFB;--m-pane:#F5F5F5;--m-sunken:#E9E9E9;--m-raised:#FFFFFF;--m-line:#DFDFDF;--m-line-strong:#C6C6C6;--m-text:#1D1D1D;--m-muted:#656565;--m-faint:#888888;--m-accent:#015DA2;--m-accent-dim:#D7E7F9;--m-accent-line:#A5C5E7;--m-on-accent:#FFFFFF;--m-ok:#2E7D4F;--m-ok-bg:#DCEBE0;--m-ok-line:#ADCDB9;--m-wait:#96660A;--m-wait-bg:#F4EAD3;--m-wait-line:#DBC69D;--m-fail:#B23C1E;--m-fail-bg:#F6E1D9;--m-fail-line:#E3B5A7;display:block;width:100%;height:auto}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-bg:#121212;--m-surface:#1A1A1A;--m-pane:#0E0E0E;--m-sunken:#0E0E0E;--m-raised:#222222;--m-line:#2E2E2E;--m-line-strong:#3E3E3E;--m-text:#E8E8E8;--m-muted:#9E9E9E;--m-faint:#777777;--m-accent:#68AEF5;--m-accent-dim:#0F2B46;--m-accent-line:#1C4165;--m-on-accent:#121212;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}}
+:root[data-theme="dark"] .mock{--m-bg:#121212;--m-surface:#1A1A1A;--m-pane:#0E0E0E;--m-sunken:#0E0E0E;--m-raised:#222222;--m-line:#2E2E2E;--m-line-strong:#3E3E3E;--m-text:#E8E8E8;--m-muted:#9E9E9E;--m-faint:#777777;--m-accent:#68AEF5;--m-accent-dim:#0F2B46;--m-accent-line:#1C4165;--m-on-accent:#121212;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}
 .mock .t-sans{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
 .mock .t-mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 .mock text{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
@@ -944,14 +944,14 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
 .mock .f-fail-bg{fill:var(--m-fail-bg)}.mock .s-fail-bg{stroke:var(--m-fail-bg)}
 .mock .f-fail-line{fill:var(--m-fail-line)}.mock .s-fail-line{stroke:var(--m-fail-line)}
 /* Extra tokens for console-graph: YAML section keys and scalar values. */
-.mock{--m-graph-key:#0E6A5F;--m-graph-value:#8A6A17}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-graph-key:#7BD2C2;--m-graph-value:#C9BE7E;}}
-:root[data-theme="dark"] .mock{--m-graph-key:#7BD2C2;--m-graph-value:#C9BE7E;}
+.mock{--m-graph-key:#015DA2;--m-graph-value:#8A6A17}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-graph-key:#8CC4FF;--m-graph-value:#D5B97D;}}
+:root[data-theme="dark"] .mock{--m-graph-key:#8CC4FF;--m-graph-value:#D5B97D;}
 .mock .f-graph-key{fill:var(--m-graph-key)}.mock .s-graph-key{stroke:var(--m-graph-key)}
 .mock .f-graph-value{fill:var(--m-graph-value)}.mock .s-graph-value{stroke:var(--m-graph-value)}
 .mock{--m-inspector-str:#8A6A17}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-inspector-str:#C9BE7E}}
-:root[data-theme="dark"] .mock{--m-inspector-str:#C9BE7E}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-inspector-str:#D5B97D}}
+:root[data-theme="dark"] .mock{--m-inspector-str:#D5B97D}
 .mock .f-inspector-str{fill:var(--m-inspector-str)}.mock .s-inspector-str{stroke:var(--m-inspector-str)}
 /* The terminal mockups: every letter in the monospace face, one cell each, and the 80 by 24
    one kept near its own size rather than enlarged to the column. */
@@ -8116,31 +8116,31 @@ resource "agentiik_workflow" "search" {
         </g>
 
         <g stroke="currentColor" stroke-opacity=".28" stroke-width="1">
-          <rect x="76" y="30" width="58" height="44" fill="#0A0F0C"/>
-          <rect x="139" y="30" width="58" height="44" fill="#0E1310"/>
-          <rect x="202" y="30" width="58" height="44" fill="#151C18"/>
-          <rect x="265" y="30" width="58" height="44" fill="#1B2420"/>
-          <rect x="343" y="30" width="58" height="44" fill="#6D7B73"/>
-          <rect x="406" y="30" width="58" height="44" fill="#94A29A"/>
-          <rect x="469" y="30" width="58" height="44" fill="#E4EAE3"/>
-          <rect x="547" y="30" width="58" height="44" fill="#12302A"/>
-          <rect x="610" y="30" width="58" height="44" fill="#4FBFAC"/>
+          <rect x="76" y="30" width="58" height="44" fill="#0E0E0E"/>
+          <rect x="139" y="30" width="58" height="44" fill="#121212"/>
+          <rect x="202" y="30" width="58" height="44" fill="#1A1A1A"/>
+          <rect x="265" y="30" width="58" height="44" fill="#222222"/>
+          <rect x="343" y="30" width="58" height="44" fill="#777777"/>
+          <rect x="406" y="30" width="58" height="44" fill="#9E9E9E"/>
+          <rect x="469" y="30" width="58" height="44" fill="#E8E8E8"/>
+          <rect x="547" y="30" width="58" height="44" fill="#0F2B46"/>
+          <rect x="610" y="30" width="58" height="44" fill="#68AEF5"/>
           <rect x="688" y="30" width="58" height="44" fill="#5FA773"/>
-          <rect x="751" y="30" width="58" height="44" fill="#4FBFAC"/>
+          <rect x="751" y="30" width="58" height="44" fill="#68AEF5"/>
           <rect x="814" y="30" width="58" height="44" fill="#D9A441"/>
           <rect x="877" y="30" width="58" height="44" fill="#E0705A"/>
 
-          <rect x="76" y="142" width="58" height="44" fill="#E7EBE3"/>
-          <rect x="139" y="142" width="58" height="44" fill="#EFF2ED"/>
-          <rect x="202" y="142" width="58" height="44" fill="#FBFCF9"/>
+          <rect x="76" y="142" width="58" height="44" fill="#E9E9E9"/>
+          <rect x="139" y="142" width="58" height="44" fill="#F1F1F1"/>
+          <rect x="202" y="142" width="58" height="44" fill="#FBFBFB"/>
           <rect x="265" y="142" width="58" height="44" fill="#FFFFFF"/>
-          <rect x="343" y="142" width="58" height="44" fill="#7E8C84"/>
-          <rect x="406" y="142" width="58" height="44" fill="#5A6961"/>
-          <rect x="469" y="142" width="58" height="44" fill="#16201B"/>
-          <rect x="547" y="142" width="58" height="44" fill="#DBE9E4"/>
-          <rect x="610" y="142" width="58" height="44" fill="#0E6A5F"/>
+          <rect x="343" y="142" width="58" height="44" fill="#888888"/>
+          <rect x="406" y="142" width="58" height="44" fill="#656565"/>
+          <rect x="469" y="142" width="58" height="44" fill="#1D1D1D"/>
+          <rect x="547" y="142" width="58" height="44" fill="#D7E7F9"/>
+          <rect x="610" y="142" width="58" height="44" fill="#015DA2"/>
           <rect x="688" y="142" width="58" height="44" fill="#2E7D4F"/>
-          <rect x="751" y="142" width="58" height="44" fill="#0E6A5F"/>
+          <rect x="751" y="142" width="58" height="44" fill="#015DA2"/>
           <rect x="814" y="142" width="58" height="44" fill="#96660A"/>
           <rect x="877" y="142" width="58" height="44" fill="#B23C1E"/>
         </g>
@@ -8163,20 +8163,20 @@ resource "agentiik_workflow" "search" {
           <text x="814" y="200">waiting</text><text x="877" y="200">failed</text>
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="8" fill="currentColor" opacity=".6">
-          <text x="76" y="99">#0A0F0C</text><text x="139" y="99">#0E1310</text>
-          <text x="202" y="99">#151C18</text><text x="265" y="99">#1B2420</text>
-          <text x="343" y="99">#6D7B73</text><text x="406" y="99">#94A29A</text>
-          <text x="469" y="99">#E4EAE3</text>
-          <text x="547" y="99">#12302A</text><text x="610" y="99">#4FBFAC</text>
-          <text x="688" y="99">#5FA773</text><text x="751" y="99">#4FBFAC</text>
+          <text x="76" y="99">#0E0E0E</text><text x="139" y="99">#121212</text>
+          <text x="202" y="99">#1A1A1A</text><text x="265" y="99">#222222</text>
+          <text x="343" y="99">#777777</text><text x="406" y="99">#9E9E9E</text>
+          <text x="469" y="99">#E8E8E8</text>
+          <text x="547" y="99">#0F2B46</text><text x="610" y="99">#68AEF5</text>
+          <text x="688" y="99">#5FA773</text><text x="751" y="99">#68AEF5</text>
           <text x="814" y="99">#D9A441</text><text x="877" y="99">#E0705A</text>
 
-          <text x="76" y="211">#E7EBE3</text><text x="139" y="211">#EFF2ED</text>
-          <text x="202" y="211">#FBFCF9</text><text x="265" y="211">#FFFFFF</text>
-          <text x="343" y="211">#7E8C84</text><text x="406" y="211">#5A6961</text>
-          <text x="469" y="211">#16201B</text>
-          <text x="547" y="211">#DBE9E4</text><text x="610" y="211">#0E6A5F</text>
-          <text x="688" y="211">#2E7D4F</text><text x="751" y="211">#0E6A5F</text>
+          <text x="76" y="211">#E9E9E9</text><text x="139" y="211">#F1F1F1</text>
+          <text x="202" y="211">#FBFBFB</text><text x="265" y="211">#FFFFFF</text>
+          <text x="343" y="211">#888888</text><text x="406" y="211">#656565</text>
+          <text x="469" y="211">#1D1D1D</text>
+          <text x="547" y="211">#D7E7F9</text><text x="610" y="211">#015DA2</text>
+          <text x="688" y="211">#2E7D4F</text><text x="751" y="211">#015DA2</text>
           <text x="814" y="211">#96660A</text><text x="877" y="211">#B23C1E</text>
         </g>
 
@@ -8184,7 +8184,7 @@ resource "agentiik_workflow" "search" {
         <text x="76" y="258" font-family="JetBrains Mono, monospace" font-size="9" fill="currentColor" opacity=".65">running is the one state that borrows the accent hue: it is the live state, and it never shares a shape with a button</text>
       </svg>
     </div>
-    <figcaption><b>Two grounds, one accent, one state ramp.</b> Neutrals lean olive, so the teal accent belongs to the surfaces instead of sitting on them. <code>queued</code>, <code>skipped</code> and <code>cancelled</code> take <code>faint</code>: they are the absence of a state, not one.</figcaption>
+    <figcaption><b>Two grounds, one accent, one state ramp.</b> The grounds are black and white, with no hue of their own, so that the blue of the accent is the one colour a screen carries beside its states, and marks what matters. <code>queued</code>, <code>skipped</code> and <code>cancelled</code> take <code>faint</code>: they are the absence of a state, not one.</figcaption>
   </figure>
 
   <div class="prose">
@@ -8200,10 +8200,10 @@ resource "agentiik_workflow" "search" {
       <table>
         <thead><tr><th>Token</th><th>Dark</th><th>Light</th><th>Draws</th></tr></thead>
         <tbody>
-          <tr><td><code>line</code></td><td><code>#26312B</code></td><td><code>#DCE2D7</code></td><td>The hairline of rows and dividers.</td></tr>
-          <tr><td><code>lineStrong</code></td><td><code>#35423A</code></td><td><code>#C0CABB</code></td><td>The outline of a control, a chip and a pane, and of the pill of a faint state, <code>queued</code>, <code>skipped</code> or <code>cancelled</code>, which is <code>sunken</code> inside.</td></tr>
-          <tr><td><code>accentLine</code></td><td><code>#21473F</code></td><td><code>#ABC9C2</code></td><td>The outline of what <code>accentDim</code> fills: the <code>running</code> pill, the active view, the selected chip.</td></tr>
-          <tr><td><code>onAccent</code></td><td><code>#0E1310</code></td><td><code>#FFFFFF</code></td><td>The ink on a solid accent fill, a primary button's.</td></tr>
+          <tr><td><code>line</code></td><td><code>#2E2E2E</code></td><td><code>#DFDFDF</code></td><td>The hairline of rows and dividers.</td></tr>
+          <tr><td><code>lineStrong</code></td><td><code>#3E3E3E</code></td><td><code>#C6C6C6</code></td><td>The outline of a control, a chip and a pane, and of the pill of a faint state, <code>queued</code>, <code>skipped</code> or <code>cancelled</code>, which is <code>sunken</code> inside.</td></tr>
+          <tr><td><code>accentLine</code></td><td><code>#1C4165</code></td><td><code>#A5C5E7</code></td><td>The outline of what <code>accentDim</code> fills: the <code>running</code> pill, the active view, the selected chip.</td></tr>
+          <tr><td><code>onAccent</code></td><td><code>#121212</code></td><td><code>#FFFFFF</code></td><td>The ink on a solid accent fill, a primary button's.</td></tr>
           <tr><td><code>succeededFill</code><br><code>succeededLine</code></td><td><code>#132A1C</code><br><code>#264B33</code></td><td><code>#DCEBE0</code><br><code>#ADCDB9</code></td><td>The fill and outline of the <code>succeeded</code> pill.</td></tr>
           <tr><td><code>waitingFill</code><br><code>waitingLine</code></td><td><code>#2E2413</code><br><code>#5B461E</code></td><td><code>#F4EAD3</code><br><code>#DBC69D</code></td><td>The fill and outline of the <code>waiting</code> pill.</td></tr>
           <tr><td><code>failedFill</code><br><code>failedLine</code></td><td><code>#31190F</code><br><code>#5F3023</code></td><td><code>#F6E1D9</code><br><code>#E3B5A7</code></td><td>The fill and outline of the <code>failed</code> pill.</td></tr>
@@ -14581,11 +14581,11 @@ archive     queued
       <table>
         <thead><tr><th>State</th><th>Dark ground</th><th>Light ground</th><th>256, dark</th><th>256, light</th><th>16 colours</th></tr></thead>
         <tbody>
-          <tr><td>running</td><td class="wrapcell"><code>#4FBFAC</code>, the accent's hue</td><td><code>#0E6A5F</code></td><td>37</td><td>23</td><td>cyan</td></tr>
+          <tr><td>running</td><td class="wrapcell"><code>#68AEF5</code>, the accent's hue</td><td><code>#015DA2</code></td><td>75</td><td>25</td><td>blue</td></tr>
           <tr><td>succeeded</td><td><code>#5FA773</code></td><td><code>#2E7D4F</code></td><td>72</td><td>29</td><td>green</td></tr>
           <tr><td>waiting</td><td><code>#D9A441</code></td><td><code>#96660A</code></td><td>179</td><td>94</td><td>yellow</td></tr>
           <tr><td>failed, timed_out</td><td><code>#E0705A</code></td><td><code>#B23C1E</code></td><td>167</td><td>88</td><td>red</td></tr>
-          <tr><td>queued, skipped, cancelled</td><td><code>#6D7B73</code>, faint</td><td><code>#7E8C84</code></td><td>243</td><td>245</td><td>the terminal's faint</td></tr>
+          <tr><td>queued, skipped, cancelled</td><td><code>#777777</code>, faint</td><td><code>#888888</code></td><td>243</td><td>102</td><td>the terminal's faint</td></tr>
         </tbody>
       </table>
     </div>
