@@ -2026,6 +2026,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Add the workflow-level concurrency block, with group and cancel_in_progress. <a class="ref" href="../#triggers">triggers</a></li>
           <li>Add the workflow step keyword (a local or published callee and its ref), exclusive with image and script. <a class="ref" href="../#step-keywords">step-keywords</a></li>
           <li>Constrain triggers in the schema: five-field cron, timezone name, auth hmac, bearer, mtls or none, response sync or async, and response: sync naming a declared output. <a class="ref" href="../#triggers">triggers</a></li>
+          <li>Add namespace and map to the event trigger: the namespace a subscription listens to, and the inputs an event fills. <a class="ref" href="../#triggers">triggers</a></li>
           <li>Add trigger_kind and triggered_by to the run, open to the mcp and terraform kinds later milestones add. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#exposed-context">exposed-context</a></li>
           <li>Ship valid and invalid fixtures for each trigger kind, concurrency and a sub-workflow call, and release agentiik/schemas 0.5. <a class="ref" href="../#versioning">versioning</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
@@ -2084,13 +2085,15 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       </div>
       <div class="work-group">
         <div class="work-head">
-          <h4>Events off the bus, and the context a trigger exposes</h4>
+          <h4>Events published to a namespace, and the context a trigger exposes</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Consume CloudEvents 1.0 from the bus, starting a run per armed subscription matching type and source. <a class="ref" href="../#triggers">triggers</a></li>
+          <li>Serve POST /api/v1/{ns}/events under workflow:run, starting a run per armed subscription matching type and source. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#api">api</a></li>
+          <li>Fill a run's inputs from an event by map, held to their schemas before the run exists. <a class="ref" href="../#triggers">triggers</a></li>
+          <li>Answer an event published again, the same source and id within a day, as the first was, starting nothing. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#storage">storage</a></li>
           <li>Evaluate filter over the event's context attributes and data before any run is created. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#expressions">expressions</a></li>
-          <li>Show a workflow only events from its own namespace or from one that granted it read access. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a></li>
+          <li>Show a workflow only events from its own namespace, or from the one it names where that namespace granted its built-in identity read. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a></li>
           <li>Expose the trigger root (body, headers, query, scheduled_for) in the on block and step parameters only. <a class="ref" href="../#exposed-context">exposed-context</a></li>
           <li>Expose the event root (id, source, specversion, type, subject, time, datacontenttype, dataschema, data) in event triggers only. <a class="ref" href="../#exposed-context">exposed-context</a></li>
           <li>Expose run.trigger_kind and run.triggered_by everywhere an expression is evaluated. <a class="ref" href="../#exposed-context">exposed-context</a></li>
