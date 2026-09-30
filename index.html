@@ -280,7 +280,8 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 }
 .install p code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.92em;color:var(--ink)}
 
-/* Four things Agentiik is, two by two, MCP first. */
+/* Four things Agentiik is, MCP first: side by side where the screen holds them, two by two
+   where it does not, one under the other on a phone. */
 .ideas{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -299,6 +300,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 .ideas p{margin:0;color:var(--muted);font-size:.94rem;line-height:1.6}
 .ideas code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.86em;color:var(--ink)}
 @media (max-width:760px){.ideas{grid-template-columns:1fr}}
+@media (min-width:1100px){.ideas{grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 .section-title{
   margin:0 0 6px;
@@ -575,6 +577,14 @@ body{overflow-x:clip}
 /* The screenshot and the recording take the screen's width, up to the 1440 the console is
    drawn at, and stop one gutter short of either edge. */
 .shot,.cast{width:min(1440px, calc(100vw - 2 * var(--gutter)))}
+/* Below the opening every block takes the width the screenshots take, so the page reads as one
+   column from the first screenshot to the footer rather than a narrow one between wide ones.
+   Placed by its left margin rather than by a transform, which can leave text on half a pixel;
+   a paragraph keeps its own measure inside it, from the column's left edge. */
+.ideas,.section-title,.section-lede,.usage,.docs,footer{
+  width:min(1440px, calc(100vw - 2 * var(--gutter)));
+  margin-left:calc(50% - min(720px, 50vw - var(--gutter)));
+}
 /* The mockup draws its own window, rounded and bordered, so the frame around it draws
    nothing: a border and a radius here would put a second corner outside the window's own.
    The shadow follows the drawing's shape rather than a box's. */
