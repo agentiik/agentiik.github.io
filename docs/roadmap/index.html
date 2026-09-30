@@ -2389,7 +2389,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Serve Streamable HTTP on one POST and GET endpoint, validating Origin on every connection and issuing an Mcp-Session-Id at initialisation. <a class="ref" href="../#protocol">protocol</a></li>
+          <li>Serve Streamable HTTP on one POST endpoint, validating Origin on every request and keeping no session, as the revision has none: a GET or a DELETE answers 405. <a class="ref" href="../#protocol">protocol</a></li>
           <li>Speak revision 2026-07-28, with the version in _meta under io.modelcontextprotocol/protocolVersion and in the MCP-Protocol-Version header. <a class="ref" href="../#protocol">protocol</a></li>
           <li>Implement server/discover, its instructions field saying: a workflow is a git repository, agentiik.yaml at its root, workflow.language before drafting, workflow.validate before committing. <a class="ref" href="../#protocol">protocol</a></li>
           <li>Act as an OAuth 2.1 resource server: publish Protected Resource Metadata, require Agentiik as token audience, never accept or forward a token issued for another audience, answer 401 when invalid and 403 with WWW-Authenticate: Bearer error=&quot;insufficient_scope&quot; when a scope is missing. <a class="ref" href="../#protocol">protocol</a></li>
@@ -2398,7 +2398,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Execute every call as the presenting principal, neither endpoint holding authority of its own, and re-authorise at run creation like any trigger. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a></li>
           <li>Serve both endpoints from the API process, with no new component, no new port and no deployment profile change. <a class="ref" href="../#mcp">mcp</a></li>
           <li>Turn both endpoints off with AGK_MCP=off, each answering 404 as a route the installation does not serve, the push still accepting and checking an mcp block and the console's MCP panel saying the installation serves none, and refuse at start any value of AGK_MCP but on and off. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#configuration">configuration</a></li>
-          <li>Run both servers against a conformance client: initialisation, server/discover, tools/list, tools/call and resources/read, over HTTP and its session. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li>Run both servers against a conformance client: server/discover, tools/list, tools/call and resources/read, over HTTP, each request standing alone. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
       </div>
       <div class="work-group">
