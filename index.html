@@ -112,7 +112,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   transform:translateX(-50%);
   background:
     radial-gradient(70% 60% at 50% 0%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 72%),
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--accent) 26%, transparent) 1px, transparent 1.4px) 0 0 / 22px 22px;
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--faint) 45%, transparent) 1px, transparent 1.4px) 0 0 / 22px 22px;
   -webkit-mask-image:linear-gradient(to bottom, #000 62%, transparent);
           mask-image:linear-gradient(to bottom, #000 62%, transparent);
 }
@@ -147,12 +147,12 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 .sk-node{opacity:0;transition:opacity .6s ease}
 .sk-node.on{opacity:1}
 .sk-node.skip{opacity:.38}
-.sk-box{fill:color-mix(in srgb, var(--surface) 84%, transparent);stroke:color-mix(in srgb, var(--accent) 42%, transparent);stroke-width:1.2;transition:stroke .3s ease}
+.sk-box{fill:color-mix(in srgb, var(--surface) 84%, transparent);stroke:color-mix(in srgb, var(--faint) 60%, transparent);stroke-width:1.2;transition:stroke .3s ease}
 .sk-node.skip .sk-box{stroke-dasharray:3 3}
 .sk-name{font:500 11px "JetBrains Mono",ui-monospace,monospace;fill:var(--muted)}
 .sk-dot{fill:color-mix(in srgb, var(--faint) 55%, transparent);transition:fill .3s ease}
-.sk-port{fill:var(--paper);stroke:color-mix(in srgb, var(--accent) 55%, transparent);stroke-width:1.2}
-.sk-edge{fill:none;stroke:color-mix(in srgb, var(--accent) 50%, transparent);stroke-width:1.4;stroke-linejoin:round;transition:stroke-dashoffset .75s cubic-bezier(.4,0,.2,1)}
+.sk-port{fill:var(--paper);stroke:color-mix(in srgb, var(--faint) 75%, transparent);stroke-width:1.2}
+.sk-edge{fill:none;stroke:color-mix(in srgb, var(--faint) 70%, transparent);stroke-width:1.4;stroke-linejoin:round;transition:stroke-dashoffset .75s cubic-bezier(.4,0,.2,1)}
 /* A rejected port's edge is dashed, so it fades in rather than drawing itself. */
 .sk-edge.rej{stroke:color-mix(in srgb, var(--wait) 60%, transparent);stroke-dasharray:4 3;opacity:0;transition:opacity .6s ease}
 .sk-edge.rej.on{opacity:1}
