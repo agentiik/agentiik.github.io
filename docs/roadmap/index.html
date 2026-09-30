@@ -1935,7 +1935,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.5.0 ============ -->
 <section id="m05">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.5.0: Runs start without being asked</h2><span class="tally">0 of 51 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.5.0: Runs start without being asked</h2><span class="tally">54 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a workflow starts on a schedule, a webhook, an event, or a call from another workflow.</p>
 
@@ -2015,106 +2015,106 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
     </figure>
 
     <div class="work">
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The trigger declarations, in the schema</h4>
           <span class="work-repo">schemas</span>
         </div>
         <ul>
-          <li>Add the on block (schedule, webhook, event) with every trigger setting: cron, timezone, jitter, catch_up, path, method, auth, response, output, map, type, source, filter. <a class="ref" href="../#triggers">triggers</a></li>
-          <li>Give every trigger keyword a description and examples from its first release. <a class="ref" href="../#yaml">yaml</a><a class="ref" href="../#repos">repos</a></li>
-          <li>Add the workflow-level concurrency block, with group and cancel_in_progress. <a class="ref" href="../#triggers">triggers</a></li>
-          <li>Add the workflow step keyword (a local or published callee and its ref), exclusive with image and script. <a class="ref" href="../#step-keywords">step-keywords</a></li>
-          <li>Constrain triggers in the schema: five-field cron, timezone name, auth hmac, bearer, mtls or none, response sync or async, and response: sync naming a declared output. <a class="ref" href="../#triggers">triggers</a></li>
-          <li>Add namespace and map to the event trigger: the namespace a subscription listens to, and the inputs an event fills. <a class="ref" href="../#triggers">triggers</a></li>
-          <li>Add trigger_kind and triggered_by to the run, open to the mcp and terraform kinds later milestones add. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#exposed-context">exposed-context</a></li>
-          <li>Ship valid and invalid fixtures for each trigger kind, concurrency and a sub-workflow call, and release agentiik/schemas 0.5. <a class="ref" href="../#versioning">versioning</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Add the on block (schedule, webhook, event) with every trigger setting: cron, timezone, jitter, catch_up, path, method, auth, response, output, map, type, source, filter. <a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
+          <li class="done">Give every trigger keyword a description and examples from its first release. <a class="ref" href="../#yaml">yaml</a><a class="ref" href="../#repos">repos</a> <span class="tick">done</span></li>
+          <li class="done">Add the workflow-level concurrency block, with group and cancel_in_progress. <a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
+          <li class="done">Add the workflow step keyword (a local or published callee and its ref), exclusive with image and script. <a class="ref" href="../#step-keywords">step-keywords</a> <span class="tick">done</span></li>
+          <li class="done">Constrain triggers in the schema: five-field cron, timezone name, auth hmac, bearer, mtls or none, response sync or async, and response: sync naming a declared output. <a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
+          <li class="done">Add namespace and map to the event trigger: the namespace a subscription listens to, and the inputs an event fills. <a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
+          <li class="done">Add trigger_kind and triggered_by to the run, open to the mcp and terraform kinds later milestones add. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#exposed-context">exposed-context</a> <span class="tick">done</span></li>
+          <li class="done">Ship valid and invalid fixtures for each trigger kind, concurrency and a sub-workflow call, and release agentiik/schemas 0.5. <a class="ref" href="../#versioning">versioning</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>Arming a trigger, and the one path that starts a run</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Add the triggers table (active triggers per version, schedule state, last firing) with its migration. <a class="ref" href="../#storage">storage</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
-          <li>Arm a version's triggers when its commit lands on the default branch, and disarm the previous version's, so schedules, webhooks and events always run the default branch. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a></li>
-          <li>Route every trigger kind through one path: authenticate, authorise, resolve the ref, write the run, NOTIFY the controller. <a class="ref" href="../#from-trigger-to-result">from-trigger-to-result</a><a class="ref" href="../#how-the-api-and-the-controller-stay-in-step">how-the-api-and-the-controller-stay-in-step</a></li>
-          <li>Record trigger_kind and triggered_by: the namespace service identity for schedule, webhook and event, the person for manual. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#principals">principals</a></li>
-          <li>Re-authorise at run creation against the trigger's principal, so revoking its grant stops it firing. <a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a><a class="ref" href="../#controller">controller</a></li>
-          <li>Implement the manual trigger under workflow:run: POST /api/v1/{ns}/workflows/{name}/runs with the workflow's inputs and an optional ref, agk run --ref. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#api">api</a><a class="ref" href="../#command-line">command-line</a></li>
-          <li>Hold per-namespace concurrency-group locks in the controller: a second run queues, or cancel_in_progress cancels the first. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#controller">controller</a></li>
-          <li>Apply max_runs_per_hour to every trigger kind, and keep a run queued while max_concurrent_tasks is spent. <a class="ref" href="../#quotas-per-namespace">quotas-per-namespace</a><a class="ref" href="../#run-states">run-states</a></li>
-          <li>Audit webhook secret writes, and trigger arming and disarming. <a class="ref" href="../#observability">observability</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
-          <li>Test the gate: an unattended schedule runs, a bad signature creates nothing, every run names kind, principal and commit. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Add the triggers table (active triggers per version, schedule state, last firing) with its migration. <a class="ref" href="../#storage">storage</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
+          <li class="done">Arm a version's triggers when its commit lands on the default branch, and disarm the previous version's, so schedules, webhooks and events always run the default branch. <a class="ref" href="../#the-workflow-repository">the-workflow-repository</a> <span class="tick">done</span></li>
+          <li class="done">Route every trigger kind through one path: authenticate, authorise, resolve the ref, write the run, NOTIFY the controller. <a class="ref" href="../#from-trigger-to-result">from-trigger-to-result</a><a class="ref" href="../#how-the-api-and-the-controller-stay-in-step">how-the-api-and-the-controller-stay-in-step</a> <span class="tick">done</span></li>
+          <li class="done">Record trigger_kind and triggered_by: the namespace service identity for schedule, webhook and event, the person for manual. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#principals">principals</a> <span class="tick">done</span></li>
+          <li class="done">Re-authorise at run creation against the trigger's principal, so revoking its grant stops it firing. <a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a><a class="ref" href="../#controller">controller</a> <span class="tick">done</span></li>
+          <li class="done">Implement the manual trigger under workflow:run: POST /api/v1/{ns}/workflows/{name}/runs with the workflow's inputs and an optional ref, agk run --ref. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#api">api</a><a class="ref" href="../#command-line">command-line</a> <span class="tick">done</span></li>
+          <li class="done">Hold per-namespace concurrency-group locks in the controller: a second run queues, or cancel_in_progress cancels the first. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#controller">controller</a> <span class="tick">done</span></li>
+          <li class="done">Apply max_runs_per_hour to every trigger kind, and keep a run queued while max_concurrent_tasks is spent. <a class="ref" href="../#quotas-per-namespace">quotas-per-namespace</a><a class="ref" href="../#run-states">run-states</a> <span class="tick">done</span></li>
+          <li class="done">Audit webhook secret writes, and trigger arming and disarming. <a class="ref" href="../#observability">observability</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
+          <li class="done">Test the gate: an unattended schedule runs, a bad signature creates nothing, every run names kind, principal and commit. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>Schedules that fire with nobody present</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Evaluate five-field cron in the trigger's timezone, including daylight-saving duplicates and gaps. <a class="ref" href="../#triggers">triggers</a></li>
-          <li>Apply jitter to each occurrence, so schedules written on the hour do not arrive as one burst. <a class="ref" href="../#triggers">triggers</a></li>
-          <li>Honour catch_up (false by default): a missed occurrence is skipped, or made up exactly once when asked. <a class="ref" href="../#triggers">triggers</a></li>
-          <li>Fire schedules only from the election-lock holder, fencing writes with its acquisition counter, so failover never skips or doubles one. <a class="ref" href="../#controller">controller</a><a class="ref" href="../#how-the-api-and-the-controller-stay-in-step">how-the-api-and-the-controller-stay-in-step</a></li>
-          <li>Compute the next occurrence from the schedule state and last firing on the trigger row, never from memory. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#controller">controller</a></li>
-          <li>Serve the armed triggers and the next scheduled occurrence to a principal holding workflow:read. <a class="ref" href="../#permissions">permissions</a><a class="ref" href="../#api">api</a></li>
-          <li>Test the scheduler on a frozen clock: both daylight-saving shifts, a leap day, a controller restart spanning an occurrence, catch_up on and off. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Evaluate five-field cron in the trigger's timezone, including daylight-saving duplicates and gaps. <a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
+          <li class="done">Apply jitter to each occurrence, so schedules written on the hour do not arrive as one burst. <a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
+          <li class="done">Honour catch_up (false by default): a missed occurrence is skipped, or made up exactly once when asked. <a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
+          <li class="done">Fire schedules only from the election-lock holder, fencing writes with its acquisition counter, so failover never skips or doubles one. <a class="ref" href="../#controller">controller</a><a class="ref" href="../#how-the-api-and-the-controller-stay-in-step">how-the-api-and-the-controller-stay-in-step</a> <span class="tick">done</span></li>
+          <li class="done">Compute the next occurrence from the schedule state and last firing on the trigger row, never from memory. <a class="ref" href="../#storage">storage</a><a class="ref" href="../#controller">controller</a> <span class="tick">done</span></li>
+          <li class="done">Serve the armed triggers and the next scheduled occurrence to a principal holding workflow:read. <a class="ref" href="../#permissions">permissions</a><a class="ref" href="../#api">api</a> <span class="tick">done</span></li>
+          <li class="done">Test the scheduler on a frozen clock: both daylight-saving shifts, a leap day, a controller restart spanning an occurrence, catch_up on and off. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>Webhooks worth trusting</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Serve POST /hooks/{ns}/{path} on the declared method, each path under the workflow's namespace. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#api">api</a></li>
-          <li>Reserve webhook paths per namespace, refusing a push that collides with another armed trigger's path. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
-          <li>Implement the auth modes hmac, bearer, mtls and none, each authenticating the caller, not a user. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a></li>
-          <li>Verify HMAC-SHA256 over the raw body, never the parsed one, with the per-trigger secret in constant time. <a class="ref" href="../#webhooks">webhooks</a></li>
-          <li>Refuse replays with a signed timestamp, a five-minute rejection window and a nonce cache covering it. <a class="ref" href="../#webhooks">webhooks</a></li>
-          <li>Count and surface signature failures per trigger, so an unannounced rotation or a guesser shows. <a class="ref" href="../#webhooks">webhooks</a><a class="ref" href="../#observability">observability</a></li>
-          <li>Store webhook secrets so no role reads them back through the API, and rotate them by writing alone. <a class="ref" href="../#webhooks">webhooks</a><a class="ref" href="../#secrets">secrets</a></li>
-          <li>Answer response: async with 202 and the run id, response: sync with the named workflow output. <a class="ref" href="../#triggers">triggers</a></li>
-          <li>Build workflow inputs with map over the trigger context, validated against their schemas before the run exists. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#yaml">yaml</a></li>
-          <li>Answer an unknown or invisible hook path with the 404 an absent one gets, before any signature work, so probing yields nothing. <a class="ref" href="../#threats">threats</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
-          <li>Test verification on captured requests: good signature, tampered body, stale timestamp, replayed nonce, rotated secret, a body re-encoded with other whitespace. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Serve POST /hooks/{ns}/{path} on the declared method, each path under the workflow's namespace. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#api">api</a> <span class="tick">done</span></li>
+          <li class="done">Reserve webhook paths per namespace, refusing a push that collides with another armed trigger's path. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
+          <li class="done">Implement the auth modes hmac, bearer, mtls and none, each authenticating the caller, not a user. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a> <span class="tick">done</span></li>
+          <li class="done">Verify HMAC-SHA256 over the raw body, never the parsed one, with the per-trigger secret in constant time. <a class="ref" href="../#webhooks">webhooks</a> <span class="tick">done</span></li>
+          <li class="done">Refuse replays with a signed timestamp, a five-minute rejection window and a nonce cache covering it. <a class="ref" href="../#webhooks">webhooks</a> <span class="tick">done</span></li>
+          <li class="done">Count and surface signature failures per trigger, so an unannounced rotation or a guesser shows. <a class="ref" href="../#webhooks">webhooks</a><a class="ref" href="../#observability">observability</a> <span class="tick">done</span></li>
+          <li class="done">Store webhook secrets so no role reads them back through the API, and rotate them by writing alone. <a class="ref" href="../#webhooks">webhooks</a><a class="ref" href="../#secrets">secrets</a> <span class="tick">done</span></li>
+          <li class="done">Answer response: async with 202 and the run id, response: sync with the named workflow output. <a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
+          <li class="done">Build workflow inputs with map over the trigger context, validated against their schemas before the run exists. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#yaml">yaml</a> <span class="tick">done</span></li>
+          <li class="done">Answer an unknown or invisible hook path with the 404 an absent one gets, before any signature work, so probing yields nothing. <a class="ref" href="../#threats">threats</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a> <span class="tick">done</span></li>
+          <li class="done">Test verification on captured requests: good signature, tampered body, stale timestamp, replayed nonce, rotated secret, a body re-encoded with other whitespace. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>Events published to a namespace, and the context a trigger exposes</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Serve POST /api/v1/{ns}/events under workflow:run, starting a run per armed subscription matching type and source. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#api">api</a></li>
-          <li>Fill a run's inputs from an event by map, held to their schemas before the run exists. <a class="ref" href="../#triggers">triggers</a></li>
-          <li>Answer an event published again, the same source and id within a day, as the first was, starting nothing. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#storage">storage</a></li>
-          <li>Evaluate filter over the event's context attributes and data before any run is created. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#expressions">expressions</a></li>
-          <li>Show a workflow only events from its own namespace, or from the one it names where that namespace granted its built-in identity read. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a></li>
-          <li>Expose the trigger root (body, headers, query, scheduled_for) in the on block and step parameters only. <a class="ref" href="../#exposed-context">exposed-context</a></li>
-          <li>Expose the event root (id, source, specversion, type, subject, time, datacontenttype, dataschema, data) in event triggers only. <a class="ref" href="../#exposed-context">exposed-context</a></li>
-          <li>Expose run.trigger_kind and run.triggered_by everywhere an expression is evaluated. <a class="ref" href="../#exposed-context">exposed-context</a></li>
-          <li>Freeze the trigger context on the run, so a replay sees what fired it, not what is true now. <a class="ref" href="../#memoisation-and-replay">memoisation-and-replay</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
-          <li>Refuse at validation an expression reading a root the context table forbids there, and keep secrets out of conditions. <a class="ref" href="../#exposed-context">exposed-context</a><a class="ref" href="../#secrets">secrets</a></li>
+          <li class="done">Serve POST /api/v1/{ns}/events under workflow:run, starting a run per armed subscription matching type and source. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#api">api</a> <span class="tick">done</span></li>
+          <li class="done">Fill a run's inputs from an event by map, held to their schemas before the run exists. <a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
+          <li class="done">Answer an event published again, the same source and id within a day, as the first was, starting nothing. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#storage">storage</a> <span class="tick">done</span></li>
+          <li class="done">Evaluate filter over the event's context attributes and data before any run is created. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#expressions">expressions</a> <span class="tick">done</span></li>
+          <li class="done">Show a workflow only events from its own namespace, or from the one it names where that namespace granted its built-in identity read. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a> <span class="tick">done</span></li>
+          <li class="done">Expose the trigger root (body, headers, query, scheduled_for) in the on block and step parameters only. <a class="ref" href="../#exposed-context">exposed-context</a> <span class="tick">done</span></li>
+          <li class="done">Expose the event root (id, source, specversion, type, subject, time, datacontenttype, dataschema, data) in event triggers only. <a class="ref" href="../#exposed-context">exposed-context</a> <span class="tick">done</span></li>
+          <li class="done">Expose run.trigger_kind and run.triggered_by everywhere an expression is evaluated. <a class="ref" href="../#exposed-context">exposed-context</a> <span class="tick">done</span></li>
+          <li class="done">Freeze the trigger context on the run, so a replay sees what fired it, not what is true now. <a class="ref" href="../#memoisation-and-replay">memoisation-and-replay</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
+          <li class="done">Refuse at validation an expression reading a root the context table forbids there, and keep secrets out of conditions. <a class="ref" href="../#exposed-context">exposed-context</a><a class="ref" href="../#secrets">secrets</a> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>Calling a workflow from a workflow</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Implement the workflow step: call a local or published sub-workflow at its ref, recording the commit on the run. <a class="ref" href="../#step-keywords">step-keywords</a><a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a></li>
-          <li>Map the step's input ports to the callee's inputs, and the callee's outputs back to the step's output ports. <a class="ref" href="../#step-keywords">step-keywords</a><a class="ref" href="../#graph">graph</a></li>
-          <li>Create the child run with trigger_kind: workflow and a from naming its caller, listed like any run. <a class="ref" href="../#triggers">triggers</a></li>
-          <li>Enforce the call depth limit (8 by default), refusing the call that exceeds it, not the whole run. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#scheduling-semantics">scheduling-semantics</a></li>
-          <li>Require workflow:run on a callee in another namespace, and answer the same 404 if it is invisible. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
-          <li>Charge a child run to the callee's namespace quota and concurrency group, like any trigger. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#quotas-per-namespace">quotas-per-namespace</a></li>
-          <li>Propagate cancellation and timeout down to child runs, and a child's terminal state up, so when and continue_on_error act as for a brick. <a class="ref" href="../#run-states">run-states</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
-          <li>Test that sub-workflow calls are the only repetition: a cycle fails validation, one call past the limit fails at the call. <a class="ref" href="../#scheduling-semantics">scheduling-semantics</a><a class="ref" href="../#nonscope">nonscope</a></li>
+          <li class="done">Implement the workflow step: call a local or published sub-workflow at its ref, recording the commit on the run. <a class="ref" href="../#step-keywords">step-keywords</a><a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a> <span class="tick">done</span></li>
+          <li class="done">Map the step's input ports to the callee's inputs, and the callee's outputs back to the step's output ports. <a class="ref" href="../#step-keywords">step-keywords</a><a class="ref" href="../#graph">graph</a> <span class="tick">done</span></li>
+          <li class="done">Create the child run with trigger_kind: workflow and a from naming its caller, listed like any run. <a class="ref" href="../#triggers">triggers</a> <span class="tick">done</span></li>
+          <li class="done">Enforce the call depth limit (8 by default), refusing the call that exceeds it, not the whole run. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#scheduling-semantics">scheduling-semantics</a> <span class="tick">done</span></li>
+          <li class="done">Require workflow:run on a callee in another namespace, and answer the same 404 if it is invisible. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a> <span class="tick">done</span></li>
+          <li class="done">Charge a child run to the callee's namespace quota and concurrency group, like any trigger. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#quotas-per-namespace">quotas-per-namespace</a> <span class="tick">done</span></li>
+          <li class="done">Propagate cancellation and timeout down to child runs, and a child's terminal state up, so when and continue_on_error act as for a brick. <a class="ref" href="../#run-states">run-states</a><span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
+          <li class="done">Test that sub-workflow calls are the only repetition: a cycle fails validation, one call past the limit fails at the call. <a class="ref" href="../#scheduling-semantics">scheduling-semantics</a><a class="ref" href="../#nonscope">nonscope</a> <span class="tick">done</span></li>
         </ul>
       </div>
     </div>
