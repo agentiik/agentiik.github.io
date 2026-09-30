@@ -6,6 +6,25 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## v0.5.0, 2026-09-30
+
+### Documentation
+
+- Every version on the page is v0.5.0's, `agk --version` in Get started names its commit, and the copies of deploy's files are its release's. What v0.5 does not do yet gains the row deploy's README has for a webhook with `auth: mtls` behind a reverse proxy, which refuses every caller since the API never reads a certificate a proxy forwards in a header, and keeps the others, none of which v0.5.0 delivers.
+- Install a server's upgrade says what upgrading to v0.5.0 does, with nothing to do by hand: the controller that leads arms what each workflow's default branch declares under `on`, and a head breaking a rule of v0.5.0 about triggers keeps running when somebody asks for a run and arms nothing.
+- Get started and the two recordings on a laptop were replayed with v0.5.0's `agk` and print what they show, but for the daemon line of the machine replaying them, its timings and its identifiers, and are kept. The recording of the command line against a server is made again with it.
+- Triggers are described as built. A cron step and the two day fields are read as every cron since Vixie's; a manual run is declared nowhere, a decision saying why; what started a run is its `trigger_kind`, which the run detail and the listings answer.
+- Arming: what the default branch's head declares under `on` is armed in the transaction that moves the branch, an entry declared again keeping its state, `trigger.arm` and `trigger.disarm` recorded, a push arming a webhook's path and method another workflow holds refused before its refs move, and a head from before v0.5.0 armed by the controller that leads; `GET /api/v1/{ns}/workflows/{name}/triggers` lists it.
+- Schedules: fired by the controller that leads, each firing one fenced transaction, an occurrence reached within ten minutes run late and one reached later skipped or made up by `catch_up`, a decision saying why ten minutes; a firing refused recorded as skipped; what fired a run frozen on it for a replay.
+- Webhooks: `hmac` signed as Standard Webhooks signs a delivery, `bearer` a service account's token, `mtls` the certificate of the TLS the API serves itself, what each refusal is answered and what a `sync` webhook waits for, the secret written under `workflow:write` and never read back; four decisions.
+- A `workflow:` step is a call: a run of the workflow it names, attributed to the calling run's principal and charged to the called namespace, the step waiting on it and ending as it did, `AGK_MAX_CALL_DEPTH`, and what fails a call; four decisions.
+- Events are published to a namespace with `POST /api/v1/{ns}/events` rather than onto the bus, heard in the namespace and in another one that names it where it granted that namespace's built-in identity `workflow:read`, and reach a run through `map`; an event's `id` and `source` are bounded, since it is remembered by them for a day. Four decisions, and the roadmap's events group and tasks say so.
+- The web console is to be built in `agentiik` and served by the API from v0.6.0, the control plane shipping as one `agentiik` image, and the repositories are twelve, `console` gone.
+
+### Site
+
+- The bytecode `sync-roadmap.py` left in `.github/__pycache__` is removed, and ignored.
+
 ## v0.4.0, 2026-09-30
 
 ### Documentation
