@@ -97,19 +97,18 @@ is current.
 
 | | |
 | --- | --- |
-| [agentiik](https://github.com/agentiik/agentiik) | The core: graph evaluator, container driver, controller, HTTP API, runner, `agk`. |
+| [agentiik](https://github.com/agentiik/agentiik) | The core: graph evaluator, container driver, controller, HTTP API, runner, `agk`, and the web console the API serves. |
 | [schemas](https://github.com/agentiik/schemas) | The workflow, brick and envelope schemas, and the OpenAPI document. |
 | [bricks](https://github.com/agentiik/bricks) | The standard catalog. |
 | [brick-sdk](https://github.com/agentiik/brick-sdk) | Optional helpers for the envelope contract. |
 | [design](https://github.com/agentiik/design) | Tokens, icons and the specimen sheet. |
-| [console](https://github.com/agentiik/console) | The web console. |
 | [ios](https://github.com/agentiik/ios) · [android](https://github.com/agentiik/android) | The mobile applications. |
 | [deploy](https://github.com/agentiik/deploy) | Compose stacks, installer, migration notes. |
 | [terraform-provider-agentiik](https://github.com/agentiik/terraform-provider-agentiik) | Namespaces, workflow repositories, grants, tokens and runs, as HCL. |
 | [homebrew-tap](https://github.com/agentiik/homebrew-tap) | The Homebrew formulae: `agk`, and the server programs with it. |
 | [.github](https://github.com/agentiik/.github) | Security policy, code of conduct, contribution guide, licensing and trademark notes. |
 
-All thirteen are public, and six of them hold no code yet. The roadmap says which release fills each one.
+All twelve are public, and five of them hold no code yet. The roadmap says which release fills each one.
 
 ## Where the rest will come from
 

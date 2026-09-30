@@ -2622,7 +2622,7 @@ EOF
       <table>
         <thead><tr><th>What</th><th>Today</th><th>When</th></tr></thead>
         <tbody>
-          <tr><td>The console</td><td>Not part of either installation. <code>agk</code> is the client.</td><td>Its own releases.</td></tr>
+          <tr><td>The console</td><td>Not part of either installation. <code>agk</code> is the client.</td><td><a href="roadmap/#m06">v0.6.0</a>, served by the API of both</td></tr>
           <tr><td>Runners on macOS or Windows</td><td>Refused: the runner hands the Docker daemon paths on the host to bind, which the virtual machine of Docker Desktop cannot see.</td><td></td></tr>
           <tr><td>A runner for the Mac installation</td><td>None: it listens on the loopback alone, and a runner is a Linux host.</td><td></td></tr>
           <tr><td>An object store</td><td>On disk, in <code>data/objects</code>, not MinIO or S3.</td><td><a href="roadmap/#m09">v0.9.0</a></td></tr>
@@ -7577,6 +7577,7 @@ flowchart LR
   </figure>
 
   <div class="prose">
+    <p>An installation that wants neither endpoint sets <code>AGK_MCP=off</code> (<a href="#configuration">Configuration</a>), and both answer 404, as any route an installation does not serve does. A workflow's <code>mcp</code> block is still accepted and checked at the push, since a file means the same on every installation and the next one it is pushed to may serve MCP; the web console's MCP panel says that this one serves none.</p>
     <h3 id="protocol">Protocol</h3>
     <div class="tablewrap">
       <table>
@@ -8354,10 +8355,15 @@ resource "agentiik_workflow" "search" {
       <li>The views a terminal serves well are also <code>agk console</code>, over the same routes: <a href="#terminal">Terminal console</a>.</li>
     </ul>
 
-    <p>The web console is served on the API's origin: at the root of the public URL, with the API under <code>/api/v1</code> and the <a href="#sign-in-page">sign-in page</a> under <code>/auth</code>. Whether the API serves the console's files itself or a console container sits behind the same proxy path is for <a href="roadmap/#m06">v0.6.0</a>'s deployment to settle; a second origin is not.</p>
+    <p>The web console is served on the API's origin: at the root of the public URL, with the API under <code>/api/v1</code> and the <a href="#sign-in-page">sign-in page</a> under <code>/auth</code>. From <a href="roadmap/#m06">v0.6.0</a> <code>agentiik-api</code> serves it itself, from a build embedded in its binary, so the console is always the release of the API it talks to. <code>AGK_CONSOLE=off</code> turns it off (<a href="#configuration">Configuration</a>) and leaves every other route served, <code>/auth</code> among them.</p>
+    <p>Each release also publishes the console's files as an archive, for an operator who would rather serve them from a CDN or a proxy of their own, on the same origin and with <code>AGK_CONSOLE=off</code>. They are then the files of the API's own release, since a console and an API of two releases are neither supported nor tested, and whatever serves them sends to the API every path this documentation gives it: <code>/api/v1/</code>, <code>/auth/</code>, <code>/hooks/</code>, <code>/mcp</code> and each repository's <code>/{namespace}/{name}.git/</code>. A second origin is not an option.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>One origin for the console and the API, rather than a console on a host of its own sharing a registrable domain with the API, which WebAuthn would allow. Passkeys, the session cookie and the <code>Origin</code> check each need the same origin, and three things kept in step across two hosts is where one of them drifts. The Relying Party Identifier, the public URL's host since v0.3.0, then never changes, as changing it would invalidate every passkey enrolled; and one URL is what a person remembers.</p>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The API serves the console from its own binary rather than from an image of the console's own. Two images on one origin need something in front of both that sends each path to one of them, and neither the Homebrew service nor a Compose installation without a proxy has one: the API serves TLS itself in both. A console image would have made a proxy mandatory, left a Mac with no console, and had every proxy configuration repeat the API's paths, git's among them, which share the root with the console's own addresses. Served from the binary, the console needs nothing an installation does not already run, and switching it off with the archive of its files keeps the other layouts open.</p>
     </div>
 
     <p>The web console is drawn in <code>agk console</code>'s design language, in a browser. The panes are bordered with rounded corners on the palette's quiet surfaces, each titled in its top border and the one in focus in the accent; a state is a badge in its colour with a dot and its word; identifiers, digests, times and logs are monospaced; a top bar holds the namespace switcher, the views and the principal; the graph is boxes and edges with its live state and a fan-out's shards and bar; notifications arrive as toasts; and a key line at the foot of the window names the keys of the view. What a browser adds, it keeps:</p>
@@ -14913,7 +14919,7 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
 <section id="deployment">
   <div class="sec-head"><span class="mark">§</span><h2>Deployment profiles</h2></div>
   <div class="prose">
-    <p>Every profile runs the same API, controller, console and runner images; it only decides where they run and what backs the database, bus, object store and secret store. The language, the brick contract and the access model never vary, so a workflow moves from a laptop to a redundant fleet unchanged.</p>
+    <p>Every profile runs the same images: from <a href="roadmap/#m06">v0.6.0</a>, <code>ghcr.io/agentiik/agentiik</code>, run once as the API, which serves the console, and once as the controller, and <code>ghcr.io/agentiik/runner</code>. A profile only decides where they run and what backs the database, bus, object store and secret store. The language, the brick contract and the access model never vary, so a workflow moves from a laptop to a redundant fleet unchanged.</p>
 
     <h3 id="what-every-profile-must-provide">What every profile must provide</h3>
     <div class="tablewrap">
@@ -14925,7 +14931,7 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
           <tr><td class="wrapcell">An object store every runner can reach</td><td>Artifacts move by presigned URL and signed POST policy, never through the controller.</td></tr>
           <tr><td class="wrapcell">A secret store the API can read, and neither the controller nor the runners can</td><td><a href="#secrets">Secrets</a>. With <code>builtin</code> the sealed values sit in the PostgreSQL the controller shares, so the master key, held by the API alone, is what keeps them from it; a database role of the API's own is an open question.</td></tr>
           <tr><td class="wrapcell">An OCI registry every runner can pull from by digest</td><td><a href="#supply-chain">Supply chain</a></td></tr>
-          <tr><td class="wrapcell">TLS in front of the API and the console, terminated in front or served by the API itself (<code>AGK_TLS_CERT_FILE</code>)</td><td>Passkeys need an HTTPS origin.</td></tr>
+          <tr><td class="wrapcell">TLS in front of the API, which serves the console, terminated in front or served by the API itself (<code>AGK_TLS_CERT_FILE</code>)</td><td>Passkeys need an HTTPS origin.</td></tr>
           <tr><td class="wrapcell">One Relying Party Identifier, chosen at installation and never changed</td><td>Changing it invalidates every passkey, so the installer holds it immutable and offers re-enrolment instead. From <a href="roadmap/#m03">v0.3.0</a> it is the host of the public URL, <code>AGK_PUBLIC_URL</code> or <code>AGK_PROXY_URL</code> behind a proxy, and every ceremony runs on the API's <a href="#sign-in-page">sign-in page</a>, its one origin. The console arrives on the same origin, at the root of the public URL (<a href="#ui">Web console</a>), so the identifier stays that host for good.</td></tr>
           <tr><td class="wrapcell">Nothing else</td><td>Workflow repositories need no shared filesystem: objects sit in the object store, refs in the database.</td></tr>
         </tbody>
@@ -14939,7 +14945,7 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
           <tr><td>Failure domains</td><td>1</td><td>3 racks, rooms or sites</td><td>3 Availability Zones</td></tr>
           <tr><td>API</td><td>one container</td><td>3 nodes behind a virtual IP</td><td>ECS Fargate service across 3 AZs</td></tr>
           <tr><td>Controller</td><td>one container</td><td>3 nodes, one active by advisory lock</td><td>Fargate service, 2 tasks, one active</td></tr>
-          <tr><td>Console</td><td>one container</td><td>served by the same virtual IP</td><td>S3 behind CloudFront, on the API's origin</td></tr>
+          <tr><td>Console</td><td>served by the API</td><td>served by each API node</td><td>served by the API's Fargate service</td></tr>
           <tr><td>Runner</td><td>1, colocated</td><td>N hosts, pooled by label</td><td>EC2 Auto Scaling group</td></tr>
           <tr><td>Database</td><td>PostgreSQL container</td><td>primary, synchronous standby, asynchronous replica</td><td>RDS PostgreSQL, Multi-AZ</td></tr>
           <tr><td>Bus</td><td>JetStream, R1</td><td>NATS cluster of 3, streams at R3</td><td>SQS standard, one queue per pool</td></tr>
@@ -14958,7 +14964,7 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 880 362" role="img" aria-label="A single host running a reverse proxy, the API, the controller and the console, with PostgreSQL, NATS and MinIO beneath them and one colocated runner, backed up to a second disk off the host.">
+      <svg viewBox="0 0 880 362" role="img" aria-label="A single host running a reverse proxy, the API serving the console and the controller, both from the agentiik image, with PostgreSQL, NATS and MinIO beneath them and one colocated runner, backed up to a second disk off the host.">
         <defs><marker id="d1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
 
         <rect x="16" y="150" width="104" height="32" rx="16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 3"/>
@@ -14969,9 +14975,8 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
 
         <g stroke="currentColor" stroke-width="1.4" fill="none">
           <rect x="184" y="58" width="512" height="34" rx="4"/>
-          <rect x="184" y="110" width="160" height="44" rx="4"/>
-          <rect x="360" y="110" width="160" height="44" rx="4"/>
-          <rect x="536" y="110" width="160" height="44" rx="4"/>
+          <rect x="184" y="110" width="248" height="44" rx="4"/>
+          <rect x="448" y="110" width="248" height="44" rx="4"/>
           <rect x="184" y="172" width="160" height="44" rx="4"/>
           <rect x="360" y="172" width="160" height="44" rx="4"/>
           <rect x="536" y="172" width="160" height="44" rx="4"/>
@@ -14979,12 +14984,12 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
         </g>
         <g font-family="Archivo, sans-serif" font-size="12" font-weight="600" fill="currentColor" text-anchor="middle">
           <text x="440" y="80">reverse proxy · TLS</text>
-          <text x="264" y="131">API</text><text x="440" y="131">controller</text><text x="616" y="131">console</text>
+          <text x="308" y="131">API · console</text><text x="572" y="131">controller</text>
           <text x="264" y="193">PostgreSQL</text><text x="440" y="193">NATS</text><text x="616" y="193">MinIO</text>
           <text x="440" y="258">runner</text>
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="9" fill="currentColor" opacity=".6" text-anchor="middle">
-          <text x="264" y="146">stateless</text><text x="440" y="146">active</text><text x="616" y="146">static files</text>
+          <text x="308" y="146">agentiik image · stateless</text><text x="572" y="146">agentiik image · active</text>
           <text x="264" y="208">single instance</text><text x="440" y="208">JetStream R1</text><text x="616" y="208">single drive</text>
           <text x="440" y="273">concurrency capped to leave the database its cache</text>
         </g>
@@ -15002,8 +15007,8 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
 
         <g stroke="currentColor" stroke-width="1.4" fill="none" marker-end="url(#d1)">
           <path d="M120 166H140V75H178"/>
-          <path d="M264 92V104"/><path d="M440 92V104"/><path d="M616 92V104"/>
-          <path d="M264 154V166"/><path d="M440 154V166"/>
+          <path d="M308 92V104"/>
+          <path d="M264 154V166"/><path d="M480 154V166"/>
           <path d="M440 216V228"/>
           <path d="M720 194H746"/>
         </g>
@@ -15015,7 +15020,7 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
   <div class="prose">
     <p>The installation is the <code>single-host</code> directory of <a href="https://github.com/agentiik/deploy">agentiik/deploy</a>: <a href="#install-with-compose">Install a server</a> shows its <code>compose.yaml</code>, and installs, operates, backs up and removes it. At <code>v0.4.0</code> it runs PostgreSQL 18, NATS, the API, the controller and one runner, prepared by <code>agentiik-api init</code> at every start: the API serves TLS itself, objects sit on disk rather than in MinIO, and there is no console yet. <code>postgres-upgrade</code> upgrades the data of an installation that ran PostgreSQL 17 before PostgreSQL starts, keeping the old cluster beside it.</p>
     <p>The reverse proxy of the figure is optional: <a href="#behind-a-reverse-proxy">behind one</a>, <code>AGENTIIK_PROXY_URL</code> sets <code>AGK_PROXY_URL</code> to the proxy's <code>https</code> URL and the API serves plain HTTP on the loopback, while the bus keeps its own TLS on 4222.</p>
-    <p>The images are published on <code>ghcr.io</code> from <code>v0.2.1</code>, for linux/amd64 and linux/arm64: <code>ghcr.io/agentiik/api</code>, <code>controller</code> and <code>runner</code>, and <code>postgres-upgrade</code> from v0.3.0, tagged with the version (<code>0.2.1</code> and <code>v0.2.1</code>) and <code>latest</code> at a release, and <code>dev</code> for every commit to <code>main</code>.</p>
+    <p>The images are published on <code>ghcr.io</code> from <code>v0.2.1</code>, for linux/amd64 and linux/arm64: <code>ghcr.io/agentiik/api</code>, <code>controller</code> and <code>runner</code>, and <code>postgres-upgrade</code> from v0.3.0, tagged with the version (<code>0.2.1</code> and <code>v0.2.1</code>) and <code>latest</code> at a release, and <code>dev</code> for every commit to <code>main</code>. From <a href="roadmap/#m06">v0.6.0</a> the API and the controller are one image, <code>ghcr.io/agentiik/agentiik</code>, run as two containers by their commands, since the controller never mounts the master key the API reads (<a href="#configuration">Configuration</a>); <code>api</code> and <code>controller</code> are no longer published, and the runner keeps an image of its own, run on other hosts and at another scale.</p>
     <ul class="plain">
       <li>Secrets: the built-in store, with its master key read from a file the API user alone can open, or from the host keyring.</li>
       <li>Backup: <code>pg_dump</code> and the <code>data/</code> directory beside <code>compose.yaml</code>, restored together, or runs point at artifacts that no longer exist (<a href="#install-with-compose">the commands</a>).</li>
@@ -15126,11 +15131,12 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 980 452" role="img" aria-label="Inside a VPC, an application load balancer fronts Fargate API tasks in three Availability Zones with two controller tasks, and an EC2 Auto Scaling group of runners beneath them; to the right, the managed services RDS, SQS, S3, Secrets Manager and ECR, with the static console served from S3 behind CloudFront.">
+      <svg viewBox="0 0 980 452" role="img" aria-label="Inside a VPC, an application load balancer fronts Fargate API tasks in three Availability Zones with two controller tasks, and an EC2 Auto Scaling group of runners beneath them; to the right, the managed services RDS, SQS, S3, Secrets Manager and ECR; browsers, phones and agk reach the API, which serves the console, through the load balancer.">
         <defs><marker id="d3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
 
         <rect x="20" y="8" width="300" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 3"/>
-        <text x="170" y="28" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor">CloudFront + S3 · static console</text>
+        <text x="170" y="28" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor">browser · phone · agk</text>
+        <path d="M296 38V80" stroke="currentColor" stroke-width="1.4" fill="none" marker-end="url(#d3)"/>
 
         <rect x="20" y="52" width="620" height="384" rx="8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="6 4"/>
         <text x="36" y="74" font-family="Archivo, sans-serif" font-size="10" letter-spacing="1.2" fill="currentColor" opacity=".6">VPC · THREE AVAILABILITY ZONES</text>
@@ -15447,6 +15453,8 @@ post_task = [
           <tr><td class="wrapcell">AGK_TASK_CEILING</td><td>api, controller</td><td><code>1h</code></td><td>The deadline of a step that writes none (<a href="#yaml">Workflow language</a>, Deadlines). The API reads it as the revocation grace's default, so both programs are given the same value.</td></tr>
           <tr><td class="wrapcell">AGK_JOIN_ROTATION</td><td>api</td><td><code>720h</code></td><td>How long a runner credential is accepted for, and how far each rotation moves <code>rotate_by</code>: a machine dark for a month should be reconsidered, not readmitted.</td></tr>
           <tr><td class="wrapcell">AGK_REVOCATION_GRACE</td><td>api</td><td>AGK_TASK_CEILING</td><td><code>revocation_grace</code>: how long a revoked runner's results are still taken. A task running past it is declared lost, so an installation whose steps write a longer <code>timeout</code> raises it (<a href="#registering-a-runner">Registering a runner</a>). Also bounds every runner bus credential, since a NATS credential runs out rather than being revoked: a grace under an hour means more frequent renewal.</td></tr>
+          <tr><td class="wrapcell">AGK_CONSOLE</td><td>api</td><td><code>on</code></td><td><code>on</code> or <code>off</code>, and nothing else: whether the API serves the <a href="#ui">web console</a> at the root of the public URL, from <a href="roadmap/#m06">v0.6.0</a>. <code>off</code> leaves every other route served, the sign-in page under <code>/auth</code> among them, for an installation that serves the console's files elsewhere on the same origin, or none.</td></tr>
+          <tr><td class="wrapcell">AGK_MCP</td><td>api</td><td><code>on</code></td><td><code>on</code> or <code>off</code>, and nothing else: whether the API serves <code>/mcp</code> and <code>/mcp/{namespace}/{workflow}</code> (<a href="#mcp">Native MCP</a>), from <a href="roadmap/#m07">v0.7.0</a>. <code>off</code> answers 404 on both.</td></tr>
           <tr><td class="wrapcell">AGK_AUDIT_EXPORT_URL</td><td>controller</td><td>none: the log stays in the database, and the controller warns at every start</td><td>An <code>https</code> URL with a host and no user: the sink the audit log is exported to, outside the installation (<a href="#audit-log">Audit log</a>). A sink behind a private authority is trusted through <code>SSL_CERT_FILE</code>.</td></tr>
           <tr><td class="wrapcell">AGK_AUDIT_EXPORT_TOKEN_FILE</td><td>controller</td><td>none: no <code>Authorization</code> header</td><td>The bearer token the sink wants. Refused without AGK_AUDIT_EXPORT_URL.</td></tr>
           <tr><td class="wrapcell">AGK_METRICS_LISTEN</td><td>controller</td><td>none: no metrics, and no port</td><td>A host and a numeric port the metrics are answered on (<a href="#metrics">Metrics</a>), apart from anything else, since they name every tenant's namespaces and workflows. An address the controller cannot listen on refuses its start. Served in plain HTTP, or over TLS where AGK_TLS_CERT_FILE names a certificate.</td></tr>
@@ -15588,12 +15596,12 @@ the bootstrap token works until alice has signed in; then sign in as alice with 
 <section id="repos">
   <div class="sec-head"><span class="mark">§</span><h2>Repositories</h2></div>
   <div class="prose">
-    <p>Thirteen repositories in the <code>agentiik</code> organisation, split by what has to be released together, not by language.</p>
+    <p>Twelve repositories in the <code>agentiik</code> organisation, split by what has to be released together, not by language.</p>
   </div>
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 900 330" role="img" aria-label="The schemas repository holds the workflow, brick and envelope schemas, and is consumed by the core, the bricks, the console, the iOS app and the Android app; the core and the bricks publish container images to the organisation registry.">
+      <svg viewBox="0 0 900 330" role="img" aria-label="The schemas repository holds the workflow, brick and envelope schemas, and is consumed by the core, the bricks, the iOS app and the Android app; the core and the bricks publish container images to the organisation registry.">
         <defs>
           <marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
@@ -15607,42 +15615,39 @@ the bootstrap token works until alice has signed in; then sign in as alice with 
         <text x="120" y="191" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".65">one contract, one version</text>
 
         <g stroke="currentColor" stroke-width="1.5" fill="none">
-          <rect x="330" y="16" width="232" height="48"/>
-          <rect x="330" y="78" width="232" height="48"/>
-          <rect x="330" y="140" width="232" height="48"/>
-          <rect x="330" y="202" width="232" height="48"/>
-          <rect x="330" y="264" width="232" height="48"/>
+          <rect x="330" y="34" width="232" height="48"/>
+          <rect x="330" y="104" width="232" height="48"/>
+          <rect x="330" y="174" width="232" height="48"/>
+          <rect x="330" y="244" width="232" height="48"/>
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="11" fill="currentColor" text-anchor="middle">
-          <text x="446" y="45">agentiik/agentiik</text>
-          <text x="446" y="107">agentiik/bricks</text>
-          <text x="446" y="169">agentiik/console</text>
-          <text x="446" y="231">agentiik/ios</text>
-          <text x="446" y="293">agentiik/android</text>
+          <text x="446" y="63">agentiik/agentiik</text>
+          <text x="446" y="133">agentiik/bricks</text>
+          <text x="446" y="203">agentiik/ios</text>
+          <text x="446" y="273">agentiik/android</text>
         </g>
 
         <g fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#a7)">
-          <path d="M 220 164 H 276 V 40 H 324"/>
-          <path d="M 220 164 H 276 V 102 H 324"/>
-          <path d="M 220 164 H 324"/>
-          <path d="M 220 164 H 276 V 226 H 324"/>
-          <path d="M 220 164 H 276 V 288 H 324"/>
+          <path d="M 220 164 H 276 V 58 H 324"/>
+          <path d="M 220 164 H 276 V 128 H 324"/>
+          <path d="M 220 164 H 276 V 198 H 324"/>
+          <path d="M 220 164 H 276 V 268 H 324"/>
         </g>
 
         <rect x="620" y="30" width="256" height="82" fill="none" stroke="currentColor" stroke-width="1.5"/>
         <line x1="620" y1="58" x2="876" y2="58" stroke="currentColor" stroke-width="1"/>
         <text x="748" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="currentColor">ghcr.io/agentiik</text>
-        <text x="748" y="80" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".65">api · controller · runner</text>
-        <text x="748" y="95" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".65">console · standard bricks</text>
+        <text x="748" y="80" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".65">agentiik · runner</text>
+        <text x="748" y="95" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".65">standard bricks</text>
 
         <g fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#a7)">
-          <path d="M 562 40 H 614"/>
-          <path d="M 562 102 H 590 V 84 H 614"/>
+          <path d="M 562 58 H 614"/>
+          <path d="M 562 128 H 590 V 96 H 614"/>
         </g>
-        <text x="588" y="26" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".7">publishes</text>
+        <text x="588" y="48" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="currentColor" opacity=".7">publishes</text>
       </svg>
     </div>
-    <figcaption><b>One contract repository, five consumers.</b> The schemas live outside the core: the console validates files against them, the mobile applications render run detail from them, and brick authors need the manifest schema without the engine.</figcaption>
+    <figcaption><b>One contract repository, four consumers.</b> The schemas live outside the core: the console validates files against them, the mobile applications render run detail from them, and brick authors need the manifest schema without the engine.</figcaption>
   </figure>
 
   <div class="prose">
@@ -15650,12 +15655,11 @@ the bootstrap token works until alice has signed in; then sign in as alice with 
       <table>
         <thead><tr><th>Repository</th><th>Contents</th><th>Stack</th></tr></thead>
         <tbody>
-          <tr><td>agentiik/agentiik</td><td>The core, as one module: graph evaluator, container driver, controller, HTTP API, runner and the <code>agk</code> command line. One module keeps the evaluator and the driver importable libraries, so <code>agk run --local</code> is the same code path as a server run.</td><td>Go</td></tr>
+          <tr><td>agentiik/agentiik</td><td>The core, as one module: graph evaluator, container driver, controller, HTTP API, runner, the <code>agk</code> command line, and the web console the API serves (graph view, run inspector, sharing panel, format-preserving YAML editor). One module keeps the evaluator and the driver importable libraries, so <code>agk run --local</code> is the same code path as a server run.</td><td>Go, TypeScript</td></tr>
           <tr><td>agentiik/schemas</td><td>JSON Schema 2020-12 for the workflow file, the brick manifest and the envelope, plus the OpenAPI document. A keyword without <code>description</code> and <code>examples</code> fails the build, because the site's language reference and <code>workflow.language</code> are generated from here.</td><td>JSON, YAML</td></tr>
           <tr><td>agentiik/bricks</td><td>The standard catalog, one directory per brick (image, manifest, example envelopes), built and published as one matrix.</td><td>mixed</td></tr>
           <tr><td>agentiik/brick-sdk</td><td>Optional envelope helpers for Go, Python and TypeScript. The contract stands without them.</td><td>mixed</td></tr>
           <tr><td>agentiik/design</td><td>Design tokens as JSON and CSS, icon SVG sources, the specimen sheet. Four clients must agree on the palette, and none of them owns it.</td><td>JSON, CSS, SVG</td></tr>
-          <tr><td>agentiik/console</td><td>Web console: graph view, run inspector, sharing panel, format-preserving YAML editor.</td><td>TypeScript</td></tr>
           <tr><td>agentiik/ios</td><td>iOS and iPadOS application.</td><td>Swift</td></tr>
           <tr><td>agentiik/android</td><td>Android application.</td><td>Kotlin</td></tr>
           <tr><td class="wrapcell">agentiik/agentiik.github.io</td><td>The site and the documentation; later the generated language and API references and the catalog pages. Named for where it is served: GitHub Pages resolves an organisation site from that name alone.</td><td>static</td></tr>
@@ -15667,6 +15671,11 @@ the bootstrap token works until alice has signed in; then sign in as alice with 
       </table>
     </div>
 
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The web console is built in <code>agentiik/agentiik</code>, not in a repository of its own. It has to be released with the API it talks to: it carries the core's licence and version, it has one consumer, and the API serves it from its own binary (<a href="#ui">Web console</a>), which Go's embedding reaches only inside the module. Kept apart, every change to it would have been a second change in the core, copying its build in before the core's tag, which cannot move once the checksum database has recorded it. The mobile applications stay apart, since the stores distribute them and the installation does not. What the separate repository guarded, a console that reads the published API and nothing else, a test holds instead: the build fails when the console calls a route the OpenAPI document does not describe.</p>
+    </div>
+
     <h3 id="licensing">Licensing</h3>
     <p>A repository's licence follows what it is for: a server somebody might host, or something other people embed in their own work.</p>
 
@@ -15674,7 +15683,7 @@ the bootstrap token works until alice has signed in; then sign in as alice with 
       <table>
         <thead><tr><th>Repository</th><th>Licence</th><th>Why</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">agentiik/agentiik<br>agentiik/console<br>agentiik/ios<br>agentiik/android</td><td>AGPL-3.0-or-later</td><td>The service. Section 13 requires anyone who offers a modified version to users over a network to offer them the corresponding source: the only OSI-approved answer to a modified Agentiik sold as a hosted product, and nothing asked of anyone running an unmodified build.</td></tr>
+          <tr><td class="wrapcell">agentiik/agentiik<br>agentiik/ios<br>agentiik/android</td><td>AGPL-3.0-or-later</td><td>The service. Section 13 requires anyone who offers a modified version to users over a network to offer them the corresponding source: the only OSI-approved answer to a modified Agentiik sold as a hosted product, and nothing asked of anyone running an unmodified build.</td></tr>
           <tr><td class="wrapcell"><span style="white-space:nowrap">agentiik/schemas</span><br><span style="white-space:nowrap">agentiik/brick-sdk</span><br><span style="white-space:nowrap">agentiik/bricks</span></td><td>Apache-2.0</td><td>They end up inside other people's bricks and clients: anyone must be able to write a brick in any language, under any licence.</td></tr>
           <tr><td class="wrapcell">agentiik/deploy<br>agentiik/.github<br><span style="white-space:nowrap">agentiik/terraform-provider-agentiik</span></td><td>Apache-2.0</td><td>Copied into other people's infrastructure. Copyleft on the provider would reach into the code that calls it.</td></tr>
           <tr><td class="wrapcell">agentiik/design<br><span style="white-space:nowrap">agentiik/agentiik.github.io</span></td><td>Apache-2.0 for code<br>CC BY 4.0 for assets and prose</td><td>Tokens and icons are code; documentation and the specimen sheet are not.</td></tr>
@@ -15718,8 +15727,7 @@ the bootstrap token works until alice has signed in; then sign in as alice with 
 
   <div class="block">
     <div class="note-label">What Agentiik 1.4.0 names</div>
-<pre><code>ghcr.io/agentiik/api:1.4.0          ghcr.io/agentiik/controller:1.4.0
-ghcr.io/agentiik/runner:1.4.0       ghcr.io/agentiik/console:1.4.0
+<pre><code>ghcr.io/agentiik/agentiik:1.4.0     ghcr.io/agentiik/runner:1.4.0
 ghcr.io/agentiik/postgres-upgrade:1.4.0
 agentiik/ios            v1.4.0      agentiik/android        v1.4.0
 agentiik/schemas        v1.4.0      agentiik/bricks         v1.4.0
@@ -15829,15 +15837,15 @@ https://agentiik.github.io/docs/v/1.4.0</code></pre>
     <ul class="plain">
       <li>Precedence is Semantic Versioning's own, as drawn. A tool resolving a range takes no pre-release unless asked: rely on that rather than on a separate channel.</li>
       <li>Counters start at 1 and never reset within a target: after <code>1.0.0-beta.4</code> comes <code>1.0.0-rc.1</code>. A release that slips to 1.1.0 renumbers from <code>1.1.0-alpha.1</code>.</li>
-      <li>A pre-release is tagged everywhere too; a <code>1.0.0-rc.2</code> core with a <code>1.0.0-beta.1</code> console is neither supported nor tested.</li>
-      <li>Images carry the same string, signed like any other: <code>ghcr.io/agentiik/api:1.0.0-rc.2</code>. <code>latest</code> never points at a pre-release, and a pre-release never moves the <code>1</code> or <code>1.0</code> rolling tags.</li>
+      <li>A pre-release is tagged everywhere too; a <code>1.0.0-rc.2</code> core with a <code>1.0.0-beta.1</code> runner is neither supported nor tested.</li>
+      <li>Images carry the same string, signed like any other: <code>ghcr.io/agentiik/agentiik:1.0.0-rc.2</code>. <code>latest</code> never points at a pre-release, and a pre-release never moves the <code>1</code> or <code>1.0</code> rolling tags.</li>
     </ul>
 
     <h4>What this costs, and what it does not</h4>
     <ul class="plain">
-      <li><b>Repositories are tagged having changed nothing.</b> A console-only release still tags the core, the schemas and the catalog: a tag is cheap, working out which four numbers go together is not.</li>
+      <li><b>Repositories are tagged having changed nothing.</b> A release that changes only the mobile applications still tags the core, the schemas and the catalog: a tag is cheap, working out which four numbers go together is not.</li>
       <li><b>A major reaches repositories nothing broke in</b>, such as an unchanged SDK. The number says <em>something in Agentiik broke</em>; the release note says what.</li>
-      <li><b>The project version is not the API version.</b> <code>/api/v1</code> is the wire contract the core, the console and the two applications agree on across a release boundary, and it moves far more slowly. A client pins it and reports the project version; a minor release never moves <code>v1</code> to <code>v2</code>.</li>
+      <li><b>The project version is not the API version.</b> <code>/api/v1</code> is the wire contract the core and the two applications agree on across a release boundary, and it moves far more slowly. A client pins it and reports the project version; a minor release never moves <code>v1</code> to <code>v2</code>.</li>
       <li><b>Given up:</b> per-repository streams, which would tell a brick author exactly what changed in <code>agentiik/schemas</code>. The people who hold the version in their heads are operators running an installation, and for them a matrix is worse than a number that sometimes moves for somebody else's reason.</li>
     </ul>
 
