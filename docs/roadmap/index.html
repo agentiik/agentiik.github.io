@@ -2021,7 +2021,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <span class="work-repo">schemas</span>
         </div>
         <ul>
-          <li>Add the on block (schedule, webhook, event, manual) with every trigger setting: cron, timezone, jitter, catch_up, path, method, auth, response, map, type, source, filter, inputs. <a class="ref" href="../#triggers">triggers</a></li>
+          <li>Add the on block (schedule, webhook, event) with every trigger setting: cron, timezone, jitter, catch_up, path, method, auth, response, output, map, type, source, filter. <a class="ref" href="../#triggers">triggers</a></li>
           <li>Give every trigger keyword a description and examples from its first release. <a class="ref" href="../#yaml">yaml</a><a class="ref" href="../#repos">repos</a></li>
           <li>Add the workflow-level concurrency block, with group and cancel_in_progress. <a class="ref" href="../#triggers">triggers</a></li>
           <li>Add the workflow step keyword (a local or published callee and its ref), exclusive with image and script. <a class="ref" href="../#step-keywords">step-keywords</a></li>
@@ -2041,7 +2041,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Route every trigger kind through one path: authenticate, authorise, resolve the ref, write the run, NOTIFY the controller. <a class="ref" href="../#from-trigger-to-result">from-trigger-to-result</a><a class="ref" href="../#how-the-api-and-the-controller-stay-in-step">how-the-api-and-the-controller-stay-in-step</a></li>
           <li>Record trigger_kind and triggered_by: the namespace service identity for schedule, webhook and event, the person for manual. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#principals">principals</a></li>
           <li>Re-authorise at run creation against the trigger's principal, so revoking its grant stops it firing. <a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a><a class="ref" href="../#controller">controller</a></li>
-          <li>Implement the manual trigger under workflow:run: on.manual inputs, POST /api/v1/{ns}/workflows/{name}/runs with the inputs and an optional ref, agk run --ref. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#api">api</a><a class="ref" href="../#command-line">command-line</a></li>
+          <li>Implement the manual trigger under workflow:run: POST /api/v1/{ns}/workflows/{name}/runs with the workflow's inputs and an optional ref, agk run --ref. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#api">api</a><a class="ref" href="../#command-line">command-line</a></li>
           <li>Hold per-namespace concurrency-group locks in the controller: a second run queues, or cancel_in_progress cancels the first. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#run-states">run-states</a><a class="ref" href="../#controller">controller</a></li>
           <li>Apply max_runs_per_hour to every trigger kind, and keep a run queued while max_concurrent_tasks is spent. <a class="ref" href="../#quotas-per-namespace">quotas-per-namespace</a><a class="ref" href="../#run-states">run-states</a></li>
           <li>Audit webhook secret writes, and trigger arming and disarming. <a class="ref" href="../#observability">observability</a><span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
