@@ -1712,6 +1712,21 @@ flowchart LR
 
     <p>Where a reverse proxy terminates TLS in front of the API, <a href="#behind-a-reverse-proxy">Behind a reverse proxy</a> starts it instead.</p>
 
+    <h4 id="compose-trying-main">Trying main</h4>
+    <p><code>compose.yaml</code> on <code>main</code> names the release being prepared, whose images are published only once it is tagged. To try it before then, download it from <code>main</code> rather than from a release tag, follow <code>dev</code>, the images <code>main</code> publishes at every commit, and install <code>agk</code> from <code>main</code> too:</p>
+
+    <div class="block">
+      <div class="note-label">start, following main</div>
+<pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/main/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
+<span class="p">$</span> <span class="cmd">echo 'AGENTIIK_VERSION=dev' &gt;&gt; .env</span>
+<span class="p">$</span> <span class="cmd">docker compose pull &amp;&amp; docker compose up -d --wait</span>
+<span class="p">$</span> <span class="cmd">go install github.com/agentiik/agentiik/cmd/agk@main</span></code></pre>
+    </div>
+
+    <p><code>docker compose up</code> never pulls again an image it holds, so run <code>docker compose pull</code> before it each time to take what <code>main</code> has published since. The <a href="#ui">web console</a> is at the installation's address, <code>https://localhost:8443</code> here, and signs in as <a href="#compose-first-admin">The first administrator</a> says.</p>
+
     <h4 id="compose-what-runs">What runs</h4>
     <p>The file in full, as it is downloaded above:</p>
 
@@ -1772,8 +1787,8 @@ services:
   # bootstrap token's hash in the database until the first administrator has signed in, and a join
   # token for the runner. Its log says what it did.
   init:
-    image: ghcr.io/agentiik/api:${AGENTIIK_VERSION:-v0.5.0}
-    command: [init]
+    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.6.0}
+    command: [agentiik-api, init]
     user: "0:0" # to give each service's directory to the account that service runs as
     network_mode: none
     userns_mode: host
@@ -1811,7 +1826,8 @@ services:
 
   api:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/api:${AGENTIIK_VERSION:-v0.5.0}
+    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.6.0}
+    command: [agentiik-api, serve] # the API, which serves the web console; the controller below runs the same image
     depends_on: { &lt;&lt;: *after-init, nats: { condition: service_healthy } }
     environment:
       AGK_DATABASE_URL: postgres://agentiik@/agentiik?host=/run/postgresql
@@ -1829,17 +1845,21 @@ services:
       # Set, the API is reached at the proxy's URL and serves plain HTTP on 127.0.0.1 alone, leaving
       # the two lines above and the certificate unread.
       AGK_PROXY_URL: ${AGENTIIK_PROXY_URL:-}
+      AGK_CONSOLE: ${AGENTIIK_CONSOLE:-on} # off serves the API alone, the sign-in page included
       SSL_CERT_DIR: /agentiik/trust # the certificate init made, beside the system's authorities
     volumes:
       - "${AGENTIIK_DATA:-./data}/api:/agentiik"
       - "${AGENTIIK_DATA:-./data}/bus:/bus"
       - "${AGENTIIK_DATA:-./data}/objects:/objects"
       - "socket:/run/postgresql"
-    healthcheck: { test: [CMD, /agentiik-api, health], interval: 2s } # the image has no shell, hence the exec form
+    healthcheck: { test: [CMD, agentiik-api, health], interval: 2s } # the image has no shell, hence the exec form
 
+  # The API's image, run with the controller's command in a container of its own, which never mounts
+  # the master key the API reads.
   controller:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/controller:${AGENTIIK_VERSION:-v0.5.0}
+    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.6.0}
+    command: [agentiik-controller]
     depends_on: { &lt;&lt;: *after-init, nats: { condition: service_healthy } }
     environment:
       AGK_DATABASE_URL: postgres://agentiik@/agentiik?host=/run/postgresql
@@ -2076,8 +2096,8 @@ AGENTIIK_OPERATOR_TOKEN=
 # or an absolute path such as /srv/agentiik on a server. Back it up; it holds the master key.
 #AGENTIIK_DATA=./data
 
-# The version of Agentiik, one for every image; compose.yaml names its own release. To upgrade, download the new release's compose.yaml rather than changing this alone, since a release may change the services too.
-#AGENTIIK_VERSION=v0.5.0
+# The version of Agentiik, one for every image; compose.yaml names its own release. To upgrade, download the new release's compose.yaml rather than changing this alone, since a release may change the services too. dev runs the images main publishes at every commit, to try what is not released yet.
+#AGENTIIK_VERSION=v0.6.0
 
 # The name agk and every runner reach the installation at: a DNS name or an IPv4 address, which the
 # certificate init makes is issued to. localhost is enough on one machine; a runner on another machine
@@ -2094,6 +2114,10 @@ AGENTIIK_OPERATOR_TOKEN=
 # https://agentiik.example.com. Unset, the API serves TLS itself at https://AGENTIIK_HOST:AGENTIIK_PORT.
 # The bus is not proxied, and keeps its own TLS on AGENTIIK_BUS_PORT at AGENTIIK_HOST.
 #AGENTIIK_PROXY_URL=
+
+# on serves the web console at the installation's address, beside the API. off serves the API alone,
+# the sign-in page and agk login included, for a console served elsewhere on the same address.
+#AGENTIIK_CONSOLE=on
 
 # The namespace init creates, where workflows are pushed and run. Changed, the previous one stays.
 #AGENTIIK_NAMESPACE=demo
@@ -2123,6 +2147,7 @@ AGENTIIK_OPERATOR_TOKEN=
           <tr><td>AGENTIIK_PORT</td><td>The API listens there, and the runner joins again at the new address.</td></tr>
           <tr><td>AGENTIIK_BUS_PORT</td><td>The bus is published there, and every runner is handed the new address.</td></tr>
           <tr><td>AGENTIIK_PROXY_URL</td><td>The API is reached at the proxy's URL and serves plain HTTP on the loopback (<a href="#behind-a-reverse-proxy">Behind a reverse proxy</a>); the runner joins again at that URL.</td></tr>
+          <tr><td>AGENTIIK_CONSOLE</td><td>The API starts again with <code>AGK_CONSOLE</code> set to it: <code>off</code> serves no console and every other route, the sign-in page among them (<a href="#ui">Web console</a>).</td></tr>
           <tr><td>AGENTIIK_NAMESPACE</td><td>Created beside the previous one, which stays.</td></tr>
           <tr><td>AGENTIIK_RUNNER_CONCURRENCY, AGENTIIK_REQUIRE_USERNS_REMAP, AGENTIIK_CA</td><td>The runner starts again with them.</td></tr>
         </tbody>
