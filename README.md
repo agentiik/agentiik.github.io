@@ -108,7 +108,7 @@ is current.
 | [homebrew-tap](https://github.com/agentiik/homebrew-tap) | The Homebrew formulae: `agk`, and the server programs with it. |
 | [.github](https://github.com/agentiik/.github) | Security policy, code of conduct, contribution guide, licensing and trademark notes. |
 
-All twelve are public, and five of them hold no code yet. The roadmap says which release fills each one. A thirteenth, [console](https://github.com/agentiik/console), held the web console until it moved into the core, and is archived once `v0.5.0` is tagged.
+All twelve are public, and five of them hold no code yet. The roadmap says which release fills each one.
 
 ## Where the rest will come from
 

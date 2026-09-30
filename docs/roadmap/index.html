@@ -2188,7 +2188,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <span class="work-repo">agentiik · deploy · homebrew-tap</span>
         </div>
         <ul>
-          <li>Move the web console into agentiik/agentiik, in a console directory holding its sources beside the Go package that embeds its build, with ./console/node_modules ignored in go.mod, and archive agentiik/console once v0.5.0 is tagged. <a class="ref" href="../#repos">repos</a></li>
+          <li>Lay out the web console in agentiik/agentiik: a console directory holding its sources beside the Go package that embeds its build, with ./console/node_modules ignored in go.mod. <a class="ref" href="../#repos">repos</a></li>
           <li>Embed the console's build in agentiik-api and serve it at the root of the public URL, on the API's origin beside /api/v1 and /auth, a build that skipped the console's stage serving none, as one that skipped the helper's carries no helper. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#repos">repos</a></li>
           <li>Turn the console off with AGK_CONSOLE=off, every other route still served, /auth among them, and refuse at start any value of AGK_CONSOLE but on and off. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#configuration">configuration</a></li>
           <li>Publish the console's files with each release as an archive at the project version, for an operator who serves them elsewhere on the API's origin with AGK_CONSOLE=off. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#conventions-across-repositories">conventions-across-repositories</a></li>
