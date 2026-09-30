@@ -22,53 +22,53 @@
 <style>
 /* The design system's tokens, the same as the documentation's. */
 :root{
-  --paper:#EFF2ED;
-  --surface:#FBFCF9;
-  --sunken:#E7EBE3;
+  --paper:#F1F1F1;
+  --surface:#FBFBFB;
+  --sunken:#E9E9E9;
   --raised:#FFFFFF;
-  --ink:#16201B;
-  --muted:#5A6961;
-  --faint:#7E8C84;
-  --line:#DCE2D7;
-  --line-strong:#C0CABB;
-  --accent:#0E6A5F;
+  --ink:#1D1D1D;
+  --muted:#656565;
+  --faint:#888888;
+  --line:#DFDFDF;
+  --line-strong:#C6C6C6;
+  --accent:#015DA2;
   --on-accent:#FFFFFF;
   --wait:#96660A;
   --fail:#B23C1E;
-  --scrim:rgba(14,19,16,.42);
+  --scrim:rgba(18,18,18,.42);
   --shadow:none;
   --gutter:clamp(16px,3vw,28px);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#0E1310;
-    --surface:#151C18;
-    --sunken:#0A0F0C;
-    --raised:#1B2420;
-    --ink:#E4EAE3;
-    --muted:#94A29A;
-    --faint:#6D7B73;
-    --line:#26312B;
-    --line-strong:#35423A;
-    --accent:#4FBFAC;
-    --on-accent:#0E1310;
+    --paper:#121212;
+    --surface:#1A1A1A;
+    --sunken:#0E0E0E;
+    --raised:#222222;
+    --ink:#E8E8E8;
+    --muted:#9E9E9E;
+    --faint:#777777;
+    --line:#2E2E2E;
+    --line-strong:#3E3E3E;
+    --accent:#68AEF5;
+    --on-accent:#121212;
     --wait:#D9A441;
     --fail:#E0705A;
     --scrim:rgba(0,0,0,.6);
   }
 }
 :root[data-theme="dark"]{
-  --paper:#0E1310;
-  --surface:#151C18;
-  --sunken:#0A0F0C;
-  --raised:#1B2420;
-  --ink:#E4EAE3;
-  --muted:#94A29A;
-  --faint:#6D7B73;
-  --line:#26312B;
-  --line-strong:#35423A;
-  --accent:#4FBFAC;
-  --on-accent:#0E1310;
+  --paper:#121212;
+  --surface:#1A1A1A;
+  --sunken:#0E0E0E;
+  --raised:#222222;
+  --ink:#E8E8E8;
+  --muted:#9E9E9E;
+  --faint:#777777;
+  --line:#2E2E2E;
+  --line-strong:#3E3E3E;
+  --accent:#68AEF5;
+  --on-accent:#121212;
   --wait:#D9A441;
   --fail:#E0705A;
   --scrim:rgba(0,0,0,.6);
@@ -112,7 +112,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   transform:translateX(-50%);
   background:
     radial-gradient(70% 60% at 50% 0%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 72%),
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--accent) 26%, transparent) 1px, transparent 1.4px) 0 0 / 22px 22px;
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--faint) 45%, transparent) 1px, transparent 1.4px) 0 0 / 22px 22px;
   -webkit-mask-image:linear-gradient(to bottom, #000 62%, transparent);
           mask-image:linear-gradient(to bottom, #000 62%, transparent);
 }
@@ -147,12 +147,12 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 .sk-node{opacity:0;transition:opacity .6s ease}
 .sk-node.on{opacity:1}
 .sk-node.skip{opacity:.38}
-.sk-box{fill:color-mix(in srgb, var(--surface) 84%, transparent);stroke:color-mix(in srgb, var(--accent) 42%, transparent);stroke-width:1.2;transition:stroke .3s ease}
+.sk-box{fill:color-mix(in srgb, var(--surface) 84%, transparent);stroke:color-mix(in srgb, var(--faint) 60%, transparent);stroke-width:1.2;transition:stroke .3s ease}
 .sk-node.skip .sk-box{stroke-dasharray:3 3}
 .sk-name{font:500 11px "JetBrains Mono",ui-monospace,monospace;fill:var(--muted)}
 .sk-dot{fill:color-mix(in srgb, var(--faint) 55%, transparent);transition:fill .3s ease}
-.sk-port{fill:var(--paper);stroke:color-mix(in srgb, var(--accent) 55%, transparent);stroke-width:1.2}
-.sk-edge{fill:none;stroke:color-mix(in srgb, var(--accent) 50%, transparent);stroke-width:1.4;stroke-linejoin:round;transition:stroke-dashoffset .75s cubic-bezier(.4,0,.2,1)}
+.sk-port{fill:var(--paper);stroke:color-mix(in srgb, var(--faint) 75%, transparent);stroke-width:1.2}
+.sk-edge{fill:none;stroke:color-mix(in srgb, var(--faint) 70%, transparent);stroke-width:1.4;stroke-linejoin:round;transition:stroke-dashoffset .75s cubic-bezier(.4,0,.2,1)}
 /* A rejected port's edge is dashed, so it fades in rather than drawing itself. */
 .sk-edge.rej{stroke:color-mix(in srgb, var(--wait) 60%, transparent);stroke-dasharray:4 3;opacity:0;transition:opacity .6s ease}
 .sk-edge.rej.on{opacity:1}
@@ -280,7 +280,8 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 }
 .install p code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.92em;color:var(--ink)}
 
-/* Four things Agentiik is, two by two, MCP first. */
+/* Four things Agentiik is, MCP first: side by side where the screen holds them, two by two
+   where it does not, one under the other on a phone. */
 .ideas{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -299,6 +300,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
 .ideas p{margin:0;color:var(--muted);font-size:.94rem;line-height:1.6}
 .ideas code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.86em;color:var(--ink)}
 @media (max-width:760px){.ideas{grid-template-columns:1fr}}
+@media (min-width:1100px){.ideas{grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 .section-title{
   margin:0 0 6px;
@@ -537,36 +539,36 @@ html.js.ready [data-rise]{
    Two classes, because the player's stylesheet arrives after this one and sets its own
    colours on one class, which would win the tie. */
 .ap-player.asciinema-player-theme-agentiik{
-  --term-color-foreground:#17201C;
-  --term-color-background:#FBFCF8;
-  --term-color-0:#3A463F; --term-color-1:#A8481B; --term-color-2:#0E6A5F;
+  --term-color-foreground:#1E1E1E;
+  --term-color-background:#FBFBFB;
+  --term-color-0:#434343; --term-color-1:#A8481B; --term-color-2:#12667B;
   --term-color-3:#8A6A1F; --term-color-4:#2F5E86; --term-color-5:#7A4B86;
-  --term-color-6:#12776C; --term-color-7:#17201C;
-  --term-color-8:#7C887F; --term-color-9:#C25A22; --term-color-10:#12897A;
+  --term-color-6:#177289; --term-color-7:#1E1E1E;
+  --term-color-8:#848484; --term-color-9:#C25A22; --term-color-10:#15839E;
   --term-color-11:#A8842A; --term-color-12:#3D74A3; --term-color-13:#9460A3;
-  --term-color-14:#189387; --term-color-15:#0B0F0D;
+  --term-color-14:#208DA9; --term-color-15:#0E0E0E;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .ap-player.asciinema-player-theme-agentiik{
-    --term-color-foreground:#E5EAE3;
-    --term-color-background:#181E1B;
-    --term-color-0:#2A332E; --term-color-1:#E0834F; --term-color-2:#54C1AD;
+    --term-color-foreground:#E8E8E8;
+    --term-color-background:#1C1C1C;
+    --term-color-0:#303030; --term-color-1:#E0834F; --term-color-2:#53BBD9;
     --term-color-3:#D6B45C; --term-color-4:#7FB0DA; --term-color-5:#C39AD4;
-    --term-color-6:#6FD4C4; --term-color-7:#E5EAE3;
-    --term-color-8:#7E8B83; --term-color-9:#EC9A6A; --term-color-10:#74D6C4;
+    --term-color-6:#70CEEB; --term-color-7:#E8E8E8;
+    --term-color-8:#878787; --term-color-9:#EC9A6A; --term-color-10:#73D0ED;
     --term-color-11:#E6C87A; --term-color-12:#9AC4E8; --term-color-13:#D3B0E2;
-    --term-color-14:#8AE2D3; --term-color-15:#FFFFFF;
+    --term-color-14:#8ADDF7; --term-color-15:#FFFFFF;
   }
 }
 :root[data-theme="dark"] .ap-player.asciinema-player-theme-agentiik{
-  --term-color-foreground:#E5EAE3;
-  --term-color-background:#181E1B;
-  --term-color-0:#2A332E; --term-color-1:#E0834F; --term-color-2:#54C1AD;
+  --term-color-foreground:#E8E8E8;
+  --term-color-background:#1C1C1C;
+  --term-color-0:#303030; --term-color-1:#E0834F; --term-color-2:#53BBD9;
   --term-color-3:#D6B45C; --term-color-4:#7FB0DA; --term-color-5:#C39AD4;
-  --term-color-6:#6FD4C4; --term-color-7:#E5EAE3;
-  --term-color-8:#7E8B83; --term-color-9:#EC9A6A; --term-color-10:#74D6C4;
+  --term-color-6:#70CEEB; --term-color-7:#E8E8E8;
+  --term-color-8:#878787; --term-color-9:#EC9A6A; --term-color-10:#73D0ED;
   --term-color-11:#E6C87A; --term-color-12:#9AC4E8; --term-color-13:#D3B0E2;
-  --term-color-14:#8AE2D3; --term-color-15:#FFFFFF;
+  --term-color-14:#8ADDF7; --term-color-15:#FFFFFF;
 }
 
 /* ---------- Redesign: width, sharpness, interaction ---------- */
@@ -575,11 +577,19 @@ body{overflow-x:clip}
 /* The screenshot and the recording take the screen's width, up to the 1440 the console is
    drawn at, and stop one gutter short of either edge. */
 .shot,.cast{width:min(1440px, calc(100vw - 2 * var(--gutter)))}
+/* Below the opening every block takes the width the screenshots take, so the page reads as one
+   column from the first screenshot to the footer rather than a narrow one between wide ones.
+   Placed by its left margin rather than by a transform, which can leave text on half a pixel;
+   a paragraph keeps its own measure inside it, from the column's left edge. */
+.ideas,.section-title,.section-lede,.usage,.docs,footer{
+  width:min(1440px, calc(100vw - 2 * var(--gutter)));
+  margin-left:calc(50% - min(720px, 50vw - var(--gutter)));
+}
 /* The mockup draws its own window, rounded and bordered, so the frame around it draws
    nothing: a border and a radius here would put a second corner outside the window's own.
    The shadow follows the drawing's shape rather than a box's. */
 .shot{border:0;background:none;border-radius:0;overflow:visible;box-shadow:none}
-.shot .mock{filter:drop-shadow(0 1px 1px rgba(14,19,16,.06)) drop-shadow(0 16px 26px rgba(14,19,16,.16))}
+.shot .mock{filter:drop-shadow(0 1px 1px rgba(18,18,18,.06)) drop-shadow(0 16px 26px rgba(18,18,18,.16))}
 .shot .mock{display:block;width:100%;height:auto}
 .cast-frame{border-radius:7px;overflow:hidden}
 .cast pre{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
@@ -616,9 +626,9 @@ body{overflow-x:clip}
 .lightbox-body > *{display:block;width:100%;max-width:1800px;min-width:1200px;height:auto}
 @media (min-width:980px){.lightbox-body > *{min-width:0}}
 /* Console mockups: one markup, both themes, from the design system's tokens. */
-.mock{--m-bg:#EFF2ED;--m-surface:#FBFCF9;--m-pane:#F4F6F1;--m-sunken:#E7EBE3;--m-raised:#FFFFFF;--m-line:#DCE2D7;--m-line-strong:#C0CABB;--m-text:#16201B;--m-muted:#5A6961;--m-faint:#7E8C84;--m-accent:#0E6A5F;--m-accent-dim:#DBE9E4;--m-accent-line:#ABC9C2;--m-on-accent:#FFFFFF;--m-ok:#2E7D4F;--m-ok-bg:#DCEBE0;--m-ok-line:#ADCDB9;--m-wait:#96660A;--m-wait-bg:#F4EAD3;--m-wait-line:#DBC69D;--m-fail:#B23C1E;--m-fail-bg:#F6E1D9;--m-fail-line:#E3B5A7;display:block;width:100%;height:auto}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-bg:#0E1310;--m-surface:#151C18;--m-pane:#0A0F0C;--m-sunken:#0A0F0C;--m-raised:#1B2420;--m-line:#26312B;--m-line-strong:#35423A;--m-text:#E4EAE3;--m-muted:#94A29A;--m-faint:#6D7B73;--m-accent:#4FBFAC;--m-accent-dim:#12302A;--m-accent-line:#21473F;--m-on-accent:#0E1310;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}}
-:root[data-theme="dark"] .mock{--m-bg:#0E1310;--m-surface:#151C18;--m-pane:#0A0F0C;--m-sunken:#0A0F0C;--m-raised:#1B2420;--m-line:#26312B;--m-line-strong:#35423A;--m-text:#E4EAE3;--m-muted:#94A29A;--m-faint:#6D7B73;--m-accent:#4FBFAC;--m-accent-dim:#12302A;--m-accent-line:#21473F;--m-on-accent:#0E1310;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}
+.mock{--m-bg:#F1F1F1;--m-surface:#FBFBFB;--m-pane:#F5F5F5;--m-sunken:#E9E9E9;--m-raised:#FFFFFF;--m-line:#DFDFDF;--m-line-strong:#C6C6C6;--m-text:#1D1D1D;--m-muted:#656565;--m-faint:#888888;--m-accent:#015DA2;--m-accent-dim:#D7E7F9;--m-accent-line:#A5C5E7;--m-on-accent:#FFFFFF;--m-ok:#2E7D4F;--m-ok-bg:#DCEBE0;--m-ok-line:#ADCDB9;--m-wait:#96660A;--m-wait-bg:#F4EAD3;--m-wait-line:#DBC69D;--m-fail:#B23C1E;--m-fail-bg:#F6E1D9;--m-fail-line:#E3B5A7;display:block;width:100%;height:auto}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-bg:#121212;--m-surface:#1A1A1A;--m-pane:#0E0E0E;--m-sunken:#0E0E0E;--m-raised:#222222;--m-line:#2E2E2E;--m-line-strong:#3E3E3E;--m-text:#E8E8E8;--m-muted:#9E9E9E;--m-faint:#777777;--m-accent:#68AEF5;--m-accent-dim:#0F2B46;--m-accent-line:#1C4165;--m-on-accent:#121212;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}}
+:root[data-theme="dark"] .mock{--m-bg:#121212;--m-surface:#1A1A1A;--m-pane:#0E0E0E;--m-sunken:#0E0E0E;--m-raised:#222222;--m-line:#2E2E2E;--m-line-strong:#3E3E3E;--m-text:#E8E8E8;--m-muted:#9E9E9E;--m-faint:#777777;--m-accent:#68AEF5;--m-accent-dim:#0F2B46;--m-accent-line:#1C4165;--m-on-accent:#121212;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}
 .mock .t-sans{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
 .mock .t-mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 .mock text{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
@@ -647,14 +657,14 @@ body{overflow-x:clip}
 .mock .f-fail-bg{fill:var(--m-fail-bg)}.mock .s-fail-bg{stroke:var(--m-fail-bg)}
 .mock .f-fail-line{fill:var(--m-fail-line)}.mock .s-fail-line{stroke:var(--m-fail-line)}
 /* Extra tokens for console-graph: YAML section keys and scalar values. */
-.mock{--m-graph-key:#0E6A5F;--m-graph-value:#8A6A17}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-graph-key:#7BD2C2;--m-graph-value:#C9BE7E;}}
-:root[data-theme="dark"] .mock{--m-graph-key:#7BD2C2;--m-graph-value:#C9BE7E;}
+.mock{--m-graph-key:#015DA2;--m-graph-value:#8A6A17}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-graph-key:#8CC4FF;--m-graph-value:#D5B97D;}}
+:root[data-theme="dark"] .mock{--m-graph-key:#8CC4FF;--m-graph-value:#D5B97D;}
 .mock .f-graph-key{fill:var(--m-graph-key)}.mock .s-graph-key{stroke:var(--m-graph-key)}
 .mock .f-graph-value{fill:var(--m-graph-value)}.mock .s-graph-value{stroke:var(--m-graph-value)}
 .mock{--m-inspector-str:#8A6A17}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-inspector-str:#C9BE7E}}
-:root[data-theme="dark"] .mock{--m-inspector-str:#C9BE7E}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-inspector-str:#D5B97D}}
+:root[data-theme="dark"] .mock{--m-inspector-str:#D5B97D}
 .mock .f-inspector-str{fill:var(--m-inspector-str)}.mock .s-inspector-str{stroke:var(--m-inspector-str)}
 </style>
 <style>

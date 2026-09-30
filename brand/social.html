@@ -10,12 +10,12 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap">
 <style>
 :root{
-  --paper:#EFF2ED;
-  --surface:#FBFCF9;
-  --ink:#16201B;
-  --muted:#5A6961;
-  --faint:#7E8C84;
-  --accent:#0E6A5F;
+  --paper:#F1F1F1;
+  --surface:#FBFBFB;
+  --ink:#1D1D1D;
+  --muted:#656565;
+  --faint:#888888;
+  --accent:#015DA2;
   --wait:#96660A;
 }
 *{box-sizing:border-box}
@@ -26,7 +26,7 @@ body{
   color:var(--ink);
   background:
     radial-gradient(80% 90% at 30% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%),
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--accent) 26%, transparent) 1.2px, transparent 1.7px) 0 0 / 26px 26px,
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--faint) 45%, transparent) 1.2px, transparent 1.7px) 0 0 / 26px 26px,
     var(--paper);
 }
 .text{position:absolute;left:84px;top:0;bottom:0;width:640px;display:flex;flex-direction:column;justify-content:center}
@@ -40,7 +40,7 @@ p{margin:22px 0 0;max-width:560px;font-size:27px;line-height:1.35;color:var(--mu
 .url{position:absolute;left:84px;bottom:52px;font:500 20px "JetBrains Mono",ui-monospace,monospace;color:var(--faint)}
 .sketch{position:absolute;right:70px;top:50%;transform:translateY(-50%)}
 .sk-title{font:500 13px "JetBrains Mono",ui-monospace,monospace;fill:var(--faint)}
-.sk-box{fill:var(--surface);stroke:color-mix(in srgb, var(--accent) 45%, transparent);stroke-width:1.3}
+.sk-box{fill:var(--surface);stroke:color-mix(in srgb, var(--faint) 60%, transparent);stroke-width:1.3}
 .run .sk-box{stroke:var(--accent);stroke-width:1.6}
 .wait .sk-box{stroke:var(--wait);stroke-width:1.6}
 .skip{opacity:.4}
@@ -50,8 +50,8 @@ p{margin:22px 0 0;max-width:560px;font-size:27px;line-height:1.35;color:var(--mu
 .done .sk-dot,.run .sk-dot{fill:var(--accent)}
 .wait .sk-dot{fill:var(--wait)}
 .sk-ring{fill:none;stroke:var(--accent);stroke-width:1.3;opacity:.45}
-.sk-port{fill:var(--paper);stroke:color-mix(in srgb, var(--accent) 55%, transparent);stroke-width:1.3}
-.sk-edge{fill:none;stroke:color-mix(in srgb, var(--accent) 55%, transparent);stroke-width:1.6;stroke-linejoin:round}
+.sk-port{fill:var(--paper);stroke:color-mix(in srgb, var(--faint) 75%, transparent);stroke-width:1.3}
+.sk-edge{fill:none;stroke:color-mix(in srgb, var(--faint) 70%, transparent);stroke-width:1.6;stroke-linejoin:round}
 .sk-edge.rej{stroke:color-mix(in srgb, var(--wait) 60%, transparent);stroke-dasharray:5 4}
 .sk-cell{fill:color-mix(in srgb, var(--faint) 30%, transparent)}
 .sk-cell.on{fill:var(--accent)}

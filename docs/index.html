@@ -23,24 +23,24 @@
    surface for panels and rails, sunken for code, raised for controls. The older names the
    pages were written with (paper, ink) stay as aliases so nothing else has to change. */
 :root{
-  --bg:#EFF2ED;
-  --surface:#FBFCF9;
-  --sunken:#E7EBE3;
+  --bg:#F1F1F1;
+  --surface:#FBFBFB;
+  --sunken:#E9E9E9;
   --raised:#FFFFFF;
-  --ink:#16201B;
-  --muted:#5A6961;
-  --faint:#7E8C84;
-  --line:#DCE2D7;
-  --line-strong:#C0CABB;
-  --accent:#0E6A5F;
-  --accent-soft:#DBE9E4;
+  --ink:#1D1D1D;
+  --muted:#656565;
+  --faint:#888888;
+  --line:#DFDFDF;
+  --line-strong:#C6C6C6;
+  --accent:#015DA2;
+  --accent-soft:#D7E7F9;
   --on-accent:#FFFFFF;
   --signal:#B23C1E;
   --paper:var(--bg);
   /* The edge of something that scrolls sideways. Not elevation, which the system draws
      with a ground and a hairline; a cue that the content goes on past the edge. */
-  --cue:rgba(22,32,27,.28);
-  --scrim:rgba(14,19,16,.42);
+  --cue:rgba(29,29,29,.28);
+  --scrim:rgba(18,18,18,.42);
   --shadow:none;
 
   --header-h:56px;
@@ -60,36 +60,36 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0E1310;
-    --surface:#151C18;
-    --sunken:#0A0F0C;
-    --raised:#1B2420;
-    --ink:#E4EAE3;
-    --muted:#94A29A;
-    --faint:#6D7B73;
-    --line:#26312B;
-    --line-strong:#35423A;
-    --accent:#4FBFAC;
-    --accent-soft:#12302A;
-    --on-accent:#0E1310;
+    --bg:#121212;
+    --surface:#1A1A1A;
+    --sunken:#0E0E0E;
+    --raised:#222222;
+    --ink:#E8E8E8;
+    --muted:#9E9E9E;
+    --faint:#777777;
+    --line:#2E2E2E;
+    --line-strong:#3E3E3E;
+    --accent:#68AEF5;
+    --accent-soft:#0F2B46;
+    --on-accent:#121212;
     --signal:#E0705A;
     --cue:rgba(0,0,0,.55);
     --scrim:rgba(0,0,0,.6);
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0E1310;
-  --surface:#151C18;
-  --sunken:#0A0F0C;
-  --raised:#1B2420;
-  --ink:#E4EAE3;
-  --muted:#94A29A;
-  --faint:#6D7B73;
-  --line:#26312B;
-  --line-strong:#35423A;
-  --accent:#4FBFAC;
-  --accent-soft:#12302A;
-  --on-accent:#0E1310;
+  --bg:#121212;
+  --surface:#1A1A1A;
+  --sunken:#0E0E0E;
+  --raised:#222222;
+  --ink:#E8E8E8;
+  --muted:#9E9E9E;
+  --faint:#777777;
+  --line:#2E2E2E;
+  --line-strong:#3E3E3E;
+  --accent:#68AEF5;
+  --accent-soft:#0F2B46;
+  --on-accent:#121212;
   --signal:#E0705A;
   --cue:rgba(0,0,0,.55);
   --scrim:rgba(0,0,0,.6);
@@ -635,7 +635,7 @@ th{
 td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
 tr:last-child td{border-bottom:0}
 tbody tr{transition:background-color .1s ease}
-tbody tr:hover{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
+tbody tr:hover{background:var(--sunken)}
 /* The first column names things. A name never breaks inside itself, but a cell of several
    words wraps, so one long cell cannot take the width of the whole table. */
 td:first-child{
@@ -818,7 +818,7 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
 /* ---------- Callouts and the end ---------- */
 .decision{
   border-left:3px solid var(--accent);
-  background:var(--accent-soft);
+  background:var(--surface);
   border-radius:0 var(--radius) var(--radius) 0;
   padding:14px 18px;
   margin:1.5em 0;
@@ -913,9 +913,9 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
   .tabpanel[hidden]{display:block!important}
 }
 /* Console mockups: one markup, both themes, from the design system's tokens. */
-.mock{--m-bg:#EFF2ED;--m-surface:#FBFCF9;--m-pane:#F4F6F1;--m-sunken:#E7EBE3;--m-raised:#FFFFFF;--m-line:#DCE2D7;--m-line-strong:#C0CABB;--m-text:#16201B;--m-muted:#5A6961;--m-faint:#7E8C84;--m-accent:#0E6A5F;--m-accent-dim:#DBE9E4;--m-accent-line:#ABC9C2;--m-on-accent:#FFFFFF;--m-ok:#2E7D4F;--m-ok-bg:#DCEBE0;--m-ok-line:#ADCDB9;--m-wait:#96660A;--m-wait-bg:#F4EAD3;--m-wait-line:#DBC69D;--m-fail:#B23C1E;--m-fail-bg:#F6E1D9;--m-fail-line:#E3B5A7;display:block;width:100%;height:auto}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-bg:#0E1310;--m-surface:#151C18;--m-pane:#0A0F0C;--m-sunken:#0A0F0C;--m-raised:#1B2420;--m-line:#26312B;--m-line-strong:#35423A;--m-text:#E4EAE3;--m-muted:#94A29A;--m-faint:#6D7B73;--m-accent:#4FBFAC;--m-accent-dim:#12302A;--m-accent-line:#21473F;--m-on-accent:#0E1310;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}}
-:root[data-theme="dark"] .mock{--m-bg:#0E1310;--m-surface:#151C18;--m-pane:#0A0F0C;--m-sunken:#0A0F0C;--m-raised:#1B2420;--m-line:#26312B;--m-line-strong:#35423A;--m-text:#E4EAE3;--m-muted:#94A29A;--m-faint:#6D7B73;--m-accent:#4FBFAC;--m-accent-dim:#12302A;--m-accent-line:#21473F;--m-on-accent:#0E1310;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}
+.mock{--m-bg:#F1F1F1;--m-surface:#FBFBFB;--m-pane:#F5F5F5;--m-sunken:#E9E9E9;--m-raised:#FFFFFF;--m-line:#DFDFDF;--m-line-strong:#C6C6C6;--m-text:#1D1D1D;--m-muted:#656565;--m-faint:#888888;--m-accent:#015DA2;--m-accent-dim:#D7E7F9;--m-accent-line:#A5C5E7;--m-on-accent:#FFFFFF;--m-ok:#2E7D4F;--m-ok-bg:#DCEBE0;--m-ok-line:#ADCDB9;--m-wait:#96660A;--m-wait-bg:#F4EAD3;--m-wait-line:#DBC69D;--m-fail:#B23C1E;--m-fail-bg:#F6E1D9;--m-fail-line:#E3B5A7;display:block;width:100%;height:auto}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-bg:#121212;--m-surface:#1A1A1A;--m-pane:#0E0E0E;--m-sunken:#0E0E0E;--m-raised:#222222;--m-line:#2E2E2E;--m-line-strong:#3E3E3E;--m-text:#E8E8E8;--m-muted:#9E9E9E;--m-faint:#777777;--m-accent:#68AEF5;--m-accent-dim:#0F2B46;--m-accent-line:#1C4165;--m-on-accent:#121212;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}}
+:root[data-theme="dark"] .mock{--m-bg:#121212;--m-surface:#1A1A1A;--m-pane:#0E0E0E;--m-sunken:#0E0E0E;--m-raised:#222222;--m-line:#2E2E2E;--m-line-strong:#3E3E3E;--m-text:#E8E8E8;--m-muted:#9E9E9E;--m-faint:#777777;--m-accent:#68AEF5;--m-accent-dim:#0F2B46;--m-accent-line:#1C4165;--m-on-accent:#121212;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}
 .mock .t-sans{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
 .mock .t-mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 .mock text{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
@@ -944,14 +944,14 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
 .mock .f-fail-bg{fill:var(--m-fail-bg)}.mock .s-fail-bg{stroke:var(--m-fail-bg)}
 .mock .f-fail-line{fill:var(--m-fail-line)}.mock .s-fail-line{stroke:var(--m-fail-line)}
 /* Extra tokens for console-graph: YAML section keys and scalar values. */
-.mock{--m-graph-key:#0E6A5F;--m-graph-value:#8A6A17}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-graph-key:#7BD2C2;--m-graph-value:#C9BE7E;}}
-:root[data-theme="dark"] .mock{--m-graph-key:#7BD2C2;--m-graph-value:#C9BE7E;}
+.mock{--m-graph-key:#015DA2;--m-graph-value:#8A6A17}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-graph-key:#8CC4FF;--m-graph-value:#D5B97D;}}
+:root[data-theme="dark"] .mock{--m-graph-key:#8CC4FF;--m-graph-value:#D5B97D;}
 .mock .f-graph-key{fill:var(--m-graph-key)}.mock .s-graph-key{stroke:var(--m-graph-key)}
 .mock .f-graph-value{fill:var(--m-graph-value)}.mock .s-graph-value{stroke:var(--m-graph-value)}
 .mock{--m-inspector-str:#8A6A17}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-inspector-str:#C9BE7E}}
-:root[data-theme="dark"] .mock{--m-inspector-str:#C9BE7E}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-inspector-str:#D5B97D}}
+:root[data-theme="dark"] .mock{--m-inspector-str:#D5B97D}
 .mock .f-inspector-str{fill:var(--m-inspector-str)}.mock .s-inspector-str{stroke:var(--m-inspector-str)}
 /* The terminal mockups: every letter in the monospace face, one cell each, and the 80 by 24
    one kept near its own size rather than enlarged to the column. */
@@ -7257,6 +7257,7 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
       </table>
     </div>
     <p>Every statistics route takes <code>from</code> and <code>to</code> (RFC 3339, the last 24 hours when left out), <code>bucket</code> (<code>1m</code>, <code>15m</code>, <code>1h</code> or <code>1d</code>, chosen from the range when left out, and refused with <code>400</code> past 1,000 buckets) and <code>compare=previous</code>, which adds the same span before the range. It answers JSON, or CSV to <code>Accept: text/csv</code>, and every bucket carries the <code>since</code> and <code>until</code> that <code>GET /api/v1/runs</code> takes, so that a point opens the runs it counts.</p>
+    <p>A bucket falls on whole minutes, quarters, hours or days in UTC, and its <code>until</code> is the last instant before the next bucket's <code>since</code>, so that the runs a point opens are exactly the runs it counts. A run's duration runs from <code>started_at</code> to <code>finished_at</code>, so that the time it queued behind a quota is not counted as its own, and a task's queue wait from its creation to its dispatch; every duration is written in whole milliseconds. <code>histogram</code> takes 1 to 100 bins, more than a chart has room to draw, and <code>by=hour</code> answers each step's p50 in the 168 hours of a week, in UTC. The quotas a series runs under are the namespace's as they stand now: an earlier value is the audit log's to tell. <code>openapi.json</code> in <a href="https://github.com/agentiik/schemas">agentiik/schemas</a> describes every answer field by field.</p>
 
   </div>
 
@@ -8188,31 +8189,31 @@ resource "agentiik_workflow" "search" {
         </g>
 
         <g stroke="currentColor" stroke-opacity=".28" stroke-width="1">
-          <rect x="76" y="30" width="58" height="44" fill="#0A0F0C"/>
-          <rect x="139" y="30" width="58" height="44" fill="#0E1310"/>
-          <rect x="202" y="30" width="58" height="44" fill="#151C18"/>
-          <rect x="265" y="30" width="58" height="44" fill="#1B2420"/>
-          <rect x="343" y="30" width="58" height="44" fill="#6D7B73"/>
-          <rect x="406" y="30" width="58" height="44" fill="#94A29A"/>
-          <rect x="469" y="30" width="58" height="44" fill="#E4EAE3"/>
-          <rect x="547" y="30" width="58" height="44" fill="#12302A"/>
-          <rect x="610" y="30" width="58" height="44" fill="#4FBFAC"/>
+          <rect x="76" y="30" width="58" height="44" fill="#0E0E0E"/>
+          <rect x="139" y="30" width="58" height="44" fill="#121212"/>
+          <rect x="202" y="30" width="58" height="44" fill="#1A1A1A"/>
+          <rect x="265" y="30" width="58" height="44" fill="#222222"/>
+          <rect x="343" y="30" width="58" height="44" fill="#777777"/>
+          <rect x="406" y="30" width="58" height="44" fill="#9E9E9E"/>
+          <rect x="469" y="30" width="58" height="44" fill="#E8E8E8"/>
+          <rect x="547" y="30" width="58" height="44" fill="#0F2B46"/>
+          <rect x="610" y="30" width="58" height="44" fill="#68AEF5"/>
           <rect x="688" y="30" width="58" height="44" fill="#5FA773"/>
-          <rect x="751" y="30" width="58" height="44" fill="#4FBFAC"/>
+          <rect x="751" y="30" width="58" height="44" fill="#68AEF5"/>
           <rect x="814" y="30" width="58" height="44" fill="#D9A441"/>
           <rect x="877" y="30" width="58" height="44" fill="#E0705A"/>
 
-          <rect x="76" y="142" width="58" height="44" fill="#E7EBE3"/>
-          <rect x="139" y="142" width="58" height="44" fill="#EFF2ED"/>
-          <rect x="202" y="142" width="58" height="44" fill="#FBFCF9"/>
+          <rect x="76" y="142" width="58" height="44" fill="#E9E9E9"/>
+          <rect x="139" y="142" width="58" height="44" fill="#F1F1F1"/>
+          <rect x="202" y="142" width="58" height="44" fill="#FBFBFB"/>
           <rect x="265" y="142" width="58" height="44" fill="#FFFFFF"/>
-          <rect x="343" y="142" width="58" height="44" fill="#7E8C84"/>
-          <rect x="406" y="142" width="58" height="44" fill="#5A6961"/>
-          <rect x="469" y="142" width="58" height="44" fill="#16201B"/>
-          <rect x="547" y="142" width="58" height="44" fill="#DBE9E4"/>
-          <rect x="610" y="142" width="58" height="44" fill="#0E6A5F"/>
+          <rect x="343" y="142" width="58" height="44" fill="#888888"/>
+          <rect x="406" y="142" width="58" height="44" fill="#656565"/>
+          <rect x="469" y="142" width="58" height="44" fill="#1D1D1D"/>
+          <rect x="547" y="142" width="58" height="44" fill="#D7E7F9"/>
+          <rect x="610" y="142" width="58" height="44" fill="#015DA2"/>
           <rect x="688" y="142" width="58" height="44" fill="#2E7D4F"/>
-          <rect x="751" y="142" width="58" height="44" fill="#0E6A5F"/>
+          <rect x="751" y="142" width="58" height="44" fill="#015DA2"/>
           <rect x="814" y="142" width="58" height="44" fill="#96660A"/>
           <rect x="877" y="142" width="58" height="44" fill="#B23C1E"/>
         </g>
@@ -8235,20 +8236,20 @@ resource "agentiik_workflow" "search" {
           <text x="814" y="200">waiting</text><text x="877" y="200">failed</text>
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="8" fill="currentColor" opacity=".6">
-          <text x="76" y="99">#0A0F0C</text><text x="139" y="99">#0E1310</text>
-          <text x="202" y="99">#151C18</text><text x="265" y="99">#1B2420</text>
-          <text x="343" y="99">#6D7B73</text><text x="406" y="99">#94A29A</text>
-          <text x="469" y="99">#E4EAE3</text>
-          <text x="547" y="99">#12302A</text><text x="610" y="99">#4FBFAC</text>
-          <text x="688" y="99">#5FA773</text><text x="751" y="99">#4FBFAC</text>
+          <text x="76" y="99">#0E0E0E</text><text x="139" y="99">#121212</text>
+          <text x="202" y="99">#1A1A1A</text><text x="265" y="99">#222222</text>
+          <text x="343" y="99">#777777</text><text x="406" y="99">#9E9E9E</text>
+          <text x="469" y="99">#E8E8E8</text>
+          <text x="547" y="99">#0F2B46</text><text x="610" y="99">#68AEF5</text>
+          <text x="688" y="99">#5FA773</text><text x="751" y="99">#68AEF5</text>
           <text x="814" y="99">#D9A441</text><text x="877" y="99">#E0705A</text>
 
-          <text x="76" y="211">#E7EBE3</text><text x="139" y="211">#EFF2ED</text>
-          <text x="202" y="211">#FBFCF9</text><text x="265" y="211">#FFFFFF</text>
-          <text x="343" y="211">#7E8C84</text><text x="406" y="211">#5A6961</text>
-          <text x="469" y="211">#16201B</text>
-          <text x="547" y="211">#DBE9E4</text><text x="610" y="211">#0E6A5F</text>
-          <text x="688" y="211">#2E7D4F</text><text x="751" y="211">#0E6A5F</text>
+          <text x="76" y="211">#E9E9E9</text><text x="139" y="211">#F1F1F1</text>
+          <text x="202" y="211">#FBFBFB</text><text x="265" y="211">#FFFFFF</text>
+          <text x="343" y="211">#888888</text><text x="406" y="211">#656565</text>
+          <text x="469" y="211">#1D1D1D</text>
+          <text x="547" y="211">#D7E7F9</text><text x="610" y="211">#015DA2</text>
+          <text x="688" y="211">#2E7D4F</text><text x="751" y="211">#015DA2</text>
           <text x="814" y="211">#96660A</text><text x="877" y="211">#B23C1E</text>
         </g>
 
@@ -8256,7 +8257,7 @@ resource "agentiik_workflow" "search" {
         <text x="76" y="258" font-family="JetBrains Mono, monospace" font-size="9" fill="currentColor" opacity=".65">running is the one state that borrows the accent hue: it is the live state, and it never shares a shape with a button</text>
       </svg>
     </div>
-    <figcaption><b>Two grounds, one accent, one state ramp.</b> Neutrals lean olive, so the teal accent belongs to the surfaces instead of sitting on them. <code>queued</code>, <code>skipped</code> and <code>cancelled</code> take <code>faint</code>: they are the absence of a state, not one.</figcaption>
+    <figcaption><b>Two grounds, one accent, one state ramp.</b> The grounds are black and white, with no hue of their own, so that the blue of the accent is the one colour a screen carries beside its states, and marks what matters. <code>queued</code>, <code>skipped</code> and <code>cancelled</code> take <code>faint</code>: they are the absence of a state, not one.</figcaption>
   </figure>
 
   <div class="prose">
@@ -8267,20 +8268,35 @@ resource "agentiik_workflow" "search" {
       <li>No state is signalled by colour alone: each carries a dot and a word, and a step strip adds position and width.</li>
       <li>Elevation is ground value plus a hairline, never a shadow, and four surface tokens are the whole vocabulary: <code>sunken</code> for code and payload panes, <code>bg</code> for the page, <code>surface</code> for panels and rails, <code>raised</code> for rows, controls and the active item.</li>
     </ul>
+    <p>The mockups on this page draw with ten more colours, each a hairline, an ink or a pill's fill and outline worked out from the swatches above, and published with them in <a href="https://github.com/agentiik/design">agentiik/design</a>:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Token</th><th>Dark</th><th>Light</th><th>Draws</th></tr></thead>
+        <tbody>
+          <tr><td><code>line</code></td><td><code>#2E2E2E</code></td><td><code>#DFDFDF</code></td><td>The hairline of rows and dividers.</td></tr>
+          <tr><td><code>lineStrong</code></td><td><code>#3E3E3E</code></td><td><code>#C6C6C6</code></td><td>The outline of a control, a chip and a pane, and of the pill of a faint state, <code>queued</code>, <code>skipped</code> or <code>cancelled</code>, which is <code>sunken</code> inside.</td></tr>
+          <tr><td><code>accentLine</code></td><td><code>#1C4165</code></td><td><code>#A5C5E7</code></td><td>The outline of what <code>accentDim</code> fills: the <code>running</code> pill, the active view, the selected chip.</td></tr>
+          <tr><td><code>onAccent</code></td><td><code>#121212</code></td><td><code>#FFFFFF</code></td><td>The ink on a solid accent fill, a primary button's.</td></tr>
+          <tr><td><code>succeededFill</code><br><code>succeededLine</code></td><td><code>#132A1C</code><br><code>#264B33</code></td><td><code>#DCEBE0</code><br><code>#ADCDB9</code></td><td>The fill and outline of the <code>succeeded</code> pill.</td></tr>
+          <tr><td><code>waitingFill</code><br><code>waitingLine</code></td><td><code>#2E2413</code><br><code>#5B461E</code></td><td><code>#F4EAD3</code><br><code>#DBC69D</code></td><td>The fill and outline of the <code>waiting</code> pill.</td></tr>
+          <tr><td><code>failedFill</code><br><code>failedLine</code></td><td><code>#31190F</code><br><code>#5F3023</code></td><td><code>#F6E1D9</code><br><code>#E3B5A7</code></td><td>The fill and outline of the <code>failed</code> pill.</td></tr>
+        </tbody>
+      </table>
+    </div>
 
     <h3 id="typography">Typography</h3>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Role</th><th>Face</th><th>Size and weight</th></tr></thead>
+        <thead><tr><th>Role</th><th>Token</th><th>Face</th><th>Size and weight</th></tr></thead>
         <tbody>
-          <tr><td>wordmark</td><td>Archivo</td><td>15px / 700, tracking -0.02em, lowercase</td></tr>
-          <tr><td>section title</td><td>Archivo</td><td>13px / 600</td></tr>
-          <tr><td>navigation</td><td>Archivo</td><td>13px / 400, 500 when active</td></tr>
-          <tr><td>control</td><td>Archivo</td><td>12.5px / 500</td></tr>
-          <tr><td>body and secondary</td><td>Archivo</td><td>12px / 400</td></tr>
-          <tr><td>column head</td><td>Archivo</td><td>10.5px / 600, uppercase, tracking 0.09em</td></tr>
-          <tr><td>identifier and data</td><td>JetBrains Mono</td><td>11 to 12.5px / 400, 500 on a name</td></tr>
-          <tr><td>code and payload</td><td>JetBrains Mono</td><td>11px / 400, line height 18 to 19px</td></tr>
+          <tr><td>wordmark</td><td><code>wordmark</code></td><td>Archivo</td><td>15px / 700, tracking -0.02em, lowercase</td></tr>
+          <tr><td>section title</td><td><code>sectionTitle</code></td><td>Archivo</td><td>13px / 600</td></tr>
+          <tr><td>navigation</td><td><code>navigation</code></td><td>Archivo</td><td>13px / 400, 500 when active</td></tr>
+          <tr><td>control</td><td><code>control</code></td><td>Archivo</td><td>12.5px / 500</td></tr>
+          <tr><td>body and secondary</td><td><code>body</code></td><td>Archivo</td><td>12px / 400</td></tr>
+          <tr><td>column head</td><td><code>columnHead</code></td><td>Archivo</td><td>10.5px / 600, uppercase, tracking 0.09em</td></tr>
+          <tr><td>identifier and data</td><td><code>identifier</code></td><td>JetBrains Mono</td><td>11 to 12.5px / 400, 500 on a name</td></tr>
+          <tr><td>code and payload</td><td><code>code</code></td><td>JetBrains Mono</td><td>11px / 400, line height 18 to 19px</td></tr>
         </tbody>
       </table>
     </div>
@@ -8377,7 +8393,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>colour</td><td>The accent only, never tinted to suit a coloured ground.</td></tr>
           <tr><td>ground</td><td><code>surface</code> or <code>bg</code>, never a photograph.</td></tr>
           <tr><td>clear space</td><td>One bar, four units, on every side.</td></tr>
-          <tr><td>lockup</td><td>Mark and lowercase wordmark on one optical centre, nine units apart. The wordmark is Archivo 700, never another face. Where the name is already on screen, the mark stands alone.</td></tr>
+          <tr><td>lockup</td><td>Mark and lowercase wordmark on one optical centre, nine units apart. The wordmark is Archivo 700, never another face, in <code>text</code>, so that only the mark carries the accent. Where the name is already on screen, the mark stands alone.</td></tr>
           <tr><td>smallest size</td><td>16 × 14, where it was drawn; the two-unit closing bar shuts below it. Larger sizes scale by whole units.</td></tr>
           <tr><td>icon</td><td>The mark alone, never the lockup: a favicon or an application icon has no room for a wordmark.</td></tr>
           <tr><td>never</td><td>Outlined, boxed, rotated, gradient-filled, or given a fourth row.</td></tr>
@@ -8401,12 +8417,14 @@ resource "agentiik_workflow" "search" {
         </tbody>
       </table>
     </div>
+    <p><a href="https://github.com/agentiik/design">agentiik/design</a> publishes these measures as <code>unit</code>, <code>window.min</code>, <code>bar.top</code>, <code>bar.sub</code>, <code>bar.keyLine</code>, <code>row.body</code>, <code>row.header</code>, <code>row.footer</code>, <code>padding.page</code>, <code>padding.panel</code>, <code>radius.pill</code>, <code>radius.chip</code>, <code>radius.control</code>, <code>radius.node</code>, <code>radius.innerPanel</code>, <code>radius.pane</code>, <code>radius.card</code>, <code>radius.round</code>, <code>border.hairline</code>, <code>border.node</code> and <code>border.focus</code>.</p>
 
     <h3 id="iconography">Iconography</h3>
     <ul class="plain">
       <li>Stroke only, on a 16px grid at 1.5px, round caps and joins, no fill and no two-tone.</li>
       <li>An icon takes <code>muted</code>, or the colour of the state it carries, and then always comes with a word.</li>
       <li>No emoji, in any surface of the product.</li>
+      <li>One icon for every run and step state, every port a workflow names by convention and every <code>trigger_kind</code>, named after what it draws as the documentation spells it (<code>state-timed_out</code>, <code>port-rejected</code>, <code>trigger-webhook</code>), and one for each control a view draws beside its word (<code>control-replay</code>): <a href="https://github.com/agentiik/design">agentiik/design</a> holds them, with the specimen sheet that shows them all.</li>
     </ul>
 
     <h3 id="voice">Voice</h3>
@@ -8454,7 +8472,8 @@ resource "agentiik_workflow" "search" {
     </ul>
 
     <p>The web console is served on the API's origin: at the root of the public URL, with the API under <code>/api/v1</code> and the <a href="#sign-in-page">sign-in page</a> under <code>/auth</code>. From <a href="roadmap/#m06">v0.6.0</a> <code>agentiik-api</code> serves it itself, from a build embedded in its binary, so the console is always the release of the API it talks to. <code>AGK_CONSOLE=off</code> turns it off (<a href="#configuration">Configuration</a>) and leaves every other route served, <code>/auth</code> among them.</p>
-    <p>Each release also publishes the console's files as an archive, for an operator who would rather serve them from a CDN or a proxy of their own, on the same origin and with <code>AGK_CONSOLE=off</code>. They are then the files of the API's own release, since a console and an API of two releases are neither supported nor tested, and whatever serves them sends to the API every path this documentation gives it: <code>/api/v1/</code>, <code>/auth/</code>, <code>/hooks/</code>, <code>/mcp</code> and each repository's <code>/{namespace}/{name}.git/</code>. A second origin is not an option.</p>
+    <p>Every address outside the API's own, <code>/api</code>, <code>/auth</code>, <code>/hooks</code>, <code>/mcp</code>, <code>/objects</code> and a repository's, is the console's, and the API registers no route anywhere else, so that the console never takes an address of the API's and a proxy sending the API the paths below misses none. A <code>GET</code> or a <code>HEAD</code> of such an address is answered the file of the build it names, or else the console's page, whose script reads the address and draws what it names; any other method is answered <code>404</code>, as a route nobody registered is. The page carries a <code>&lt;base href="/"&gt;</code>, which the API rewrites to the public URL's path, so that its relative addresses resolve from its root at any depth and under the path a proxy serves the installation at. Each answer is revalidated at every load by its ETag, as the sign-in page's files are, so that an upgrade never serves the page beside another release's scripts, and carries a Content-Security-Policy letting the console load its own files and reach its own origin and nothing else, its faces among them, since a font service would learn who opens the console and when; it is never framed and sends no <code>Referer</code>, since its addresses name namespaces and workflows. A build that skipped the console's stage carries none and serves none, and the API says which when it starts.</p>
+    <p>Each release also publishes the console's files as an archive, for an operator who would rather serve them from a CDN or a proxy of their own, on the same origin and with <code>AGK_CONSOLE=off</code>. They are then the files of the API's own release, since a console and an API of two releases are neither supported nor tested, and whatever serves them sends to the API every path this documentation gives it: <code>/api/v1/</code>, <code>/auth/</code>, <code>/hooks/</code>, <code>/mcp</code>, <code>/objects/</code> where the built-in object store is attached, and each repository's <code>/{namespace}/{name}.git/</code>, and answers every other <code>GET</code> it does not hold a file for with the console's page, its <code>&lt;base&gt;</code> rewritten where the public URL has a path. A second origin is not an option.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>One origin for the console and the API, rather than a console on a host of its own sharing a registrable domain with the API, which WebAuthn would allow. Passkeys, the session cookie and the <code>Origin</code> check each need the same origin, and three things kept in step across two hosts is where one of them drifts. The Relying Party Identifier, the public URL's host since v0.3.0, then never changes, as changing it would invalidate every passkey enrolled; and one URL is what a person remembers.</p>
@@ -14635,11 +14654,11 @@ archive     queued
       <table>
         <thead><tr><th>State</th><th>Dark ground</th><th>Light ground</th><th>256, dark</th><th>256, light</th><th>16 colours</th></tr></thead>
         <tbody>
-          <tr><td>running</td><td class="wrapcell"><code>#4FBFAC</code>, the accent's hue</td><td><code>#0E6A5F</code></td><td>37</td><td>23</td><td>cyan</td></tr>
+          <tr><td>running</td><td class="wrapcell"><code>#68AEF5</code>, the accent's hue</td><td><code>#015DA2</code></td><td>75</td><td>25</td><td>blue</td></tr>
           <tr><td>succeeded</td><td><code>#5FA773</code></td><td><code>#2E7D4F</code></td><td>72</td><td>29</td><td>green</td></tr>
           <tr><td>waiting</td><td><code>#D9A441</code></td><td><code>#96660A</code></td><td>179</td><td>94</td><td>yellow</td></tr>
           <tr><td>failed, timed_out</td><td><code>#E0705A</code></td><td><code>#B23C1E</code></td><td>167</td><td>88</td><td>red</td></tr>
-          <tr><td>queued, skipped, cancelled</td><td><code>#6D7B73</code>, faint</td><td><code>#7E8C84</code></td><td>243</td><td>245</td><td>the terminal's faint</td></tr>
+          <tr><td>queued, skipped, cancelled</td><td><code>#777777</code>, faint</td><td><code>#888888</code></td><td>243</td><td>102</td><td>the terminal's faint</td></tr>
         </tbody>
       </table>
     </div>
