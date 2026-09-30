@@ -8320,7 +8320,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>colour</td><td>The accent only, never tinted to suit a coloured ground.</td></tr>
           <tr><td>ground</td><td><code>surface</code> or <code>bg</code>, never a photograph.</td></tr>
           <tr><td>clear space</td><td>One bar, four units, on every side.</td></tr>
-          <tr><td>lockup</td><td>Mark and lowercase wordmark on one optical centre, nine units apart. The wordmark is Archivo 700, never another face. Where the name is already on screen, the mark stands alone.</td></tr>
+          <tr><td>lockup</td><td>Mark and lowercase wordmark on one optical centre, nine units apart. The wordmark is Archivo 700, never another face, in <code>text</code>, so that only the mark carries the accent. Where the name is already on screen, the mark stands alone.</td></tr>
           <tr><td>smallest size</td><td>16 × 14, where it was drawn; the two-unit closing bar shuts below it. Larger sizes scale by whole units.</td></tr>
           <tr><td>icon</td><td>The mark alone, never the lockup: a favicon or an application icon has no room for a wordmark.</td></tr>
           <tr><td>never</td><td>Outlined, boxed, rotated, gradient-filled, or given a fourth row.</td></tr>
@@ -8351,6 +8351,7 @@ resource "agentiik_workflow" "search" {
       <li>Stroke only, on a 16px grid at 1.5px, round caps and joins, no fill and no two-tone.</li>
       <li>An icon takes <code>muted</code>, or the colour of the state it carries, and then always comes with a word.</li>
       <li>No emoji, in any surface of the product.</li>
+      <li>One icon for every run and step state, every port a workflow names by convention and every <code>trigger_kind</code>, named after what it draws as the documentation spells it (<code>state-timed_out</code>, <code>port-rejected</code>, <code>trigger-webhook</code>), and one for each control a view draws beside its word (<code>control-replay</code>): <a href="https://github.com/agentiik/design">agentiik/design</a> holds them, with the specimen sheet that shows them all.</li>
     </ul>
 
     <h3 id="voice">Voice</h3>
