@@ -14705,7 +14705,7 @@ archive     queued
 
   <div class="prose">
     <h3 id="terminal-colour">Colour</h3>
-    <p>The console draws in the design system's palette, the same greens, ambers and reds for the same states as the web console, and paints the palette's ground under what it draws, so the contrast the design system chose holds whatever the terminal's theme. The values are not typed into <code>agk</code>: they are generated into <code>cmd/agk</code> from the <code>design</code> repository's token file at the same version, so the terminal cannot drift from the browser. It degrades with what the terminal can show:</p>
+    <p>The console draws in the design system's palette, the same greens, ambers and reds for the same states as the web console, and paints the palette's ground under what it draws, so the contrast the design system chose holds whatever the terminal's theme. The values are not typed into <code>agk</code>: they are generated into <code>cmd/agk</code> from the <code>design</code> repository's token file at the same version, the copy the web console keeps beside its <code>tokens.css</code>, so the terminal cannot drift from the browser. It degrades with what the terminal can show:</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>The terminal</th><th>Draws</th><th>Known from</th></tr></thead>
@@ -14718,7 +14718,8 @@ archive     queued
         </tbody>
       </table>
     </div>
-    <p>Light or dark follows the terminal's background: at start the console asks the terminal for it with the OSC 11 query Lip Gloss sends, and takes the light palette on a light background. A terminal that has not answered within a tenth of a second is taken as dark, as most are, and <code>AGENTIIK_THEME</code>, <code>light</code> or <code>dark</code>, settles it for a terminal that never answers, as some multiplexers never do.</p>
+    <p>Light or dark follows the terminal's background: at start the console asks the terminal for it with the OSC 11 query Lip Gloss sends, and takes the light palette on a light background. A terminal that has not answered within a tenth of a second is taken as dark, as most are, and an answer after that is left, since turning a drawn screen light would flash. <code>AGENTIIK_THEME</code>, <code>light</code> or <code>dark</code>, settles it for a terminal that never answers, as some multiplexers never do, and any other value is refused with 2 before the installation is asked. At sixteen colours and without colour no ground is painted, so the terminal is not asked.</p>
+    <p>The selection is the accent's dim fill, <code>accentDim</code>, behind the text, where the ground is painted. Of the 256, <code>accentDim</code>'s nearest is a grey a step or two from the ground's own, 235 on 233 and 254 on 255, which no eye tells apart, so at 256 colours the selection takes <code>accentLine</code>'s nearest, 24 dark and 153 light, the first blues of the cube that still carry the text. Where no ground is painted, the selection is reversed.</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>State</th><th>Dark ground</th><th>Light ground</th><th>256, dark</th><th>256, light</th><th>16 colours</th></tr></thead>
