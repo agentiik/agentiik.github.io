@@ -1097,7 +1097,7 @@ img{max-width:100%}
             <li><a href="#the-workflow-repository">The workflow repository</a></li>
             <li><a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a></li>
             <li><a href="#includes-and-inheritance">Includes and inheritance</a></li>
-            <li><a href="#publishing-tools">Publishing the workflow as tools</a></li>
+            <li><a href="#publishing-tools">Publishing the workflow as a tool</a></li>
           </ul>
         </li>
         <li><a href="#expressions">Expressions</a>
@@ -1194,9 +1194,9 @@ img{max-width:100%}
         <li><a href="#mcp">Native MCP</a>
           <ul class="subs">
             <li><a href="#protocol">Protocol</a></li>
-            <li><a href="#the-platform-server">The platform server</a></li>
+            <li><a href="#the-platform-server">The user's server</a></li>
             <li><a href="#teaching-a-client-the-language">Teaching a client the language</a></li>
-            <li><a href="#a-workflow-as-an-mcp-server">A workflow as an MCP server</a></li>
+            <li><a href="#collections">Collections</a></li>
             <li><a href="#errors-and-obligations">Errors and obligations</a></li>
           </ul>
         </li>
@@ -3135,13 +3135,8 @@ metadata:
   namespace: support
 
 inputs:
-  query:
-    schema:
-      type: object
-      required: [order_id]
-      additionalProperties: false
-      properties:
-        order_id: { type: string, pattern: "^ORD-[0-9]{6}$" }
+  order_id:
+    schema: { type: string, pattern: "^ORD-[0-9]{6}$" }
     required: true
 
 outputs:
@@ -3156,19 +3151,15 @@ outputs:
         tracking_url: { type: string }
 
 mcp:
-  name: orders
-  description: Customer orders, read-only.
-  tools:
-    - name: order_status
-      title: Order status
-      description: Return the state of one order and, once shipped, its tracking link. Takes an order number such as ORD-004211 and nothing else.
-      input: { from: { input: query } }
-      output: { from: { output: status } }
-      mode: sync
-      timeout: 30s
-      annotations:
-        readOnlyHint: true
-        idempotentHint: true
+  name: order_status
+  title: Order status
+  description: Return the state of one order and, once shipped, its tracking link. Takes an order number such as ORD-004211 and nothing else.
+  output: status
+  mode: sync
+  timeout: 30s
+  annotations:
+    readOnlyHint: true
+    idempotentHint: true
 
 secrets: [orders-api]
 
@@ -3176,7 +3167,7 @@ steps:
   lookup:
     image: python:3.13-slim
     inputs:
-      in: ${{ workflow.inputs.query }}
+      in: ${{ workflow.inputs.order_id }}
     secrets: [orders-api]  <span class="c"># the model never holds it</span>
     network: egress
     egress:
@@ -3193,8 +3184,8 @@ steps:
       <table>
         <thead><tr><th>What it uses</th><th>Why</th></tr></thead>
         <tbody>
-          <tr><td><a href="#publishing-tools">mcp</a></td><td>One tool, <code>order_status</code>, whose <code>inputSchema</code> is the <code>query</code> input's schema as it stands and whose result is the <code>status</code> output.</td></tr>
-          <tr><td><a href="#a-workflow-as-an-mcp-server">/mcp/support/order-status</a></td><td>The workflow is an MCP server of its own, listed and called with <code>workflow:run</code> alone, which reaches no step, no file and no endpoint behind it.</td></tr>
+          <tr><td><a href="#publishing-tools">mcp</a></td><td>One tool, <code>order_status</code>, whose argument is the workflow's input <code>order_id</code> with its schema as it stands, and whose result is the <code>status</code> output.</td></tr>
+          <tr><td><a href="#collections">a collection</a></td><td>The assistant's service account adds the workflow to a collection of its own, and the client is given that collection's URL. The tool is listed and called with <code>workflow:run</code> alone, which reaches no step, no file and no endpoint behind it.</td></tr>
           <tr><td><a href="#roles">operator</a></td><td>The role to grant the assistant's <a href="#principals">service account</a>: it runs the tool and follows its runs, and reads neither the workflow nor their data.</td></tr>
           <tr><td><a href="#errors-and-obligations">input validation</a></td><td>An argument that does not match <code>^ORD-[0-9]{6}$</code> is refused as a protocol error before any run is created.</td></tr>
           <tr><td><a href="#publishing-tools">mode: sync</a></td><td>The answer comes back in the call, within the tool's 30 seconds.</td></tr>
@@ -4225,7 +4216,7 @@ steps:
           <tr><td>metadata</td><td><code>name</code>, <code>namespace</code>, <code>labels</code>.</td></tr>
           <tr><td>inputs, outputs</td><td>The workflow's own <a href="#graph">ports</a>; <a href="#inputs">Workflow inputs</a>.</td></tr>
           <tr><td>on</td><td><a href="#triggers">Triggers</a>.</td></tr>
-          <tr><td>mcp</td><td><a href="#publishing-tools">Published tools</a>.</td></tr>
+          <tr><td>mcp</td><td><a href="#publishing-tools">The published tool</a>.</td></tr>
           <tr><td>include</td><td><a href="#includes-and-inheritance">Reuse</a>.</td></tr>
           <tr><td>vars</td><td>Values read as <code>vars.&lt;name&gt;</code> in <a href="#expressions">expressions</a>.</td></tr>
           <tr><td>secrets</td><td>The namespace's <a href="#secrets">secrets</a> a step may mount, by name and nothing else: at least one, none twice. Where each lives is declared on the namespace, and a block still giving <code>provider</code> or <code>path</code> is refused.</td></tr>
@@ -4835,13 +4826,13 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
       <p>The including version keeps what it read of each library, beside the files it included of its own tree, rather than naming the library's version and reading it back: a run rebuilds its graph from what its version holds and reaches no other repository, which is what lets a library be renamed or deleted, and a tag of it moved by whoever holds <code>grant:manage</code> there, without anything already pushed changing what it runs.</p>
     </div>
 
-    <h3 id="publishing-tools">Publishing the workflow as tools</h3>
-    <p>A workflow is callable by a model-driven client only when its root <code>mcp</code> block says so. It is part of the language because it belongs to the version: publishing, renaming or withdrawing a tool is a reviewable, revertible commit. <a href="#mcp">Native MCP</a> covers the wire.</p>
+    <h3 id="publishing-tools">Publishing the workflow as a tool</h3>
+    <p>A workflow is callable by a model-driven client only when its root <code>mcp</code> block says how: one block, one tool, whose arguments are the workflow's inputs. It is part of the language because it belongs to the version: publishing, renaming or withdrawing the tool is a reviewable, revertible commit. Whether a client is offered it is decided elsewhere, by whoever adds the workflow to a <a href="#collections">collection</a>; <a href="#mcp">Native MCP</a> covers the wire.</p>
   </div>
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 940 312" role="img" aria-label="The published tool create_invoice, declared in mcp.tools with mode sync, takes its inputSchema from the JSON Schema of the workflow input orders, as it stands, and its outputSchema and result from the schema and envelope of the workflow output invoices. The steps normalize, invoice and archive and their ports sit behind that boundary and are never named by a tool.">
+      <svg viewBox="0 0 940 312" role="img" aria-label="The published tool create_invoice, declared in the mcp block with mode sync, takes its inputSchema from the JSON Schema of the workflow input orders, as it stands, and its outputSchema and result from the schema and envelope of the workflow output invoices. The steps normalize, invoice and archive and their ports sit behind that boundary and are never named by a tool.">
         <defs>
           <marker id="yaml-arrow-tool" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
@@ -4889,7 +4880,7 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
         <text x="805" y="166" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity=".75">its schema and its envelope</text>
       </svg>
     </div>
-    <figcaption><b>A tool is a view of the workflow's boundary.</b> It maps one workflow input and, optionally, one workflow output. The graph behind them can change without the tool changing.</figcaption>
+    <figcaption><b>A tool is a view of the workflow's boundary.</b> Its arguments are the workflow's inputs and its result, optionally, one workflow output. The graph behind them can change without the tool changing.</figcaption>
   </figure>
 
   <div class="prose">
@@ -4897,20 +4888,18 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
       <table>
         <thead><tr><th>Key</th><th>Role</th></tr></thead>
         <tbody>
-          <tr><td>name</td><td>Server name shown to a client. Defaults to the workflow name, and exists so that a published interface need not follow an internal rename.</td></tr>
-          <tr><td>description</td><td>What the server is for, in a sentence or two. A model reads it before any tool.</td></tr>
-          <tr><td>tools</td><td>An empty list serves an empty tool list; no <code>mcp</code> block serves nothing and returns 404.</td></tr>
-          <tr><td class="wrapcell">tools[].name</td><td>Unique in the workflow and stable across commits, because clients hold it: renaming is removing one tool and adding another.</td></tr>
-          <tr><td class="wrapcell">tools[].title</td><td>Optional label for clients that list tools.</td></tr>
-          <tr><td class="wrapcell">tools[].description</td><td>What the tool does, when to reach for it, what it refuses: the field a model acts on.</td></tr>
-          <tr><td class="wrapcell">tools[].input</td><td><code>{ from: { input: &lt;name&gt; } }</code>. Names one declared workflow input, whose JSON Schema becomes the tool's <code>inputSchema</code> as it stands.</td></tr>
-          <tr><td class="wrapcell">tools[].output</td><td><code>{ from: { output: &lt;name&gt; } }</code>, optional. The output's envelope becomes the result and its <code>schema</code> the <code>outputSchema</code>, and an output carrying no <code>schema</code> publishes none: a tool may have an effect and return only that it succeeded.</td></tr>
-          <tr><td class="wrapcell">tools[].mode</td><td><code>sync</code>, the default, returns the output; <code>async</code> returns the run identifier at once, to follow with the platform server's <code>run.get</code>.</td></tr>
-          <tr><td class="wrapcell">tools[].timeout</td><td>How long a <code>sync</code> call waits, as a duration. At most 120 seconds, because clients time out: <code>120s</code>, <code>2m</code> and <code>120000ms</code> are the longest forms accepted, and an hour cannot be written. Longer work is <code>async</code>.</td></tr>
-          <tr><td class="wrapcell">tools[].annotations</td><td><code>readOnlyHint</code>, <code>idempotentHint</code>, <code>destructiveHint</code>, <code>openWorldHint</code>, passed through unchanged. They are hints to a client, never a permission: what a tool may do is decided by the grants, not by a field in the file.</td></tr>
+          <tr><td>name</td><td>The tool's name, the workflow's name where none is written. Stable across commits, because clients hold it: renaming it is withdrawing one tool and publishing another, in every collection that does not give the tool a name of its own.</td></tr>
+          <tr><td>title</td><td>Optional label for clients that list tools.</td></tr>
+          <tr><td>description</td><td>What the tool does, when to reach for it, what it refuses: the field a model acts on. Required.</td></tr>
+          <tr><td>output</td><td>The name of one declared workflow output, optional. Its envelope becomes the result and its <code>schema</code> the <code>outputSchema</code>, and an output carrying no <code>schema</code> publishes none: a tool may have an effect and return only that it succeeded.</td></tr>
+          <tr><td>mode</td><td><code>sync</code>, the default, returns the output; <code>async</code> returns the run identifier at once, to follow with the user's server's <code>run.get</code>.</td></tr>
+          <tr><td>timeout</td><td>How long a <code>sync</code> call waits, as a duration. At most 120 seconds, because clients time out: <code>120s</code>, <code>2m</code> and <code>120000ms</code> are the longest forms accepted, and an hour cannot be written. Longer work is <code>async</code>.</td></tr>
+          <tr><td>annotations</td><td><code>readOnlyHint</code>, <code>idempotentHint</code>, <code>destructiveHint</code>, <code>openWorldHint</code>, passed through unchanged. They are hints to a client, never a permission: what a tool may do is decided by the grants, not by a field in the file.</td></tr>
         </tbody>
       </table>
     </div>
+
+    <p>The tool's arguments are not written in the block: they are the workflow's inputs, each by its name and with its schema as it stands, required where the input is required and has no default. A call fills them as a manual run does, so a tool is the workflow as anybody starting it sees it, with nothing added.</p>
 
     <h4>What validation refuses</h4>
     <p>These are language rules, so they are checked before the push is accepted rather than at the first call. A workflow whose published surface does not hold together cannot reach the branch.</p>
@@ -4918,10 +4907,10 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
       <table>
         <thead><tr><th>Refused</th><th>Why</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">no name, description or input</td><td>All three are required: a tool published without a description is exactly the tool a model has no way to decide to call.</td></tr>
-          <tr><td class="wrapcell">a from naming a step, a port or anything undeclared</td><td>A tool is a view of the workflow's own inputs and outputs, which keeps the graph free to change beneath it.</td></tr>
-          <tr><td class="wrapcell">a duplicate or invalid tool name</td><td>Clients hold the name.</td></tr>
-          <tr><td class="wrapcell">a mapped input with no schema</td><td>A tool has to publish an <code>inputSchema</code>.</td></tr>
+          <tr><td class="wrapcell">no description</td><td>A tool published without a description is exactly the tool a model has no way to decide to call.</td></tr>
+          <tr><td class="wrapcell">an invalid name</td><td>Clients hold the name and send it back in every call.</td></tr>
+          <tr><td class="wrapcell">an output the workflow does not declare</td><td>A tool is a view of the workflow's own boundary, which keeps the graph free to change beneath it.</td></tr>
+          <tr><td class="wrapcell">a workflow input with no schema</td><td>Every input is an argument, and a tool has to publish an <code>inputSchema</code>.</td></tr>
           <tr><td class="wrapcell">a sync timeout over 120 seconds, a timeout on async</td><td>Clients time out; an <code>async</code> call does not wait.</td></tr>
           <tr><td class="wrapcell">mcp in an included file</td><td>Reuse covers steps and defaults; the published surface is declared by the workflow that publishes it, so that reading one file tells you everything that workflow exposes.</td></tr>
         </tbody>
@@ -4930,7 +4919,12 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
 
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>The tool's schema is the workflow input's schema, as it stands; a second one cannot be written. Two schemas for one value drift silently, until a client sends something the workflow rejects. Callers who need another shape get a workflow input shaped for them.</p>
+      <p>One workflow, one tool. A workflow is one boundary, its inputs and its outputs, and a tool is a view of that boundary: two tools over one workflow were two views of it to keep apart, each mapping some inputs and leaving the others to their defaults. A connector offering several tools is a <a href="#collections">collection</a> of several workflows.</p>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The tool's arguments are the workflow's inputs, each with its schema as it stands; a second schema cannot be written. Two schemas for one value drift silently, until a client sends something the workflow rejects. Callers who need another shape get a workflow whose inputs are shaped for them.</p>
     </div>
   </div>
 </section>
@@ -4998,7 +4992,7 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
           <tr><td>webhook</td><td><code>path</code>, <code>method</code>, <code>auth</code>, <code>response</code>, <code>output</code>, <code>map</code></td><td><code>auth</code>: <code>hmac</code>, <code>bearer</code>, <code>mtls</code> or <code>none</code>. <code>response: async</code> answers 202 with the run id; <code>response: sync</code> waits and returns the workflow output that <code>output</code> names. Paths are namespaced as <code>/hooks/&lt;namespace&gt;/&lt;path&gt;</code>.</td></tr>
           <tr><td>event</td><td><code>type</code>, <code>source</code>, <code>filter</code>, <code>namespace</code>, <code>map</code></td><td>CloudEvents 1.0 published to <code>POST /api/v1/{ns}/events</code>. <code>filter</code> is CEL over the context attributes and <code>data</code>. Only events published into the workflow's own namespace, or into the one <code>namespace</code> names where it granted the workflow's namespace read access.</td></tr>
           <tr><td>manual</td><td><code>inputs</code>, at the call</td><td>Started from the API, the command line, the console or a mobile app by a principal holding <code>workflow:run</code>, the workflow's <code>inputs</code> supplied explicitly. Nothing in <code>on</code> declares it.</td></tr>
-          <tr><td>mcp</td><td>in <code>mcp.tools</code></td><td>An MCP <code>tools/call</code> starts a run whose inputs are the tool's arguments. Attributed to the calling principal, needs <code>workflow:run</code>, rate limited like every trigger. See <a href="#mcp">Native MCP</a>.</td></tr>
+          <tr><td>mcp</td><td>the <code>mcp</code> block, called through a <a href="#collections">collection</a></td><td>An MCP <code>tools/call</code> starts a run whose inputs are the tool's arguments. Attributed to the calling principal, needs <code>workflow:run</code>, rate limited like every trigger. See <a href="#mcp">Native MCP</a>.</td></tr>
           <tr><td>terraform</td><td class="wrapcell"><code>agentiik_run</code>, or the provider's action</td><td>An apply starts a run with the resource's inputs. Attributed to the token's principal, needs <code>workflow:run</code>, quota-limited like every trigger. It is distinguished from <code>manual</code> rather than folded into it because a run that appears here is reproducible from a configuration, which is exactly what a person looking at the run list wants to know. See <a href="#terraform">Terraform provider</a>.</td></tr>
           <tr><td>workflow</td><td><code>from</code></td><td>Called by a <code>workflow:</code> step of another workflow. Maximum depth configurable, default 8, with <code>AGK_MAX_CALL_DEPTH</code>. Across namespaces, needs <code>workflow:run</code> on the callee.</td></tr>
         </tbody>
@@ -5185,7 +5179,7 @@ concurrency:
       <li>A login, a group's name and each half of a service account's are lowercase words joined by hyphens, at most 255 characters: the grammar a namespace is named in, since a login is also a namespace's name, and 255 is the most a directory or a bus subject token holds. A login never changes, for the same reason.</li>
       <li>Logins and namespace names share one name space: a login is refused where a namespace of that name exists, and a namespace where a login does. A user's personal namespace is named after their login, and a namespace created first would take it from them.</li>
       <li><code>operator</code>, <code>installation</code> and the <a href="#scopes-and-resolution">reserved words</a> are refused as logins. The two name the authors of rows the installation holds, and a user of either name would read as that author.</li>
-      <li>Removing a user, a group or a service account removes everything it holds with it: credentials, tokens, sessions, enrolment links, memberships, grants and what it was told in <code>GET /api/v1/me</code>. A user's personal namespace goes with them where it holds nothing, and refuses their removal, saying what it holds, where it holds something, since what a namespace holds is somebody's work. One that another namespace's record names as owner is refused removal, so that no namespace is left owned by somebody who is gone.</li>
+      <li>Removing a user, a group or a service account removes everything it holds with it: credentials, tokens, sessions, enrolment links, memberships, grants, <a href="#collections">collections</a> and what it was told in <code>GET /api/v1/me</code>. A user's personal namespace goes with them where it holds nothing, and refuses their removal, saying what it holds, where it holds something, since what a namespace holds is somebody's work. One that another namespace's record names as owner is refused removal, so that no namespace is left owned by somebody who is gone.</li>
       <li>A service account is written with its namespace, so one name in two namespaces is two principals, and the slash, which no login holds, keeps the forms apart. <code>agentiik</code> is the built-in identity's name in every namespace and no other service account's.</li>
       <li>A namespace's built-in identity, <code>NS/agentiik</code>, holds no grant until an owner gives it one: what a namespace's unattended runs may do is then a decision someone made, visible in the grant list, never a default nobody reviewed. A namespace is created with it from <a href="roadmap/#m03">v0.3.0</a>, and <code>init</code> and <code>migrate</code> give one, at every run, to each namespace made before, recorded as <code>service_account.create</code> by <code>installation</code>. The runs nobody started, scheduled, webhook and event runs, are written as its own where every run is created, and one naming another principal is refused.</li>
     </ul>
@@ -7229,6 +7223,9 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
           <tr><td class="wrapcell">GET /api/v1/me/live</td><td>A WebSocket (RFC 6455) telling its caller, as it happens, what changed among what it may read, so that a console reads again what it shows when it changes rather than on a clock. Each message is a JSON object naming what changed and holding nothing of it: <code>{"kind": "run", "namespace", "workflow", "run"}</code> for a run created, or moved on, or one of whose steps did, sent where the caller holds <code>run:read</code> on that workflow; <code>{"kind": "notifications"}</code> for a notification told to the caller or dismissed; <code>{"kind": "runners"}</code>, to an administrator, for a runner or a pool changed; <code>{"kind": "activity"}</code>, to an administrator, for a run created, or moved on, or one of whose steps did, in any namespace, naming none, so that what the installation is doing is read again through <code>GET /api/v1/stats/activity</code>; and <code>{"kind": "all"}</code> where the API may have missed a change, which reads everything again. What changed within a quarter of a second is sent once. A message holds an identifier and never a record, and what it names is read through the route that answers it, under that route's permissions. The client sends nothing but the protocol's own frames, a message from it closing the connection with <code>1008</code>, and the API pings every 15 s. Authenticated as any request, by a session cookie or a bearer token; a session's handshake carries the installation's <code>Origin</code>, <code>403</code> otherwise, since a page of another site sharing its domain could otherwise open one with the cookie. A permission revoked stops its messages within 30 s, when it is asked again, and a credential that no longer identifies its caller closes the connection with <code>1008</code>, as the API stopping closes it with <code>1001</code>; a client connects again, and reads again what it shows. Any authenticated principal; <code>426</code> for a request that asks for no WebSocket, and <code>400</code> for a handshake RFC 6455 refuses.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/me/devices</td><td>A mobile device: platform, push token, label. Revoked with the API token it is bound to.</td></tr>
           <tr><td class="wrapcell">PUT /api/v1/me/notifications</td><td>Notification preferences, per namespace and per event kind.</td></tr>
+          <tr><td class="wrapcell">GET, POST /api/v1/me/collections</td><td>The caller's <a href="#collections">collections</a>, each with its <code>id</code>, <code>name</code>, <code>description</code>, the <code>url</code> a client is given and its members; and a new one, <code>{name, description}</code>, answered <code>201</code> with the same, its URL <code>/mcp/collections/{id}</code> under the public URL. A name one of the caller's collections already has is <code>409</code>, and a 51st collection <code>422</code>. Any authenticated principal, about its own. Not audited: a collection grants nothing, and every call through it is a run, which is.</td></tr>
+          <tr><td class="wrapcell">GET, PATCH, DELETE /api/v1/me/collections/{id}</td><td>One of the caller's collections, each member with its <code>workflow</code>, its <code>ref</code> and its <code>as</code> where written, and <code>tool</code>, the name it is offered under, or <code>null</code> beside <code>reason</code>, <code>no_mcp_block</code> or <code>not_runnable</code>; its <code>name</code> and <code>description</code> changed; or removed, its URL answering <code>404</code> from the next request. Another principal's collection is answered <code>404</code>, to an administrator as to anybody.</td></tr>
+          <tr><td class="wrapcell">PUT, DELETE /api/v1/me/collections/{id}/members/{ns}/{name}</td><td>Adds a workflow to the collection or changes how it is read, <code>{ref, as}</code>, both optional, or takes it out. A workflow the caller cannot run is answered as one that does not exist, <code>404</code>; a ref the repository does not hold is <code>422</code>; a tool name another member already gives is <code>409</code>, naming the member; a 101st member is <code>422</code>.</td></tr>
 
           <tr><th colspan="2">Administration</th></tr>
           <tr><td class="wrapcell">POST /api/v1/namespaces</td><td>A shared namespace, its owner and its quotas. The owner is required, a user or <code>group:NAME</code>, and is given the <code>owner</code> role on the namespace in the same transaction, so that it can share it and act in it from the start; the namespace's built-in <code>NS/agentiik</code> is created with it. <code>allowed_runner_pools</code> names pools that exist. A name a namespace or a login holds is refused with <code>409</code>; an owner naming no user or group, or a pool that does not exist, with <code>422</code>. Administrator only, audited as <code>namespace.create</code>, and the owner's grant as <code>grant.create</code> in the namespace.</td></tr>
@@ -7673,7 +7670,7 @@ flowchart LR
 <section id="mcp">
   <div class="sec-head"><span class="mark">§</span><h2>Native MCP</h2></div>
   <div class="prose">
-    <p>Agentiik speaks the Model Context Protocol on two surfaces: <code>/mcp</code> operates the platform, and <code>/mcp/{namespace}/{workflow}</code> presents one workflow as a tool.</p>
+    <p>Agentiik speaks the Model Context Protocol on two kinds of surface: <code>/mcp</code>, the user's server, through which every principal manages what they may reach, their namespaces, their workflows, their runs and their collections; and <code>/mcp/collections/{id}</code>, a collection, a connector a principal assembles from the workflows they may run, each workflow one tool.</p>
 
     <div class="decision">
       <span class="note-label">Decision</span>
@@ -7683,7 +7680,7 @@ flowchart LR
 
   <figure>
     <div class="figbody">
-      <svg viewBox="0 0 940 336" role="img" aria-label="An MCP client, which is where a model lives, calls across a protocol boundary to two endpoints: the platform server and a workflow's own server. Both are facades over the same authorised HTTP API, which alone reaches the controller, the bus and the runners.">
+      <svg viewBox="0 0 940 336" role="img" aria-label="An MCP client, which is where a model lives, calls across a protocol boundary to two endpoints: the user's server and a collection. Both are facades over the same authorised HTTP API, which alone reaches the controller, the bus and the runners.">
         <defs><marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
 
         <rect x="16" y="96" width="184" height="128" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 4"/>
@@ -7700,11 +7697,11 @@ flowchart LR
           <rect x="292" y="188" width="252" height="76" rx="5"/>
         </g>
         <text x="418" y="94" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">/mcp</text>
-        <text x="418" y="114" text-anchor="middle" font-family="Archivo, sans-serif" font-size="11" font-weight="600" fill="currentColor">platform server</text>
-        <text x="418" y="131" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="currentColor" opacity=".65">author, run, inspect</text>
-        <text x="418" y="214" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">/mcp/{ns}/{workflow}</text>
-        <text x="418" y="234" text-anchor="middle" font-family="Archivo, sans-serif" font-size="11" font-weight="600" fill="currentColor">one workflow as a tool</text>
-        <text x="418" y="251" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="currentColor" opacity=".65">declared in the entry point</text>
+        <text x="418" y="114" text-anchor="middle" font-family="Archivo, sans-serif" font-size="11" font-weight="600" fill="currentColor">the user's server</text>
+        <text x="418" y="131" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="currentColor" opacity=".65">namespaces, workflows, runs</text>
+        <text x="418" y="214" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">/mcp/collections/{id}</text>
+        <text x="418" y="234" text-anchor="middle" font-family="Archivo, sans-serif" font-size="11" font-weight="600" fill="currentColor">a collection</text>
+        <text x="418" y="251" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="currentColor" opacity=".65">one tool per workflow</text>
 
         <rect x="614" y="108" width="310" height="70" rx="5" fill="none" stroke="currentColor" stroke-width="2.5"/>
         <text x="769" y="136" text-anchor="middle" font-family="Archivo, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">HTTP API</text>
@@ -7729,7 +7726,7 @@ flowchart LR
   </figure>
 
   <div class="prose">
-    <p>An installation that wants neither endpoint sets <code>AGK_MCP=off</code> (<a href="#configuration">Configuration</a>), and both answer 404, as any route an installation does not serve does. A workflow's <code>mcp</code> block is still accepted and checked at the push, since a file means the same on every installation and the next one it is pushed to may serve MCP; the web console's MCP panel says that this one serves none.</p>
+    <p>An installation that wants neither sets <code>AGK_MCP=off</code> (<a href="#configuration">Configuration</a>), and <code>/mcp</code> and every collection answer 404, as any route an installation does not serve does. A workflow's <code>mcp</code> block is still accepted and checked at the push, since a file means the same on every installation and the next one it is pushed to may serve MCP; the web console's MCP panel says that this one serves none, and collections are kept, made and changed as before, to be served once the installation does.</p>
     <h3 id="protocol">Protocol</h3>
     <div class="tablewrap">
       <table>
@@ -7744,13 +7741,21 @@ flowchart LR
       </table>
     </div>
 
-    <h3 id="the-platform-server">The platform server</h3>
-    <p>At <code>/mcp</code>. Its tools mirror the API and hold no authority of their own: each call runs as the presenting principal, under the grants that govern the console.</p>
+    <h3 id="the-platform-server">The user's server</h3>
+    <p>At <code>/mcp</code>, one address for every principal, each answered as themselves: what a principal finds there is everything they may reach and nothing else, the namespaces they hold a grant in, the workflows and runs those grants open, and their own collections. Its tools mirror the API and hold no authority of their own: each call runs as the presenting principal, under the grants that govern the console, so a user manages their namespaces and their workflows from a client exactly as far as the console lets them.</p>
 
     <div class="tablewrap">
       <table>
         <thead><tr><th>Tool</th><th>What it does</th><th>Needs</th></tr></thead>
         <tbody>
+          <tr><td>namespace.list</td><td>The namespaces the caller holds a grant in, the personal one first, and every one for an administrator.</td><td>any authenticated principal</td></tr>
+          <tr><td>namespace.get</td><td>One namespace: its kind, its owner and its quotas.</td><td>a grant in it</td></tr>
+          <tr><td class="wrapcell">namespace.create, namespace.delete</td><td>A shared namespace, with its owner and its quotas; removing one that holds nothing.</td><td>administrator</td></tr>
+          <tr><td>namespace.quotas</td><td>Sets a namespace's quotas and allowed runner pools.</td><td>administrator</td></tr>
+          <tr><td>grant.list</td><td>The grants and denies written on a namespace or on a workflow.</td><td><code>grant:manage</code></td></tr>
+          <tr><td class="wrapcell">grant.create, grant.revoke</td><td>Shares a namespace or a workflow with a user, a group or a service account, a role or a deny with an optional expiry; revokes one.</td><td><code>grant:manage</code></td></tr>
+          <tr><td>secret.list</td><td>A namespace's secret declarations: names, providers, paths and mount points, never a value.</td><td><code>workflow:read</code> at namespace scope</td></tr>
+          <tr><td class="wrapcell">secret.declare, secret.remove</td><td>Declares a secret by its provider and its path, or removes a declaration.</td><td><code>secret:write</code></td></tr>
           <tr><td>workflow.list</td><td>Workflows in namespaces the caller can see.</td><td><code>workflow:read</code></td></tr>
           <tr><td>workflow.get</td><td>Entry point and resolved graph at a ref.</td><td><code>workflow:read</code></td></tr>
           <tr><td>workflow.language</td><td>The language, one topic at a time, with examples.</td><td>any authenticated principal</td></tr>
@@ -7758,6 +7763,8 @@ flowchart LR
           <tr><td>workflow.validate</td><td>Validates a draft entry point and file set, committing nothing. The only authority on whether a draft is legal.</td><td><code>workflow:read</code></td></tr>
           <tr><td>workflow.create</td><td>Empty repository with its default branch.</td><td><code>workflow:write</code> at namespace scope</td></tr>
           <tr><td>workflow.commit</td><td>Writes files and commits to a branch, through the pre-receive validation.</td><td><code>workflow:write</code>, and <code>secret:use</code> where the commit names a secret</td></tr>
+          <tr><td>workflow.update</td><td>Renames the workflow, moves it to another namespace, or names and protects its default branch.</td><td><code>workflow:write</code>; owning both namespaces, to move it; <code>grant:manage</code>, for its default branch</td></tr>
+          <tr><td>workflow.delete</td><td>Deletes the workflow with its runs.</td><td><code>workflow:delete</code></td></tr>
           <tr><td>workflow.run</td><td>Starts a run, optionally on a ref other than the default branch.</td><td><code>workflow:run</code></td></tr>
           <tr><td>run.list, run.get</td><td>Run history and state; without <code>run:read_data</code>, a run names no inputs.</td><td><code>run:read</code></td></tr>
           <tr><td>run.logs</td><td>A step's log tail, secrets masked.</td><td><code>run:read</code></td></tr>
@@ -7766,6 +7773,9 @@ flowchart LR
           <tr><td class="wrapcell">run.approve, run.reject</td><td>Act on a waiting run. With the wait step, in <a href="roadmap/#m08">v0.8.0</a>.</td><td><code>workflow:run</code></td></tr>
           <tr><td>brick.list, brick.get</td><td>The catalog; a manifest with its parameter schema.</td><td>any authenticated principal</td></tr>
           <tr><td>runner.list</td><td>Runner inventory.</td><td>administrator</td></tr>
+          <tr><td class="wrapcell">collection.list, collection.get</td><td>The caller's collections, each with the URL a client is given, its members, and what each member offers or why it offers nothing.</td><td>any authenticated principal, for their own</td></tr>
+          <tr><td class="wrapcell">collection.create, collection.update, collection.delete</td><td>Makes one of the caller's collections, renames it or describes it, and removes it.</td><td>any authenticated principal, for their own</td></tr>
+          <tr><td class="wrapcell">collection.add, collection.remove</td><td>Adds a workflow to one of the caller's collections, with the ref it is read at and the name its tool goes by, or takes one out.</td><td><code>workflow:run</code> on the workflow, to add it</td></tr>
         </tbody>
       </table>
     </div>
@@ -7792,6 +7802,16 @@ flowchart LR
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>A client authors by committing. <code>workflow.commit</code> makes a real git commit, attributed to the calling principal and marked as arriving through MCP, so <code>git log</code> and the audit log agree. Nothing changes a workflow without a commit. <code>workflow.validate</code> lets a client iterate without landing broken ones; the pre-receive hook is the backstop.</p>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A user manages from <code>/mcp</code> what they own and nothing an administrator hands out. Their own namespace is their personal one, made at their first sign-in; a shared namespace is created by an administrator, because it carries quotas, runner pools and a share of the fleet, which are the installation's to give (<a href="#administrators">Administrators</a>). So <code>namespace.create</code>, <code>namespace.delete</code> and <code>namespace.quotas</code> are offered to an administrator and to nobody else, as their routes are, and what a user manages is what owning a namespace gives: its sharing, its secret declarations and its workflows.</p>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>No credential crosses MCP. No tool issues, shows or takes one: no API token, no service account's token, no passkey, recovery code or enrolment link, no webhook's secret or certificate, and no secret's value, so <code>secret.declare</code> takes a provider and a path and never a <code>builtin</code> secret's value. Whatever a tool answers or is sent lands in a model's context, which the installation does not control and a client may keep or send on; a credential there is one nobody can say who holds. Those stay with the console, <code>agk</code> and the API, where the person reading a credential is the one holding it.</p>
     </div>
 
     <h3 id="teaching-a-client-the-language">Teaching a client the language</h3>
@@ -7861,56 +7881,63 @@ flowchart LR
       <p>A validation error is written for the reader that acts on it: a JSON Pointer to the offending node, what was expected there, and the <code>workflow.language</code> topic that covers it. The command line and the console show the same errors, so no audience gets a worse explanation.</p>
     </div>
 
-    <h3 id="a-workflow-as-an-mcp-server">A workflow as an MCP server</h3>
-    <p>At <code>/mcp/{namespace}/{workflow}</code>, only if the entry point says so. <a href="#publishing-tools">Publishing the workflow as tools</a> sets out the block key by key.</p>
+    <h3 id="collections">Collections</h3>
+    <p>A collection is a connector of a principal's own: the workflows they choose, each one a tool, served at <code>/mcp/collections/{id}</code>, which is the URL a client is given. A member is a workflow and, optionally, the ref it is read at and the name its tool goes by; the tool itself is what the workflow's entry point declares in its <code>mcp</code> block (<a href="#publishing-tools">Publishing the workflow as a tool</a>). A collection is made and changed with the API under <code>/api/v1/me/collections</code>, from the web console, or with the user's server's <code>collection</code> tools.</p>
   </div>
 
   <div class="block">
-    <div class="note-label">in agentiik.yaml</div>
-<pre><code>mcp:
-  name: invoicing
-  description: Issue invoices and check their status.
-
-  tools:
-    - name: create_invoice
-      title: Create an invoice
-      description: &gt;
-        Create one invoice for a customer and return its number and total.
-        Rejects a customer whose VAT number does not validate.
-      input:
-        from: { input: orders }        <span class="c"># its JSON Schema becomes inputSchema</span>
-      output:
-        from: { output: invoices }     <span class="c"># its envelope becomes structuredContent</span>
-      mode: sync
-      timeout: 60s
-      annotations:
-        readOnlyHint: false
-        idempotentHint: false
-
-    - name: reconcile_month
-      description: Reconcile a whole month. Long running; returns a run to follow.
-      input:
-        from: { input: period }
-      mode: async</code></pre>
+    <div class="note-label">a collection, as GET /api/v1/me/collections/{id} answers it</div>
+<pre><code>{
+  "id": "01JR8Q2W6H3V0X9K4M7N5P1T2C",
+  "name": "back-office",
+  "description": "Invoices and orders, for the finance assistant.",
+  "url": "https://agentiik.example.com/mcp/collections/01JR8Q2W6H3V0X9K4M7N5P1T2C",
+  "members": [
+    { "workflow": "finance/monthly-invoicing", "tool": "create_invoice" },
+    { "workflow": "support/order-status", "ref": "v2", "as": "order_lookup",
+      "tool": "order_lookup" },
+    { "workflow": "finance/reconcile", "tool": null, "reason": "no_mcp_block" }
+  ]
+}</code></pre>
   </div>
 
   <div class="prose">
     <div class="tablewrap">
       <table>
+        <thead><tr><th>What</th><th>Rule</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>owner</td><td>The principal that made it, a user or a service account, alone lists it, changes it and calls through it. Anybody else, an administrator included, is answered 404, as for a collection that does not exist.</td><td>A collection grants nothing: it is one principal's arrangement of what they may already run. Sharing a capability is sharing the workflows, and whoever is shared them assembles their own.</td></tr>
+          <tr><td>address</td><td><code>/mcp/collections/{id}</code>, the identifier given when it is made and never changed.</td><td>Renaming a collection changes nothing a client is configured with.</td></tr>
+          <tr><td>member</td><td>A workflow, by namespace and name; <code>ref</code>, a branch or a tag, its default branch where none is written; and <code>as</code>, the name its tool goes by in this collection, the one its <code>mcp</code> block gives where none is written.</td><td>Two workflows may declare the same name, and a member written at a tag holds its tool still while the branch moves.</td></tr>
+          <tr><td>tool</td><td>Read from the entry point at the head of the member's ref at every <code>tools/list</code>, and run at the commit the ref points at when it is called.</td><td>A collection follows a workflow as its triggers follow the default branch, with nothing to add again when the workflow changes.</td></tr>
+          <tr><td>absent</td><td>A member whose entry point at its ref declares no <code>mcp</code> block, or whose workflow the owner may no longer run, deleted ones included, is left out of <code>tools/list</code> and answered as a tool that does not exist. The collection's record says which, <code>no_mcp_block</code> or <code>not_runnable</code>, the second for both since a workflow one may not run is one whose fate a collection does not tell.</td><td>A grant revoked takes the tool away from the next list, as the protocol lets a tool set "vary by the authorization presented on the request", and the member comes back when the grant does.</td></tr>
+          <tr><td>names</td><td>A tool's name is unique in its collection: a member whose name another member already gives is refused with 409, naming the other, and <code>as</code> resolves it.</td><td>Clients hold the name, and a model told of two tools of one name cannot choose between them.</td></tr>
+          <tr><td>bounds</td><td>A collection holds at most 100 members, and a principal at most 50 collections.</td><td>A client reads the whole tool list into a model's context at every list. A hundred tools is past what a model chooses among well, and somebody needing more needs a second collection more than a longer one.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tablewrap">
+      <table>
         <thead><tr><th>Declared</th><th>Becomes, on the wire</th></tr></thead>
         <tbody>
-          <tr><td>input.from</td><td><code>inputSchema</code>: the input's own JSON Schema, as it stands, so no second schema can drift.</td></tr>
-          <tr><td>output.from</td><td><code>outputSchema</code> when the output declares a schema. Its envelope goes in <code>structuredContent</code>, with a text rendering alongside.</td></tr>
+          <tr><td>the workflow's inputs</td><td><code>inputSchema</code>: an object whose properties are the workflow's inputs, each with its own JSON Schema as it stands, the required ones required, and its references into the repository bundled in, since a client cannot read the tree. No second schema can drift.</td></tr>
+          <tr><td>output</td><td><code>outputSchema</code> when the output declares a schema. Its envelope goes in <code>structuredContent</code>, with a text rendering alongside.</td></tr>
           <tr><td>mode: sync</td><td>Waits for the run and returns the output, for 120 seconds at most, because clients time out. A workflow that cannot finish inside that must be <code>async</code>.</td></tr>
-          <tr><td>mode: async</td><td>Returns the run identifier at once, to follow with the platform server's <code>run.get</code>. A workflow's own server never grows a polling tool.</td></tr>
+          <tr><td>mode: async</td><td>Returns the run identifier at once, to follow with the user's server's <code>run.get</code>. A collection never grows a polling tool.</td></tr>
         </tbody>
       </table>
     </div>
 
     <ul class="plain">
-      <li>A tool call is a run: the calling principal's, with <code>trigger_kind: mcp</code>, in the run list, under the namespace quota and the workflow's concurrency group. A client calling in a loop meets the rate limit a webhook would.</li>
-      <li>Listing and calling both require <code>workflow:run</code>, never <code>workflow:read</code>.</li>
+      <li>A tool call is a run: the calling principal's, with <code>trigger_kind: mcp</code> and the collection it came through, in the run list, under the namespace quota and the workflow's concurrency group. A client calling in a loop meets the rate limit a webhook would.</li>
+      <li>Listing a collection is its owner's; calling one of its tools requires <code>workflow:run</code> on the workflow, never <code>workflow:read</code>.</li>
     </ul>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A connector is assembled by whoever uses it, not published by whoever writes the workflow. A workflow says how it reads as a tool; whoever may run it decides whether a client is offered it, and beside what. One server per workflow gave a client one connector per tool to configure, and somebody working with ten workflows ten URLs; a collection is the set they actually work with, given one.</p>
+    </div>
 
     <div class="decision">
       <span class="note-label">Decision</span>
@@ -7919,7 +7946,7 @@ flowchart LR
 
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>A workflow's server exposes tools and nothing else: no resources, no prompts, no tree. A resource would turn <code>workflow:run</code> into a read path into the repository, undoing the separation the roles were built around.</p>
+      <p>A collection exposes tools and nothing else: no resources, no prompts, no tree. A resource would turn <code>workflow:run</code> into a read path into the repository, undoing the separation the roles were built around.</p>
     </div>
 
     <h3 id="errors-and-obligations">Errors and obligations</h3>
@@ -8540,7 +8567,8 @@ resource "agentiik_workflow" "search" {
           <tr><td>runners</td><td>To an administrator alone: the pools, what each accepts and caps and which namespaces reach it, to write <code>allowed_runner_pools</code> against, and each runner's condition, concurrency, last heartbeat and capacity, never its host.</td></tr>
           <tr><td>administration</td><td>To an administrator alone: the users, the groups and who is in each, and every namespace with its owner and its quotas, <code>allowed_runner_pools</code> chosen among the pools that exist.</td></tr>
           <tr><td>brick catalog</td><td>Manifests, parameter schemas, published examples.</td></tr>
-          <tr><td>MCP panel</td><td>On a workflow that declares one: the endpoint URL, and the tools exactly as a client sees them, schemas rendered from the declaration.</td></tr>
+          <tr><td>MCP panel</td><td>On a workflow that declares one: the tool exactly as a client sees it, its schemas rendered from the declaration, and the caller's collections, those it is in named and adding it to another a click away.</td></tr>
+          <tr><td>collections</td><td>Under the caller's account: their <a href="#collections">collections</a>, each with the URL to give a client, its members, and what each offers or why it offers nothing.</td></tr>
           <tr><td>namespace switcher</td><td>In the sidebar, above the namespace's views: the personal namespace first, shared ones grouped after it.</td></tr>
           <tr><td>credentials</td><td>Enrol, name and remove passkeys, with each one's last use. An administrator sees every user's list, and whether each credential is synced or device-bound.</td></tr>
           <tr><td>profile</td><td>Under the caller's account: their display name, given and family names, title, location, time zone and bio, written with <code>PATCH /api/v1/me</code>, and their photo, chosen from a file and set with <code>PUT /api/v1/me/avatar</code> or removed. The photo is drawn wherever the caller is, in the top bar and on the home, and their initial where there is none.</td></tr>
@@ -15732,7 +15760,7 @@ post_task = [
           <tr><td class="wrapcell">AGK_JOIN_ROTATION</td><td>api</td><td><code>720h</code></td><td>How long a runner credential is accepted for, and how far each rotation moves <code>rotate_by</code>: a machine dark for a month should be reconsidered, not readmitted.</td></tr>
           <tr><td class="wrapcell">AGK_REVOCATION_GRACE</td><td>api</td><td>AGK_TASK_CEILING</td><td><code>revocation_grace</code>: how long a revoked runner's results are still taken. A task running past it is declared lost, so an installation whose steps write a longer <code>timeout</code> raises it (<a href="#registering-a-runner">Registering a runner</a>). Also bounds every runner bus credential, since a NATS credential runs out rather than being revoked: a grace under an hour means more frequent renewal.</td></tr>
           <tr><td class="wrapcell">AGK_CONSOLE</td><td>api</td><td><code>on</code></td><td><code>on</code> or <code>off</code>, and nothing else: whether the API serves the <a href="#ui">web console</a> at the root of the public URL, from <a href="roadmap/#m06">v0.6.0</a>. <code>off</code> leaves every other route served, the sign-in page under <code>/auth</code> among them, for an installation that serves the console's files elsewhere on the same origin, or none.</td></tr>
-          <tr><td class="wrapcell">AGK_MCP</td><td>api</td><td><code>on</code></td><td><code>on</code> or <code>off</code>, and nothing else: whether the API serves <code>/mcp</code> and <code>/mcp/{namespace}/{workflow}</code> (<a href="#mcp">Native MCP</a>), from <a href="roadmap/#m07">v0.7.0</a>. <code>off</code> answers 404 on both.</td></tr>
+          <tr><td class="wrapcell">AGK_MCP</td><td>api</td><td><code>on</code></td><td><code>on</code> or <code>off</code>, and nothing else: whether the API serves <code>/mcp</code> and every collection at <code>/mcp/collections/{id}</code> (<a href="#mcp">Native MCP</a>), from <a href="roadmap/#m07">v0.7.0</a>. <code>off</code> answers 404 on each and keeps the collections.</td></tr>
           <tr><td class="wrapcell">AGK_AUDIT_EXPORT_URL</td><td>controller</td><td>none: the log stays in the database, and the controller warns at every start</td><td>An <code>https</code> URL with a host and no user: the sink the audit log is exported to, outside the installation (<a href="#audit-log">Audit log</a>). A sink behind a private authority is trusted through <code>SSL_CERT_FILE</code>.</td></tr>
           <tr><td class="wrapcell">AGK_AUDIT_EXPORT_TOKEN_FILE</td><td>controller</td><td>none: no <code>Authorization</code> header</td><td>The bearer token the sink wants. Refused without AGK_AUDIT_EXPORT_URL.</td></tr>
           <tr><td class="wrapcell">AGK_METRICS_LISTEN</td><td>controller</td><td>none: no metrics, and no port</td><td>A host and a numeric port the metrics are answered on (<a href="#metrics">Metrics</a>), apart from anything else, since they name every tenant's namespaces and workflows. An address the controller cannot listen on refuses its start. Served in plain HTTP, or over TLS where AGK_TLS_CERT_FILE names a certificate.</td></tr>
