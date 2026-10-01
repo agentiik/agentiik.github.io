@@ -12035,7 +12035,7 @@ resource "agentiik_workflow" "search" {
       <table>
         <thead><tr><th>Window</th><th>Panes</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">160 columns and more</td><td>Runs, run and log side by side, as above. With no run open, the runs take the whole width, one line a run with more columns; opening a run adds the two panes on its right.</td></tr>
+          <tr><td class="wrapcell">160 columns and more</td><td>Runs, run and log side by side, as above. With no run open, the runs take the whole width, one line a run with more columns; opening a run adds the two panes on its right. Beside a run, in a pane under 64 columns, each run takes two lines: its state, workflow and duration, then its identifier by twelve characters, its trigger, who started it and when.</td></tr>
           <tr><td class="wrapcell">120 to 159 columns</td><td>Runs beside the run, and the log beneath the run in the lower third of its column.</td></tr>
           <tr><td class="wrapcell">under 120 columns</td><td>Stacked, below. With no run open, the runs show a run's identifier by its first twelve characters, which still tell two runs of one day apart, and leave out the trigger kind, so that the workflow keeps room to be read at 80 columns. Once a run is open, the runs fold to one line that still counts the failed and the running; the run and its log share the rows, the pane in focus taking two thirds.</td></tr>
           <tr><td class="wrapcell">under 80 columns or 24 rows</td><td>Nothing drawn cut: the window is asked to grow, naming the size it needs.</td></tr>
@@ -12046,6 +12046,8 @@ resource "agentiik_workflow" "search" {
       <li><code>tab</code> moves the focus to the next pane, and a click does too. The pane in focus has the accent's border, as selection does in the web console.</li>
       <li>A border between two panes side by side is dragged with the mouse to move it, for the rest of the session.</li>
       <li>A pane is filled with the palette's surface and bordered with rounded corners, as Lip Gloss draws them; the three panes above are three such blocks joined.</li>
+      <li>Each pane is laid out as a window of its own size would be. A run's steps sit beside the step chosen once the run's pane is 120 columns wide, and above it in a narrower one, so that nothing in a column is cut to fit a width the window has and the column has not.</li>
+      <li>In focus, the runs move their selection without leaving the run open, which <code>enter</code> replaces with the run selected; the log scrolls back from its end and says how far.</li>
     </ul>
   </div>
 
@@ -12202,7 +12204,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>run</td><td>Its graph drawn, each step's state live, a fan-out's shards one cell each beside a bar of those done. A step's exit code and its meaning, attempt, shard, image digest, runner name, pool and labels, never the host. Each port's envelope with its item count, and its JSON under <code>run:read_data</code>, up to the <a href="#size-rules">size rules</a>. Its log, history then live, as <code>agk logs</code> follows it. Cancel, replay from a step and, from v0.8.0, approve or reject.</td><td class="wrapcell">GET /api/v1/runs/{id}, its steps' inputs, outputs and logs</td></tr>
           <tr><td>graph</td><td>The resolved graph of a run or a version, full screen, drawn as boxes and edges (<a href="#terminal-graph">The graph, drawn</a>), or written as a list.</td><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}</td></tr>
           <tr><td>workflows</td><td>The workflows of a namespace the principal can read, each one's versions, declared triggers, a sparkline of its last twenty runs and a histogram of its durations, and a version's graph.</td><td class="wrapcell">what the web console lists, GET /api/v1/{ns}/workflows/{name}, GET /api/v1/runs and GET /api/v1/{ns}/stats/runs</td></tr>
-          <tr><td>sharing</td><td>What <code>agk grants</code> prints, kept live, for a workflow or a namespace: the grants as written, and resolved for one principal with the scope each permission comes from, a deny the only subtraction.</td><td class="wrapcell">GET /api/v1/{ns}/grants, GET /api/v1/{ns}/workflows/{name}/grants</td></tr>
+          <tr><td>sharing</td><td>What <code>agk grants</code> prints, kept live, for a workflow or a namespace: the grants as written, and resolved for one principal with the scope each permission comes from, a deny the only subtraction. It opens on the workflow in front of the principal where it holds <code>grant:manage</code> there, then on that workflow's namespace, and <code>s</code> chooses among the scopes where it holds it, since the grants routes answer nobody else; a principal holding it nowhere is told so, and nothing is asked. <code>/</code> narrows the grants listed, each word found whole, and never the resolution.</td><td class="wrapcell">GET /api/v1/{ns}/grants, GET /api/v1/{ns}/workflows/{name}/grants</td></tr>
           <tr><td>runners</td><td>To an administrator alone: runners and pools, with labels, capacity, last heartbeat, state and concurrency, and who drained or revoked one and when, never a host.</td><td class="wrapcell">GET /api/v1/runners, GET /api/v1/runner-pools</td></tr>
         </tbody>
       </table>
@@ -13373,7 +13375,7 @@ archive     queued
         <thead><tr><th>Key</th><th>Does</th></tr></thead>
         <tbody>
           <tr><td><code>↑</code> <code>↓</code> or <code>j</code> <code>k</code></td><td>Moves the selection; in a graph, to the step above or below.</td></tr>
-          <tr><td><code>←</code> <code>→</code> or <code>h</code> <code>l</code></td><td>In a graph, moves the selection to the step before or after, along an edge.</td></tr>
+          <tr><td><code>←</code> <code>→</code> or <code>h</code> <code>l</code></td><td>In a graph, moves the selection to the step before or after, along an edge: the first step it needs, in the order its <code>needs</code> declares them, or the first step in running order that needs it.</td></tr>
           <tr><td><code>enter</code></td><td>Opens what is selected: a run, a step, a workflow, a version.</td></tr>
           <tr><td><code>esc</code></td><td>Goes back to the view before, or closes the filter, the palette or a prompt.</td></tr>
           <tr><td><code>tab</code> <code>shift+tab</code></td><td>Moves the focus to the next or the previous pane: in a run, steps, ports, then log.</td></tr>
@@ -13395,14 +13397,14 @@ archive     queued
         <thead><tr><th>Mouse</th><th>Does</th></tr></thead>
         <tbody>
           <tr><td>click</td><td>Selects a row, a step, a port or a tab, and focuses its pane; on a toast, opens what it names.</td></tr>
-          <tr><td>double click</td><td>Opens what it selects, as <code>enter</code> does.</td></tr>
+          <tr><td>double click</td><td>Opens what it selects, as <code>enter</code> does: a second click on the same within half a second.</td></tr>
           <tr><td>wheel</td><td>Scrolls the list or the log under the pointer, or pans the graph.</td></tr>
           <tr><td>drag a border</td><td>Moves the border between two panes.</td></tr>
           <tr><td>shift and drag</td><td>Selects text as the terminal does, to copy a run identifier or a log line: a terminal gives the mouse back to itself while shift is held, and the console asking for the mouse would otherwise take copying away.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The mouse's reports reach <code>agk</code> as the keys do, in the terminal's own escape sequences, so it works over SSH as it does locally. Every mouse action has a key, and no key needs the mouse.</p>
+    <p>The mouse's reports reach <code>agk</code> as the keys do, in the terminal's own escape sequences, so it works over SSH as it does locally. Every mouse action has a key, and no key needs the mouse. Neither a click nor the wheel answers a prompt: a wheel turned over <code>Cancel run?</code> decides nothing, and the prompt waits for a key.</p>
 
     <h4>The filter</h4>
     <p><code>/</code> opens a line above the list, and each key narrows the list at once:</p>
