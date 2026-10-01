@@ -8542,6 +8542,13 @@ resource "agentiik_workflow" "search" {
       <span class="note-label">Decision</span>
       <p>The web console and <code>agk console</code> share one design language, where the web console was first drawn with a sidebar and tables of its own. They are one product: the same runs, the same states in the same colours, the same graph, the same principal's permissions. An operator who moves between them, the browser at a desk and <code>agk console</code> over SSH at night, reads the same thing in the same place, and a state learnt in one is recognised in the other; two languages would be two products to learn, each change to one leaving the other behind. The browser keeps what it does better, since a shared language is not a shared lowest common denominator.</p>
     </div>
+
+    <p>The key line names the keys of the view drawn and the console's own: a digit for each view of the top bar, in its order there, and <code>?</code> for a list of every key of the view, which <code>esc</code> closes. The runs view moves a selection with <code>↑</code> and <code>↓</code>, or <code>j</code> and <code>k</code>, and opens it with <code>enter</code>. The run inspector moves between its steps the same way, between the ports holding an envelope with <code>[</code> and <code>]</code>, and back to the runs with <code>esc</code>; <code>c</code> cancels the run and <code>p</code> replays it from the step chosen once the question each asks is answered <code>y</code>, <code>n</code> and <code>esc</code> answering no. A key belongs to a field while it is typed into, <code>enter</code> to a focused button or link, and a key held with <code>ctrl</code>, <code>meta</code> or <code>alt</code> to the browser; <code>tab</code> moves the focus as a browser's does, rather than between panes as in <code>agk console</code>, since a person on the keyboard alone relies on it. An act the principal does not hold has no key in the line, and its key does nothing, as its button is hidden.</p>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The key <code>p</code> asks before it replays, and the button Replay from invoice does not. A key is pressed by mistake more easily than a button naming the step is clicked, which is why <code>agk console</code>'s prompts default to no; asking at the button as well would add a click to the act the inspector is most often opened for, after a failure, and the button already says what it starts.</p>
+    </div>
   </div>
 
   <figure class="console">
