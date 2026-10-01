@@ -8492,10 +8492,15 @@ resource "agentiik_workflow" "search" {
       <li>Sentence case throughout, buttons, tabs and headings included.</li>
       <li>A control names its effect: Approve, Reject, Replay from invoice, Load 25 more. Never OK, never Submit.</li>
       <li>An error names the step, the exit code and what was refused, in that order.</li>
-      <li>A failure of the console itself says what could not be done, why in everyday words, and what the reader can do: wait and try again, sign in again, ask an owner of the namespace, or tell the administrator. The server's own answer, its status and its sentence, follows in small type for whoever has to look further. Try again is offered where trying again may succeed.</li>
-      <li>A hint says what a thing is for, and a confirmation what an act did and what follows from it, for someone who has not read the API.</li>
+      <li>A failure of the console itself says what could not be done and why in a few words, the reason decided by the status, and what to do where there is something: sign in again, wait and try again. The server's own answer, its status and its sentence, follows in small type. Try again is offered where trying again may succeed.</li>
+      <li>Nothing on screen explains the console: no note, hint or aside says what a feature is for or how it works. Labels, values and short empty states say what a screen shows, and a confirmation is a few words: Token revoked.</li>
       <li>Identifiers are never translated or prettified: <code>run:read_data</code>, <code>rejected</code>, <code>succeeded</code> appear as the YAML and the API spell them, so what a person reads on screen is what they type in a file.</li>
     </ul>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A feature that needs a sentence to be understood is built wrong, and is fixed rather than explained. The sentence is read once and skipped on every visit after, in the screen a person works in, and a console where every pane carries one is one where nothing can be found.</p>
+    </div>
 
     <div class="decision">
       <span class="note-label">Decision</span>
