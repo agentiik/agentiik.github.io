@@ -11994,7 +11994,8 @@ resource "agentiik_workflow" "search" {
           <tr><td>principal</td><td>The one <code>agk</code> is signed in as: the token <code>agk login</code> stored, or <code>AGENTIIK_TOKEN</code>, against <code>--server</code> or <code>AGENTIIK_SERVER</code> (<a href="#pointing-agk-at-an-installation">Pointing agk at an installation</a>).</td></tr>
           <tr><td>permissions</td><td>None of its own. It shows what the principal holds, as <code>GET /api/v1/me</code> gives it, and hides the rest rather than disabling it, payload panes included without <code>run:read_data</code>. A token narrowed by a scope narrows the console with it.</td></tr>
           <tr><td>opens on</td><td>The runs view of every namespace the principal reads; <code>--namespace NS</code> on one namespace; <code>agk console RUN</code> on that run.</td></tr>
-          <tr><td>exits</td><td>0 when quit. 2 for a wrong command line and 4 where the installation cannot be reached at start, as <a href="#command-line">every verb</a>. Once open, an installation that stops answering is said so in the top line and asked again, since somebody is watching.</td></tr>
+          <tr><td>reads again</td><td>What is shown, every five seconds: the runs view's page of runs, and a run until it has ended, as the web console reads them. A change is seen within five seconds for one small read a view, and the two consoles open side by side never disagree on a run for longer than that.</td></tr>
+          <tr><td>exits</td><td>0 when quit. 1 where the installation refuses the credential, read from <code>GET /api/v1/me</code> before anything is drawn so that no screen hides the sentence; 2 for a wrong command line and 4 where the installation cannot be reached at start, as <a href="#command-line">every verb</a>. Once open, an installation that stops answering is said so in the top line and asked again, since somebody is watching, and what was read before stays on the screen.</td></tr>
         </tbody>
       </table>
     </div>
@@ -12022,7 +12023,7 @@ resource "agentiik_workflow" "search" {
         <tbody>
           <tr><td class="wrapcell">160 columns and more</td><td>Runs, run and log side by side, as above. With no run open, the runs take the whole width, one line a run with more columns; opening a run adds the two panes on its right.</td></tr>
           <tr><td class="wrapcell">120 to 159 columns</td><td>Runs beside the run, and the log beneath the run in the lower third of its column.</td></tr>
-          <tr><td class="wrapcell">under 120 columns</td><td>Stacked, below. Once a run is open, the runs fold to one line that still counts the failed and the running; the run and its log share the rows, the pane in focus taking two thirds.</td></tr>
+          <tr><td class="wrapcell">under 120 columns</td><td>Stacked, below. With no run open, the runs show a run's identifier by its first twelve characters, which still tell two runs of one day apart, and leave out the trigger kind, so that the workflow keeps room to be read at 80 columns. Once a run is open, the runs fold to one line that still counts the failed and the running; the run and its log share the rows, the pane in focus taking two thirds.</td></tr>
           <tr><td class="wrapcell">under 80 columns or 24 rows</td><td>Nothing drawn cut: the window is asked to grow, naming the size it needs.</td></tr>
         </tbody>
       </table>
@@ -14746,7 +14747,7 @@ archive     queued
           <tr><td class="wrapcell">over SSH</td><td>The keys and the mouse work as locally. SSH does not carry <code>COLORTERM</code> unless its configuration sends it, so a true colour terminal usually draws in 256 colours there; <code>SendEnv COLORTERM</code> on the client and <code>AcceptEnv COLORTERM</code> on the server bring the exact palette back.</td></tr>
           <tr><td class="wrapcell">a machine with no browser</td><td>Takes its token in <code>AGENTIIK_TOKEN</code>, made elsewhere with <code>agk token create</code>, since <code>agk login</code> needs a browser beside <code>agk</code> for its loopback redirect (<a href="#auth">Authentication</a>). On a host others use, a token narrowed with <code>--scope</code> opens only what it names.</td></tr>
           <tr><td class="wrapcell"><code>NO_COLOR</code> set and not empty</td><td>No colour at all. Nothing is lost, since every state is a word.</td></tr>
-          <tr><td class="wrapcell">standard input or output not a terminal, or <code>TERM=dumb</code></td><td>No screen. The view it would have opened is printed once as plain lines, and it exits 0, so a script or a cron job never waits on a screen nobody sees. The runs view is one line per run, columns separated by tabs, no header, times in RFC 3339; a run is what <code>agk status</code> prints; a graph is the list above.</td></tr>
+          <tr><td class="wrapcell">standard input or output not a terminal, or <code>TERM=dumb</code></td><td>No screen. The view it would have opened is printed once as plain lines, and it exits 0, so a script or a cron job never waits on a screen nobody sees. The runs view is one line per run, newest first, its columns separated by tabs in this order: the state, the run, <code>namespace/workflow</code>, the trigger kind, when it started, or was created where it has not started, how long it took or has been going, and who started it, left empty where no principal did; no header, times in RFC 3339. A run is what <code>agk status</code> prints; a graph is the list above.</td></tr>
         </tbody>
       </table>
     </div>
