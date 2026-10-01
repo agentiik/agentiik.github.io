@@ -2258,7 +2258,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Diff two commits across the whole tree, not only the entry point. <a class="ref" href="../#ui">ui</a></li>
           <li>Create a workflow repository with default branch and protection via POST /api/v1/{ns}/workflows. <a class="ref" href="../#api">api</a><a class="ref" href="../#the-workflow-repository">the-workflow-repository</a></li>
           <li>Build a format-preserving YAML tree that keeps comments and key order, so a round trip adds no diff a human would not write. <a class="ref" href="../#ui">ui</a></li>
-          <li>Build one object model that graph and text both edit, serialised by the command line's writer. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#command-line">command-line</a></li>
+          <li>Build one object model that graph and text both edit, each edit a splice of the file as written. <a class="ref" href="../#ui">ui</a></li>
           <li>Edit the graph (add a step, connect a port, change a merge or fan_out) through that model, so both sides write the same file. <a class="ref" href="../#ui">ui</a></li>
           <li>Resolve include, extends, defaults and vars for display only and write them back as they stand, so editing a step rewrites nothing else. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#includes-and-inheritance">includes-and-inheritance</a></li>
           <li>Validate the file in the browser against agentiik/schemas before sending, with those schemas published in a browser-consumable form. <a class="ref" href="../#repos">repos</a><a class="ref" href="../#yaml">yaml</a></li>
