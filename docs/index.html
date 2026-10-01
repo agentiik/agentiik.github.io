@@ -8493,8 +8493,20 @@ resource "agentiik_workflow" "search" {
       <li>Sentence case throughout, buttons, tabs and headings included.</li>
       <li>A control names its effect: Approve, Reject, Replay from invoice, Load 25 more. Never OK, never Submit.</li>
       <li>An error names the step, the exit code and what was refused, in that order.</li>
+      <li>A failure of the console itself says what could not be done and why in a few words, the reason decided by the status, and what to do where there is something: sign in again, wait and try again. The server's own answer, its status and its sentence, follows in small type. Try again is offered where trying again may succeed.</li>
+      <li>Nothing on screen explains the console: no note, hint or aside says what a feature is for or how it works. Labels, values and short empty states say what a screen shows, and a confirmation is a few words: Token revoked.</li>
       <li>Identifiers are never translated or prettified: <code>run:read_data</code>, <code>rejected</code>, <code>succeeded</code> appear as the YAML and the API spell them, so what a person reads on screen is what they type in a file.</li>
     </ul>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A feature that needs a sentence to be understood is built wrong, and is fixed rather than explained. The sentence is read once and skipped on every visit after, in the screen a person works in, and a console where every pane carries one is one where nothing can be found.</p>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The reason a failure gives is decided by its status, not by the API's sentence. The API's sentences are written for whoever reads the API, and "what the caller holds could not be read" shown alone leaves a person not knowing whether they did something wrong, whether to wait or whom to ask. A <code>403</code> is a missing permission whatever the route, a <code>5xx</code> is the server's fault whatever went wrong inside it, and a request that got no answer is neither. Where the sentence is the reason, as for a <code>409</code> or a <code>422</code>, it is the reason, and the status alone goes below.</p>
+    </div>
 
     <div class="decision">
       <span class="note-label">Decision</span>
