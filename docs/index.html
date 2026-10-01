@@ -8491,12 +8491,17 @@ resource "agentiik_workflow" "search" {
     <h3 id="voice">Voice</h3>
     <ul class="plain">
       <li>Sentence case throughout, buttons, tabs and headings included.</li>
-      <li>A control names its effect: Approve, Reject, Replay from invoice, Load 25 more. Never OK, never Submit.</li>
+      <li>A control names its effect in words that never change: Approve, Reject, Replay from this step, Load 25 more. Never OK, never Submit, and never a name, a count or a word a state chooses: what a control acts on is said by its row, its pane or the question before it. A confirmation draws Keep before the same button turned red.</li>
       <li>An error names the step, the exit code and what was refused, in that order.</li>
       <li>A failure of the console itself says what could not be done and why in a few words, the reason decided by the status, and what to do where there is something: sign in again, wait and try again. The server's own answer, its status and its sentence, follows in small type. Try again is offered where trying again may succeed.</li>
       <li>Nothing on screen explains the console: no note, hint or aside says what a feature is for or how it works. Labels, values and short empty states say what a screen shows, and a confirmation is a few words: Token revoked.</li>
       <li>Identifiers are never translated or prettified: <code>run:read_data</code>, <code>rejected</code>, <code>succeeded</code> appear as the YAML and the API spell them, so what a person reads on screen is what they type in a file.</li>
     </ul>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A control's label holds no value. "Create vat-reconciliation" grew as the name was typed, "Show 25 more items" shrank with what was left and "Remove alice/deploy-bot" was as wide as the name, and each moved whatever was drawn beside it, under a pointer about to click. The row, the pane or the question before a control already says what it acts on, so its label need only say what it does. A confirmation keeps the button clicked where it was, turned red, and draws Keep before it, rather than a second button naming the target in its place.</p>
+    </div>
 
     <div class="decision">
       <span class="note-label">Decision</span>
@@ -8616,7 +8621,7 @@ resource "agentiik_workflow" "search" {
       <table>
         <thead><tr><th>The browser adds</th><th>Because</th></tr></thead>
         <tbody>
-          <tr><td>the mouse first</td><td>A pointer is how a browser is used, so every act is a button or a link (Approve, Replay from invoice, Cancel run), a mark explains itself under the pointer, and the keys of the key line are shortcuts beside them rather than the only way.</td></tr>
+          <tr><td>the mouse first</td><td>A pointer is how a browser is used, so every act is a button or a link (Approve, Replay from this step, Cancel run), a mark explains itself under the pointer, and the keys of the key line are shortcuts beside them rather than the only way.</td></tr>
           <tr><td>forms</td><td>Adding a grant, a manual run's inputs drawn from their JSON Schemas, and a namespace's settings are forms the browser checks before anything is sent.</td></tr>
           <tr><td>the visual editor</td><td>Editing the graph and the file as one object model needs a canvas to drag one port onto another; <code>agk console</code> leaves editing to the clone.</td></tr>
           <tr><td>passkeys</td><td>Signing in and enrolling are ceremonies a browser runs (<a href="#auth">Authentication</a>).</td></tr>
@@ -8639,12 +8644,12 @@ resource "agentiik_workflow" "search" {
 
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>The key <code>p</code> asks before it replays, and the button Replay from invoice does not. A key is pressed by mistake more easily than a button naming the step is clicked, which is why <code>agk console</code>'s prompts default to no; asking at the button as well would add a click to the act the inspector is most often opened for, after a failure, and the button already says what it starts.</p>
+      <p>The key <code>p</code> asks before it replays, and the button Replay from this step does not. A key is pressed by mistake more easily than a button beside the step chosen is clicked, which is why <code>agk console</code>'s prompts default to no; asking at the button as well would add a click to the act the inspector is most often opened for, after a failure, and the button already says what it starts.</p>
     </div>
   </div>
 
   <figure class="console">
-    <svg class="mock web" viewBox="0 0 1440 946" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mockup of the web console&#x27;s runs view, the screen it opens on, in a browser window at agentiik.example.com/finance/runs, drawn in the terminal console&#x27;s design language. The top bar holds the mark, the namespace switcher on finance, the views, a search field, a live indicator, three notifications and the principal, alice. One pane with rounded borders holds round filter chips, New run and Export buttons, then a band of runs needing attention: an approval requested at invoice with Approve, keyboard focus on it, and Reject buttons, and a failed run of monthly-invoicing, exit 108, with Replay from invoice and Open. Below, a table of twelve runs, each with a state badge, a spinner on the running ones, its identifier, workflow, trigger, principal, a strip of steps weighted by duration, times and a sparkline of the workflow&#x27;s last twenty runs; scheduled, webhook and event runs are by finance/agentiik. The pointer hovers the failed run&#x27;s strip, and a tooltip names the step, its exit code and duration. A key line runs along the foot of the window.">
+    <svg class="mock web" viewBox="0 0 1440 946" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mockup of the web console&#x27;s runs view, the screen it opens on, in a browser window at agentiik.example.com/finance/runs, drawn in the terminal console&#x27;s design language. The top bar holds the mark, the namespace switcher on finance, the views, a search field, a live indicator, three notifications and the principal, alice. One pane with rounded borders holds round filter chips, New run and Export buttons, then a band of runs needing attention: an approval requested at invoice with Approve, keyboard focus on it, and Reject buttons, and a failed run of monthly-invoicing, exit 108, with Replay from this step and Open. Below, a table of twelve runs, each with a state badge, a spinner on the running ones, its identifier, workflow, trigger, principal, a strip of steps weighted by duration, times and a sparkline of the workflow&#x27;s last twenty runs; scheduled, webhook and event runs are by finance/agentiik. The pointer hovers the failed run&#x27;s strip, and a tooltip names the step, its exit code and duration. A key line runs along the foot of the window.">
 <rect x=".5" y=".5" width="1439" height="945" rx="10" class="f-bg"/>
 <path d="M.5 46V10.5a10 10 0 0 1 10-10h1419a10 10 0 0 1 10 10V46z" class="f-raised"/>
 <path d="M.5 45.5H1439.5" class="f-none s-line"/>
@@ -8753,12 +8758,12 @@ resource "agentiik_workflow" "search" {
 <text x="525.44" y="218.72" font-size="13.5" class="f-faint">·</text>
 <text x="532.73" y="218.55" font-size="13" class="f-fail t-mono" font-weight="600" textLength="62.4">exit 108</text>
 <text x="597.96" y="218.72" font-size="13.5" class="f-muted">after 4 attempts · billing API refused 3 of 214 items</text>
-<rect x="1240.49" y="199.5" width="167.01" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
-<path transform="translate(1250.99 206)" d="M3.2 8a4.8 4.8 0 1 0 1.4-3.4M3.2 2.8v2.6h2.6" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="1274.99" y="218.72" font-size="13.5" class="f-text" font-weight="500">Replay from invoice</text>
-<rect x="1170.87" y="199.5" width="58.62" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
-<text x="1183.37" y="218.72" font-size="13.5" class="f-text" font-weight="500">Open</text>
-<text x="1152.37" y="218.55" font-size="13" class="f-faint" text-anchor="end">23m ago</text>
+<rect x="1232.23" y="199.5" width="175.27" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<path transform="translate(1242.73 206)" d="M3.2 8a4.8 4.8 0 1 0 1.4-3.4M3.2 2.8v2.6h2.6" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1266.73" y="218.72" font-size="13.5" class="f-text" font-weight="500">Replay from this step</text>
+<rect x="1162.61" y="199.5" width="58.62" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="1175.11" y="218.72" font-size="13.5" class="f-text" font-weight="500">Open</text>
+<text x="1144.11" y="218.55" font-size="13" class="f-faint" text-anchor="end">23m ago</text>
 <text x="46" y="259.85" font-size="11" class="f-faint" font-weight="600" letter-spacing="0.99">STATE</text>
 <text x="166" y="259.85" font-size="11" class="f-faint" font-weight="600" letter-spacing="0.99">RUN</text>
 <text x="288" y="259.85" font-size="11" class="f-faint" font-weight="600" letter-spacing="0.99">WORKFLOW</text>
@@ -8835,8 +8840,8 @@ resource "agentiik_workflow" "search" {
 <rect x="1187" y="333.9" width="5" height="12.1" rx="1" class="f-muted" opacity=".6"/>
 <rect x="1194" y="339.25" width="5" height="6.75" rx="1" class="f-fail"/>
 <rect x="1201" y="333.44" width="5" height="12.56" rx="1" class="f-muted" opacity=".6"/>
-<path transform="translate(1250.99 331)" d="M3.2 8a4.8 4.8 0 1 0 1.4-3.4M3.2 2.8v2.6h2.6" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="1274.99" y="343.73" font-size="13.5" class="f-muted" font-weight="500">Replay from invoice</text>
+<path transform="translate(1242.73 331)" d="M3.2 8a4.8 4.8 0 1 0 1.4-3.4M3.2 2.8v2.6h2.6" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1266.73" y="343.73" font-size="13.5" class="f-muted" font-weight="500">Replay from this step</text>
 <path d="M40 405H1400" class="f-none s-line" stroke-width="0.8"/>
 <rect x="46.5" y="372.5" width="111" height="21" rx="3" class="f-fail-bg s-fail-line" stroke-width="1"/>
 <circle cx="57" cy="383" r="3.4" class="f-fail"/>
@@ -9181,10 +9186,10 @@ resource "agentiik_workflow" "search" {
 <text x="234.85" y="888.55" font-size="13" class="f-muted">Approve</text>
 <rect x="302.36" y="874.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
 <text x="307.86" y="888.2" font-size="12" class="f-text t-mono" font-weight="700">p</text>
-<text x="328.06" y="888.55" font-size="13" class="f-muted">Replay from invoice</text>
-<rect x="460.31" y="874.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
-<text x="465.81" y="888.2" font-size="12" class="f-text t-mono" font-weight="700">?</text>
-<text x="486.01" y="888.55" font-size="13" class="f-muted">Keys</text>
+<text x="328.06" y="888.55" font-size="13" class="f-muted">Replay from this step</text>
+<rect x="468.26" y="874.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="473.76" y="888.2" font-size="12" class="f-text t-mono" font-weight="700">?</text>
+<text x="493.96" y="888.55" font-size="13" class="f-muted">Keys</text>
 <text x="1422" y="888.38" font-size="12.5" class="f-faint t-mono" text-anchor="end" textLength="112.5">agentiik v0.6.0</text>
 <rect x="650.4" y="307" width="279.2" height="20" rx="5" class="f-text"/>
 <text x="660.4" y="321.2" font-size="12" class="f-bg t-mono" textLength="259.2">invoice · failed · exit 108 · 1m 47s</text>
@@ -9557,7 +9562,7 @@ resource "agentiik_workflow" "search" {
     <figcaption><b>The graph and the file are one object.</b> Ports sit where the YAML declares them: the <code>rejected</code> edge skips invoicing, and the <code>error</code> port leaves the run intact. Selecting <code>invoice</code> selects its block. Seen by <code>chloe</code>: saving a version that names the secret <code>billing</code> takes <code>secret:use</code>, which comes from namespace grants alone (<a href="#permissions">Permissions</a>).</figcaption>
   </figure>
   <figure class="console">
-    <svg class="mock web" viewBox="0 0 1440 946" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mockup of the web console&#x27;s run inspector on a failed run of monthly-invoicing, in a browser window at agentiik.example.com/finance/runs/01JMZ8V1P9C4, seen by bruno, who holds run:read_data. The run pane names the run, who started it and when, with a sparkline of the workflow&#x27;s last twenty runs, the path through its steps, and Open workflow and Replay from invoice buttons. The steps pane lists normalize succeeded, invoice failed with a strip of its eight shards and each shard&#x27;s duration and attempt, shard 3 failed, and archive not reached; then the runner by name and label, the image digest and the idempotency key. The step pane, in focus, shows exit 108, a transient failure, tabs for input, output, logs and parameters, a port selector with out carrying 211 items and error, selected, carrying 3, Copy, hovered with its tooltip, and Download buttons, the error envelope as coloured JSON on a sunken ground, and the log tail with a masked secret.">
+    <svg class="mock web" viewBox="0 0 1440 946" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mockup of the web console&#x27;s run inspector on a failed run of monthly-invoicing, in a browser window at agentiik.example.com/finance/runs/01JMZ8V1P9C4, seen by bruno, who holds run:read_data. The run pane names the run, who started it and when, with a sparkline of the workflow&#x27;s last twenty runs, the path through its steps, and Open workflow and Replay from this step buttons. The steps pane lists normalize succeeded, invoice failed with a strip of its eight shards and each shard&#x27;s duration and attempt, shard 3 failed, and archive not reached; then the runner by name and label, the image digest and the idempotency key. The step pane, in focus, shows exit 108, a transient failure, tabs for input, output, logs and parameters, a port selector with out carrying 211 items and error, selected, carrying 3, Copy, hovered with its tooltip, and Download buttons, the error envelope as coloured JSON on a sunken ground, and the log tail with a masked secret.">
 <rect x=".5" y=".5" width="1439" height="945" rx="10" class="f-bg"/>
 <path d="M.5 46V10.5a10 10 0 0 1 10-10h1419a10 10 0 0 1 10 10V46z" class="f-raised"/>
 <path d="M.5 45.5H1439.5" class="f-none s-line"/>
@@ -9618,9 +9623,9 @@ resource "agentiik_workflow" "search" {
 <text x="600.23" y="98.55" font-size="13" class="f-muted t-mono" textLength="46.8">1m 52s</text>
 <text x="649.86" y="98.72" font-size="13.5" class="f-faint">· by</text>
 <text x="674.43" y="98.55" font-size="13" class="f-text t-mono" textLength="39">alice</text>
-<rect x="1240.49" y="79.5" width="167.01" height="29" rx="5" class="f-accent s-accent" stroke-width="1"/>
-<path transform="translate(1250.99 86)" d="M3.2 8a4.8 4.8 0 1 0 1.4-3.4M3.2 2.8v2.6h2.6" class="f-none s-on-accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="1274.99" y="98.72" font-size="13.5" class="f-on-accent" font-weight="500">Replay from invoice</text>
+<rect x="1232.23" y="79.5" width="175.27" height="29" rx="5" class="f-accent s-accent" stroke-width="1"/>
+<path transform="translate(1242.73 86)" d="M3.2 8a4.8 4.8 0 1 0 1.4-3.4M3.2 2.8v2.6h2.6" class="f-none s-on-accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1266.73" y="98.72" font-size="13.5" class="f-on-accent" font-weight="500">Replay from this step</text>
 <rect x="1093.36" y="79.5" width="138.12" height="29" rx="5" class="f-raised s-line-strong" stroke-width="1"/>
 <path transform="translate(1103.86 86)" d="M9.5 2.5h4v4M13.5 2.5 8 8M11.5 9.5v4h-9v-9h4" class="f-none s-muted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="1127.86" y="98.72" font-size="13.5" class="f-text" font-weight="500">Open workflow</text>
@@ -9878,10 +9883,10 @@ resource "agentiik_workflow" "search" {
 <text x="146.84" y="888.55" font-size="13" class="f-muted">Port</text>
 <rect x="189.65" y="874.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
 <text x="195.15" y="888.2" font-size="12" class="f-text t-mono" font-weight="700">p</text>
-<text x="215.35" y="888.55" font-size="13" class="f-muted">Replay from invoice</text>
-<rect x="347.6" y="874.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
-<text x="353.1" y="888.2" font-size="12" class="f-text t-mono" font-weight="700">?</text>
-<text x="373.3" y="888.55" font-size="13" class="f-muted">Keys</text>
+<text x="215.35" y="888.55" font-size="13" class="f-muted">Replay from this step</text>
+<rect x="355.55" y="874.5" width="18.2" height="19" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
+<text x="361.05" y="888.2" font-size="12" class="f-text t-mono" font-weight="700">?</text>
+<text x="381.25" y="888.55" font-size="13" class="f-muted">Keys</text>
 <text x="1422" y="888.38" font-size="12.5" class="f-faint t-mono" text-anchor="end" textLength="112.5">agentiik v0.6.0</text>
 <rect x="1165.79" y="303" width="176.5" height="26" rx="5" class="f-text"/>
 <text x="1175.79" y="320.38" font-size="12.5" class="f-bg">Copy the envelope as JSON</text>
