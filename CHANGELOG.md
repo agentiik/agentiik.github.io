@@ -24,6 +24,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 - The web console's figures are screenshots of the console v0.6.0 builds, in both themes and at twice the page's pixels, where they were mockups: on the home page, its home and a workflow being edited, as wide as they are taken, and in the documentation nine screens, an administrator's home among them, as wide as the column. `agk console`'s are screenshots too, seven of its views drawn cell by cell from what the console writes into a virtual terminal, the 80 by 24 one in 256 colours; the approval, which arrives in v0.8.0, stays a mockup. Each is made to read as one installation at one moment: identifiers that name their instant, digests SHA-256 could have drawn, a workflow's earlier runs, runners heard from seconds ago. `.github/console-shots.mjs` renders them all again from an agentiik checkout, and the README says how.
 - The roadmap is marked with what v0.6.0 did.
+- On the roadmap, browsing the brick catalog in the web console moves to v0.8.0, into the group that builds `GET /api/v1/bricks`, the route it reads.
 
 ## v0.5.0, 2026-09-30
 
