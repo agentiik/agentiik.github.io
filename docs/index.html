@@ -5624,6 +5624,10 @@ Authorization: Bearer &lt;an administrator's token&gt;
       <li><code>workflow:delete</code> is the owner's alone. Every change an editor makes is a new version the history keeps; a deletion takes the versions with it, and nothing brings them back.</li>
       <li>The <code>secret</code> column is <code>secret:write</code>: <code>editor</code> holds it by default, and a deny takes it away where only owners should say where a value lives.</li>
     </ul>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A namespace's workflows are listed to whoever reads the runs of one, <code>run:read</code>, rather than to whoever reads the workflow, <code>workflow:read</code>. Every role holds <code>run:read</code>, an <code>operator</code> among them, which runs a workflow it does not read and has to find it first; a listing under <code>workflow:read</code> would leave it a workflow it may run and cannot name. So the listing answers what the runs already tell their readers, each workflow's name and its latest run, and nothing of its repository or its file: its default branch, its head and its graph stay behind <code>workflow:read</code>.</p>
+    </div>
 
     <h3 id="scopes-and-resolution">Scopes and resolution</h3>
   </div>
