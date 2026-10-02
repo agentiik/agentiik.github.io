@@ -28,14 +28,21 @@ LICENSES/              the full text of both licences the repository uses
 README.md
 ```
 
-`assets/` holds the web console mockups, one file per screen and per theme:
+`assets/` holds the screenshots of the web console, one file per screen and per theme, taken at 1440 pixels wide and twice the pixels of the page:
 
 | Screen | Light | Dark |
 | --- | --- | --- |
-| Run list | `console-runs-light.png` | `console-runs-dark.png` |
-| Workflow and graph | `console-graph-light.png` | `console-graph-dark.png` |
+| Home | `console-home-light.png` | `console-home-dark.png` |
+| Home, to an administrator | `console-admin-home-light.png` | `console-admin-home-dark.png` |
+| A workflow's runs | `console-runs-light.png` | `console-runs-dark.png` |
+| A workflow being edited | `console-editor-light.png` | `console-editor-dark.png` |
 | Run inspector | `console-inspector-light.png` | `console-inspector-dark.png` |
-| Access and sharing | `console-sharing-light.png` | `console-sharing-dark.png` |
+| Sharing | `console-sharing-light.png` | `console-sharing-dark.png` |
+| A workflow's statistics | `console-workflow-statistics-light.png` | `console-workflow-statistics-dark.png` |
+| A namespace's quotas | `console-quotas-light.png` | `console-quotas-dark.png` |
+| Runner pools | `console-pools-light.png` | `console-pools-dark.png` |
+
+They are taken of the console a release builds rather than drawn: `node .github/console-shots.mjs ../agentiik`, with `npm ci && npm run build` run first in that checkout's `console/` at the release the site describes, renders them all again from the recorded answers the console's screen tests use, made to read as one installation at one moment. The script says how.
 
 `social-home.png`, `social-docs.png` and `social-roadmap.png` are the cards a shared link to the home page, the documentation and the roadmap shows, rendered from `brand/social.html`, which `brand/README.md` says how to render again.
 
