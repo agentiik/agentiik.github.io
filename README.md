@@ -28,14 +28,28 @@ LICENSES/              the full text of both licences the repository uses
 README.md
 ```
 
-`assets/` holds the web console mockups, one file per screen and per theme:
+`assets/` holds the screenshots of the web console and of `agk console`, one file per screen and per theme, at twice the pixels of the page: the web console's taken 1440 pixels wide, the terminal's one cell to 7.5 by 16.5 pixels.
 
 | Screen | Light | Dark |
 | --- | --- | --- |
-| Run list | `console-runs-light.png` | `console-runs-dark.png` |
-| Workflow and graph | `console-graph-light.png` | `console-graph-dark.png` |
+| Home | `console-home-light.png` | `console-home-dark.png` |
+| Home, to an administrator | `console-admin-home-light.png` | `console-admin-home-dark.png` |
+| A workflow's runs | `console-runs-light.png` | `console-runs-dark.png` |
+| A workflow being edited | `console-editor-light.png` | `console-editor-dark.png` |
 | Run inspector | `console-inspector-light.png` | `console-inspector-dark.png` |
-| Access and sharing | `console-sharing-light.png` | `console-sharing-dark.png` |
+| Sharing | `console-sharing-light.png` | `console-sharing-dark.png` |
+| A workflow's statistics | `console-workflow-statistics-light.png` | `console-workflow-statistics-dark.png` |
+| A namespace's quotas | `console-quotas-light.png` | `console-quotas-dark.png` |
+| Runner pools | `console-pools-light.png` | `console-pools-dark.png` |
+| `agk console`: three panes, one run | `console-term-run-light.png` | `console-term-run-dark.png` |
+| `agk console` at 80 by 24, in 256 colours | `console-term-ssh-light.png` | `console-term-ssh-dark.png` |
+| `agk console`: a step's ports | `console-term-ports-light.png` | `console-term-ports-dark.png` |
+| `agk console`: sharing | `console-term-sharing-light.png` | `console-term-sharing-dark.png` |
+| `agk console`: runners | `console-term-runners-light.png` | `console-term-runners-dark.png` |
+| `agk console`: the graph | `console-term-graph-light.png` | `console-term-graph-dark.png` |
+| `agk console`: the command palette | `console-term-palette-light.png` | `console-term-palette-dark.png` |
+
+They are taken of the console a release builds rather than drawn: `node .github/console-shots.mjs ../agentiik`, with `npm ci && npm run build` run first in that checkout's `console/` at the release the site describes, renders them all again from the recorded answers the console's screen tests use, made to read as one installation at one moment; `agk console`'s are drawn by `.github/agk-console-shots_test.go`, which the script copies beside that package's own screen tests and removes, with the checkout's Go toolchain. A second argument renders only the screens whose name it matches. The script says how.
 
 `social-home.png`, `social-docs.png` and `social-roadmap.png` are the cards a shared link to the home page, the documentation and the roadmap shows, rendered from `brand/social.html`, which `brand/README.md` says how to render again.
 
