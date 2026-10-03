@@ -7887,7 +7887,7 @@ flowchart LR
           <tr><td>workflow.commit</td><td>Writes files and commits to a branch, through the pre-receive validation.</td><td><code>workflow:write</code>, and <code>secret:use</code> where the commit names a secret</td></tr>
           <tr><td>workflow.update</td><td>Renames the workflow, moves it to another namespace, or names and protects its default branch.</td><td><code>workflow:write</code>; owning both namespaces, to move it; <code>grant:manage</code>, for its default branch</td></tr>
           <tr><td>workflow.delete</td><td>Deletes the workflow with its runs.</td><td><code>workflow:delete</code></td></tr>
-          <tr><td>workflow.run</td><td>Starts a run, optionally on a ref other than the default branch.</td><td><code>workflow:run</code></td></tr>
+          <tr><td>workflow.run</td><td>Starts a run, optionally on a ref other than the default branch, as the API's manual trigger does: its <code>trigger_kind</code> is <code>manual</code>, since <code>mcp</code> names a call through a collection.</td><td><code>workflow:run</code></td></tr>
           <tr><td>run.list, run.get</td><td>Run history and state; without <code>run:read_data</code>, a run names no inputs.</td><td><code>run:read</code></td></tr>
           <tr><td>run.logs</td><td>A step's log tail, secrets masked.</td><td><code>run:read</code></td></tr>
           <tr><td>run.output</td><td>A named output of a finished run.</td><td><code>run:read_data</code></td></tr>
@@ -8052,7 +8052,7 @@ flowchart LR
     </div>
 
     <ul class="plain">
-      <li>A tool call is a run: the calling principal's, with <code>trigger_kind: mcp</code> and the collection it came through, in the run list, under the namespace quota and the workflow's concurrency group. A client calling in a loop meets the rate limit a webhook would.</li>
+      <li>A tool call is a run: the calling principal's, with <code>trigger_kind: mcp</code> and the collection it came through, which the run records as <code>collection</code>, the collection's <code>id</code> and the <code>tool</code> it was called as, and keeps once the collection is gone, in the run list, under the namespace quota and the workflow's concurrency group. A client calling in a loop meets the rate limit a webhook would.</li>
       <li>Listing a collection is its owner's; calling one of its tools requires <code>workflow:run</code> on the workflow, never <code>workflow:read</code>.</li>
     </ul>
 
