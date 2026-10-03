@@ -4135,15 +4135,12 @@ on:
     - type: com.example.order.approved
       filter: ${{ event.data.amount &gt; 0 }}
 
-<span class="c"># --- Published as tools ---------------------------------------------</span>
+<span class="c"># --- Published as a tool --------------------------------------------</span>
 mcp:
-  name: invoicing
-  tools:
-    - name: create_invoice
-      description: Issue one invoice for a customer.
-      input:  { from: { input: orders } }
-      output: { from: { output: invoices } }
-      mode: sync
+  name: create_invoices
+  description: Issue the invoices for a set of orders, and return them.
+  output: invoices
+  mode: sync
 
 <span class="c"># --- Reuse ----------------------------------------------------------</span>
 include:
