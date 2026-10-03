@@ -8045,9 +8045,9 @@ flowchart LR
       <table>
         <thead><tr><th>Declared</th><th>Becomes, on the wire</th></tr></thead>
         <tbody>
-          <tr><td>the workflow's inputs</td><td><code>inputSchema</code>: an object whose properties are the workflow's inputs, each with its own JSON Schema as it stands, the required ones required, and its references into the repository bundled in, since a client cannot read the tree. No second schema can drift.</td></tr>
-          <tr><td>output</td><td><code>outputSchema</code> when the output declares a schema. Its envelope goes in <code>structuredContent</code>, with a text rendering alongside.</td></tr>
-          <tr><td>mode: sync</td><td>Waits for the run and returns the output, for 120 seconds at most, because clients time out. A workflow that cannot finish inside that must be <code>async</code>.</td></tr>
+          <tr><td>the workflow's inputs</td><td><code>inputSchema</code>: an object whose properties are the workflow's inputs, each with its own JSON Schema as it stands, the required ones required, and its references into the repository bundled in, since a client cannot read the tree. No second schema can drift. Each file an input reaches is embedded under <code>$defs</code> with the <code>$id</code> the engine compiles it under, <code>agk://repo/</code> and its path, and the schema's own <code>$id</code> is <code>agk://repo/</code>, so that <code>./schemas/order.json</code> resolves to the file embedded beside it as JSON Schema 2020-12 resolves any embedded resource, with nothing rewritten.</td></tr>
+          <tr><td>output</td><td><code>outputSchema</code> when the output declares a schema: the envelope, whose items' <code>data</code> are held to the output's schema, since that schema says what the items carry and the protocol holds a structured result to its <code>outputSchema</code>. Its envelope goes in <code>structuredContent</code>, with a text rendering alongside.</td></tr>
+          <tr><td>mode: sync</td><td>Waits for the run and returns the output, for its <code>timeout</code>, or 120 seconds where it writes none, because clients time out. A workflow that cannot finish inside that must be <code>async</code>. A run still going when the wait is over goes on, and the call answers its identifier and its state, to follow with the user's server's <code>run.get</code>, rather than an error the run did not make.</td></tr>
           <tr><td>mode: async</td><td>Returns the run identifier at once, to follow with the user's server's <code>run.get</code>. A collection never grows a polling tool.</td></tr>
         </tbody>
       </table>
@@ -8056,7 +8056,14 @@ flowchart LR
     <ul class="plain">
       <li>A tool call is a run: the calling principal's, with <code>trigger_kind: mcp</code> and the collection it came through, which the run records as <code>collection</code>, the collection's <code>id</code> and the <code>tool</code> it was called as, and keeps once the collection is gone, in the run list, under the namespace quota and the workflow's concurrency group. A client calling in a loop meets the rate limit a webhook would.</li>
       <li>Listing a collection is its owner's; calling one of its tools requires <code>workflow:run</code> on the workflow, never <code>workflow:read</code>.</li>
+      <li>A member is read at a branch or a tag, never a commit, so that it follows its workflow; a commit named as its <code>ref</code> is refused when the member is written.</li>
+      <li>A version stored before v0.7.0 whose <code>mcp</code> block lists <code>tools</code>, as the language had it then, publishes no tool: its member offers nothing, beside <code>no_mcp_block</code>, until a commit writing the block as one tool reaches its ref. Nothing ever served those tools, and the version keeps building and running as it was accepted.</li>
     </ul>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A sync call returns the output of the run it started under <code>workflow:run</code> alone, <code>run:read_data</code> not asked. The result of one's own call is what calling a tool is for, and <code>operator</code>, the role without <code>run:read_data</code>, is exactly a client's grant. Reading the outputs of any run afterwards, this one included, still asks <code>run:read_data</code>.</p>
+    </div>
 
     <div class="decision">
       <span class="note-label">Decision</span>
@@ -8080,6 +8087,7 @@ flowchart LR
         <tbody>
           <tr><td class="wrapcell">the run fails</td><td>A tool execution error, <code>isError: true</code>, naming the failing step, its exit code and its message: the specification says clients should hand those to the model so it can correct itself.</td></tr>
           <tr><td class="wrapcell">an argument is malformed</td><td>A protocol error. The input schema rejects it before any run exists.</td></tr>
+          <tr><td class="wrapcell">the namespace's quota is reached</td><td>A tool execution error, <code>isError: true</code>, saying which quota and when one more run fits, with <code>retry_after_seconds</code> in <code>structuredContent</code>: what a webhook answers as 429 with <code>Retry-After</code>, said where a model reads it, since a tool's result travels inside an answer the protocol already sent.</td></tr>
         </tbody>
       </table>
     </div>
@@ -8695,8 +8703,8 @@ resource "agentiik_workflow" "search" {
           <tr><td>runners</td><td>To an administrator alone: the pools, what each accepts and caps and which namespaces reach it, to write <code>allowed_runner_pools</code> against, and each runner's condition, concurrency, last heartbeat and capacity, never its host.</td></tr>
           <tr><td>administration</td><td>To an administrator alone, under Administration in the sidebar: the users with the installation's sign-in policy, the groups and who is in each, and every namespace with its owner, its quotas and its sign-in policy, <code>allowed_runner_pools</code> chosen among the pools that exist.</td></tr>
           <tr><td>brick catalog</td><td>Manifests, parameter schemas, published examples.</td></tr>
-          <tr><td>MCP panel</td><td>On a workflow that declares one: the tool exactly as a client sees it, its schemas rendered from the declaration, and the caller's collections, those it is in named and adding it to another a click away.</td></tr>
-          <tr><td>collections</td><td>Under the caller's account: their <a href="#collections">collections</a>, each with the URL to give a client, its members, and what each offers or why it offers nothing.</td></tr>
+          <tr><td>MCP panel</td><td>On a workflow that declares one: the tool exactly as a client sees it, its <code>inputSchema</code> the object of the workflow's inputs and its <code>outputSchema</code> the schema of the output it returns, rendered from the declaration, and the caller's collections, those it is in named with what it offers there and adding it to another a click away.</td></tr>
+          <tr><td>MCP</td><td>Under the caller's account, at <code>/me/mcp</code>: the address of the <a href="#the-platform-server">user's server</a>, with the API token a client presents at it, and their <a href="#collections">collections</a>, each with the URL to give a client, its members, and what each offers or why it offers nothing, made, renamed, described and removed there, and a member taken out on a second click. A workflow is added from its MCP panel.</td></tr>
           <tr><td>namespace switcher</td><td>In the sidebar, above the namespace's views: the personal namespace first, shared ones grouped after it, each by its picture or its initial; at its foot, New namespace, to any person, asks a name and creates a shared namespace they own with <code>POST /api/v1/namespaces</code>, then opens it. Another owner and quotas stay an administrator's, from Namespaces.</td></tr>
           <tr><td>credentials</td><td>Enrol, name and remove passkeys, with each one's last use. An administrator sees every user's list, and whether each credential is synced or device-bound.</td></tr>
           <tr><td>profile</td><td>Under the caller's account: their given and family names, which make the display name shown above them, title, location, time zone and bio, written with <code>PATCH /api/v1/me</code>, their email address, shown and not written, since an administrator gives it, and their photo, chosen from a file and set with <code>PUT /api/v1/me/avatar</code> or removed. The photo is drawn wherever the caller is, in the top bar and on the home, and their initial where there is none.</td></tr>
