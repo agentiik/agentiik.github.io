@@ -2356,23 +2356,23 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.7.0 ============ -->
 <section id="m07">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2><span class="tally">0 of 52 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2><span class="tally">0 of 67 done</span></div>
   <div class="prose">
-    <p class="makes"><b>Makes possible:</b> a model-driven client discovers Agentiik, learns the language, writes a valid workflow and runs it, and a workflow appears to such a client as a server of tools.</p>
+    <p class="makes"><b>Makes possible:</b> a model-driven client discovers Agentiik, learns the language, writes a valid workflow and runs it; a user manages their namespaces and workflows from it; and each user assembles the workflows they run into a connector of their own, every workflow one tool.</p>
 
-    <p>MCP is <a href="../#mcp">native</a>, not a gateway bolted onto the API, with two servers:</p>
+    <p>MCP is <a href="../#mcp">native</a>, not a gateway bolted onto the API, with two kinds of server:</p>
 
     <div class="tablewrap">
       <table>
         <thead><tr><th>Endpoint</th><th>Server</th><th>Offers</th><th>Gated by</th></tr></thead>
         <tbody>
-          <tr><td>/mcp</td><td>The platform</td><td>Tools and read-only resources</td><td>Each tool's own permission</td></tr>
-          <tr><td>/mcp/{namespace}/{workflow}</td><td>One workflow</td><td>Its declared tools only</td><td><code>workflow:run</code> alone</td></tr>
+          <tr><td>/mcp</td><td>Each principal's own</td><td>Tools and read-only resources over what they may reach</td><td>Each tool's own permission</td></tr>
+          <tr><td>/mcp/collections/{id}</td><td>A collection</td><td>One tool per member workflow that declares one</td><td>Its owner alone, and <code>workflow:run</code> on each workflow</td></tr>
         </tbody>
       </table>
     </div>
 
-    <p>A resource on a workflow's server would turn <code>workflow:run</code> into a read path into the repository, undoing the separation the roles were built around.</p>
+    <p>A resource on a collection would turn <code>workflow:run</code> into a read path into the repository, undoing the separation the roles were built around.</p>
 
     <p><code>workflow.language</code> is generated from <code>agentiik/schemas</code>, which is why every keyword there has carried a description and examples since v0.1.0: a reference maintained by hand would teach a different language from the one the validator enforces.</p>
 
@@ -2383,13 +2383,14 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <span class="work-repo">schemas</span>
         </div>
         <ul>
-          <li>Add the mcp block to the schema: name, description, and tools[] with name, title, description, input, output, mode, timeout and annotations. <a class="ref" href="../#publishing-tools">publishing-tools</a></li>
-          <li>Constrain it in the schema: tools[].name a unique identifier, mode sync (default) or async, timeout at most 120 seconds, annotations only readOnlyHint, idempotentHint, destructiveHint and openWorldHint. <a class="ref" href="../#publishing-tools">publishing-tools</a><a class="ref" href="../#a-workflow-as-an-mcp-server">a-workflow-as-an-mcp-server</a></li>
+          <li>Add the mcp block to the schema as one tool per workflow: name, the workflow's name where none is written, title, description, output, mode, timeout and annotations. <a class="ref" href="../#publishing-tools">publishing-tools</a></li>
+          <li>Constrain it in the schema: name an identifier, description required, output a declared output's name, mode sync (default) or async, timeout at most 120 seconds and only on sync, annotations only readOnlyHint, idempotentHint, destructiveHint and openWorldHint. <a class="ref" href="../#publishing-tools">publishing-tools</a><a class="ref" href="../#collections">collections</a></li>
           <li>Give every workflow, brick manifest and envelope keyword a description and examples, failing the build otherwise. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#repos">repos</a></li>
           <li>Generate a reference page per topic (repository, inputs, outputs, triggers, steps, ports, needs, merge, fan_out, retry, expressions, secrets, files, script, includes, mcp): summary, keywords, schema fragment, worked examples. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a></li>
           <li>Generate the no-topic orientation: what the language is, one complete minimal workflow, and the list of topics. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a></li>
           <li>Publish the entry point, brick manifest and envelope as JSON Schema 2020-12 parts addressable by name. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a></li>
-          <li>Add mcp to the trigger_kind enumeration wherever a run records what started it. <a class="ref" href="../#triggers">triggers</a></li>
+          <li>Add mcp to the trigger_kind enumeration wherever a run records what started it, and the collection a run came through. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#collections">collections</a></li>
+          <li>Describe a collection, its members and what each offers in wire.schema.json, and the routes under /api/v1/me/collections in openapi.json. <a class="ref" href="../#collections">collections</a><a class="ref" href="../#api">api</a></li>
           <li>Test that every topic page's examples validate against their schema fragment, and that no topic lacks examples. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
       </div>
@@ -2399,33 +2400,42 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Serve Streamable HTTP on one POST and GET endpoint, validating Origin on every connection and issuing an Mcp-Session-Id at initialisation. <a class="ref" href="../#protocol">protocol</a></li>
+          <li>Serve Streamable HTTP on one POST endpoint, validating Origin on every request and keeping no session, as the revision has none: a GET or a DELETE answers 405. <a class="ref" href="../#protocol">protocol</a></li>
           <li>Speak revision 2026-07-28, with the version in _meta under io.modelcontextprotocol/protocolVersion and in the MCP-Protocol-Version header. <a class="ref" href="../#protocol">protocol</a></li>
           <li>Implement server/discover, its instructions field saying: a workflow is a git repository, agentiik.yaml at its root, workflow.language before drafting, workflow.validate before committing. <a class="ref" href="../#protocol">protocol</a></li>
           <li>Act as an OAuth 2.1 resource server: publish Protected Resource Metadata, require Agentiik as token audience, never accept or forward a token issued for another audience, answer 401 when invalid and 403 with WWW-Authenticate: Bearer error=&quot;insufficient_scope&quot; when a scope is missing. <a class="ref" href="../#protocol">protocol</a></li>
-          <li>Accept an ordinary API bearer token on both endpoints, so a service account needs no browser. <a class="ref" href="../#protocol">protocol</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a></li>
+          <li>Accept an ordinary API bearer token on /mcp and on every collection, so a service account needs no browser. <a class="ref" href="../#protocol">protocol</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a></li>
           <li>Read the trusted issuer, audience and key set from installation configuration, refreshing keys without restarting the API. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
-          <li>Execute every call as the presenting principal, neither endpoint holding authority of its own, and re-authorise at run creation like any trigger. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a></li>
-          <li>Serve both endpoints from the API process, with no new component, no new port and no deployment profile change. <a class="ref" href="../#mcp">mcp</a></li>
-          <li>Turn both endpoints off with AGK_MCP=off, each answering 404 as a route the installation does not serve, the push still accepting and checking an mcp block and the console's MCP panel saying the installation serves none, and refuse at start any value of AGK_MCP but on and off. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#configuration">configuration</a></li>
-          <li>Run both servers against a conformance client: initialisation, server/discover, tools/list, tools/call and resources/read, over HTTP and its session. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li>Execute every call as the presenting principal, no endpoint holding authority of its own, and re-authorise at run creation like any trigger. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a></li>
+          <li>Serve /mcp and every collection from the API process, with no new component, no new port and no deployment profile change. <a class="ref" href="../#mcp">mcp</a></li>
+          <li>Turn /mcp and every collection off with AGK_MCP=off, each answering 404 as a route the installation does not serve, the push still accepting and checking an mcp block, the collections kept, and the console's MCP panel saying the installation serves none, and refuse at start any value of AGK_MCP but on and off. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#configuration">configuration</a></li>
+          <li>Run the user's server and a collection against a conformance client: server/discover, tools/list, tools/call and resources/read, over HTTP, each request standing alone. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
       </div>
       <div class="work-group">
         <div class="work-head">
-          <h4>The platform server and its tools</h4>
+          <h4>The user's server and its tools</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Implement workflow.list, workflow.get, workflow.create, workflow.commit and workflow.run over their API routes, under workflow:read, namespace owner, workflow:write and workflow:run. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#api">api</a></li>
+          <li>Implement namespace.list and namespace.get for whoever holds a grant in the namespace, namespace.create for any user, namespace.update and namespace.delete for its owner or an administrator, and namespace.quotas for an administrator, over their API routes. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a><a class="ref" href="../#administrators">administrators</a></li>
+          <li>Implement grant.list, grant.create and grant.revoke on a namespace or a workflow under grant:manage, telling the owners of an administrator widening their own access as the API does. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#administrators">administrators</a></li>
+          <li>Implement secret.list under workflow:read at namespace scope, and secret.declare and secret.remove under secret:write, taking a provider and a path and never a builtin secret's value. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#secrets">secrets</a></li>
+          <li>Implement workflow.list, workflow.get, workflow.create, workflow.commit and workflow.run over their API routes, under workflow:read, workflow:write at namespace scope, workflow:write and workflow:run. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#api">api</a></li>
+          <li>Implement workflow.update and workflow.delete over the workflow's PATCH and DELETE, under what each field of the PATCH asks and workflow:delete. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#api">api</a></li>
           <li>Implement run.list, run.get and run.logs under run:read, with the log tail masked, and run.output under run:read_data. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
           <li>Implement run.cancel and run.replay under workflow:run. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#run-states">run-states</a></li>
           <li>Implement brick.list and brick.get (manifest and parameter schema) for any authenticated principal, and runner.list for an administrator. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
+          <li>Implement collection.list, collection.get, collection.create, collection.update, collection.delete, collection.add and collection.remove over the collection routes, for the caller's own collections alone. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#collections">collections</a></li>
+          <li>Issue, show and take no credential through any tool: no API token, no service account's token, no passkey, recovery code or enrolment link, no webhook's secret or certificate, no secret's value. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
           <li>Filter tools/list by effective permissions on every request, so an unusable tool is absent rather than refused. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
-          <li>Mark workflow.language, workflow.schema, workflow.validate and every other read-only tool with readOnlyHint. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a></li>
+          <li>Mark workflow.language, workflow.schema, workflow.validate and every other read-only tool with readOnlyHint, and namespace.delete, grant.revoke, workflow.delete and collection.delete with destructiveHint. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#the-platform-server">the-platform-server</a></li>
           <li>Serve the read-only resources agentiik://{ns}/{name}/tree/{ref}/{path}, agentiik://run/{id}, agentiik://brick/{name}, agentiik://schema/{part} and agentiik://language/{topic}, each under its tool's permission. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
-          <li>Make workflow.commit a real git commit by the calling principal, marked as arriving through MCP so git log and the audit log agree, with the pre-receive hook as backstop. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#observability">observability</a></li>
-          <li>Answer the same 404 for absent and invisible workflows on every tool and resource, so names cannot be discovered. <a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
+          <li>Serve POST /api/v1/{ns}/workflows/{name}/commits: files committed onto a branch as the caller from the parent they were read at, and received by the path a git push takes, the pre-receive hook, a push's grants and audit, refused with 409 where the branch moved and 422 with the hook's rule, place, pointer, expectation and topic. <a class="ref" href="../#api">api</a><a class="ref" href="../#the-workflow-repository">the-workflow-repository</a></li>
+          <li>Commit from the web console's editor with POST /api/v1/{ns}/workflows/{name}/commits, dropping the git client, the pack fetch and the push token the page carried. <a class="ref" href="../#ui">ui</a></li>
+          <li>Write an empty repository's first agentiik.yaml from the web console, a first workflow on an image pinned by digest committed with no parent, and say above every screen a console opened away from the public URL's origin, which the API writes into the page, linking the same page there. <a class="ref" href="../#ui">ui</a></li>
+          <li>Make workflow.commit a real git commit by the calling principal with POST /api/v1/{ns}/workflows/{name}/commits, marked as arriving through MCP by a Via: mcp trailer and its audit entry so git log and the audit log agree, with the pre-receive hook as backstop. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#observability">observability</a></li>
+          <li>Answer the same 404 for absent and invisible workflows and namespaces on every tool and resource, so names cannot be discovered. <a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
           <li>Test the tool set per role (viewer, operator, editor, owner, administrator), recording what each is offered and refused. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
       </div>
@@ -2438,7 +2448,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Implement workflow.language: a topic returns its page, no topic returns the orientation, a minimal workflow and the topic list. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a></li>
           <li>Build workflow.language from the reference generated in agentiik/schemas, so the tool, the command line and the site teach one language. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#repos">repos</a></li>
           <li>Implement workflow.schema, returning the JSON Schema 2020-12 document for the entry point, a brick manifest or an envelope. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a></li>
-          <li>Implement workflow.validate over a candidate file set (includes, extends and defaults resolved, cycles and ports checked), committing nothing, as the only authority on a draft. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#publishing-tools">publishing-tools</a></li>
+          <li>Implement workflow.validate over a candidate file set (includes, extends and defaults resolved, cycles and ports checked), committing nothing, as the only authority on a draft, with POST /api/v1/{ns}/workflows/{name}/validate, which the pre-receive hook's own check answers. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#publishing-tools">publishing-tools</a></li>
           <li>Give every validation error a JSON Pointer to the offending node, what was expected there, and the workflow.language topic covering it. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a></li>
           <li>Return the same errors from agk validate, the pre-receive hook and the API. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#command-line">command-line</a></li>
           <li>Test the sequence with a fresh client: workflow.language, brick.list and brick.get, a draft, workflow.validate until it passes, workflow.commit. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
@@ -2446,20 +2456,25 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       </div>
       <div class="work-group">
         <div class="work-head">
-          <h4>A workflow published as a server</h4>
+          <h4>Collections, a connector of one's own</h4>
           <span class="work-repo">agentiik</span>
         </div>
         <ul>
-          <li>Refuse at the push an mcp block in an included file, or with an undeclared input.from or output.from, a repeated or invalid tool name, a schemaless input, a sync timeout over the ceiling or an async timeout. <a class="ref" href="../#publishing-tools">publishing-tools</a></li>
-          <li>Serve /mcp/{namespace}/{workflow} only for an entry point with an mcp block: empty tools serve an empty list, no block serves 404. <a class="ref" href="../#a-workflow-as-an-mcp-server">a-workflow-as-an-mcp-server</a><a class="ref" href="../#publishing-tools">publishing-tools</a></li>
-          <li>Build each tool from its declaration alone: inputSchema is the named input's JSON Schema as it stands, outputSchema the named output's when it declares one, annotations unchanged, nothing from the graph. <a class="ref" href="../#a-workflow-as-an-mcp-server">a-workflow-as-an-mcp-server</a><a class="ref" href="../#publishing-tools">publishing-tools</a></li>
-          <li>Implement mode: sync, waiting for the run within the tool's timeout (at most 120 seconds) and returning the envelope in structuredContent with a text rendering. <a class="ref" href="../#a-workflow-as-an-mcp-server">a-workflow-as-an-mcp-server</a></li>
-          <li>Implement mode: async, returning the run identifier at once, with no polling tool: the platform server's run.get follows it. <a class="ref" href="../#a-workflow-as-an-mcp-server">a-workflow-as-an-mcp-server</a></li>
-          <li>Start a run on tools/call with trigger_kind: mcp, the arguments as inputs and the caller as principal, listed like any run and holding the concurrency group. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#a-workflow-as-an-mcp-server">a-workflow-as-an-mcp-server</a></li>
-          <li>Gate listing and calling on workflow:run alone, never workflow:read, and expose no resources, no prompts and no path into the tree. <a class="ref" href="../#a-workflow-as-an-mcp-server">a-workflow-as-an-mcp-server</a></li>
-          <li>Keep a tool's name, title and description stable across commits, so a rename is a removal plus an addition. <a class="ref" href="../#publishing-tools">publishing-tools</a></li>
-          <li>Prove that operator alone lists and calls the tools but reaches no entry point, no step and no endpoint the steps talk to through any accepted request. <a class="ref" href="../#a-workflow-as-an-mcp-server">a-workflow-as-an-mcp-server</a><a class="ref" href="../#roles">roles</a></li>
-          <li>Migrate the run store to record the mcp trigger kind and the published tool that started the run. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li>Store collections and their members, each collection owned by the principal that made it and removed with it, at most 50 per principal and 100 members each. <a class="ref" href="../#collections">collections</a><a class="ref" href="../#principals">principals</a></li>
+          <li>Serve GET and POST /api/v1/me/collections, GET, PATCH and DELETE /api/v1/me/collections/{id}, and PUT and DELETE /api/v1/me/collections/{id}/members/{ns}/{name} to the collection's owner alone, another principal's collection answered 404. <a class="ref" href="../#collections">collections</a><a class="ref" href="../#api">api</a></li>
+          <li>Refuse a member whose tool name another member gives with 409, naming it, a ref the repository does not hold with 422, and a workflow the owner cannot run as one that does not exist. <a class="ref" href="../#collections">collections</a></li>
+          <li>Serve /mcp/collections/{id} to its owner alone, anybody else, an administrator included, answered 404 as for a collection that does not exist. <a class="ref" href="../#collections">collections</a></li>
+          <li>Build each member's tool from the entry point at the head of its ref at every tools/list: inputSchema an object of the workflow's inputs, each with its schema as it stands and its references into the repository bundled in, outputSchema the output's when it declares one, annotations unchanged, nothing from the graph. <a class="ref" href="../#collections">collections</a><a class="ref" href="../#publishing-tools">publishing-tools</a></li>
+          <li>Leave out of tools/list, rather than refuse, a member whose entry point at its ref declares no mcp block or whose workflow the owner may no longer run, and say which in the collection's record, no_mcp_block or not_runnable. <a class="ref" href="../#collections">collections</a></li>
+          <li>Keep a tool's name stable across commits, so that renaming it in the mcp block withdraws one tool and publishes another in every collection that does not name it with as. <a class="ref" href="../#publishing-tools">publishing-tools</a><a class="ref" href="../#collections">collections</a></li>
+          <li>Refuse at the push an mcp block in an included file, or with no description, an invalid name, an output the workflow does not declare, a workflow input with no schema, a sync timeout over the ceiling or a timeout on async. <a class="ref" href="../#publishing-tools">publishing-tools</a></li>
+          <li>Implement mode: sync, waiting for the run within the tool's timeout (at most 120 seconds) and returning the envelope in structuredContent with a text rendering. <a class="ref" href="../#collections">collections</a></li>
+          <li>Implement mode: async, returning the run identifier at once, with no polling tool: the user's server's run.get follows it. <a class="ref" href="../#collections">collections</a></li>
+          <li>Start a run on tools/call with trigger_kind: mcp, the arguments as inputs, at the commit the member's ref points at, the caller as principal, listed like any run with the collection it came through and holding the concurrency group. <a class="ref" href="../#triggers">triggers</a><a class="ref" href="../#collections">collections</a></li>
+          <li>Gate calling on workflow:run alone, never workflow:read, and expose no resources, no prompts and no path into the tree. <a class="ref" href="../#collections">collections</a></li>
+          <li>Show the caller's collections in the web console, each with its URL, its members and what each offers or why it offers nothing, and add a workflow to one from its MCP panel. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#collections">collections</a></li>
+          <li>Prove that operator alone lists and calls a collection's tools but reaches no entry point, no step and no endpoint the steps talk to through any accepted request. <a class="ref" href="../#collections">collections</a><a class="ref" href="../#roles">roles</a></li>
+          <li>Migrate the run store to record the mcp trigger kind, the collection and the tool that started the run. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
       </div>
       <div class="work-group">
@@ -2473,15 +2488,15 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Apply the log masking unchanged to every MCP result, so no secret appears in one. <a class="ref" href="../#errors-and-obligations">errors-and-obligations</a><a class="ref" href="../#secrets">secrets</a></li>
           <li>Return an artifact reference, not the artifact, once a result passes the size ceiling, which envelope_max_bytes and inline_max_bytes already set, inventing no second one. <a class="ref" href="../#errors-and-obligations">errors-and-obligations</a><a class="ref" href="../#size-rules">size-rules</a></li>
           <li>Rate limit tool calls with max_runs_per_hour, max_concurrent_tasks and the concurrency group, answering a looping client as a webhook is answered. <a class="ref" href="../#errors-and-obligations">errors-and-obligations</a><a class="ref" href="../#quotas-per-namespace">quotas-per-namespace</a></li>
-          <li>Record MCP commits, run creations and cancellations in the audit log beside API ones, naming principal and tool. <a class="ref" href="../#observability">observability</a><a class="ref" href="../#the-platform-server">the-platform-server</a></li>
-          <li>Test the four obligations (inputs validated, access controlled, invocations rate limited, outputs sanitised) on both servers. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li>Record MCP commits, grants, secret declarations, run creations and cancellations in the audit log beside API ones, naming principal and tool. <a class="ref" href="../#observability">observability</a><a class="ref" href="../#the-platform-server">the-platform-server</a></li>
+          <li>Test the four obligations (inputs validated, access controlled, invocations rate limited, outputs sanitised) on the user's server and on a collection. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
         </ul>
       </div>
     </div>
 
     <div class="gate">
       <span class="note-label">Done when</span>
-      <p>A client that has never seen Agentiik writes a valid workflow from <code>workflow.language</code> alone, and <code>workflow:run</code> on a workflow reveals nothing of its tree.</p>
+      <p>A client that has never seen Agentiik writes a valid workflow from <code>workflow.language</code> alone; a user manages their namespaces and workflows from <code>/mcp</code> and connects a client to a collection of their own; and <code>workflow:run</code> on a workflow reveals nothing of its tree.</p>
     </div>
     <p class="where"><span>Repositories</span> <code>agentiik</code> · <code>schemas</code></p>
   </div>
