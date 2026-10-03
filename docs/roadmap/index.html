@@ -2356,7 +2356,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.7.0 ============ -->
 <section id="m07">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2><span class="tally">0 of 66 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2><span class="tally">0 of 67 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a model-driven client discovers Agentiik, learns the language, writes a valid workflow and runs it; a user manages their namespaces and workflows from it; and each user assembles the workflows they run into a connector of their own, every workflow one tool.</p>
 
@@ -2433,6 +2433,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Serve the read-only resources agentiik://{ns}/{name}/tree/{ref}/{path}, agentiik://run/{id}, agentiik://brick/{name}, agentiik://schema/{part} and agentiik://language/{topic}, each under its tool's permission. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
           <li>Serve POST /api/v1/{ns}/workflows/{name}/commits: files committed onto a branch as the caller from the parent they were read at, and received by the path a git push takes, the pre-receive hook, a push's grants and audit, refused with 409 where the branch moved and 422 with the hook's rule, place, pointer, expectation and topic. <a class="ref" href="../#api">api</a><a class="ref" href="../#the-workflow-repository">the-workflow-repository</a></li>
           <li>Commit from the web console's editor with POST /api/v1/{ns}/workflows/{name}/commits, dropping the git client, the pack fetch and the push token the page carried. <a class="ref" href="../#ui">ui</a></li>
+          <li>Write an empty repository's first agentiik.yaml from the web console, a first workflow on an image pinned by digest committed with no parent, and say above every screen a console opened away from the public URL's origin, which the API writes into the page, linking the same page there. <a class="ref" href="../#ui">ui</a></li>
           <li>Make workflow.commit a real git commit by the calling principal with POST /api/v1/{ns}/workflows/{name}/commits, marked as arriving through MCP by a Via: mcp trailer and its audit entry so git log and the audit log agree, with the pre-receive hook as backstop. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#observability">observability</a></li>
           <li>Answer the same 404 for absent and invisible workflows and namespaces on every tool and resource, so names cannot be discovered. <a class="ref" href="../#scopes-and-resolution">scopes-and-resolution</a><a class="ref" href="../#what-sharing-does-not-expose">what-sharing-does-not-expose</a></li>
           <li>Test the tool set per role (viewer, operator, editor, owner, administrator), recording what each is offered and refused. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
