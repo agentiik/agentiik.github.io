@@ -707,7 +707,7 @@ img{max-width:100%}
   <div data-rise style="--delay:.06s">
     <span class="tag">mcp</span>
     <h2>Native MCP</h2>
-    <p>An AI assistant connected to <code>/mcp</code> writes, validates, commits and runs workflows, with its user&#x27;s permissions. A workflow can also be published as an MCP tool. From v0.7.0.</p>
+    <p>An AI assistant connected to <code>/mcp</code> manages its user&#x27;s namespaces and workflows, writes, validates, commits and runs them, with its user&#x27;s permissions. Each user also assembles collections of their own, a connector in which every workflow is a tool. From v0.7.0.</p>
   </div>
   <div data-rise style="--delay:.12s">
     <span class="tag">brick</span>
@@ -833,7 +833,7 @@ throw 4/4 | driver: the container exited 0: the output envelopes are published</
       <li><code>run.output</code><span>the orders it kept</span></li>
     </ol>
   </div>
-  <figcaption><b>Arrives in v0.7.0.</b> Drawn from the documentation, not recorded. Each call runs with your permissions, and of these tools only <code>workflow.commit</code> and <code>workflow.run</code> change anything. A workflow can also be served as a tool of its own, at <code>/mcp/{namespace}/{workflow}</code>: see <a href="docs/#mcp">Native MCP</a>.</figcaption>
+  <figcaption><b>Arrives in v0.7.0.</b> Drawn from the documentation, not recorded. Each call runs with your permissions, and of these tools only <code>workflow.commit</code> and <code>workflow.run</code> change anything. A workflow can also be a tool in a collection of your own, a connector served at <code>/mcp/collections/{id}</code>: see <a href="docs/#collections">Collections</a>.</figcaption>
 </figure>
 </div>
 
