@@ -6,6 +6,26 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## v0.6.0, 2026-10-02
+
+### Documentation
+
+- Every version on the page is v0.6.0's, `agk --version` in Get started names its commit, and the copies of deploy's files are its release's. Install a server and the single-host profile say the API serves the web console at the installation's address, with `init`, the API and the controller running one image, `ghcr.io/agentiik/agentiik`; `AGENTIIK_CONSOLE=off` serves the API alone, and the README says how to try `main` before its release.
+- The web console is described as built: written in Svelte with its charts in uPlot, and served by the API from its own binary, a decision saying why one origin. Its sign-in pages, a home over every namespace with a year of activity a square a day and, to an administrator, the installation's last hour, a sidebar in place of a top bar and a key line, pages held to 1280px and two columns, and a palette drawn in black, white and blue.
+- A workflow's page: its graph and which run it shows, its files, its runs as a tab of the workflow rather than a list the namespace keeps, its statistics and its settings. The visual editor and the YAML editor are one model, edits spliced into the file and resolution shown and never written back, committed over git with a token minted for the commit.
+- The run inspector: its step header, a run's artifacts and how one is fetched, a step's log to find in and download, two runs of one commit side by side, and a step under way cancelled with its run, which a replay reuses none of.
+- What a namespace's owner and an administrator manage there: sharing, with how a group's grants are counted; secrets; namespace variables, read by a run as they stood when it was created; the runners and their pools, created, replaced, drained and revoked; users with an email an administrator gives and a profile and photo they write themself; groups, namespaces any user creates and owns, service accounts, the sign-in policy and the audit log.
+- A command palette on `:` or Search, a Filter field on the lists the API answers whole, the keys each screen names, labels that hold no value, a failure told on screen and explained nowhere else, and everything told what changed over one WebSocket rather than read again on a clock.
+- What the API answers for the console: the statistics, what they count and their Max range, a listing of runs carrying each run's steps, a namespace's workflows to whoever reads their runs, the inputs a run takes to whoever may run it, a repository's branches and tags, and the audit log. What a namespace's runs produce is kept until somebody sets `max_retention_days`, and `agentiik-api` refuses a database lacking a migration it carries.
+- `agk console` is described as built: how often it reads again and what its plain lines hold, where its palette is copied from and how it draws a selection at 256 colours, and its panes, sharing view, keys and mouse.
+- The `agentiik` formula installs `agk-runner` on Linux alone, and a release publishes the console's files as an archive.
+
+### Site
+
+- The web console's figures are screenshots of the console v0.6.0 builds, in both themes and at twice the page's pixels, where they were mockups: on the home page, its home and a workflow being edited, as wide as they are taken, and in the documentation nine screens, an administrator's home among them, as wide as the column. `agk console`'s are screenshots too, seven of its views drawn cell by cell from what the console writes into a virtual terminal, the 80 by 24 one in 256 colours; the approval, which arrives in v0.8.0, stays a mockup. Each is made to read as one installation at one moment: identifiers that name their instant, digests SHA-256 could have drawn, a workflow's earlier runs, runners heard from seconds ago. `.github/console-shots.mjs` renders them all again from an agentiik checkout, and the README says how.
+- The roadmap is marked with what v0.6.0 did.
+- On the roadmap, browsing the brick catalog in the web console moves to v0.8.0, into the group that builds `GET /api/v1/bricks`, the route it reads.
+
 ## v0.5.0, 2026-09-30
 
 ### Documentation
