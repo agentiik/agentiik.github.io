@@ -7909,14 +7909,16 @@ flowchart LR
       <table>
         <thead><tr><th>Resource</th><th>Is</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">agentiik://{ns}/{name}/tree/{ref}/{path}</td><td>A file in a workflow repository.</td></tr>
-          <tr><td>agentiik://run/{id}</td><td>A run.</td></tr>
+          <tr><td class="wrapcell">agentiik://{ns}/{name}/tree/{ref}/{path}</td><td>A file in a workflow repository, at a branch, a tag or a commit, under <code>workflow:read</code> as <code>workflow.get</code>. A ref holding a slash writes it as <code>%2F</code>, since the path after it holds slashes of its own. A file that is UTF-8 is answered as <code>text</code>, typed by its extension, and any other as <code>blob</code>.</td></tr>
+          <tr><td>agentiik://run/{id}</td><td>A run, as <code>run.get</code> answers it, under <code>run:read</code>.</td></tr>
           <tr><td>agentiik://brick/{name}</td><td>A brick manifest.</td></tr>
           <tr><td>agentiik://schema/{part}</td><td>A schema document.</td></tr>
           <tr><td>agentiik://language/{topic}</td><td>A page of the language reference, for clients that prefer attaching documents to calling <code>workflow.language</code>.</td></tr>
         </tbody>
       </table>
     </div>
+
+    <p>Each resource is read through its tool's route as the caller, and its template is listed to whoever holds that tool's permission somewhere, as the tool is. A resource the route refuses is answered as one not found, the same whether it is absent or out of reach, so that a URI tells no more than a tool does.</p>
 
     <div class="decision">
       <span class="note-label">Decision</span>
@@ -8046,7 +8048,7 @@ flowchart LR
         <thead><tr><th>Declared</th><th>Becomes, on the wire</th></tr></thead>
         <tbody>
           <tr><td>the workflow's inputs</td><td><code>inputSchema</code>: an object whose properties are the workflow's inputs, each with its own JSON Schema as it stands, the required ones required, and its references into the repository bundled in, since a client cannot read the tree. No second schema can drift. Each file an input reaches is embedded under <code>$defs</code> with the <code>$id</code> the engine compiles it under, <code>agk://repo/</code> and its path, and the schema's own <code>$id</code> is <code>agk://repo/</code>, so that <code>./schemas/order.json</code> resolves to the file embedded beside it as JSON Schema 2020-12 resolves any embedded resource, with nothing rewritten.</td></tr>
-          <tr><td>output</td><td><code>outputSchema</code> when the output declares a schema: the envelope, whose items' <code>data</code> are held to the output's schema, since that schema says what the items carry and the protocol holds a structured result to its <code>outputSchema</code>. Its envelope goes in <code>structuredContent</code>, with a text rendering alongside.</td></tr>
+          <tr><td>output</td><td><code>outputSchema</code> when the output declares a schema and the tool is <code>mode: sync</code>: the envelope, whose items' <code>data</code> are held to the output's schema, since that schema says what the items carry and the protocol holds a structured result to its <code>outputSchema</code>. Its envelope goes in <code>structuredContent</code>, with a text rendering alongside. An async tool publishes none, since its call answers the run and never the output.</td></tr>
           <tr><td>mode: sync</td><td>Waits for the run and returns the output, for its <code>timeout</code>, or 120 seconds where it writes none, because clients time out. A workflow that cannot finish inside that must be <code>async</code>. A run still going when the wait is over goes on, and the call answers its identifier and its state, to follow with the user's server's <code>run.get</code>, rather than an error the run did not make.</td></tr>
           <tr><td>mode: async</td><td>Returns the run identifier at once, to follow with the user's server's <code>run.get</code>. A collection never grows a polling tool.</td></tr>
         </tbody>
@@ -8103,6 +8105,8 @@ flowchart LR
         </tbody>
       </table>
     </div>
+
+    <p>An act a tool asks for is recorded in the audit log as its route records it, by the calling principal, and every entry it writes, a commit, a grant, a secret declaration, a run started or cancelled, carries <code>through: mcp</code> and the tool's name, a collection's tool by the name it was called as. The audit log tells a client's acts from a person's whichever route they took, and no route has to remember to say so.</p>
   </div>
 </section>
 
