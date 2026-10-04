@@ -33,6 +33,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Test that the marker refuses a partial read
+        run: python3 .github/sync-roadmap_test.py
+
       - name: Mark what is done
         env:
           GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || secrets.GITHUB_TOKEN }}
