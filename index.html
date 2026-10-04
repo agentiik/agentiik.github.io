@@ -818,13 +818,14 @@ throw 4/4 | driver: the container exited 0: the output envelopes are published</
 </figure>
 
 <h3 class="tab-title" data-tab="MCP">MCP</h3>
-<p class="section-lede" data-tab="MCP">Connect an MCP client to your server&#x27;s <code>/mcp</code> endpoint. The model learns the language, writes the workflow, validates it, commits it and runs it, as you.</p>
+<p class="section-lede" data-tab="MCP">Connect an MCP client to your server&#x27;s <code>/mcp</code> endpoint. The model learns the language, creates the workflow, writes it, validates it, commits it and runs it, as you.</p>
 <figure class="cast transcript" data-tab="MCP">
   <div class="cast-frame">
     <p class="ask"><span class="who">you</span> Read data/orders.csv, keep the orders over 100 euros, and run it.</p>
     <ol class="calls">
       <li><code>workflow.language</code><span>learns the shape of agentiik.yaml</span></li>
       <li><code>brick.list, brick.get</code><span>picks the csv and jq bricks, and reads their parameters</span></li>
+      <li><code>workflow.create</code><span>creates demo/big-orders, an empty repository, as you</span></li>
       <li><code>workflow.validate</code><span><b class="bad">invalid</b>: /steps/filter/needs/0/port is not a port of parse; topic needs</span></li>
       <li><code>workflow.validate</code><span>valid</span></li>
       <li><code>workflow.commit</code><span>commits agentiik.yaml to demo/big-orders, as you</span></li>
@@ -833,7 +834,7 @@ throw 4/4 | driver: the container exited 0: the output envelopes are published</
       <li><code>run.output</code><span>the orders it kept</span></li>
     </ol>
   </div>
-  <figcaption><b>Arrives in v0.7.0.</b> Drawn from the documentation, not recorded, and <code>brick.list</code> and <code>brick.get</code> arrive with the catalog in <a href="docs/roadmap/#m08">v0.8.0</a>. Each call runs with your permissions, and of these tools only <code>workflow.commit</code> and <code>workflow.run</code> change anything. A workflow can also be a tool in a collection of your own, a connector served at <code>/mcp/collections/{id}</code>: see <a href="docs/#collections">Collections</a>.</figcaption>
+  <figcaption><b>Arrives in v0.7.0.</b> Drawn from the documentation, not recorded, and <code>brick.list</code> and <code>brick.get</code> arrive with the catalog in <a href="docs/roadmap/#m08">v0.8.0</a>. Each call runs with your permissions, and of these tools only <code>workflow.create</code>, <code>workflow.commit</code> and <code>workflow.run</code> change anything. A workflow can also be a tool in a collection of your own, a connector served at <code>/mcp/collections/{id}</code>: see <a href="docs/#collections">Collections</a>.</figcaption>
 </figure>
 </div>
 
