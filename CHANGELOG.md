@@ -6,6 +6,14 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+### Documentation
+
+- Install a server's What v0.6 does not do yet is named for the release it installs and drops the row saying neither installation serves the console, and Get started no longer counts the console among what a server does not do. On a Mac, with Homebrew says the API the service runs serves the web console at `https://localhost:8443`, that the formula builds it with Node before `agentiik-api`, and that `api.env` names `AGK_CONSOLE`.
+- Typography says the two faces are published by Google Fonts, which the tokens name as their source and the specimen sheet and this site load them from, while the web console serves its own copies under `font-src 'self'`, since a font service would learn who opens it; the roadmap's task says the same.
+- The web console chapter draws the caller's photo in the sidebar and on the home rather than in a top bar it no longer has, says the console draws its graph itself rather than naming a library it never took, and gives the visual editor the reason that holds, a browser having no clone, editor or `git` beside it, where it said ports were dragged, which they are connected through a form. The decision on a token of the console's own for each push is folded, in the past tense, into the one on `POST /api/v1/{ns}/workflows/{name}/commits`, since v0.7.0 commits through that route and mints nothing.
+
 ## v0.6.0, 2026-10-02
 
 ### Documentation
