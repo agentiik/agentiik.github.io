@@ -22,25 +22,37 @@ REPOS = ["agentiik", "schemas", "bricks", "brick-sdk", "design", "ios", "android
          "deploy", "terraform-provider-agentiik", "agentiik.github.io", ".github",
          "homebrew-tap"]
 
+# The most issues read from one repository. gh answers the newest first, a page at a time, and
+# stops at --limit without saying it stopped, so a ceiling a repository reaches drops its oldest
+# issues and the tasks they close: 500 did, once agentiik held 612. It is set far above any
+# repository's count, and a repository answering exactly this many is refused as possibly cut.
+LIMIT = 10000
+
 
 def issue_state():
     """Every issue in the organisation, by title, with whether it is closed.
 
     Refuses to return a partial picture. A token that cannot read one of the
     repositories would otherwise make this script strike nothing through and
-    commit that as the truth, which is how the roadmap lost its marks once.
+    commit that as the truth, which is how the roadmap lost its marks once; a
+    read cut at gh's --limit would unmark the oldest tasks the same way.
     """
     state = {}
     unreadable = []
+    cut = []
     for repo in REPOS:
         r = subprocess.run(
             ["gh", "issue", "list", "--repo", f"agentiik/{repo}", "--state", "all",
-             "--limit", "500", "--json", "title,state"],
+             "--limit", str(LIMIT), "--json", "title,state"],
             capture_output=True, text=True)
         if r.returncode != 0 or not r.stdout.strip():
             unreadable.append(repo)
             continue
-        for issue in json.loads(r.stdout):
+        issues = json.loads(r.stdout)
+        if len(issues) >= LIMIT:
+            cut.append(repo)
+            continue
+        for issue in issues:
             state[issue["title"].strip()] = issue["state"] == "CLOSED"
 
     if unreadable:
@@ -49,6 +61,12 @@ def issue_state():
             + ", ".join(unreadable)
             + ".\nThe default GITHUB_TOKEN only reaches its own repository, so this needs a"
             " token that can read issues across the organisation."
+        )
+    if cut:
+        raise SystemExit(
+            "refusing to mark anything: " + ", ".join(cut)
+            + f" answered {LIMIT} issues, the most this reads, so older ones may be missing."
+            "\nRaise LIMIT above the repository's count."
         )
     if not state:
         raise SystemExit("refusing to mark anything: no issues found in any repository")

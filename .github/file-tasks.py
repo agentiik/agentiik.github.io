@@ -32,6 +32,12 @@ import sys
 OWNER = "agentiik"
 PROJECT_NUMBER = "1"
 
+# The most issues read from one repository to learn what is filed already. gh answers the newest
+# first and stops at --limit without saying it stopped, so a ceiling a repository reaches hides
+# its oldest titles and files them again: 500 did, once agentiik held 612. It is set far above any
+# repository's count, as sync-roadmap.py's is, and a repository answering this many is refused.
+LIMIT = 10000
+
 
 def run(args):
     out = subprocess.run(args, capture_output=True, text=True)
@@ -146,13 +152,16 @@ def main():
         raise SystemExit(f"the roadmap has {len(groups)} groups called {group_title!r}")
     group = groups[0]
 
-    filed = {
-        i["title"]
-        for i in json.loads(run([
-            "gh", "issue", "list", "--repo", f"{OWNER}/{repo}", "--state", "all",
-            "--limit", "500", "--json", "title",
-        ]))
-    }
+    issues = json.loads(run([
+        "gh", "issue", "list", "--repo", f"{OWNER}/{repo}", "--state", "all",
+        "--limit", str(LIMIT), "--json", "title",
+    ]))
+    if len(issues) >= LIMIT:
+        raise SystemExit(
+            f"refusing to file anything: {OWNER}/{repo} answered {LIMIT} issues, the most this reads,"
+            " so a task filed long ago would look unfiled and be filed again. Raise LIMIT above the"
+            " repository's count.")
+    filed = {i["title"] for i in issues}
 
     if not writing:
         for i, t in enumerate(group["tasks"], 1):
