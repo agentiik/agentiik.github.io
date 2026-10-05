@@ -70,19 +70,20 @@ const terminal = [
   { name: "term-palette", who: "alice", run: failed, width: 160, height: 44, keys: [":", "r", "e", "p"] },
 ];
 
-// What invoice wrote before its third shard failed twice, as its log reads.
-function invoiceLog(started) {
-  const at = (s) => new Date(started + s * 1000).toISOString().slice(11, 19);
+// What invoice wrote before its third shard failed twice, as agk logs follows it into agk console's
+// log pane: each line behind its label, the step, its shard and, after the first, its attempt,
+// and no time, since neither writes one.
+function invoiceLog() {
   const invoice = (i) => `INV-2026-09-${String(1840 + i).padStart(5, "0")}`;
   const lines = [];
-  for (let shard = 1; shard <= 8; shard++) lines.push(`${at(shard)} invoice ${shard}/8 | reading 27 orders from in`);
-  for (let i = 1; i <= 9; i++) lines.push(`${at(20 + i)} invoice 3/8 | posted ${invoice(i)} to the ledger`);
-  lines.push(`${at(31)} invoice 3/8 | the ledger answered 503 Service Unavailable, Retry-After: 30`);
-  lines.push(`${at(31)} invoice 3/8 | exit 108: the ledger is unavailable, try again later`);
-  lines.push(`${at(62)} invoice 3/8, attempt 2 | reading 27 orders from in`);
-  for (let i = 10; i <= 14; i++) lines.push(`${at(60 + i)} invoice 3/8, attempt 2 | posted ${invoice(i)} to the ledger`);
-  lines.push(`${at(108)} invoice 3/8, attempt 2 | the ledger answered 503 Service Unavailable, Retry-After: 30`);
-  lines.push(`${at(108)} invoice 3/8, attempt 2 | exit 108: the ledger is unavailable, try again later`);
+  for (let shard = 1; shard <= 8; shard++) lines.push(`invoice ${shard}/8 | reading 27 orders from in`);
+  for (let i = 1; i <= 9; i++) lines.push(`invoice 3/8 | posted ${invoice(i)} to the ledger`);
+  lines.push(`invoice 3/8 | the ledger answered 503 Service Unavailable, Retry-After: 30`);
+  lines.push(`invoice 3/8 | exit 108: the ledger is unavailable, try again later`);
+  lines.push(`invoice 3/8, attempt 2 | reading 27 orders from in`);
+  for (let i = 10; i <= 14; i++) lines.push(`invoice 3/8, attempt 2 | posted ${invoice(i)} to the ledger`);
+  lines.push(`invoice 3/8, attempt 2 | the ledger answered 503 Service Unavailable, Retry-After: 30`);
+  lines.push(`invoice 3/8, attempt 2 | exit 108: the ledger is unavailable, try again later`);
   return lines;
 }
 
@@ -275,9 +276,7 @@ function cellsOf(shots) {
   const test = join(engine, "cmd/agk/internal/console/zz_site_shots_test.go");
   try {
     for (const who of Object.keys(answers)) writeFileSync(join(dir, `${who}.json`), JSON.stringify(answers[who]));
-    const detail = answers.alice[`GET /api/v1/runs/${ids.get(failed)}`].body;
-    const started = Date.parse(detail.steps.find((s) => s.step === "invoice").started_at);
-    const asked = shots.map((s) => ({ ...s, run: s.run ? ids.get(s.run) : "", logs: s.logs ? { invoice: invoiceLog(started) } : undefined }));
+    const asked = shots.map((s) => ({ ...s, run: s.run ? ids.get(s.run) : "", logs: s.logs ? { invoice: invoiceLog() } : undefined }));
     writeFileSync(join(dir, "shots.json"), JSON.stringify(asked));
     copyFileSync(join(site, ".github", "agk-console-shots_test.go"), test);
     execFileSync("go", ["test", "./cmd/agk/internal/console", "-run", "^TestSiteShots$", "-count=1"], { cwd: engine, stdio: "inherit", env: { ...process.env, AGK_SITE_SHOTS: dir, AGK_SITE_NOW: now.toISOString() } });
