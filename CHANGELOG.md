@@ -10,6 +10,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Documentation
 
+- The sign-in page and the web console say they ask a browser for HTTPS alone with `Strict-Transport-Security` where the public URL names a host, and why none is sent for an address or `localhost`; a file of a workflow's tree and an object of the built-in store are said to be served as an attachment with `nosniff`, since whoever can push or produce an artifact wrote them and they are served on the console's origin.
 - The API's route table lists `GET /api/v1/users/{login}/credentials`, a user's credentials read by an administrator as `GET /api/v1/me/credentials` lists the caller's, which the web console's credentials row already promised, and the console's users screen draws each user's list from it.
 - `PUT /api/v1/me/avatar` and `PUT /api/v1/namespaces/{ns}/avatar` say that pictures are re-encoded a few at a time in each process of the API, and that one waiting five seconds for its turn is answered `503` with `Retry-After`, storing nothing, as agentiik/agentiik#844 asks.
 - The web console's editor opens as an entry of the history of its own, so that Back closes it, and says how leaving with changes asks first: Stop editing turned red beside Keep, and Keep or Leave for a link or Back to another screen, as agentiik/agentiik#870 asks.
