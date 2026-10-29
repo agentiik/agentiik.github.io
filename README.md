@@ -126,11 +126,7 @@ All twelve are public, and five of them hold no code yet. The roadmap says which
 
 ## Where the rest will come from
 
-The language reference and the API reference are generated from
-[`agentiik/schemas`](https://github.com/agentiik/schemas) rather than written here,
-so that this repository, the command line and the `workflow.language` MCP tool can
-never teach three different languages. When those generators exist, their output
-lands here alongside the hand-written documents.
+The language reference is generated in [`agentiik/schemas`](https://github.com/agentiik/schemas) rather than written here, so that this repository, the command line and the `workflow.language` MCP tool can never teach three different languages: `docs/index.html` carries each of its pages as a verbatim copy, in The language reference, and `.github/check-copies.py` fails where a copy differs from that repository's `main` or a page its `topics.json` lists has none. The API reference is to be generated from there too, and to land here beside the hand-written documents.
 
 ## Licence
 

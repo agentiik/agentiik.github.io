@@ -11,10 +11,16 @@ entities unescaped, with that file on the repository's main branch (or on the
 ref COPY_REF names, to try a branch that is not merged yet). A copy that differs
 fails, since the point of showing the file is that a reader can run what CI runs.
 
+The language reference agentiik/schemas generates is held whole as well: every
+page its language/topics.json names, the orientation and each topic's, has to
+be copied on some page. Comparing the copies there are cannot notice a topic
+added there, and a site without it teaches less than workflow.language does.
+
 Standard library only, and no token: the repositories copied from are public.
 """
 
 import html
+import json
 import os
 import re
 import sys
@@ -22,6 +28,10 @@ import urllib.request
 
 PAGES = ["docs/index.html"]
 REF = os.environ.get("COPY_REF", "main")
+
+# Where the language reference is generated, and the directory topics.json lists its pages in.
+REFERENCE_REPO = "agentiik/schemas"
+REFERENCE_DIR = "language/"
 
 COPY = re.compile(
     r"<!-- Verbatim copy of (?P<path>\S+) in https://github\.com/(?P<repo>[\w.-]+/[\w.-]+)\b.*?-->"
@@ -36,14 +46,23 @@ def fetch(repo, path):
         return answer.read().decode()
 
 
+def reference_pages():
+    """The files of the language reference, as topics.json names them: the orientation, then
+    each topic's page."""
+    index = json.loads(fetch(REFERENCE_REPO, REFERENCE_DIR + "topics.json"))
+    return [REFERENCE_DIR + index["orientation"]] + [REFERENCE_DIR + t["page"] for t in index["topics"]]
+
+
 def main():
     failed = 0
     seen = 0
+    copied = set()
     for page in PAGES:
         text = open(page, encoding="utf-8").read()
         for copy in COPY.finditer(text):
             seen += 1
             repo, path = copy["repo"], copy["path"]
+            copied.add((repo, path))
             shown = html.unescape(re.sub(r"<[^>]+>", "", copy["body"])).rstrip("\n")
             try:
                 source = fetch(repo, path).rstrip("\n")
@@ -62,6 +81,17 @@ def main():
                     break
             else:
                 print(f"  the page has {len(shown.splitlines())} lines, the file {len(source.splitlines())}")
+    try:
+        wanted = reference_pages()
+    except Exception as err:  # a reference whose pages cannot be listed is not one known to be whole
+        print(f"{REFERENCE_REPO}/{REFERENCE_DIR}topics.json@{REF} could not be read: {err}")
+        failed += 1
+        wanted = []
+    for path in wanted:
+        if (REFERENCE_REPO, path) in copied:
+            continue
+        failed += 1
+        print(f"{REFERENCE_REPO}/{path}@{REF} is a page of the language reference that no page copies")
     if seen == 0:
         print("no verbatim copy found: the comment that marks one has changed, and nothing was checked")
         return 1

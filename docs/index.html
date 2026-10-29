@@ -565,6 +565,13 @@ code{
   tab-size:2;
 }
 .block pre code{background:none;padding:0;font-size:inherit;border-radius:0;overflow-wrap:normal}
+/* A copy whose lines are paragraphs, as a page of the language reference's are, wraps at the
+   column rather than scrolling sideways, since each line is a sentence read whole. What is copied
+   and what the copies check compares is the text, which wrapping leaves as it is. */
+.block.wrap pre,.block.wrap pre code{white-space:pre-wrap;overflow-wrap:anywhere}
+/* A heading that names an identifier keeps its spelling: the uppercase of h4 would show fan_out
+   as a word nobody types. */
+h4 code{text-transform:none;letter-spacing:0;font-size:.95rem;color:var(--ink)}
 .c{color:var(--faint);font-style:italic}
 .block pre .p{color:var(--accent);user-select:none}
 .block pre .cmd{color:var(--ink);font-weight:500}
@@ -1099,6 +1106,7 @@ img{max-width:100%}
             <li><a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a></li>
             <li><a href="#includes-and-inheritance">Includes and inheritance</a></li>
             <li><a href="#publishing-tools">Publishing the workflow as a tool</a></li>
+            <li><a href="#language-reference">The language reference</a></li>
           </ul>
         </li>
         <li><a href="#expressions">Expressions</a>
@@ -4937,6 +4945,3767 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
       <span class="note-label">Decision</span>
       <p>The tool's arguments are the workflow's inputs, each with its schema as it stands; a second schema cannot be written. Two schemas for one value drift silently, until a client sends something the workflow rejects. Callers who need another shape get a workflow whose inputs are shaped for them.</p>
     </div>
+
+    <h3 id="language-reference">The language reference</h3>
+    <p>These are the pages <code>workflow.language</code> answers and <code>agk language</code> prints: the orientation, then each topic under the name a client asks for it by. <code>agentiik/schemas</code> generates them from the <code>description</code> and the <code>examples</code> of every keyword of the schemas the validator enforces (<a href="#teaching-a-client-the-language">Teaching a client the language</a>), and each is shown here as a verbatim copy of its file under <code>language/</code> there, in the Markdown a client reads.</p>
+    <p>A check compares every copy with that file on <code>main</code>, on every pull request and once a day, and fails where one differs or where <code>topics.json</code> lists a page the site does not carry. A page is never edited here, because the site, the command line and the MCP tools teach one language only while there is one text: a copy changed on its own would be another reading of the schema, written beside it. At a release, <code>agk</code>, the API and this page carry the pages of the same tag of <code>agentiik/schemas</code>. The chapter above says why the language is what it is; these pages say what the schema accepts, keyword by keyword.</p>
+    <p>The topics: <a href="#language-repository"><code>repository</code></a>, <a href="#language-inputs"><code>inputs</code></a>, <a href="#language-outputs"><code>outputs</code></a>, <a href="#language-triggers"><code>triggers</code></a>, <a href="#language-steps"><code>steps</code></a>, <a href="#language-ports"><code>ports</code></a>, <a href="#language-needs"><code>needs</code></a>, <a href="#language-merge"><code>merge</code></a>, <a href="#language-fan_out"><code>fan_out</code></a>, <a href="#language-retry"><code>retry</code></a>, <a href="#language-expressions"><code>expressions</code></a>, <a href="#language-secrets"><code>secrets</code></a>, <a href="#language-files"><code>files</code></a>, <a href="#language-script"><code>script</code></a>, <a href="#language-includes"><code>includes</code></a>, <a href="#language-mcp"><code>mcp</code></a>.</p>
+
+    <h4 id="language-orientation">The orientation, with no topic</h4>
+    <!-- Verbatim copy of language/index.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/index.md, from agentiik/schemas</div>
+<pre><code># Agentiik workflow
+
+The entry point of a workflow repository, agentiik.yaml at the root. It is the source of truth for what a workflow does, validated before a push is accepted, and the commit that carries it is the version. It is not the source of truth for who may do what: access grants live in the platform and never in this file.
+
+## A complete minimal workflow
+
+```yaml
+apiVersion: agentiik.dev/v1
+kind: Workflow
+metadata:
+  name: first-run
+  namespace: demo
+outputs:
+  greeting:
+    from:
+      step: greet
+      port: out
+steps:
+  greet:
+    image: alpine:3.21@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507
+    script:
+    - echo "hello from ${AGK_STEP}"
+    outputs:
+    - out
+```
+
+## Topics
+
+- `repository`: The entry point of a workflow repository, agentiik.yaml at the root.
+- `inputs`: Named values a run is started with, each validated against its schema before any step runs.
+- `outputs`: The results a run is read by, each one a view of a single step port.
+- `triggers`: What starts a run.
+- `steps`: The steps of the workflow, named.
+- `ports`: The output ports this step publishes.
+- `needs`: The inbound edges of the step, which are the only form of dependency there is.
+- `merge`: How several edges arriving on the same input port are combined.
+- `fan_out`: How the step is split into shards and how many of them run at once.
+- `retry`: When an attempt is made again, and how long the engine waits first.
+- `expressions`: A CEL expression inside ${{ }}, evaluated by the controller.
+- `secrets`: The secrets of the owning namespace this workflow uses, by name and by nothing else, resolved by the API at the last moment.
+- `files`: Narrows what the step receives from the repository tree, which it otherwise gets whole under /agk/repo/.
+- `script`: Shell commands run inside image instead of treating it as a brick, under the same contract every brick honours: the same mounts, the same environment, the same isolation, the same meaning for the exit code.
+- `includes`: Files and repositories merged into this one before anything else is resolved, in declaration order, each read as an included file, $defs/fragment.
+- `mcp`: Publishes the workflow as one tool to model-driven clients: one block, one tool, whose arguments are the workflow's inputs and whose result is optionally one of its outputs.
+
+## Schema parts
+
+- `workflow`, Agentiik workflow: The entry point of a workflow repository, agentiik.yaml at the root. `https://schemas.agentiik.dev/workflow.schema.json`
+- `brick`, Brick manifest: The manifest embedded in a brick image at /agk/brick.yaml. `https://schemas.agentiik.dev/brick.schema.json`
+- `envelope`, Envelope: The JSON object { meta, items } that travels along a port. `https://schemas.agentiik.dev/envelope.schema.json`</code></pre>
+    </div>
+
+    <h4 id="language-repository"><code>repository</code></h4>
+    <!-- Verbatim copy of language/repository.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/repository.md, from agentiik/schemas</div>
+<pre><code># `repository`
+
+The entry point of a workflow repository, agentiik.yaml at the root. It is the source of truth for what a workflow does, validated before a push is accepted, and the commit that carries it is the version. It is not the source of truth for who may do what: access grants live in the platform and never in this file.
+
+## Keywords
+
+- ``: The entry point of a workflow repository, agentiik.yaml at the root. It is the source of truth for what a workflow does, validated before a push is accepted, and the commit that carries it is the version. It is not the source of truth for who may do what: access grants live in the platform and never in this file.
+- `/apiVersion`: Language version this file is written against. It is read before anything else, because it decides how every other key in the file is interpreted.
+- `/kind`: Which document of the language this is. The same apiVersion also covers the brick manifest, so a reader has to be told which of the two it is holding.
+- `/metadata`: What the workflow is called, which namespace owns it, and the labels it is found by. Ownership is not only naming: a workflow reaches the secrets, the quotas and the runner pools of the namespace that owns it, and of no other.
+- `/metadata/name`: Name of the workflow inside its namespace. With the namespace it forms the &lt;namespace&gt;/&lt;name&gt; identity that a run, a grant and a git remote are all addressed by.
+- `/metadata/namespace`: Namespace that owns the workflow. It is the unit of ownership and the coarse scope for access grants, so it decides which secrets can be named here and which runner pools may be selected.
+- `/metadata/labels`: Key and value pairs used to group workflows and to find them again. They carry no meaning to the engine: nothing about scheduling, isolation or access is decided by a label.
+- `/vars`: Values written once and read anywhere an expression is allowed, through the vars context. They keep a currency or a threshold in a single place instead of repeated across steps. They are not secrets: they sit in the file and are readable by anyone who can read the workflow. On a server the vars context also holds the variables the owning namespace shows this workflow, set through the API rather than in a file, and a name written here takes this file's value, as a name an including file writes takes that file's; agk run --local reaches no namespace and reads these alone.
+- `/concurrency`: What happens when a trigger fires while a run of this workflow is still going. Groups are scoped to the namespace, so one namespace can never block or cancel another's runs.
+- `/concurrency/group`: Name that runs queue behind. Two runs sharing a group never overlap, which is how a workflow that writes to one ledger is kept from writing to it twice at once.
+- `/concurrency/cancel_in_progress`: Whether the arriving run cancels the one already going instead of waiting behind it. The run it replaces ends in the cancelled state.
+- `/timeout`: Maximum duration of the whole run. It is not the step keyword of the same name: that one bounds a single shard, this one bounds everything the run does, from the first task to the last. A run still going when it expires is stopped and ends in the timed_out state, which is what makes that state reachable from a file rather than only from an operator cancelling something. It is capped by the namespace quota max_run_duration, exactly as retain is capped by max_retention_days: a timeout above the quota is held to it rather than refused, and a workflow writing none is bounded by the quota.
+- `/metadata/name`, `/metadata/namespace`, `/outputs/*/from/step`, `/outputs/*/from/port`, `/on/webhook/*/output`, `/on/event/*/namespace`, `/mcp/name`, `/mcp/output`, `/secrets/*`, `/defaults/secrets/*`, `/steps/*/needs/*`, `/steps/*/needs/*/step`, `/steps/*/needs/*/port`, `/steps/*/needs/*/as`, `/steps/*/outputs/*`, `/steps/*/secrets/*`, `/.*/needs/*`, `/.*/needs/*/step`, `/.*/needs/*/port`, `/.*/needs/*/as`, `/.*/outputs/*`, `/.*/secrets/*`: A name written in the file and used as a key elsewhere: a workflow, a namespace, an input, an output, a port, a variable, a secret or a tool. Kept to letters, digits, hyphens and underscores so that the same name survives a URL, an environment variable and a tool list unchanged, and to 255 characters because no filesystem holds a longer name: a step becomes a directory and a secret a file. A port and a workflow output are held to 250, $defs/portName.
+- `/metadata/namespace`, `/on/event/*/namespace`: The name of a namespace, an identifier other than a reserved word, at most 255 characters, the most a directory holds a name to. The API's first path segment decides the route, so auth, me, users, groups, service-accounts, namespaces, runners, runner-pools, bus, tasks, bricks, runs, artifacts, stats cannot name a namespace, and are refused at namespace and login creation from v0.3.0. stats is reserved from v0.3.0 for GET /api/v1/stats/pools, which v0.6.0 serves at that path alone, so that no namespace created meanwhile takes it. api, hooks, mcp and objects are reserved from v0.7.0, because an address's first path segment decides who answers it: the API answers /api, /auth, /hooks, /mcp and /objects, and the web console every other one, which it reads as a namespace, so that a namespace named after one of them would be one whose pages the console never opens. A namespace made under one of these words before it was reserved keeps its name until it is renamed, and the API still serves it, every route of it; only its creation, and a rename to one, are refused, which is why the engine still reads a workflow naming it, though this pattern, which cannot tell such a namespace from one asked for now, refuses one. From v0.6.0 a shared namespace is renamed by its owner or an administrator, and from v0.7.0 a user's personal namespace with their login, where an administrator gives a user whose login a later release reserved a new one; the name either leaves stays its own as a former name, which no other namespace or login takes while it lives, so that a workflow naming it in metadata.namespace, a call, an include or an event trigger keeps working. Its objects stay under the name it was created with, its storage name, so that a rename copies nothing.
+- `/outputs/*/retain`, `/outputs/*/retain/for`, `/on/schedule/*/jitter`, `/defaults/timeout`, `/defaults/retain`, `/defaults/retain/for`, `/defaults/retry/backoff/base`, `/defaults/retry/backoff/max`, `/timeout`, `/steps/*/retry/backoff/base`, `/steps/*/retry/backoff/max`, `/steps/*/timeout`, `/.*/retry/backoff/base`, `/.*/retry/backoff/max`, `/.*/timeout`: A length of time written as a number and a unit: ms, s, m, h or d. Written rather than counted in seconds so that a file says 90d where a reader would otherwise have to work out what 7776000 means.
+- `/vars`: The vars block, as the entry point and an included file both write it: names and values, read by expressions through the vars context.
+
+## Schema
+
+`workflow.schema.json#/properties/apiVersion`:
+
+```json
+{"const": "agentiik.dev/v1"}
+```
+
+`workflow.schema.json#/properties/kind`:
+
+```json
+{"const": "Workflow"}
+```
+
+`workflow.schema.json#/properties/metadata`:
+
+```json
+{
+  "type": "object",
+  "required": ["name"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {"$ref": "#/$defs/identifier"},
+    "namespace": {"$ref": "#/$defs/namespace"},
+    "labels": {
+      "type": "object",
+      "propertyNames": {"$ref": "#/$defs/identifier"},
+      "additionalProperties": {"type": "string"}
+    }
+  }
+}
+```
+
+`workflow.schema.json#/properties/concurrency`:
+
+```json
+{
+  "type": "object",
+  "minProperties": 1,
+  "additionalProperties": false,
+  "properties": {"group": {"type": "string", "minLength": 1}, "cancel_in_progress": {"type": "boolean"}}
+}
+```
+
+`workflow.schema.json#/properties/timeout`:
+
+```json
+{"$ref": "#/$defs/duration"}
+```
+
+`workflow.schema.json#/properties/vars`:
+
+```json
+{"$ref": "#/$defs/vars"}
+```
+
+`workflow.schema.json#/$defs/vars`:
+
+```json
+{"type": "object", "propertyNames": {"$ref": "#/$defs/identifier"}, "additionalProperties": {}}
+```
+
+`workflow.schema.json#/$defs/identifier`:
+
+```json
+{"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$", "maxLength": 255}
+```
+
+`workflow.schema.json#/$defs/namespace`:
+
+```json
+{
+  "$ref": "#/$defs/identifier",
+  "maxLength": 255,
+  "not": {
+    "pattern": "^(auth|me|users|groups|service-accounts|namespaces|runners|runner-pools|bus|tasks|bricks|runs|artifacts|stats|api|hooks|mcp|objects)$"
+  }
+}
+```
+
+`workflow.schema.json#/$defs/duration`:
+
+```json
+{"type": "string", "pattern": "^[0-9]+(ms|s|m|h|d)$"}
+```
+
+## Examples
+
+`agentiik.yaml`:
+
+```yaml
+apiVersion: agentiik.dev/v1
+kind: Workflow
+metadata:
+  name: first-run
+  namespace: demo
+outputs:
+  greeting:
+    from:
+      step: greet
+      port: out
+steps:
+  greet:
+    image: alpine:3.21@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507
+    script:
+    - echo "hello from ${AGK_STEP}"
+    outputs:
+    - out
+```
+
+`agentiik.yaml`:
+
+```yaml
+apiVersion: agentiik.dev/v1
+kind: Workflow
+metadata:
+  name: monthly-invoicing
+  namespace: finance
+steps:
+  normalize:
+    image: ghcr.io/acme/agk-normalize@sha256:9f2c1d4a77b0c3e51d8a6f2b4c9e0a13d5f7b82c6e04a9d31b7f5c28e6a0b7e0
+    inputs:
+      orders: ${{ workflow.inputs.orders }}
+    outputs:
+    - ok
+    - rejected
+```
+
+`/apiVersion`:
+
+```yaml
+apiVersion: agentiik.dev/v1
+```
+
+`/kind`:
+
+```yaml
+kind: Workflow
+```
+
+`/metadata`:
+
+```yaml
+metadata:
+  name: monthly-invoicing
+  namespace: finance
+  labels:
+    domain: billing
+```
+
+`/metadata/name`:
+
+```yaml
+metadata:
+  name: monthly-invoicing
+```
+
+`/metadata/name`:
+
+```yaml
+metadata:
+  name: vat-reconciliation
+```
+
+`/metadata/namespace`:
+
+```yaml
+metadata:
+  namespace: finance
+```
+
+`/metadata/namespace`:
+
+```yaml
+metadata:
+  namespace: platform
+```
+
+`/metadata/labels`:
+
+```yaml
+metadata:
+  labels:
+    domain: billing
+```
+
+`/metadata/labels`:
+
+```yaml
+metadata:
+  labels:
+    domain: billing
+    tier: critical
+```
+
+`/vars`:
+
+```yaml
+vars:
+  currency: EUR
+  dunning_days: 30
+```
+
+`/concurrency`:
+
+```yaml
+concurrency:
+  group: monthly-invoicing
+  cancel_in_progress: false
+```
+
+`/concurrency/group`:
+
+```yaml
+concurrency:
+  group: monthly-invoicing
+```
+
+`/concurrency/group`:
+
+```yaml
+concurrency:
+  group: invoicing-fr
+```
+
+`/concurrency/cancel_in_progress`:
+
+```yaml
+concurrency:
+  cancel_in_progress: true
+```
+
+`/concurrency/cancel_in_progress`:
+
+```yaml
+concurrency:
+  cancel_in_progress: false
+```
+
+`/timeout`:
+
+```yaml
+timeout: 30m
+```
+
+`/timeout`:
+
+```yaml
+timeout: 6h
+```
+
+`/timeout`:
+
+```yaml
+timeout: 24h
+```
+
+`workflow.schema.json#/$defs/identifier`:
+
+```yaml
+monthly-invoicing
+```
+
+`workflow.schema.json#/$defs/identifier`:
+
+```yaml
+create_invoice
+```
+
+`workflow.schema.json#/$defs/identifier`:
+
+```yaml
+orders
+```
+
+`workflow.schema.json#/$defs/namespace`:
+
+```yaml
+finance
+```
+
+`workflow.schema.json#/$defs/namespace`:
+
+```yaml
+platform
+```
+
+`workflow.schema.json#/$defs/duration`:
+
+```yaml
+500ms
+```
+
+`workflow.schema.json#/$defs/duration`:
+
+```yaml
+30s
+```
+
+`workflow.schema.json#/$defs/duration`:
+
+```yaml
+10m
+```
+
+`workflow.schema.json#/$defs/duration`:
+
+```yaml
+24h
+```
+
+`workflow.schema.json#/$defs/duration`:
+
+```yaml
+90d
+```</code></pre>
+    </div>
+
+    <h4 id="language-inputs"><code>inputs</code></h4>
+    <!-- Verbatim copy of language/inputs.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/inputs.md, from agentiik/schemas</div>
+<pre><code># `inputs`
+
+Named values a run is started with, each validated against its schema before any step runs. They are the workflow's own boundary, which is what a trigger fills and what an MCP tool publishes; the graph behind them is free to change without callers noticing.
+
+## Keywords
+
+- `/inputs`: Named values a run is started with, each validated against its schema before any step runs. They are the workflow's own boundary, which is what a trigger fills and what an MCP tool publishes; the graph behind them is free to change without callers noticing.
+- `/inputs/*/schema`, `/outputs/*/schema`: A JSON Schema 2020-12 document describing a value, either an object of keywords or a boolean. A $ref pointing into the repository tree keeps the schema beside the workflow and versioned with the same commit. The brick manifest calls the same thing by the same name and accepts the same two shapes, so a schema written on a port and a schema written on a workflow boundary are one kind of document.
+- `/inputs/*`: One named input of the workflow: what it must look like, whether a run can start without it, and what stands in when it is absent.
+- `/inputs/*/schema`: What the value has to look like for the run to start. An input without one is accepted as it comes and cannot be published as an MCP tool input, since a tool has to advertise an inputSchema.
+- `/inputs/*/required`: Refuses a run that does not supply the input, rather than letting every step downstream discover the absence for itself.
+- `/inputs/*/default`: Value used when the run supplies none. It is what makes an optional input ordinary: the graph reads one value and never tests for absence.
+
+## Schema
+
+`workflow.schema.json#/properties/inputs`:
+
+```json
+{
+  "type": "object",
+  "propertyNames": {"$ref": "#/$defs/identifier"},
+  "additionalProperties": {"$ref": "#/$defs/workflowInput"}
+}
+```
+
+`workflow.schema.json#/$defs/workflowInput`:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"$ref": "#/$defs/jsonSchema"},
+    "required": {"type": "boolean", "default": false},
+    "default": {}
+  }
+}
+```
+
+`workflow.schema.json#/$defs/jsonSchema`:
+
+```json
+{"type": ["object", "boolean"]}
+```
+
+## Examples
+
+`/inputs`:
+
+```yaml
+inputs:
+  orders:
+    schema:
+      $ref: ./schemas/order.json
+    required: true
+  customers:
+    schema:
+      $ref: ./schemas/customer.json
+    default: []
+```
+
+`workflow.schema.json#/$defs/jsonSchema`:
+
+```yaml
+$ref: ./schemas/order.json
+```
+
+`workflow.schema.json#/$defs/jsonSchema`:
+
+```yaml
+type: object
+required:
+- customer_id
+properties:
+  customer_id:
+    type: string
+```
+
+`workflow.schema.json#/$defs/jsonSchema`:
+
+```yaml
+true
+```
+
+`/inputs/*`:
+
+```yaml
+inputs:
+  monthly-invoicing:
+    schema:
+      $ref: ./schemas/order.json
+    required: true
+```
+
+`/inputs/*`:
+
+```yaml
+inputs:
+  monthly-invoicing:
+    schema:
+      type: array
+    default: []
+```
+
+`/inputs/*/schema`:
+
+```yaml
+inputs:
+  monthly-invoicing:
+    schema:
+      $ref: ./schemas/order.json
+```
+
+`/inputs/*/required`:
+
+```yaml
+inputs:
+  monthly-invoicing:
+    required: true
+```
+
+`/inputs/*/required`:
+
+```yaml
+inputs:
+  monthly-invoicing:
+    required: false
+```
+
+`/inputs/*/default`:
+
+```yaml
+inputs:
+  monthly-invoicing:
+    default: []
+```
+
+`/inputs/*/default`:
+
+```yaml
+inputs:
+  monthly-invoicing:
+    default: 0
+```
+
+`/inputs/*/default`:
+
+```yaml
+inputs:
+  monthly-invoicing:
+    default: EUR
+```</code></pre>
+    </div>
+
+    <h4 id="language-outputs"><code>outputs</code></h4>
+    <!-- Verbatim copy of language/outputs.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/outputs.md, from agentiik/schemas</div>
+<pre><code># `outputs`
+
+The results a run is read by, each one a view of a single step port. Naming the boundary here is what lets a step be renamed, split or replaced without anything that consumes the workflow having to change.
+
+## Keywords
+
+- `/outputs`: The results a run is read by, each one a view of a single step port. Naming the boundary here is what lets a step be renamed, split or replaced without anything that consumes the workflow having to change.
+- `/outputs/*`: One named result of the workflow: the step port it is taken from, how long it stays fetchable, and optionally what it carries.
+- `/outputs/*/from`: The single step port whose envelope becomes this output. One port, because an output that concatenated several would hide which step actually produced what.
+- `/outputs/*/from/step`: Step the envelope is taken from.
+- `/outputs/*/from/port`: Output port of that step. An error port raised to a workflow output is how a run reports what it could not process without failing.
+- `/outputs/*/retain`: How long this output stays fetchable, and how many times it may be collected.
+- `/outputs/*/schema`: What the data of each item of this output carries, written as a JSON Schema 2020-12 document. A sync tool published from this output advertises it inside its outputSchema, which describes the output's envelope with each item's data held to this schema, so a client is told the shape of a result and not only its text. It is the mirror of a tool input, which has to have a schema because a tool has to advertise an inputSchema; here it stays optional, and an output declaring none is published as a tool with no outputSchema beside it.
+- `/outputs/*/retain`: How long the artifacts of this output stay fetchable, and how many times they may be fetched. A duration answers how long it may be fetched; the long form also answers whether it may be fetched more than once. Retention is capped by the namespace quota: a workflow may always ask for less, never for more.
+- `/outputs/*/retain/for`: How long the artifacts stay fetchable when nobody comes for them. A one-shot output still needs one, because it is what expires an artifact that is never collected.
+- `/outputs/*/retain/fetches`: How many completed fetches the artifacts survive. The count is per artifact and not per principal, which is why it is a number and not a flag: two consumers of one output are fetches: 2. An interrupted, refused or ranged transfer does not count.
+- `/defaults/retain`: How long artifacts stay fetchable. Only a workflow output may be one-shot, so no fetch count belongs here: an artifact travelling between two steps is read once per shard and again by a replay, and consuming it would make a graph that runs correctly the first time and not the second.
+- `/defaults/retain/for`: How long the artifacts stay fetchable.
+
+## Schema
+
+`workflow.schema.json#/properties/outputs`:
+
+```json
+{
+  "type": "object",
+  "propertyNames": {"$ref": "#/$defs/portName"},
+  "additionalProperties": {"$ref": "#/$defs/workflowOutput"}
+}
+```
+
+`workflow.schema.json#/$defs/workflowOutput`:
+
+```json
+{
+  "type": "object",
+  "required": ["from"],
+  "additionalProperties": false,
+  "properties": {
+    "from": {
+      "type": "object",
+      "required": ["step", "port"],
+      "additionalProperties": false,
+      "properties": {"step": {"$ref": "#/$defs/identifier"}, "port": {"$ref": "#/$defs/portName"}}
+    },
+    "retain": {"$ref": "#/$defs/retainOutput"},
+    "schema": {"$ref": "#/$defs/jsonSchema"}
+  }
+}
+```
+
+`workflow.schema.json#/$defs/retainOutput`:
+
+```json
+{
+  "oneOf": [
+    {"$ref": "#/$defs/duration"},
+    {
+      "type": "object",
+      "required": ["for"],
+      "additionalProperties": false,
+      "properties": {"for": {"$ref": "#/$defs/duration"}, "fetches": {"type": "integer", "minimum": 1}}
+    }
+  ]
+}
+```
+
+`workflow.schema.json#/$defs/retain`:
+
+```json
+{
+  "oneOf": [
+    {"$ref": "#/$defs/duration"},
+    {
+      "type": "object",
+      "required": ["for"],
+      "additionalProperties": false,
+      "properties": {"for": {"$ref": "#/$defs/duration"}}
+    }
+  ]
+}
+```
+
+## Examples
+
+`/outputs`:
+
+```yaml
+outputs:
+  invoices:
+    from:
+      step: archive
+      port: out
+    retain: 90d
+  errors:
+    from:
+      step: invoice
+      port: error
+```
+
+`/outputs/*`:
+
+```yaml
+outputs:
+  out:
+    from:
+      step: archive
+      port: out
+    retain: 90d
+```
+
+`/outputs/*`:
+
+```yaml
+outputs:
+  out:
+    from:
+      step: render
+      port: out
+    retain:
+      for: 24h
+      fetches: 1
+```
+
+`/outputs/*/from`:
+
+```yaml
+outputs:
+  out:
+    from:
+      step: archive
+      port: out
+```
+
+`/outputs/*/from/step`:
+
+```yaml
+outputs:
+  out:
+    from:
+      step: archive
+```
+
+`/outputs/*/from/step`:
+
+```yaml
+outputs:
+  out:
+    from:
+      step: invoice
+```
+
+`/outputs/*/from/port`:
+
+```yaml
+outputs:
+  out:
+    from:
+      port: out
+```
+
+`/outputs/*/from/port`:
+
+```yaml
+outputs:
+  out:
+    from:
+      port: error
+```
+
+`/outputs/*/retain`:
+
+```yaml
+outputs:
+  out:
+    retain: 90d
+```
+
+`/outputs/*/retain`:
+
+```yaml
+outputs:
+  out:
+    retain:
+      for: 24h
+      fetches: 1
+```
+
+`/outputs/*/schema`:
+
+```yaml
+outputs:
+  out:
+    schema:
+      $ref: ./schemas/invoice.json
+```
+
+`/outputs/*/schema`:
+
+```yaml
+outputs:
+  out:
+    schema:
+      type: object
+      properties:
+        total:
+          type: number
+```
+
+`/outputs/*/retain/for`:
+
+```yaml
+outputs:
+  out:
+    retain:
+      for: 24h
+```
+
+`/outputs/*/retain/for`:
+
+```yaml
+outputs:
+  out:
+    retain:
+      for: 7d
+```
+
+`/outputs/*/retain/fetches`:
+
+```yaml
+outputs:
+  out:
+    retain:
+      fetches: 1
+```
+
+`/outputs/*/retain/fetches`:
+
+```yaml
+outputs:
+  out:
+    retain:
+      fetches: 2
+```
+
+`/defaults/retain`:
+
+```yaml
+defaults:
+  retain: 7d
+```
+
+`/defaults/retain`:
+
+```yaml
+defaults:
+  retain:
+    for: 7d
+```</code></pre>
+    </div>
+
+    <h4 id="language-triggers"><code>triggers</code></h4>
+    <!-- Verbatim copy of language/triggers.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/triggers.md, from agentiik/schemas</div>
+<pre><code># `triggers`
+
+What starts a run. A run started by a schedule, a webhook or an event is attributed to the namespace service identity rather than to whoever last edited the file, so production traffic does not stop when an author leaves. Three of the seven kinds of trigger are declared here; the other four are declared elsewhere or by the caller, and are listed in the comment beside this block. A manual run needs no declaration: any principal holding workflow:run starts one, supplying the inputs the workflow declares under inputs.
+
+## Keywords
+
+- `/on`: What starts a run. A run started by a schedule, a webhook or an event is attributed to the namespace service identity rather than to whoever last edited the file, so production traffic does not stop when an author leaves. Three of the seven kinds of trigger are declared here; the other four are declared elsewhere or by the caller, and are listed in the comment beside this block. A manual run needs no declaration: any principal holding workflow:run starts one, supplying the inputs the workflow declares under inputs.
+- `/on/schedule`: Clock triggers, each a cron expression read in a named timezone.
+- `/on/webhook`: HTTP entry points, each served below the namespaced prefix /hooks/&lt;namespace&gt;/ and authenticating the caller rather than a user.
+- `/on/event`: Subscriptions to CloudEvents 1.0 carried on the bus. A workflow only sees events published into its own namespace, or into a namespace that granted it read access.
+- `/on/schedule/*`: Starts a run on the clock, on the default branch. The run is attributed to the namespace service identity, so a schedule keeps working after its author is gone.
+- `/on/schedule/*/cron`: Five-field cron expression: minute, hour, day of the month, month and day of the week, read in the timezone given beside it. A field is *, a value, a range a-b, * or a range stepped by /n, or a list of these joined by commas; a month may be written JAN to DEC and a day of the week SUN to SAT, with 0 and 7 both Sunday. Where both day fields are restricted, neither beginning with *, a day matching either runs, as in every cron since Vixie's. A value stepped alone, 5/15, is refused, since crons disagree on whether it means 5-59/15. No sixth field and no @daily: a schedule is read the same way by everyone who reads it, and five fields is what everyone reads.
+- `/on/schedule/*/timezone`: Name of the IANA time zone the expression is read in, so that a schedule written for a country keeps its local hour across a daylight saving change. UTC when absent, never the installation's own zone, so that one file fires at the same instants on every installation it is pushed to. An occurrence a change skips runs at the first instant after the gap, and one a change repeats runs once, at its first instance.
+- `/on/schedule/*/jitter`: Random delay of at most this long added to each occurrence, so that many workflows sharing an hour do not all start in the same second.
+- `/on/schedule/*/catch_up`: Whether the occurrences missed while no controller led are made up once one leads again, each exactly once and with the instant it was due as trigger.scheduled_for. False by default, because a burst of late runs is rarely what a schedule meant: a missed occurrence is then skipped, and the next one runs on time.
+- `/on/webhook/*`: Starts a run from an HTTP request. Paths are namespaced as /hooks/&lt;namespace&gt;/&lt;path&gt;, and authentication proves which caller is speaking, never which user.
+- `/on/webhook/*/path`: Path the trigger answers on, below the namespaced prefix. Two namespaces can therefore use the same word without colliding, and within one namespace a path and a method answer one trigger: a push arming a second is refused. Each segment starts with a letter, a digit, an underscore, a tilde or a hyphen, so that no segment is . or .. and no path climbs out of its namespace's prefix once a proxy normalises it.
+- `/on/webhook/*/method`: HTTP method the trigger accepts. A request arriving with another one is refused before a run is created. POST when absent, the method a sender delivers an event with.
+- `/on/webhook/*/auth`: How the caller is proved: hmac over the raw body with a per-trigger secret, bearer for a token bound to a service account, mtls for client certificates, or none where the endpoint is deliberately open. hmac when absent, so that an endpoint is open only where the file says none.
+- `/on/webhook/*/response`: What the caller gets back. async answers 202 with the run id; sync holds the request until the run finishes and returns the workflow output that output names. async when absent.
+- `/on/webhook/*/output`: The workflow output a sync response returns, one of those the file declares under outputs. Required with response: sync and refused without it.
+- `/on/webhook/*/map`: Fills workflow inputs from the request, through expressions over the trigger context. Without it a body is received and nothing reads it.
+- `/on/event/*`: Starts a run on a CloudEvents 1.0 event published into a namespace with POST /api/v1/{ns}/events. A workflow only hears events published into its own namespace, or into the one namespace names where that namespace granted it read access.
+- `/on/event/*/type`: CloudEvents type consumed. It is the event's own name for what happened, so a workflow subscribes to a fact rather than to a publisher.
+- `/on/event/*/source`: CloudEvents source the event has to come from, for a workflow that cares which system said it.
+- `/on/event/*/filter`: CEL expression evaluated over the event's context attributes and over its data. Only an event it accepts starts a run, which keeps a busy topic from starting runs that would immediately decide they had nothing to do.
+- `/on/event/*/namespace`: Namespace whose events the subscription hears, the workflow's own where it names none. Another namespace's events are heard only while that namespace grants this workflow's namespace read access, its built-in identity holding workflow:read there, so that both namespaces chose it.
+- `/on/event/*/map`: Fills workflow inputs from the event, through expressions over it, each input held to its schema before the run exists. Without it an event starts a run with the inputs' defaults, and nothing reads its data.
+
+## Schema
+
+`workflow.schema.json#/properties/on`:
+
+```json
+{
+  "type": "object",
+  "minProperties": 1,
+  "additionalProperties": false,
+  "properties": {
+    "schedule": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/scheduleTrigger"}},
+    "webhook": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/webhookTrigger"}},
+    "event": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/eventTrigger"}}
+  }
+}
+```
+
+`workflow.schema.json#/$defs/scheduleTrigger`:
+
+```json
+{
+  "type": "object",
+  "required": ["cron"],
+  "additionalProperties": false,
+  "properties": {
+    "cron": {
+      "type": "string",
+      "pattern": "^(?:\\*(?:/[0-9]+)?|[0-9A-Za-z]+(?:-[0-9A-Za-z]+(?:/[0-9]+)?)?)(?:,(?:\\*(?:/[0-9]+)?|[0-9A-Za-z]+(?:-[0-9A-Za-z]+(?:/[0-9]+)?)?))*\\s+(?:\\*(?:/[0-9]+)?|[0-9A-Za-z]+(?:-[0-9A-Za-z]+(?:/[0-9]+)?)?)(?:,(?:\\*(?:/[0-9]+)?|[0-9A-Za-z]+(?:-[0-9A-Za-z]+(?:/[0-9]+)?)?))*\\s+(?:\\*(?:/[0-9]+)?|[0-9A-Za-z]+(?:-[0-9A-Za-z]+(?:/[0-9]+)?)?)(?:,(?:\\*(?:/[0-9]+)?|[0-9A-Za-z]+(?:-[0-9A-Za-z]+(?:/[0-9]+)?)?))*\\s+(?:\\*(?:/[0-9]+)?|[0-9A-Za-z]+(?:-[0-9A-Za-z]+(?:/[0-9]+)?)?)(?:,(?:\\*(?:/[0-9]+)?|[0-9A-Za-z]+(?:-[0-9A-Za-z]+(?:/[0-9]+)?)?))*\\s+(?:\\*(?:/[0-9]+)?|[0-9A-Za-z]+(?:-[0-9A-Za-z]+(?:/[0-9]+)?)?)(?:,(?:\\*(?:/[0-9]+)?|[0-9A-Za-z]+(?:-[0-9A-Za-z]+(?:/[0-9]+)?)?))*$"
+    },
+    "timezone": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_+-]*(?:/[A-Za-z0-9_+-]+)*$",
+      "not": {"const": "Local"},
+      "maxLength": 64,
+      "default": "UTC"
+    },
+    "jitter": {"$ref": "#/$defs/duration"},
+    "catch_up": {"type": "boolean", "default": false}
+  }
+}
+```
+
+`workflow.schema.json#/$defs/webhookTrigger`:
+
+```json
+{
+  "type": "object",
+  "required": ["path"],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {"required": ["response"], "properties": {"response": {"const": "sync"}}},
+      "then": {"required": ["output"]}
+    },
+    {
+      "if": {"required": ["output"]},
+      "then": {"required": ["response"], "properties": {"response": {"const": "sync"}}}
+    }
+  ],
+  "properties": {
+    "path": {"type": "string", "pattern": "^(?:/[A-Za-z0-9_~-][A-Za-z0-9._~-]*)+$", "maxLength": 255},
+    "method": {"type": "string", "pattern": "^[A-Z]+$", "default": "POST"},
+    "auth": {"enum": ["hmac", "bearer", "mtls", "none"], "default": "hmac"},
+    "response": {"enum": ["async", "sync"], "default": "async"},
+    "output": {"$ref": "#/$defs/portName"},
+    "map": {"type": "object", "propertyNames": {"$ref": "#/$defs/identifier"}, "additionalProperties": {}}
+  }
+}
+```
+
+`workflow.schema.json#/$defs/eventTrigger`:
+
+```json
+{
+  "type": "object",
+  "anyOf": [{"required": ["type"]}, {"required": ["source"]}, {"required": ["filter"]}],
+  "additionalProperties": false,
+  "properties": {
+    "type": {"type": "string", "minLength": 1},
+    "source": {"type": "string", "minLength": 1},
+    "filter": {"$ref": "#/$defs/expression"},
+    "namespace": {"$ref": "#/$defs/namespace"},
+    "map": {"type": "object", "propertyNames": {"$ref": "#/$defs/identifier"}, "additionalProperties": {}}
+  }
+}
+```
+
+## Examples
+
+`/on`:
+
+```yaml
+on:
+  schedule:
+  - cron: 0 6 1 * *
+    timezone: Europe/Paris
+```
+
+`/on`:
+
+```yaml
+on:
+  webhook:
+  - path: /invoicing
+    method: POST
+    auth: hmac
+```
+
+`/on/event`:
+
+```yaml
+on:
+  event:
+  - type: com.example.order.approved
+```
+
+`/on/schedule/*`:
+
+```yaml
+on:
+  schedule:
+  - cron: 0 6 1 * *
+    timezone: Europe/Paris
+    jitter: 5m
+    catch_up: false
+```
+
+`/on/schedule/*/cron`:
+
+```yaml
+on:
+  schedule:
+  - cron: 0 6 1 * *
+```
+
+`/on/schedule/*/cron`:
+
+```yaml
+on:
+  schedule:
+  - cron: '*/15 * * * *'
+```
+
+`/on/schedule/*/cron`:
+
+```yaml
+on:
+  schedule:
+  - cron: 30 7 * * MON-FRI
+```
+
+`/on/schedule/*/cron`:
+
+```yaml
+on:
+  schedule:
+  - cron: 0 0 1,15 * *
+```
+
+`/on/schedule/*/timezone`:
+
+```yaml
+on:
+  schedule:
+  - timezone: Europe/Paris
+```
+
+`/on/schedule/*/timezone`:
+
+```yaml
+on:
+  schedule:
+  - timezone: UTC
+```
+
+`/on/schedule/*/timezone`:
+
+```yaml
+on:
+  schedule:
+  - timezone: America/Argentina/Buenos_Aires
+```
+
+`/on/schedule/*/jitter`:
+
+```yaml
+on:
+  schedule:
+  - jitter: 30s
+```
+
+`/on/schedule/*/jitter`:
+
+```yaml
+on:
+  schedule:
+  - jitter: 5m
+```
+
+`/on/schedule/*/catch_up`:
+
+```yaml
+on:
+  schedule:
+  - catch_up: false
+```
+
+`/on/schedule/*/catch_up`:
+
+```yaml
+on:
+  schedule:
+  - catch_up: true
+```
+
+`/on/webhook/*`:
+
+```yaml
+on:
+  webhook:
+  - path: /invoicing
+    method: POST
+    auth: hmac
+    map:
+      orders: ${{ trigger.body.orders }}
+```
+
+`/on/webhook/*`:
+
+```yaml
+on:
+  webhook:
+  - path: /quotes
+    auth: bearer
+    response: sync
+    output: quote
+```
+
+`/on/webhook/*/path`:
+
+```yaml
+on:
+  webhook:
+  - path: /invoicing
+```
+
+`/on/webhook/*/path`:
+
+```yaml
+on:
+  webhook:
+  - path: /orders/approved
+```
+
+`/on/webhook/*/method`:
+
+```yaml
+on:
+  webhook:
+  - method: POST
+```
+
+`/on/webhook/*/method`:
+
+```yaml
+on:
+  webhook:
+  - method: PUT
+```
+
+`/on/webhook/*/auth`:
+
+```yaml
+on:
+  webhook:
+  - auth: hmac
+```
+
+`/on/webhook/*/auth`:
+
+```yaml
+on:
+  webhook:
+  - auth: bearer
+```
+
+`/on/webhook/*/response`:
+
+```yaml
+on:
+  webhook:
+  - response: async
+```
+
+`/on/webhook/*/response`:
+
+```yaml
+on:
+  webhook:
+  - response: sync
+```
+
+`/on/webhook/*/output`:
+
+```yaml
+on:
+  webhook:
+  - output: quote
+```
+
+`/on/webhook/*/output`:
+
+```yaml
+on:
+  webhook:
+  - output: invoices
+```
+
+`/on/webhook/*/map`:
+
+```yaml
+on:
+  webhook:
+  - map:
+      orders: ${{ trigger.body.orders }}
+```
+
+`/on/event/*`:
+
+```yaml
+on:
+  event:
+  - type: com.example.order.approved
+    filter: ${{ event.data.amount &gt; 0 }}
+```
+
+`/on/event/*`:
+
+```yaml
+on:
+  event:
+  - type: com.example.order.approved
+    source: /erp/orders
+    namespace: sales
+    map:
+      orders: ${{ event.data.orders }}
+```
+
+`/on/event/*/source`:
+
+```yaml
+on:
+  event:
+  - source: /erp/orders
+```
+
+`/on/event/*/filter`:
+
+```yaml
+on:
+  event:
+  - filter: ${{ event.data.amount &gt; 0 }}
+```
+
+`/on/event/*/namespace`:
+
+```yaml
+on:
+  event:
+  - namespace: sales
+```
+
+`/on/event/*/map`:
+
+```yaml
+on:
+  event:
+  - map:
+      orders: ${{ event.data.orders }}
+```</code></pre>
+    </div>
+
+    <h4 id="language-steps"><code>steps</code></h4>
+    <!-- Verbatim copy of language/steps.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/steps.md, from agentiik/schemas</div>
+<pre><code># `steps`
+
+The steps of the workflow, named. The order they appear in has no bearing on scheduling: a step becomes runnable once every declared input port is satisfied, and an edge is the only form of dependency there is. A name starting with a dot is a hidden block, never executed, there to be extended.
+
+## Keywords
+
+- `/steps`: The steps of the workflow, named. The order they appear in has no bearing on scheduling: a step becomes runnable once every declared input port is satisfied, and an edge is the only form of dependency there is. A name starting with a dot is a hidden block, never executed, there to be extended.
+- `workflow.schema.json#/$defs/paramName`: Name of a step parameter. It is a key of /agk/params.json, and the same name is exported as AGK_PARAM_&lt;NAME&gt; where a step runs a script instead of a brick, so a parameter name reads as an identifier and carries no hyphen. It is the grammar the brick manifest keys its own params by, which is what lets a step be validated against a manifest at all.
+- `/steps`: The steps block, as the entry point and an included file both write it: steps by name, with hidden blocks, whose names start with a dot, among them.
+- `/steps/*`, `/.*`: One instance of a brick, a script or a sub-workflow inside the graph, with its edges, its parameters and its execution settings. A hidden block, whose name starts with a dot, has the same shape and is never executed.
+- `/steps/*/image`, `/.*/image`: OCI image the step runs. A digest is required in production and a mutable tag is accepted in development, where it is resolved once for the whole run so that two shards of one step can never execute different code.
+- `/steps/*/params`, `/.*/params`: Parameters handed to the brick, validated against its manifest schema once the expressions are resolved. A step carrying a script has no manifest to validate against, so each entry is written to /agk/params.json and exported as AGK_PARAM_&lt;NAME&gt;. Substitution belongs here rather than in the repository tree, because a file in the tree is bytes and never a template.
+- `/steps/*/timeout`, `/.*/timeout`: How long one shard of this step may run before its container is stopped.
+- `/steps/*/resources`, `/.*/resources`: What this step's container is given, for work that needs more or less than the rest of the graph.
+- `/steps/*/network`, `/.*/network`: Whether this step can reach anything at all, and through what.
+- `/steps/*/egress`, `/.*/egress`: The addresses this step is allowed to open a connection to.
+- `/steps/*/runs_on`, `/.*/runs_on`: Where this step has to run, for work that any runner will not do.
+- `/steps/*/cache`, `/.*/cache`: Whether an identical earlier execution of this step may stand in for running it again.
+- `/steps/*/workflow`, `/.*/workflow`: Calls a sub-workflow instead of running an image. It is the only way to loop, since cycles in the graph are refused at validation, and it is bounded by a configurable maximum depth. A call into another namespace requires workflow:run on the workflow being called.
+- `/steps/*/workflow/workflow`, `/.*/workflow/workflow`: The workflow to call, as &lt;namespace&gt;/&lt;name&gt;.
+- `/steps/*/workflow/ref`, `/.*/workflow/ref`: Tag or commit the called workflow is read at, so that a change on its default branch does not change this run.
+- `/defaults/timeout`, `/steps/*/timeout`, `/.*/timeout`: Maximum duration of one shard, not of the step and not of the run: the whole run is bounded by the timeout at the root. On expiry the container is sent SIGTERM and then SIGKILL after a grace period the runner policy sets, so a step with something to flush or to write gets the chance to do it.
+- `/defaults/resources`, `/steps/*/resources`, `/.*/resources`: What the container is given and may not exceed. These are capped by the runner policy and by the namespace quota, so they can always ask for less than the fleet allows and never for more.
+- `/defaults/resources/cpu`, `/steps/*/resources/cpu`, `/.*/resources/cpu`: CPU allowance, in cores, fractions included. It is written as a string so that half a core reads as 0.5 wherever it travels, in this file, in the brick manifest and in the task message alike, and so that cpu: 0.5 and cpu: "0.5" are not two different documents in YAML. It is what the runner sets NanoCPUs from, and a runner refuses a task whose demand would take it past its own declared capacity. Zero is not an allowance, and NanoCPUs 0 is how a container is given no limit at all, so the value starts above it.
+- `/defaults/resources/memory`, `/steps/*/resources/memory`, `/.*/resources/memory`: Memory ceiling for the container, as a quantity with a binary suffix. The container is stopped when it goes past it, which is a failure of the step and not of the runner. A ceiling of zero would stop the container before it started, so the quantity begins at one.
+- `/defaults/resources/pids`, `/steps/*/resources/pids`, `/.*/resources/pids`: Ceiling on the number of processes inside the container, 256 by default. It is the cheap defence against a fork bomb taking a runner with it.
+- `/defaults/network`, `/steps/*/network`, `/.*/network`: The network the container is given. none is the default and leaves it with no network at all. egress attaches a network whose outbound traffic goes through the runner proxy that enforces the egress list. internal attaches a network with no route out and no address of the runner host in it, for a step that only talks to a sidecar service. Every task gets its own network, so two containers on one host never see each other.
+- `/defaults/egress`, `/steps/*/egress`, `/.*/egress`: The addresses this step may reach. The runner proxy enforces it, so anything not listed is refused rather than merely discouraged. It only means something with network: egress, where it is the difference between one API and the whole internet.
+- `/defaults/egress/allow`, `/steps/*/egress/allow`, `/.*/egress/allow`: The host and port pairs the step is allowed to open a connection to.
+- `/defaults/runs_on`, `/steps/*/runs_on`, `/.*/runs_on`: Runner labels a task of this step has to match, for work that has to happen somewhere particular: a zone, an architecture, a host holding a licence. A namespace can only select the runner pools it is allowed to use, so this narrows a choice and never widens it. The task goes to the one pool whose labels include every one of these, because a pool is a queue and a task on two queues would run twice: none, or more than one, fails the step with exit code 125 on the infrastructure's account. A step that names none goes to the pool default.
+- `/defaults/cache`, `/steps/*/cache`, `/.*/cache`: Reuses the result of an identical earlier execution instead of starting a container. The key combines the image digest, the resolved parameters and the digests of the input envelopes, prefixed by the namespace, so a hit never crosses a namespace boundary. A hit that would hand back an expired artifact is not a hit, because the point is to skip work whose result is still there.
+
+## Schema
+
+`workflow.schema.json#/properties/steps`:
+
+```json
+{"$ref": "#/$defs/steps"}
+```
+
+`workflow.schema.json#/$defs/steps`:
+
+```json
+{
+  "type": "object",
+  "propertyNames": {"anyOf": [{"$ref": "#/$defs/identifier"}, {"pattern": "^\\.[A-Za-z0-9][A-Za-z0-9_-]*$"}]},
+  "additionalProperties": {"$ref": "#/$defs/step"}
+}
+```
+
+`workflow.schema.json#/$defs/step`:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "allOf": [
+    {"not": {"required": ["image", "workflow"]}},
+    {
+      "if": {"required": ["workflow"]},
+      "then": {
+        "not": {
+          "anyOf": [
+            {"required": ["script"]},
+            {"required": ["before_script"]},
+            {"required": ["after_script"]},
+            {"required": ["shell"]}
+          ]
+        }
+      }
+    }
+  ],
+  "properties": {
+    "image": {"type": "string", "minLength": 1},
+    "needs": {"$comment": "taught by the needs topic"},
+    "inputs": {"$comment": "taught by the ports topic"},
+    "outputs": {"$comment": "taught by the ports topic"},
+    "params": {"type": "object", "propertyNames": {"$ref": "#/$defs/paramName"}, "additionalProperties": {}},
+    "if": {"$comment": "taught by the needs topic"},
+    "when": {"$comment": "taught by the needs topic"},
+    "merge": {"$comment": "taught by the merge topic"},
+    "strategy": {"$comment": "taught by the fan_out topic"},
+    "retry": {"$comment": "taught by the retry topic"},
+    "timeout": {"$ref": "#/$defs/timeout"},
+    "continue_on_error": {"$comment": "taught by the retry topic"},
+    "resources": {"$ref": "#/$defs/resources"},
+    "network": {"$ref": "#/$defs/network"},
+    "egress": {"$ref": "#/$defs/egress"},
+    "runs_on": {"$ref": "#/$defs/runsOn"},
+    "secrets": {"$comment": "taught by the secrets topic"},
+    "cache": {"$ref": "#/$defs/cache"},
+    "idempotent": {"$comment": "taught by the retry topic"},
+    "files": {"$comment": "taught by the files topic"},
+    "script": {"$comment": "taught by the script topic"},
+    "before_script": {"$comment": "taught by the script topic"},
+    "after_script": {"$comment": "taught by the script topic"},
+    "shell": {"$comment": "taught by the script topic"},
+    "extends": {"$comment": "taught by the includes topic"},
+    "workflow": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,254}/[A-Za-z0-9][A-Za-z0-9_-]{0,254}(@\\S+)?$",
+          "not": {
+            "pattern": "^(auth|me|users|groups|service-accounts|namespaces|runners|runner-pools|bus|tasks|bricks|runs|artifacts|stats|api|hooks|mcp|objects)/"
+          }
+        },
+        {
+          "type": "object",
+          "required": ["workflow"],
+          "additionalProperties": false,
+          "properties": {"workflow": {"$ref": "#/$defs/workflowPath"}, "ref": {"type": "string", "minLength": 1}}
+        }
+      ]
+    }
+  }
+}
+```
+
+`workflow.schema.json#/$defs/paramName`:
+
+```json
+{"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"}
+```
+
+`workflow.schema.json#/$defs/timeout`:
+
+```json
+{"$ref": "#/$defs/duration"}
+```
+
+`workflow.schema.json#/$defs/resources`:
+
+```json
+{
+  "type": "object",
+  "minProperties": 1,
+  "additionalProperties": false,
+  "properties": {
+    "cpu": {
+      "type": "string",
+      "pattern": "^(?:[0-9]*[1-9][0-9]*(?:\\.[0-9]+)?|[0-9]+\\.[0-9]*[1-9][0-9]*)$"
+    },
+    "memory": {"type": "string", "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"},
+    "pids": {"type": "integer", "minimum": 1, "default": 256}
+  }
+}
+```
+
+`workflow.schema.json#/$defs/network`:
+
+```json
+{"enum": ["none", "egress", "internal"], "default": "none"}
+```
+
+`workflow.schema.json#/$defs/egress`:
+
+```json
+{
+  "type": "object",
+  "required": ["allow"],
+  "additionalProperties": false,
+  "properties": {
+    "allow": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[^\\s/:]+:(?:6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3})$"
+      }
+    }
+  }
+}
+```
+
+`workflow.schema.json#/$defs/runsOn`:
+
+```json
+{
+  "type": "array",
+  "minItems": 1,
+  "uniqueItems": true,
+  "items": {"type": "string", "pattern": "^[^\\s=]+=[^\\s=]+$"}
+}
+```
+
+`workflow.schema.json#/$defs/cache`:
+
+```json
+{"type": "boolean"}
+```
+
+## Examples
+
+`/steps`:
+
+```yaml
+steps:
+  normalize:
+    image: ghcr.io/acme/agk-normalize@sha256:9f2c1d4a77b0c3e51d8a6f2b4c9e0a13d5f7b82c6e04a9d31b7f5c28e6a0b7e0
+    inputs:
+      orders: ${{ workflow.inputs.orders }}
+    outputs:
+    - ok
+    - rejected
+  archive:
+    image: ghcr.io/acme/agk-archive@sha256:44de9033c0a15bb27e8d41f6a920cd73b58e1f0427cad96b3e8175d20f41c115
+    needs:
+    - step: normalize
+      port: ok
+      as: in
+    merge: wait_all
+    outputs:
+    - out
+```
+
+`workflow.schema.json#/$defs/paramName`:
+
+```yaml
+url
+```
+
+`workflow.schema.json#/$defs/paramName`:
+
+```yaml
+method
+```
+
+`workflow.schema.json#/$defs/paramName`:
+
+```yaml
+endpoint
+```
+
+`workflow.schema.json#/$defs/paramName`:
+
+```yaml
+currency
+```
+
+`/steps`:
+
+```yaml
+steps:
+  normalize:
+    image: ghcr.io/acme/agk-normalize@sha256:9f2c1d4a77b0c3e51d8a6f2b4c9e0a13d5f7b82c6e04a9d31b7f5c28e6a0b7e0
+    outputs:
+    - ok
+    - rejected
+  .shared-egress:
+    network: egress
+    egress:
+      allow:
+      - vat.example.com:443
+```
+
+`workflow.schema.json#/$defs/step`:
+
+```yaml
+image: ghcr.io/acme/agk-invoice@sha256:1ab74e5c9d0b3f6182a47ce05d9b3f21708cd4a6e2b95f30c71d8ae64b2c39cc
+needs:
+- step: normalize
+  port: ok
+  as: in
+if: ${{ inputs.in.count &gt; 0 }}
+strategy:
+  fan_out: item
+  max_parallel: 8
+secrets:
+- billing
+network: egress
+egress:
+  allow:
+  - api.billing.example.com:443
+retry:
+  max: 4
+  on:
+  - transient
+outputs:
+- out
+- error
+```
+
+`/steps/*/image`:
+
+```yaml
+steps:
+  normalize:
+    image: ghcr.io/acme/agk-invoice@sha256:1ab74e5c9d0b3f6182a47ce05d9b3f21708cd4a6e2b95f30c71d8ae64b2c39cc
+```
+
+`/steps/*/image`:
+
+```yaml
+steps:
+  normalize:
+    image: python:3.13-slim@sha256:1c4d5e8f2a70b91c36d0ae47f5b82091c6d3a41e7059bfc2183d6a04e7b19a02
+```
+
+`/steps/*/params`:
+
+```yaml
+steps:
+  normalize:
+    params:
+      currency: ${{ vars.currency }}
+```
+
+`/steps/*/params`:
+
+```yaml
+steps:
+  normalize:
+    params:
+      endpoint: https://vat.example.com/v2
+```
+
+`/steps/*/timeout`:
+
+```yaml
+steps:
+  normalize:
+    timeout: 2m
+```
+
+`/steps/*/timeout`:
+
+```yaml
+steps:
+  normalize:
+    timeout: 10m
+```
+
+`/steps/*/resources`:
+
+```yaml
+steps:
+  normalize:
+    resources:
+      cpu: '0.5'
+      memory: 256Mi
+```
+
+`/steps/*/network`:
+
+```yaml
+steps:
+  normalize:
+    network: egress
+```
+
+`/steps/*/egress`:
+
+```yaml
+steps:
+  normalize:
+    egress:
+      allow:
+      - api.billing.example.com:443
+```
+
+`/steps/*/runs_on`:
+
+```yaml
+steps:
+  normalize:
+    runs_on:
+    - zone=dmz
+    - arch=arm64
+```
+
+`/steps/*/cache`:
+
+```yaml
+steps:
+  normalize:
+    cache: true
+```
+
+`/steps/*/workflow`:
+
+```yaml
+steps:
+  normalize:
+    workflow: finance/common
+```
+
+`/steps/*/workflow`:
+
+```yaml
+steps:
+  normalize:
+    workflow: finance/common@v2.1.0
+```
+
+`/steps/*/workflow`:
+
+```yaml
+steps:
+  normalize:
+    workflow:
+      workflow: finance/common
+      ref: v2.1.0
+```
+
+`/steps/*/workflow/workflow`:
+
+```yaml
+steps:
+  normalize:
+    workflow:
+      workflow: finance/common
+```
+
+`/steps/*/workflow/ref`:
+
+```yaml
+steps:
+  normalize:
+    workflow:
+      ref: v2.1.0
+```
+
+`/steps/*/workflow/ref`:
+
+```yaml
+steps:
+  normalize:
+    workflow:
+      ref: a3f9c1e
+```
+
+`workflow.schema.json#/$defs/timeout`:
+
+```yaml
+2m
+```
+
+`workflow.schema.json#/$defs/timeout`:
+
+```yaml
+10m
+```
+
+`workflow.schema.json#/$defs/resources`:
+
+```yaml
+cpu: '1'
+memory: 512Mi
+```
+
+`workflow.schema.json#/$defs/resources`:
+
+```yaml
+cpu: '0.5'
+memory: 256Mi
+pids: 128
+```
+
+`/defaults/resources/cpu`:
+
+```yaml
+defaults:
+  resources:
+    cpu: '1'
+```
+
+`/defaults/resources/cpu`:
+
+```yaml
+defaults:
+  resources:
+    cpu: '0.5'
+```
+
+`/defaults/resources/memory`:
+
+```yaml
+defaults:
+  resources:
+    memory: 256Mi
+```
+
+`/defaults/resources/memory`:
+
+```yaml
+defaults:
+  resources:
+    memory: 512Mi
+```
+
+`/defaults/resources/memory`:
+
+```yaml
+defaults:
+  resources:
+    memory: 2Gi
+```
+
+`/defaults/resources/pids`:
+
+```yaml
+defaults:
+  resources:
+    pids: 128
+```
+
+`/defaults/resources/pids`:
+
+```yaml
+defaults:
+  resources:
+    pids: 256
+```
+
+`workflow.schema.json#/$defs/network`:
+
+```yaml
+none
+```
+
+`workflow.schema.json#/$defs/network`:
+
+```yaml
+egress
+```
+
+`workflow.schema.json#/$defs/network`:
+
+```yaml
+internal
+```
+
+`workflow.schema.json#/$defs/egress`:
+
+```yaml
+allow:
+- api.billing.example.com:443
+```
+
+`/defaults/egress/allow`:
+
+```yaml
+defaults:
+  egress:
+    allow:
+    - api.billing.example.com:443
+    - vat.example.com:443
+```
+
+`workflow.schema.json#/$defs/runsOn`:
+
+```yaml
+- arch=amd64
+```
+
+`workflow.schema.json#/$defs/runsOn`:
+
+```yaml
+- zone=dmz
+- arch=arm64
+```
+
+`workflow.schema.json#/$defs/cache`:
+
+```yaml
+true
+```
+
+`workflow.schema.json#/$defs/cache`:
+
+```yaml
+false
+```</code></pre>
+    </div>
+
+    <h4 id="language-ports"><code>ports</code></h4>
+    <!-- Verbatim copy of language/ports.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/ports.md, from agentiik/schemas</div>
+<pre><code># `ports`
+
+The output ports this step publishes. For a brick they must be a subset of the ports its manifest declares; a script has no manifest to read them from, so there they have to be written out. A declared port the container never writes publishes an empty envelope, which is not an error.
+
+## Keywords
+
+- `/steps/*/outputs`, `/.*/outputs`: The output ports this step publishes. For a brick they must be a subset of the ports its manifest declares; a script has no manifest to read them from, so there they have to be written out. A declared port the container never writes publishes an empty envelope, which is not an error.
+- `/outputs/*/from/port`, `/on/webhook/*/output`, `/mcp/output`, `/steps/*/needs/*/port`, `/steps/*/needs/*/as`, `/steps/*/outputs/*`, `/.*/needs/*/port`, `/.*/needs/*/as`, `/.*/outputs/*`: The name of a port, or of a workflow output: an identifier of at most 250 characters, since each becomes the file &lt;name&gt;.json, which a filesystem holds to 255 with its suffix. It is the grammar and the bound the brick manifest declares its ports on, so that every port a manifest declares can be named here.
+- `/steps/*/inputs`, `/.*/inputs`: Feeds an input port from a workflow input or from an expression, creating no dependency on another step. It is how a step reads what the run was started with rather than what another step produced.
+
+## Schema
+
+`workflow.schema.json#/$defs/step/properties/inputs`:
+
+```json
+{"type": "object", "propertyNames": {"$ref": "#/$defs/portName"}, "additionalProperties": {}}
+```
+
+`workflow.schema.json#/$defs/step/properties/outputs`:
+
+```json
+{"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/portName"}}
+```
+
+`workflow.schema.json#/$defs/portName`:
+
+```json
+{"$ref": "#/$defs/identifier", "maxLength": 250}
+```
+
+## Examples
+
+`/steps/*/outputs`:
+
+```yaml
+steps:
+  normalize:
+    outputs:
+    - ok
+    - rejected
+```
+
+`/steps/*/outputs`:
+
+```yaml
+steps:
+  normalize:
+    outputs:
+    - out
+    - error
+```
+
+`workflow.schema.json#/$defs/portName`:
+
+```yaml
+out
+```
+
+`workflow.schema.json#/$defs/portName`:
+
+```yaml
+error
+```
+
+`workflow.schema.json#/$defs/portName`:
+
+```yaml
+rejected
+```
+
+`workflow.schema.json#/$defs/portName`:
+
+```yaml
+invoices
+```
+
+`/steps/*/inputs`:
+
+```yaml
+steps:
+  normalize:
+    inputs:
+      orders: ${{ workflow.inputs.orders }}
+      customers: ${{ workflow.inputs.customers }}
+```</code></pre>
+    </div>
+
+    <h4 id="language-needs"><code>needs</code></h4>
+    <!-- Verbatim copy of language/needs.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/needs.md, from agentiik/schemas</div>
+<pre><code># `needs`
+
+The inbound edges of the step, which are the only form of dependency there is. Each edge names the step and the output port an envelope comes from and the input port it arrives on. A step becomes runnable once every declared port is satisfied, so this is a barrier and not a stream.
+
+## Keywords
+
+- `/steps/*/needs`, `/.*/needs`: The inbound edges of the step, which are the only form of dependency there is. Each edge names the step and the output port an envelope comes from and the input port it arrives on. A step becomes runnable once every declared port is satisfied, so this is a barrier and not a stream.
+- `/steps/*/if`, `/.*/if`: Decides whether the step runs at all. When it is false the step is skipped and publishes empty envelopes on every port, so the steps below it still get to decide their own fate through when. Item contents are not readable here: a test reads port metadata such as inputs.in.count, which is what keeps the controller from loading a namespace's data to schedule it.
+- `/steps/*/when`, `/.*/when`: Which upstream outcomes let this step start, so that a step cleaning up after a failure runs where an ordinary one would not.
+- `/steps/*/needs/*`, `/.*/needs/*`: One inbound edge: the output port of another step, and the input port it lands on here. The short form names the step alone, which is the same as taking its out port onto in.
+- `/steps/*/needs/*/step`, `/.*/needs/*/step`: The step the envelope comes from.
+- `/steps/*/needs/*/port`, `/.*/needs/*/port`: Which of that step's output ports is taken. This is what lets an item rejected by one step bypass the next and still reach the last.
+- `/steps/*/needs/*/as`, `/.*/needs/*/as`: The input port the envelope arrives on here. Naming it is what lets one step take two different envelopes and still tell them apart.
+- `/defaults/when`, `/steps/*/when`, `/.*/when`: The upstream states this step is willing to start on. The default is [succeeded], which is why a step that cleans up after a failure, or that runs whatever happened, has to say so. A step reached through continue_on_error sees the failed state here.
+
+## Schema
+
+`workflow.schema.json#/$defs/step/properties/needs`:
+
+```json
+{"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/edge"}}
+```
+
+`workflow.schema.json#/$defs/edge`:
+
+```json
+{
+  "oneOf": [
+    {"$ref": "#/$defs/identifier"},
+    {
+      "type": "object",
+      "required": ["step"],
+      "additionalProperties": false,
+      "properties": {
+        "step": {"$ref": "#/$defs/identifier"},
+        "port": {"$ref": "#/$defs/portName", "default": "out"},
+        "as": {"$ref": "#/$defs/portName", "default": "in"}
+      }
+    }
+  ]
+}
+```
+
+`workflow.schema.json#/$defs/step/properties/when`:
+
+```json
+{"$ref": "#/$defs/when"}
+```
+
+`workflow.schema.json#/$defs/when`:
+
+```json
+{
+  "type": "array",
+  "minItems": 1,
+  "uniqueItems": true,
+  "items": {"enum": ["succeeded", "failed", "skipped", "always"]},
+  "default": ["succeeded"]
+}
+```
+
+`workflow.schema.json#/$defs/step/properties/if`:
+
+```json
+{"$ref": "#/$defs/expression"}
+```
+
+## Examples
+
+`/steps/*/needs`:
+
+```yaml
+steps:
+  normalize:
+    needs:
+    - normalize
+```
+
+`/steps/*/needs`:
+
+```yaml
+steps:
+  normalize:
+    needs:
+    - step: invoice
+      port: out
+      as: invoices
+    - step: normalize
+      port: rejected
+      as: rejected
+```
+
+`/steps/*/if`:
+
+```yaml
+steps:
+  normalize:
+    if: ${{ inputs.in.count &gt; 0 }}
+```
+
+`/steps/*/when`:
+
+```yaml
+steps:
+  normalize:
+    when:
+    - succeeded
+    - skipped
+```
+
+`workflow.schema.json#/$defs/edge`:
+
+```yaml
+normalize
+```
+
+`workflow.schema.json#/$defs/edge`:
+
+```yaml
+step: normalize
+port: ok
+as: in
+```
+
+`/steps/*/needs/*/step`:
+
+```yaml
+steps:
+  normalize:
+    needs:
+    - step: normalize
+```
+
+`/steps/*/needs/*/port`:
+
+```yaml
+steps:
+  normalize:
+    needs:
+    - port: ok
+```
+
+`/steps/*/needs/*/port`:
+
+```yaml
+steps:
+  normalize:
+    needs:
+    - port: rejected
+```
+
+`/steps/*/needs/*/port`:
+
+```yaml
+steps:
+  normalize:
+    needs:
+    - port: error
+```
+
+`/steps/*/needs/*/as`:
+
+```yaml
+steps:
+  normalize:
+    needs:
+    - as: in
+```
+
+`/steps/*/needs/*/as`:
+
+```yaml
+steps:
+  normalize:
+    needs:
+    - as: invoices
+```
+
+`/steps/*/needs/*/as`:
+
+```yaml
+steps:
+  normalize:
+    needs:
+    - as: rejected
+```
+
+`workflow.schema.json#/$defs/when`:
+
+```yaml
+- succeeded
+- skipped
+```
+
+`workflow.schema.json#/$defs/when`:
+
+```yaml
+- always
+```</code></pre>
+    </div>
+
+    <h4 id="language-merge"><code>merge</code></h4>
+    <!-- Verbatim copy of language/merge.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/merge.md, from agentiik/schemas</div>
+<pre><code># `merge`
+
+How several edges arriving on the same input port are combined. wait_all waits for every upstream port and concatenates items in edge declaration order, which is the default when a port has more than one edge. zip pairs items by rank and fails validation on envelopes of differing lengths. join matches items on a JSON path and sends what it cannot match to the unmatched port, when the step declares one. first lifts the barrier as soon as one upstream port has produced, abandoning the other edges and cancelling their steps when nothing else needs them.
+
+## Keywords
+
+- `/steps/*/merge`, `/.*/merge`: How several edges arriving on the same input port are combined. wait_all waits for every upstream port and concatenates items in edge declaration order, which is the default when a port has more than one edge. zip pairs items by rank and fails validation on envelopes of differing lengths. join matches items on a JSON path and sends what it cannot match to the unmatched port, when the step declares one. first lifts the barrier as soon as one upstream port has produced, abandoning the other edges and cancelling their steps when nothing else needs them.
+- `/steps/*/merge/join`, `/.*/merge/join`: The join and what it matches items on.
+- `/steps/*/merge/join/on`, `/.*/merge/join/on`: JSON path to the value items are matched by. Items that match nothing leave on the unmatched port if the step declares one, rather than disappearing quietly.
+
+## Schema
+
+`workflow.schema.json#/$defs/step/properties/merge`:
+
+```json
+{
+  "oneOf": [
+    {"enum": ["wait_all", "zip", "first"]},
+    {
+      "type": "object",
+      "required": ["join"],
+      "additionalProperties": false,
+      "properties": {
+        "join": {
+          "type": "object",
+          "required": ["on"],
+          "additionalProperties": false,
+          "properties": {"on": {"type": "string", "minLength": 1}}
+        }
+      }
+    }
+  ],
+  "default": "wait_all"
+}
+```
+
+## Examples
+
+`/steps/*/merge`:
+
+```yaml
+steps:
+  normalize:
+    merge: wait_all
+```
+
+`/steps/*/merge`:
+
+```yaml
+steps:
+  normalize:
+    merge: first
+```
+
+`/steps/*/merge`:
+
+```yaml
+steps:
+  normalize:
+    merge:
+      join:
+        on: $.data.customer_id
+```</code></pre>
+    </div>
+
+    <h4 id="language-fan_out"><code>fan_out</code></h4>
+    <!-- Verbatim copy of language/fan_out.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/fan_out.md, from agentiik/schemas</div>
+<pre><code># `fan_out`
+
+How the step is split into shards and how many of them run at once. Shards of one step have their envelopes concatenated port by port before publication, so a fan-out is invisible to whatever reads the result.
+
+## Keywords
+
+- `/steps/*/strategy`, `/.*/strategy`: How the step is split into shards and how many of them run at once. Shards of one step have their envelopes concatenated port by port before publication, so a fan-out is invisible to whatever reads the result.
+- `/steps/*/strategy/fan_out`, `/.*/strategy/fan_out`: Whether one container takes the whole envelope or the work is divided. none gives a single container everything and is the default. item gives one container per item, each receiving a single-item envelope, and is the only place an expression can read item. batch(n) gives one container per n items. matrix gives one container per combination of the matrix variables.
+- `/steps/*/strategy/max_parallel`, `/.*/strategy/max_parallel`: Ceiling on how many shards of this step run at the same time. It is what keeps a fan-out of ten thousand items from taking the whole namespace's share of the fleet, before the namespace quota has to.
+- `/steps/*/strategy/matrix`, `/.*/strategy/matrix`: Variable lists whose cartesian product becomes the shards. Every combination runs as its own shard with its variables injected into params, which is how one step covers three regions and two profiles without being written six times.
+- `/steps/*/strategy/fail_fast`, `/.*/strategy/fail_fast`: Whether the first shard to fail stops the shards still running, rather than letting every shard finish before the step is judged.
+
+## Schema
+
+`workflow.schema.json#/$defs/step/properties/strategy`:
+
+```json
+{
+  "type": "object",
+  "minProperties": 1,
+  "additionalProperties": false,
+  "properties": {
+    "fan_out": {
+      "anyOf": [
+        {"enum": ["none", "item", "matrix"]},
+        {"type": "string", "pattern": "^batch\\([1-9][0-9]*\\)$"}
+      ],
+      "default": "none"
+    },
+    "max_parallel": {"type": "integer", "minimum": 1},
+    "matrix": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"$ref": "#/$defs/identifier"},
+      "additionalProperties": {"type": "array", "minItems": 1}
+    },
+    "fail_fast": {"type": "boolean"}
+  }
+}
+```
+
+## Examples
+
+`/steps/*/strategy`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      fan_out: item
+      max_parallel: 8
+```
+
+`/steps/*/strategy`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      matrix:
+        region:
+        - fr
+        - be
+        - ch
+        profile:
+        - standard
+        - reduced
+      max_parallel: 3
+```
+
+`/steps/*/strategy/fan_out`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      fan_out: none
+```
+
+`/steps/*/strategy/fan_out`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      fan_out: item
+```
+
+`/steps/*/strategy/fan_out`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      fan_out: batch(50)
+```
+
+`/steps/*/strategy/fan_out`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      fan_out: matrix
+```
+
+`/steps/*/strategy/max_parallel`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      max_parallel: 3
+```
+
+`/steps/*/strategy/max_parallel`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      max_parallel: 8
+```
+
+`/steps/*/strategy/matrix`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      matrix:
+        region:
+        - fr
+        - be
+        - ch
+        profile:
+        - standard
+        - reduced
+```
+
+`/steps/*/strategy/fail_fast`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      fail_fast: true
+```
+
+`/steps/*/strategy/fail_fast`:
+
+```yaml
+steps:
+  normalize:
+    strategy:
+      fail_fast: false
+```</code></pre>
+    </div>
+
+    <h4 id="language-retry"><code>retry</code></h4>
+    <!-- Verbatim copy of language/retry.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/retry.md, from agentiik/schemas</div>
+<pre><code># `retry`
+
+When an attempt is made again, and how long the engine waits first. Retrying is deliberate rather than automatic: an application failure is not retried unless this says it should be, and invalid input, exit code 120, is never retried whatever this says.
+
+## Keywords
+
+- `/defaults/retry`, `/steps/*/retry`, `/.*/retry`: When an attempt is made again, and how long the engine waits first. Retrying is deliberate rather than automatic: an application failure is not retried unless this says it should be, and invalid input, exit code 120, is never retried whatever this says.
+- `/steps/*/retry`, `/.*/retry`: Whether a failed attempt at this step is made again, and how long the engine waits first.
+- `/steps/*/continue_on_error`, `/.*/continue_on_error`: Whether the run survives this step failing.
+- `/steps/*/idempotent`, `/.*/idempotent`: Whether this step can safely be run twice, which is what decides if a lost task is requeued.
+- `/defaults/retry/max`, `/steps/*/retry/max`, `/.*/retry/max`: How many further attempts a failure that this policy accepts is given. Beyond it the step is failed and the graph carries on as when says.
+- `/defaults/retry/on`, `/steps/*/retry/on`, `/.*/retry/on`: The failures worth another attempt. transient is the 100 to 119 exit range a brick uses to say it was unlucky. failed is the application range, 1 to 99, retried only where the author knows it is safe. lost is a task whose runner stopped reporting, which is requeued only for an idempotent step. timeout is an attempt stopped at its deadline.
+- `/defaults/retry/backoff`, `/steps/*/retry/backoff`, `/.*/retry/backoff`: How long to wait between attempts, so that a dependency which is briefly unwell is not hammered while it recovers.
+- `/defaults/retry/backoff/type`, `/steps/*/retry/backoff/type`, `/.*/retry/backoff/type`: How the wait grows. exponential lengthens it after each failure, starting at base and never going past max.
+- `/defaults/retry/backoff/base`, `/steps/*/retry/backoff/base`, `/.*/retry/backoff/base`: The wait before the first further attempt, and the value the growth starts from.
+- `/defaults/retry/backoff/max`, `/steps/*/retry/backoff/max`, `/.*/retry/backoff/max`: Ceiling on the wait between two attempts, however many have already failed.
+- `/defaults/continue_on_error`, `/steps/*/continue_on_error`, `/.*/continue_on_error`: Lets the run carry on when this step fails. The step is still failed and still says so: downstream steps see that state through when, which is how an error path is written without the whole run being marked failed.
+- `/defaults/idempotent`, `/steps/*/idempotent`, `/.*/idempotent`: Whether running the step again with the same inputs is safe. Only an idempotent step is requeued after a task is lost, because a lost task may well have finished without the result coming back, and only an idempotent step can be cached. The default is true, which puts the burden on the brick author.
+
+## Schema
+
+`workflow.schema.json#/$defs/step/properties/retry`:
+
+```json
+{"$ref": "#/$defs/retry"}
+```
+
+`workflow.schema.json#/$defs/retry`:
+
+```json
+{
+  "type": "object",
+  "minProperties": 1,
+  "additionalProperties": false,
+  "properties": {
+    "max": {"type": "integer", "minimum": 0},
+    "on": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["transient", "failed", "lost", "timeout"]}
+    },
+    "backoff": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "type": {"enum": ["exponential"]},
+        "base": {"$ref": "#/$defs/duration"},
+        "max": {"$ref": "#/$defs/duration"}
+      }
+    }
+  }
+}
+```
+
+`workflow.schema.json#/$defs/step/properties/continue_on_error`:
+
+```json
+{"$ref": "#/$defs/continueOnError"}
+```
+
+`workflow.schema.json#/$defs/continueOnError`:
+
+```json
+{"type": "boolean"}
+```
+
+`workflow.schema.json#/$defs/step/properties/idempotent`:
+
+```json
+{"$ref": "#/$defs/idempotent"}
+```
+
+`workflow.schema.json#/$defs/idempotent`:
+
+```json
+{"type": "boolean", "default": true}
+```
+
+## Examples
+
+`workflow.schema.json#/$defs/retry`:
+
+```yaml
+max: 4
+on:
+- transient
+```
+
+`workflow.schema.json#/$defs/retry`:
+
+```yaml
+max: 2
+on:
+- transient
+backoff:
+  type: exponential
+  base: 2s
+  max: 60s
+```
+
+`/steps/*/retry`:
+
+```yaml
+steps:
+  normalize:
+    retry:
+      max: 4
+      on:
+      - transient
+```
+
+`/steps/*/continue_on_error`:
+
+```yaml
+steps:
+  normalize:
+    continue_on_error: true
+```
+
+`/steps/*/idempotent`:
+
+```yaml
+steps:
+  normalize:
+    idempotent: false
+```
+
+`/defaults/retry/max`:
+
+```yaml
+defaults:
+  retry:
+    max: 2
+```
+
+`/defaults/retry/max`:
+
+```yaml
+defaults:
+  retry:
+    max: 4
+```
+
+`/defaults/retry/on`:
+
+```yaml
+defaults:
+  retry:
+    on:
+    - transient
+```
+
+`/defaults/retry/on`:
+
+```yaml
+defaults:
+  retry:
+    on:
+    - transient
+    - lost
+```
+
+`/defaults/retry/backoff`:
+
+```yaml
+defaults:
+  retry:
+    backoff:
+      type: exponential
+      base: 2s
+      max: 60s
+```
+
+`/defaults/retry/backoff/type`:
+
+```yaml
+defaults:
+  retry:
+    backoff:
+      type: exponential
+```
+
+`/defaults/retry/backoff/base`:
+
+```yaml
+defaults:
+  retry:
+    backoff:
+      base: 2s
+```
+
+`/defaults/retry/backoff/max`:
+
+```yaml
+defaults:
+  retry:
+    backoff:
+      max: 60s
+```
+
+`workflow.schema.json#/$defs/continueOnError`:
+
+```yaml
+true
+```
+
+`workflow.schema.json#/$defs/continueOnError`:
+
+```yaml
+false
+```</code></pre>
+    </div>
+
+    <h4 id="language-expressions"><code>expressions</code></h4>
+    <!-- Verbatim copy of language/expressions.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/expressions.md, from agentiik/schemas</div>
+<pre><code># `expressions`
+
+A CEL expression inside ${{ }}, evaluated by the controller. An expression that fills the whole value keeps its type; one embedded in a longer string is converted to text. CEL is used because it terminates, has no side effects and cannot be made to diverge by the file that carries it. It reads a fixed set of roots, each only where it means something: workflow (name, namespace, version, inputs), run (id, started_at, attempt, trigger_kind, triggered_by) and vars everywhere; trigger (body, headers, query, scheduled_for) in the on block and step parameters; event (the CloudEvents 1.0 attributes and data) in an event trigger's filter and map; inputs (the current step's input ports: count, empty, bytes) and steps (steps.&lt;id&gt;.status, steps.&lt;id&gt;.outputs.&lt;port&gt;.count) in a step; item under fan_out: item and matrix under fan_out: matrix, in a shard; and secrets, opaque references, in params and secrets alone. It never reads what an item holds, only a port's metadata such as inputs.in.count, except the current item under fan_out: item, so the controller serving every namespace never loads one namespace's business data.
+
+## Keywords
+
+- `/on/event/*/filter`, `/steps/*/if`, `/.*/if`: A CEL expression inside ${{ }}, evaluated by the controller. An expression that fills the whole value keeps its type; one embedded in a longer string is converted to text. CEL is used because it terminates, has no side effects and cannot be made to diverge by the file that carries it. It reads a fixed set of roots, each only where it means something: workflow (name, namespace, version, inputs), run (id, started_at, attempt, trigger_kind, triggered_by) and vars everywhere; trigger (body, headers, query, scheduled_for) in the on block and step parameters; event (the CloudEvents 1.0 attributes and data) in an event trigger's filter and map; inputs (the current step's input ports: count, empty, bytes) and steps (steps.&lt;id&gt;.status, steps.&lt;id&gt;.outputs.&lt;port&gt;.count) in a step; item under fan_out: item and matrix under fan_out: matrix, in a shard; and secrets, opaque references, in params and secrets alone. It never reads what an item holds, only a port's metadata such as inputs.in.count, except the current item under fan_out: item, so the controller serving every namespace never loads one namespace's business data.
+
+## Schema
+
+`workflow.schema.json#/$defs/expression`:
+
+```json
+{"type": "string"}
+```
+
+## Examples
+
+`workflow.schema.json#/$defs/expression`:
+
+```yaml
+${{ workflow.inputs.orders }}
+```
+
+`workflow.schema.json#/$defs/expression`:
+
+```yaml
+${{ inputs.in.count &gt; 0 }}
+```
+
+`workflow.schema.json#/$defs/expression`:
+
+```yaml
+${{ vars.currency }}
+```
+
+`workflow.schema.json#/$defs/expression`:
+
+```yaml
+${{ trigger.body.orders }}
+```</code></pre>
+    </div>
+
+    <h4 id="language-secrets"><code>secrets</code></h4>
+    <!-- Verbatim copy of language/secrets.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/secrets.md, from agentiik/schemas</div>
+<pre><code># `secrets`
+
+The secrets of the owning namespace this workflow uses, by name and by nothing else, resolved by the API at the last moment. Where a value lives, its provider and its path, is declared on the namespace through the API or agentiik_secret in Terraform, by a principal holding secret:write, and a namespace is confined to its own paths: a path written in this file would let anyone able to push the workflow aim it at whatever the store holds. Only secrets the owning namespace declares can be named, so moving a workflow elsewhere breaks the reference at validation instead of quietly carrying access along. A step mounts one of them by the same name.
+
+## Keywords
+
+- `/secrets`: The secrets of the owning namespace this workflow uses, by name and by nothing else, resolved by the API at the last moment. Where a value lives, its provider and its path, is declared on the namespace through the API or agentiik_secret in Terraform, by a principal holding secret:write, and a namespace is confined to its own paths: a path written in this file would let anyone able to push the workflow aim it at whatever the store holds. Only secrets the owning namespace declares can be named, so moving a workflow elsewhere breaks the reference at validation instead of quietly carrying access along. A step mounts one of them by the same name.
+- `/secrets`: The secrets block, as the entry point and an included file both write it: names the owning namespace declares, each once, and nothing about where a value lives.
+- `/steps/*/secrets`, `/.*/secrets`: Which of the workflow's secrets this step is given, kept to the few it actually uses.
+- `/defaults/secrets`, `/steps/*/secrets`, `/.*/secrets`: Which of the secrets the workflow names in its secrets block this step gets, by the same name. They arrive as files on tmpfs under /agk/secrets/, at the mount the brick manifest gives the name or at /agk/secrets/&lt;name&gt; where it gives none, rather than as environment variables, because a process environment is readable by its children and ends up in diagnostic dumps. A secret is never reachable from a condition.
+
+## Schema
+
+`workflow.schema.json#/properties/secrets`:
+
+```json
+{"$ref": "#/$defs/secrets"}
+```
+
+`workflow.schema.json#/$defs/secrets`:
+
+```json
+{"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}}
+```
+
+`workflow.schema.json#/$defs/step/properties/secrets`:
+
+```json
+{"$ref": "#/$defs/stepSecrets"}
+```
+
+`workflow.schema.json#/$defs/stepSecrets`:
+
+```json
+{"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}}
+```
+
+## Examples
+
+`/secrets`:
+
+```yaml
+secrets:
+- billing
+```
+
+`/secrets`:
+
+```yaml
+secrets:
+- billing
+- ledger
+```
+
+`/steps/*/secrets`:
+
+```yaml
+steps:
+  normalize:
+    secrets:
+    - billing
+```
+
+`workflow.schema.json#/$defs/stepSecrets`:
+
+```yaml
+- billing
+```</code></pre>
+    </div>
+
+    <h4 id="language-files"><code>files</code></h4>
+    <!-- Verbatim copy of language/files.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/files.md, from agentiik/schemas</div>
+<pre><code># `files`
+
+Narrows what the step receives from the repository tree, which it otherwise gets whole under /agk/repo/. It is an optimisation for a large repository and never a permission boundary: everything in the tree is readable by anyone who can read the workflow. Each entry is a path or a glob relative to the root of the repository. A path names a file, or a directory with everything under it. A glob is matched against the path of every file of the tree, segment by segment: * matches any run of characters inside one segment, ? one character, [abc] one character of a set or a range, and ** written as a segment of its own matches zero or more whole segments, so ./sql/** is every file at any depth under sql/ and ./sql/**/*.sql every .sql file at any depth there, sql/orders.sql among them. What an entry selects is laid out where it is under /agk/repo/, unless the long form relocates it to wherever a tool insists on finding it.
+
+## Keywords
+
+- `/defaults/files`, `/steps/*/files`, `/.*/files`: Narrows what the step receives from the repository tree, which it otherwise gets whole under /agk/repo/. It is an optimisation for a large repository and never a permission boundary: everything in the tree is readable by anyone who can read the workflow. Each entry is a path or a glob relative to the root of the repository. A path names a file, or a directory with everything under it. A glob is matched against the path of every file of the tree, segment by segment: * matches any run of characters inside one segment, ? one character, [abc] one character of a set or a range, and ** written as a segment of its own matches zero or more whole segments, so ./sql/** is every file at any depth under sql/ and ./sql/**/*.sql every .sql file at any depth there, sql/orders.sql among them. What an entry selects is laid out where it is under /agk/repo/, unless the long form relocates it to wherever a tool insists on finding it.
+- `/steps/*/files`, `/.*/files`: What this step receives from the repository tree, and where each path is placed.
+- `/defaults/files/*/from`, `/steps/*/files/*/from`, `/.*/files/*/from`: The path or glob in the repository tree, relative to its root and read as the short form is: a file, a directory with everything under it, or every file a glob matches.
+- `/defaults/files/*/to`, `/steps/*/files/*/to`, `/.*/files/*/to`: Where it is placed in the container, for a tool that will only look in one place, as an absolute path. For a path naming a file, the path the file takes. For a directory or a glob, the directory what it selects is placed under, each file keeping its path below the directory named, or below the glob's fixed prefix, the segments before the first one holding a wildcard: { from: ./sql/**/*.sql, to: /docker-entrypoint-initdb.d } places sql/orders.sql at /docker-entrypoint-initdb.d/orders.sql and sql/2026/q1.sql at /docker-entrypoint-initdb.d/2026/q1.sql, so that no two files one glob selects land on one path. Absolute because a relative path has nothing inside a container to be relative to, which is why the runner refuses one and the task message holds it to the same grammar.
+- `/defaults/files/*/mode`, `/steps/*/files/*/mode`, `/.*/files/*/mode`: The permissions it is given, as an octal string, every file a directory or a glob selects taking the same. It decides whether the file is executable, and never who may read it: every file a step is given is laid out readable by anybody and writable by nobody, 0444 or 0555, since the container reads it through a read-only bind as the image's user, in a remapped range the runner does not know, and a narrower mode would keep the file from the step that asked for it. What must not be readable by everything in the container is a secret, which has its own store and its own mount.
+
+## Schema
+
+`workflow.schema.json#/$defs/step/properties/files`:
+
+```json
+{"$ref": "#/$defs/files"}
+```
+
+`workflow.schema.json#/$defs/files`:
+
+```json
+{
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "oneOf": [
+      {"type": "string", "minLength": 1},
+      {
+        "type": "object",
+        "required": ["from"],
+        "additionalProperties": false,
+        "properties": {
+          "from": {"type": "string", "minLength": 1},
+          "to": {"type": "string", "pattern": "^/", "minLength": 1},
+          "mode": {"type": "string", "pattern": "^0?[0-7]{3}$"}
+        }
+      }
+    ]
+  }
+}
+```
+
+## Examples
+
+`workflow.schema.json#/$defs/files`:
+
+```yaml
+- ./sql/**
+- from: ./certs/internal-ca.pem
+  to: /etc/ssl/certs/internal-ca.pem
+  mode: '0444'
+```
+
+`workflow.schema.json#/$defs/files`:
+
+```yaml
+- from: ./sql/**/*.sql
+  to: /docker-entrypoint-initdb.d
+  mode: '0444'
+```
+
+`/steps/*/files`:
+
+```yaml
+steps:
+  normalize:
+    files:
+    - ./sql/**
+```
+
+`/defaults/files/*/from`:
+
+```yaml
+defaults:
+  files:
+  - from: ./certs/internal-ca.pem
+```
+
+`/defaults/files/*/from`:
+
+```yaml
+defaults:
+  files:
+  - from: ./sql/**
+```
+
+`/defaults/files/*/from`:
+
+```yaml
+defaults:
+  files:
+  - from: ./sql/**/*.sql
+```
+
+`/defaults/files/*/to`:
+
+```yaml
+defaults:
+  files:
+  - to: /etc/ssl/certs/internal-ca.pem
+```
+
+`/defaults/files/*/to`:
+
+```yaml
+defaults:
+  files:
+  - to: /docker-entrypoint-initdb.d
+```
+
+`/defaults/files/*/mode`:
+
+```yaml
+defaults:
+  files:
+  - mode: '0444'
+```
+
+`/defaults/files/*/mode`:
+
+```yaml
+defaults:
+  files:
+  - mode: '0600'
+```</code></pre>
+    </div>
+
+    <h4 id="language-script"><code>script</code></h4>
+    <!-- Verbatim copy of language/script.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/script.md, from agentiik/schemas</div>
+<pre><code># `script`
+
+Shell commands run inside image instead of treating it as a brick, under the same contract every brick honours: the same mounts, the same environment, the same isolation, the same meaning for the exit code. No manifest is read, so nothing about the ports is inferred and outputs has to be declared. A script that writes nothing and exits 0 publishes one item on out carrying its standard output and whatever it left in /agk/out/files/, which is what makes a two-line script worth writing.
+
+## Keywords
+
+- `/steps/*/script`, `/.*/script`: Shell commands run inside image instead of treating it as a brick, under the same contract every brick honours: the same mounts, the same environment, the same isolation, the same meaning for the exit code. No manifest is read, so nothing about the ports is inferred and outputs has to be declared. A script that writes nothing and exits 0 publishes one item on out carrying its standard output and whatever it left in /agk/out/files/, which is what makes a two-line script worth writing.
+- `/steps/*/before_script`, `/.*/before_script`: What this step runs before its script, usually the one tool the image does not carry.
+- `/steps/*/after_script`, `/.*/after_script`: What this step runs after its script, whether the script worked or not.
+- `/steps/*/shell`, `/.*/shell`: The interpreter this step's commands are handed to, and the flags it starts with.
+- `/defaults/before_script`, `/defaults/after_script`, `/steps/*/script`, `/steps/*/before_script`, `/steps/*/after_script`, `/.*/script`, `/.*/before_script`, `/.*/after_script`: A list of shell commands, run in order inside the container. The first one to exit non-zero ends the step with that code, which the exit code table then reads as an application, transient or infrastructure failure.
+- `/defaults/before_script`, `/steps/*/before_script`, `/.*/before_script`: Commands prepended to script, merged from defaults and from extends outwards in. They run in the same container, which is where a step installs the one tool it needs before doing its work.
+- `/defaults/after_script`, `/steps/*/after_script`, `/.*/after_script`: Commands appended to script, run in the same container even when script failed, so that a diagnostic dump survives a failure. Their own exit code does not change the step's verdict.
+- `/defaults/shell`, `/steps/*/shell`, `/.*/shell`: The interpreter the commands are handed to, and the flags it starts with. It defaults to ["/bin/sh", "-e"], so the first command that fails ends the step rather than letting the rest run on a broken assumption.
+
+## Schema
+
+`workflow.schema.json#/$defs/step/properties/script`:
+
+```json
+{"$ref": "#/$defs/commands"}
+```
+
+`workflow.schema.json#/$defs/step/properties/before_script`:
+
+```json
+{"$ref": "#/$defs/beforeScript"}
+```
+
+`workflow.schema.json#/$defs/step/properties/after_script`:
+
+```json
+{"$ref": "#/$defs/afterScript"}
+```
+
+`workflow.schema.json#/$defs/step/properties/shell`:
+
+```json
+{"$ref": "#/$defs/shell"}
+```
+
+`workflow.schema.json#/$defs/commands`:
+
+```json
+{"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+```
+
+`workflow.schema.json#/$defs/beforeScript`:
+
+```json
+{"$ref": "#/$defs/commands"}
+```
+
+`workflow.schema.json#/$defs/afterScript`:
+
+```json
+{"$ref": "#/$defs/commands"}
+```
+
+`workflow.schema.json#/$defs/shell`:
+
+```json
+{
+  "type": "array",
+  "minItems": 1,
+  "items": {"type": "string", "minLength": 1},
+  "default": ["/bin/sh", "-e"]
+}
+```
+
+## Examples
+
+`/steps/*/script`:
+
+```yaml
+steps:
+  normalize:
+    script:
+    - python /agk/repo/scripts/normalize.py
+```
+
+`/steps/*/script`:
+
+```yaml
+steps:
+  normalize:
+    script:
+    - agk items | jq -r '.data.vat_number' &gt; /tmp/numbers
+```
+
+`/steps/*/before_script`:
+
+```yaml
+steps:
+  normalize:
+    before_script:
+    - apk add --no-cache jq curl
+```
+
+`/steps/*/after_script`:
+
+```yaml
+steps:
+  normalize:
+    after_script:
+    - cp /tmp/result.json /agk/out/files/ 2&gt;/dev/null || true
+```
+
+`/steps/*/shell`:
+
+```yaml
+steps:
+  normalize:
+    shell:
+    - /bin/sh
+    - -eu
+    - -o
+    - pipefail
+```
+
+`workflow.schema.json#/$defs/commands`:
+
+```yaml
+- psql -f /agk/repo/sql/orders.sql
+```
+
+`workflow.schema.json#/$defs/beforeScript`:
+
+```yaml
+- apk add --no-cache jq curl
+```
+
+`workflow.schema.json#/$defs/afterScript`:
+
+```yaml
+- cp /tmp/result.json /agk/out/files/ 2&gt;/dev/null || true
+```
+
+`workflow.schema.json#/$defs/shell`:
+
+```yaml
+- /bin/sh
+- -e
+```
+
+`workflow.schema.json#/$defs/shell`:
+
+```yaml
+- /bin/sh
+- -eu
+- -o
+- pipefail
+```</code></pre>
+    </div>
+
+    <h4 id="language-includes"><code>includes</code></h4>
+    <!-- Verbatim copy of language/includes.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/includes.md, from agentiik/schemas</div>
+<pre><code># `includes`
+
+Files and repositories merged into this one before anything else is resolved, in declaration order, each read as an included file, $defs/fragment. Reuse applies to steps and defaults; the published surface is not included, so reading this file tells you everything the workflow exposes.
+
+## Keywords
+
+- `/include`: Files and repositories merged into this one before anything else is resolved, in declaration order, each read as an included file, $defs/fragment. Reuse applies to steps and defaults; the published surface is not included, so reading this file tells you everything the workflow exposes.
+- `/defaults`: Settings every step of this workflow inherits unless it states its own, so that a decision taken once is not repeated in twenty places.
+- `/.*`: A hidden block at the root of the file, whose name starts with a dot. It is never executed and exists to be named by a step's extends, which is how one set of settings is written once and inherited by many steps.
+- ``: A file an include names: a fragment merged into the file that includes it, never an entry point, and validated against this definition rather than against the root of this document, which is the entry point's. It carries what reuse is for, hidden blocks at its root, steps, defaults, vars, secrets and includes of its own, and none of what makes a document an entry point: no apiVersion, kind or metadata, and none of the workflow's boundary, inputs, outputs, on, mcp, concurrency or timeout, since what a workflow is given, returns, starts on, publishes and is bounded by is declared by the workflow itself, so that reading one file tells you what that workflow is. It is closed like every block the language owns, so any of those keys, and any key it does not define, is refused rather than ignored. What it writes sits under what the file including it writes, keyword by keyword, and what it includes sits under it in turn. A repository whose root agentiik.yaml is written this way is a library: another workflow includes it at a tag or a commit, its own hook validates it as a fragment, and nothing runs it.
+- `/include`: Files and repositories this file includes in turn, resolved before it in declaration order, so that what they carry sits under what this file writes. A path include here resolves against this file's own directory, and inside the repository this file came from where a workflow include brought it.
+- `/vars`: Variables this file contributes, read through the vars context of the workflow including it. A name the including file writes too takes that file's value, since the including file is applied last.
+- `/secrets`: Secrets the steps and blocks of this file name. Names add up rather than override: a name written here and by the including file is one secret, and it is the namespace owning the workflow that runs it that has to declare it, whichever repository the name was written in.
+- `/defaults`: Settings this file contributes to the defaults of the workflow including it, keyword by keyword, under whatever the including file sets itself.
+- `/steps`: Steps and hidden blocks this file contributes. A step written here carries its own values, above the defaults, and a step of the same name in the including file overrides it keyword by keyword; a hidden block of the same name is replaced whole.
+- `/.*`: A hidden block at the root of the included file, never executed, there to be named by the extends of a step in this file or in any file including it.
+- `/include`: The include block, as the entry point and an included file both write it: files and repositories in declaration order, each read as an included file, $defs/fragment, and merged under the file naming it.
+- `/include/*`: One file or repository merged into this one, and read as an included file, $defs/fragment, never as an entry point. A path include resolves inside the same commit, so it can never be stale and nothing has to pin it. A workflow include resolves another repository at a tag or a commit, requires workflow:read on it, and records the commit it resolved to in the run.
+- `/include/*/path`: A file of this repository, relative to the directory of the file naming it, which for the entry point is the root, or from the root where it starts with /. A path leaving the repository tree is refused. It travels with the commit, which is why it carries no version of its own and why a ref beside it is refused: a path include resolves inside the same commit, so it can never be stale and there is nothing for a ref to pin.
+- `/include/*/workflow`: Another workflow repository, as &lt;namespace&gt;/&lt;name&gt;, whose root agentiik.yaml is read at ref. That file is written as an included file, $defs/fragment: a library repository, which its own hook validates as a fragment and nothing runs, since an entry point carries apiVersion and the rest of what a fragment refuses. Its own path includes resolve inside that repository, at that commit. Reading it requires workflow:read on it, so an include cannot widen what its author may see.
+- `/include/*/ref`: Tag or commit the included repository is read at: a tag, by its name or in full, or a commit written whole that a branch or a tag of the library was pushed to, which is a version its hook judged. It is required because a moving ref would let another repository change what this workflow does without this commit changing, so a branch is refused. A commit abbreviated is refused too: an abbreviation is a name another commit of the library can come to share, and the file would then name two. The version records the commit it resolved to, and every run of it names that commit.
+- `/include/*/workflow`, `/steps/*/workflow/workflow`, `/.*/workflow/workflow`: A workflow addressed as &lt;namespace&gt;/&lt;name&gt;, the same identity a grant and a git remote use. The namespace is never a reserved word, as $defs/namespace lists them, and each half is at most 255 characters, as $defs/identifier is: a maxLength would bound the whole string, so the pattern counts each half.
+- `/defaults`: Settings applied to every step that does not state its own. Resolution is ordered: includes first, which bring hidden blocks and defaults of their own, then extends depth first, then these defaults, then the step's own values, so a default never overrides something a step said. A step written in an included file carries its own values, above these defaults, and the entry point overrides it keyword by keyword. Graph shape is not settable here: what a step runs and what it depends on belongs to the step.
+- `/defaults/timeout`: How long a shard may run where the step sets no limit of its own.
+- `/defaults/retain`: How long intermediate artifacts stay fetchable, and any workflow output that does not say otherwise.
+- `/defaults/retry`: The policy a step inherits when it declares no retry of its own.
+- `/defaults/resources`: What a container is given where the step asks for nothing in particular.
+- `/defaults/network`: The network a step gets unless it asks for another, which is where a workflow says that reaching out is the exception.
+- `/defaults/egress`: The addresses every step may reach, for a workflow whose steps all talk to the same few hosts.
+- `/defaults/runs_on`: The runner labels every step selects, for a workflow that belongs on one kind of host.
+- `/defaults/secrets`: Secrets mounted into every step, for a workflow whose steps all need the same credential.
+- `/defaults/cache`: Whether memoisation is on for the steps that do not decide for themselves.
+- `/defaults/continue_on_error`: Whether a failure leaves the run going, for the steps that do not say.
+- `/defaults/idempotent`: Whether steps may be requeued after a lost task and cached, unless one of them says otherwise.
+- `/defaults/files`: What every step receives from the repository tree, for a repository too large to hand over whole.
+- `/defaults/shell`: The interpreter every script step is handed to unless it names another.
+- `/defaults/before_script`: Commands every script step runs first, merged outwards in with those of the blocks it extends.
+- `/defaults/after_script`: Commands every script step runs last, failure included.
+- `/defaults/when`: The upstream states steps start on where they do not say, which stays [succeeded] unless a workflow decides otherwise.
+- `/steps/*/extends`, `/.*/extends`: The hidden block this step inherits from. A hidden block's name starts with a dot and is never executed, which is how one set of settings is written once and shared by many steps. It is resolved after includes and before defaults, so the step's own values still win.
+
+## Schema
+
+`workflow.schema.json#/properties/include`:
+
+```json
+{"$ref": "#/$defs/includes"}
+```
+
+`workflow.schema.json#/$defs/includes`:
+
+```json
+{"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/include"}}
+```
+
+`workflow.schema.json#/$defs/include`:
+
+```json
+{
+  "type": "object",
+  "oneOf": [
+    {"required": ["path"], "not": {"anyOf": [{"required": ["workflow"]}, {"required": ["ref"]}]}},
+    {"required": ["workflow", "ref"], "not": {"required": ["path"]}}
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "path": {"type": "string", "minLength": 1},
+    "workflow": {"$ref": "#/$defs/workflowPath"},
+    "ref": {"type": "string", "minLength": 1}
+  }
+}
+```
+
+`workflow.schema.json#/$defs/workflowPath`:
+
+```json
+{
+  "type": "string",
+  "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,254}/[A-Za-z0-9][A-Za-z0-9_-]{0,254}$",
+  "not": {
+    "pattern": "^(auth|me|users|groups|service-accounts|namespaces|runners|runner-pools|bus|tasks|bricks|runs|artifacts|stats|api|hooks|mcp|objects)/"
+  }
+}
+```
+
+`workflow.schema.json#/$defs/fragment`:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "include": {"$ref": "#/$defs/includes"},
+    "vars": {"$ref": "#/$defs/vars"},
+    "secrets": {"$ref": "#/$defs/secrets"},
+    "defaults": {"$ref": "#/$defs/defaults"},
+    "steps": {"$ref": "#/$defs/steps"}
+  },
+  "patternProperties": {"^\\.[A-Za-z0-9][A-Za-z0-9_-]*$": {"$ref": "#/$defs/step"}}
+}
+```
+
+`workflow.schema.json#/properties/defaults`:
+
+```json
+{"$ref": "#/$defs/defaults"}
+```
+
+`workflow.schema.json#/$defs/defaults`:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "timeout": {"$ref": "#/$defs/timeout"},
+    "retain": {"$ref": "#/$defs/retain"},
+    "retry": {"$ref": "#/$defs/retry"},
+    "resources": {"$ref": "#/$defs/resources"},
+    "network": {"$ref": "#/$defs/network"},
+    "egress": {"$ref": "#/$defs/egress"},
+    "runs_on": {"$ref": "#/$defs/runsOn"},
+    "secrets": {"$ref": "#/$defs/stepSecrets"},
+    "cache": {"$ref": "#/$defs/cache"},
+    "continue_on_error": {"$ref": "#/$defs/continueOnError"},
+    "idempotent": {"$ref": "#/$defs/idempotent"},
+    "files": {"$ref": "#/$defs/files"},
+    "shell": {"$ref": "#/$defs/shell"},
+    "before_script": {"$ref": "#/$defs/beforeScript"},
+    "after_script": {"$ref": "#/$defs/afterScript"},
+    "when": {"$ref": "#/$defs/when"}
+  }
+}
+```
+
+`workflow.schema.json#/$defs/step/properties/extends`:
+
+```json
+{"type": "string", "pattern": "^\\.[A-Za-z0-9][A-Za-z0-9_-]*$"}
+```
+
+`workflow.schema.json#/patternProperties`:
+
+```json
+{
+  "^\\.[A-Za-z0-9][A-Za-z0-9_-]*$": {
+    "description": "A hidden block at the root of the file, whose name starts with a dot. It is never executed and exists to be named by a step's extends, which is how one set of settings is written once and inherited by many steps.",
+    "$ref": "#/$defs/step",
+    "examples": [{"timeout": "2m", "network": "egress", "retry": {"max": 3, "on": ["transient"]}}]
+  }
+}
+```
+
+## Examples
+
+`/include`:
+
+```yaml
+include:
+- path: ./common-bricks.yaml
+- workflow: finance/common
+  ref: v2.1.0
+```
+
+`/defaults`:
+
+```yaml
+defaults:
+  timeout: 10m
+  network: none
+  retain: 7d
+```
+
+`/.*`:
+
+```yaml
+.base:
+  timeout: 2m
+  network: egress
+  retry:
+    max: 3
+    on:
+    - transient
+```
+
+`workflow.schema.json#/$defs/fragment`:
+
+```yaml
+.api-brick:
+  timeout: 2m
+  retry:
+    max: 3
+    on:
+    - transient
+  network: egress
+  resources:
+    cpu: '0.5'
+    memory: 256Mi
+.region-matrix:
+  strategy:
+    matrix:
+      region:
+      - fr
+      - be
+      - ch
+      profile:
+      - standard
+      - reduced
+    max_parallel: 3
+```
+
+`workflow.schema.json#/$defs/fragment`:
+
+```yaml
+include:
+- path: ./retry-policy.yaml
+vars:
+  currency: EUR
+secrets:
+- billing
+defaults:
+  timeout: 10m
+  network: none
+steps:
+  .billing-api:
+    network: egress
+    egress:
+      allow:
+      - api.billing.example.com:443
+    secrets:
+    - billing
+```
+
+`/include`:
+
+```yaml
+include:
+- path: ./retry-policy.yaml
+```
+
+`/vars`:
+
+```yaml
+vars:
+  currency: EUR
+```
+
+`/secrets`:
+
+```yaml
+secrets:
+- billing
+```
+
+`/defaults`:
+
+```yaml
+defaults:
+  timeout: 10m
+  network: none
+```
+
+`/steps`:
+
+```yaml
+steps:
+  .billing-api:
+    network: egress
+    egress:
+      allow:
+      - api.billing.example.com:443
+    secrets:
+    - billing
+```
+
+`/include/*`:
+
+```yaml
+include:
+- path: ./common-bricks.yaml
+```
+
+`/include/*`:
+
+```yaml
+include:
+- workflow: finance/common
+  ref: v2.1.0
+```
+
+`/include/*/path`:
+
+```yaml
+include:
+- path: ./includes/defaults.yaml
+```
+
+`/include/*/path`:
+
+```yaml
+include:
+- path: /includes/defaults.yaml
+```
+
+`/include/*/workflow`:
+
+```yaml
+include:
+- workflow: finance/common
+```
+
+`/include/*/ref`:
+
+```yaml
+include:
+- ref: v2.1.0
+```
+
+`/include/*/ref`:
+
+```yaml
+include:
+- ref: c41d9e2a7b3f5e8d1c0a9b6e4f2d8c7a5b3e1f09
+```
+
+`workflow.schema.json#/$defs/workflowPath`:
+
+```yaml
+finance/common
+```
+
+`workflow.schema.json#/$defs/workflowPath`:
+
+```yaml
+finance/monthly-invoicing
+```
+
+`/defaults`:
+
+```yaml
+defaults:
+  timeout: 10m
+  retain: 7d
+  retry:
+    max: 2
+    on:
+    - transient
+    backoff:
+      type: exponential
+      base: 2s
+      max: 60s
+  resources:
+    cpu: '1'
+    memory: 512Mi
+  network: none
+  runs_on:
+  - arch=amd64
+```
+
+`/defaults/timeout`:
+
+```yaml
+defaults:
+  timeout: 10m
+```
+
+`/defaults/retain`:
+
+```yaml
+defaults:
+  retain: 7d
+```
+
+`/defaults/retry`:
+
+```yaml
+defaults:
+  retry:
+    max: 2
+    on:
+    - transient
+```
+
+`/defaults/resources`:
+
+```yaml
+defaults:
+  resources:
+    cpu: '1'
+    memory: 512Mi
+```
+
+`/defaults/network`:
+
+```yaml
+defaults:
+  network: none
+```
+
+`/defaults/egress`:
+
+```yaml
+defaults:
+  egress:
+    allow:
+    - api.billing.example.com:443
+```
+
+`/defaults/runs_on`:
+
+```yaml
+defaults:
+  runs_on:
+  - arch=amd64
+```
+
+`/defaults/secrets`:
+
+```yaml
+defaults:
+  secrets:
+  - billing
+```
+
+`/defaults/cache`:
+
+```yaml
+defaults:
+  cache: true
+```
+
+`/defaults/continue_on_error`:
+
+```yaml
+defaults:
+  continue_on_error: false
+```
+
+`/defaults/idempotent`:
+
+```yaml
+defaults:
+  idempotent: true
+```
+
+`/defaults/files`:
+
+```yaml
+defaults:
+  files:
+  - ./sql/**
+```
+
+`/defaults/shell`:
+
+```yaml
+defaults:
+  shell:
+  - /bin/sh
+  - -e
+```
+
+`/defaults/before_script`:
+
+```yaml
+defaults:
+  before_script:
+  - apk add --no-cache jq curl
+```
+
+`/defaults/after_script`:
+
+```yaml
+defaults:
+  after_script:
+  - cp /tmp/result.json /agk/out/files/ 2&gt;/dev/null || true
+```
+
+`/defaults/when`:
+
+```yaml
+defaults:
+  when:
+  - succeeded
+```
+
+`/steps/*/extends`:
+
+```yaml
+steps:
+  normalize:
+    extends: .api-brick
+```
+
+`/steps/*/extends`:
+
+```yaml
+steps:
+  normalize:
+    extends: .region-matrix
+```</code></pre>
+    </div>
+
+    <h4 id="language-mcp"><code>mcp</code></h4>
+    <!-- Verbatim copy of language/mcp.md in https://github.com/agentiik/schemas, HTML-escaped: a check compares the two. tools/language.py writes that file from the schemas, so change a description or an example there and copy the page here, never the other way. -->
+    <div class="block wrap">
+      <div class="note-label">language/mcp.md, from agentiik/schemas</div>
+<pre><code># `mcp`
+
+Publishes the workflow as one tool to model-driven clients: one block, one tool, whose arguments are the workflow's inputs and whose result is optionally one of its outputs. Whether a client is offered it is decided by whoever adds the workflow to a collection, so the block says what the tool is and never who may call it. Nothing is inferred from the graph, so publishing a workflow never leaks its internals, and publishing, renaming or withdrawing the tool is a commit like any other change.
+
+## Keywords
+
+- `/mcp`: Publishes the workflow as one tool to model-driven clients: one block, one tool, whose arguments are the workflow's inputs and whose result is optionally one of its outputs. Whether a client is offered it is decided by whoever adds the workflow to a collection, so the block says what the tool is and never who may call it. Nothing is inferred from the graph, so publishing a workflow never leaks its internals, and publishing, renaming or withdrawing the tool is a commit like any other change.
+- `/mcp/name`: The tool's name, the workflow's name where none is written. It is stable across commits because clients hold it and send it back in every call: renaming it is withdrawing one tool and publishing another, in every collection that does not give the tool a name of its own.
+- `/mcp/title`: Label a client shows to a person in a list of tools, where the name would read as machinery.
+- `/mcp/description`: What the tool does, when to reach for it and what it refuses. This is the field a model actually acts on, and the one worth spending sentences on: a tool published without one is exactly the tool a model has no way to decide to call, and one of white space alone, as Unicode counts it, line breaks and the spaces of every script included, is refused as none, since it tells a model as little.
+- `/mcp/output`: The name of one workflow output declared in this file, optional. Its envelope becomes the result, carried as structuredContent with a text rendering beside it. Where the output declares a schema and the tool is sync, the tool's outputSchema describes that envelope, { meta, items } with each item's data held to the output's schema, since the protocol holds a structured result to its outputSchema and the result is the envelope; an async tool publishes none, since its call answers the run it started and never the output. Leaving it out publishes a tool that has an effect and returns only that it succeeded. It names an output and never a step or a port, so that the graph stays free to change beneath a published tool.
+- `/mcp/mode`: Whether the call waits. sync holds the call until the run finishes and returns the output; async returns the run identifier at once, to be followed with run.get on the user's server.
+- `/mcp/timeout`: How long a sync call waits. It is capped at 120 seconds because clients time out long before a workflow gives up, and a workflow that cannot finish inside that has to be async. The ceiling is carried by the grammar of the value, so a timeout above it is refused here and not left to the validator; the companion rule, that an async tool carries no timeout at all, is stated on mode.
+- `/mcp/annotations`: The protocol's own hints, passed through to the client unchanged. They tell a client what to expect of a call, never what it is allowed to do: that is decided by the grants and not by a field in this file.
+- `/mcp/annotations/readOnlyHint`: Says the tool only reads, so a client may call it without asking anyone first.
+- `/mcp/annotations/idempotentHint`: Says calling twice with the same arguments has the same effect as calling once, which is what lets a client retry a call it is unsure about.
+- `/mcp/annotations/destructiveHint`: Says the tool can remove or overwrite something, so a client may want a confirmation it would not otherwise ask for.
+- `/mcp/annotations/openWorldHint`: Says the tool reaches systems outside this installation, so its result depends on something nobody here controls.
+- `/mcp/timeout`: How long a sync call waits, written as a duration and capped at 120 seconds. The ceiling sits in the grammar rather than in a sentence beside it, because a client times out long before a workflow gives up: 120s, 2m and 120000ms are the longest forms this accepts, and an hour or a day cannot be written at all. A workflow that cannot finish inside it is published as an async tool, which carries no timeout.
+
+## Schema
+
+`workflow.schema.json#/properties/mcp`:
+
+```json
+{
+  "type": "object",
+  "required": ["description"],
+  "additionalProperties": false,
+  "dependentSchemas": {
+    "mode": {
+      "if": {"properties": {"mode": {"const": "async"}}, "required": ["mode"]},
+      "then": {"not": {"required": ["timeout"]}}
+    }
+  },
+  "properties": {
+    "name": {"$ref": "#/$defs/identifier"},
+    "title": {"type": "string"},
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "[^\\x09-\\x0d\\x20\\x85\\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]"
+    },
+    "output": {"$ref": "#/$defs/portName"},
+    "mode": {"enum": ["sync", "async"], "default": "sync"},
+    "timeout": {"$ref": "#/$defs/mcpTimeout"},
+    "annotations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "readOnlyHint": {"type": "boolean"},
+        "idempotentHint": {"type": "boolean"},
+        "destructiveHint": {"type": "boolean"},
+        "openWorldHint": {"type": "boolean"}
+      }
+    }
+  }
+}
+```
+
+`workflow.schema.json#/$defs/mcpTimeout`:
+
+```json
+{
+  "type": "string",
+  "pattern": "^(?:(?:[1-9][0-9]{0,4}|1[01][0-9]{4}|120000)ms|(?:[1-9][0-9]?|1[01][0-9]|120)s|[12]m)$"
+}
+```
+
+`workflow.schema.json#/dependentSchemas/mcp`:
+
+```json
+{"properties": {"inputs": {"additionalProperties": {"required": ["schema"]}}}}
+```
+
+## Examples
+
+`/mcp`:
+
+```yaml
+mcp:
+  name: order_status
+  title: Order status
+  description: Return the state of one order and, once shipped, its tracking link. Takes an order number such as ORD-004211 and nothing else.
+  output: status
+  mode: sync
+  timeout: 30s
+  annotations:
+    readOnlyHint: true
+    idempotentHint: true
+```
+
+`/mcp`:
+
+```yaml
+mcp:
+  description: 'Reconcile a whole month against the bank statements. Long running: returns a run to follow with run.get.'
+  mode: async
+```
+
+`/mcp/name`:
+
+```yaml
+mcp:
+  name: order_status
+```
+
+`/mcp/name`:
+
+```yaml
+mcp:
+  name: create_invoices
+```
+
+`/mcp/title`:
+
+```yaml
+mcp:
+  title: Order status
+```
+
+`/mcp/description`:
+
+```yaml
+mcp:
+  description: Return the state of one order and, once shipped, its tracking link. Takes an order number such as ORD-004211 and nothing else.
+```
+
+`/mcp/output`:
+
+```yaml
+mcp:
+  output: status
+```
+
+`/mcp/output`:
+
+```yaml
+mcp:
+  output: invoices
+```
+
+`/mcp/mode`:
+
+```yaml
+mcp:
+  mode: sync
+```
+
+`/mcp/mode`:
+
+```yaml
+mcp:
+  mode: async
+```
+
+`/mcp/timeout`:
+
+```yaml
+mcp:
+  timeout: 30s
+```
+
+`/mcp/timeout`:
+
+```yaml
+mcp:
+  timeout: 120s
+```
+
+`/mcp/annotations`:
+
+```yaml
+mcp:
+  annotations:
+    readOnlyHint: false
+    idempotentHint: false
+```
+
+`/mcp/annotations/readOnlyHint`:
+
+```yaml
+mcp:
+  annotations:
+    readOnlyHint: true
+```
+
+`/mcp/annotations/readOnlyHint`:
+
+```yaml
+mcp:
+  annotations:
+    readOnlyHint: false
+```
+
+`/mcp/annotations/idempotentHint`:
+
+```yaml
+mcp:
+  annotations:
+    idempotentHint: true
+```
+
+`/mcp/annotations/idempotentHint`:
+
+```yaml
+mcp:
+  annotations:
+    idempotentHint: false
+```
+
+`/mcp/annotations/destructiveHint`:
+
+```yaml
+mcp:
+  annotations:
+    destructiveHint: true
+```
+
+`/mcp/annotations/destructiveHint`:
+
+```yaml
+mcp:
+  annotations:
+    destructiveHint: false
+```
+
+`/mcp/annotations/openWorldHint`:
+
+```yaml
+mcp:
+  annotations:
+    openWorldHint: true
+```
+
+`/mcp/annotations/openWorldHint`:
+
+```yaml
+mcp:
+  annotations:
+    openWorldHint: false
+```
+
+`/mcp/timeout`:
+
+```yaml
+mcp:
+  timeout: 500ms
+```
+
+`/mcp/timeout`:
+
+```yaml
+mcp:
+  timeout: 60s
+```
+
+`/mcp/timeout`:
+
+```yaml
+mcp:
+  timeout: 2m
+```</code></pre>
+    </div>
   </div>
 </section>
 
@@ -7593,6 +11362,7 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td>agk namespace rename</td><td>Renames a namespace you own, its old name kept as a former name that every address still reaches: <code>agk namespace rename finance accounting</code> (<a href="#renaming-a-namespace">Renaming a namespace</a>).</td></tr>
           <tr><td>agk namespace delete</td><td>Removes a namespace that holds nothing but its built-in identity, by its owner or an administrator.</td></tr>
           <tr><td>agk namespace quotas</td><td>Prints a namespace's quotas. With quotas given, it reads them first, sets those given on top and sends the whole set, so a bound nobody named is kept: the route replaces the whole set, and a person typing one flag means one bound, not the others lifted with it, <code>allowed_runner_pools</code> among them. <code>--lift max_runs_per_hour</code> lifts one, repeated for each; <code>max_concurrent_tasks</code> always holds a value and is set, never lifted. Administrator only to change.</td></tr>
+          <tr><td>agk language [TOPIC]</td><td>Prints what <code>workflow.language</code> answers, from the reference the binary carries, with no installation and no network: with no topic, the orientation, a minimal workflow and the list of topics; with a topic, that topic's page, <code>agk language fan_out</code>. An unknown topic is refused naming the topics, exit 2 as for any command line that is wrong. The page is written to standard output as it stands, on a terminal as to a pipe: it is the text a model is answered with, and the one <a href="#language-reference">The language reference</a> shows.</td></tr>
           <tr><td>agk validate</td><td>Validates the YAML, resolves includes and inheritance, detects cycles, checks ports against the manifests of the referenced images. A library's root is judged as its hook judges it, as a fragment; a workflow include is refused, naming it, since it reads a library only an installation keeps, which <code>agk push</code> reaches.</td></tr>
           <tr><td>agk graph</td><td>Writes the resolved graph as DOT or Mermaid, for review inside a merge request.</td></tr>
           <tr><td>agk run --local</td><td>Runs the whole workflow against the local Docker daemon, with no controller, no bus and no database. Artifacts land in a working directory.</td></tr>
@@ -8010,6 +11780,7 @@ flowchart LR
   <div class="prose">
     <p><code>workflow.language</code> takes an optional <code>topic</code> and returns a page, not a manual: summary, keywords, the schema fragment governing them, worked examples. Without a topic it returns an orientation, a complete minimal workflow and the topics, which are the sections of the language: <code>repository</code>, <code>inputs</code>, <code>outputs</code>, <code>triggers</code>, <code>steps</code>, <code>ports</code>, <code>needs</code>, <code>merge</code>, <code>fan_out</code>, <code>retry</code>, <code>expressions</code>, <code>secrets</code>, <code>files</code>, <code>script</code>, <code>includes</code>, <code>mcp</code>.</p>
     <p>The pages are generated in <code>agentiik/schemas</code>, under <code>language/</code>, by the tool that checks the schemas, and the build fails where they differ from what it generates. Each topic's summary is the description of one keyword it names, and every keyword of the workflow schema belongs to exactly one topic. Beside the pages, <code>topics.json</code> gives each topic the places in <code>agentiik.yaml</code> it answers for, as JSON Pointer patterns in which <code>*</code> stands for any name or index and <code>.*</code> for a hidden block's; the topic a validation error names is the one whose pattern matches the most of the error's pointer. <code>workflow.schema</code> and <code>agentiik://schema/{part}</code> name a part after its file: <code>workflow</code>, <code>brick</code> and <code>envelope</code>.</p>
+    <p><code>agk language</code> prints the same pages from the same files, which <code>agk</code> carries as the API does, so that a person at a terminal reads what a model is answered with no installation to ask (<a href="#command-line">Command line</a>). <a href="#language-reference">The language reference</a> shows each of them as it stands.</p>
 
     <div class="decision">
       <span class="note-label">Decision</span>
@@ -9996,7 +13767,7 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
         <tbody>
           <tr><td>home</td><td>What the product is, in one screen, with a complete workflow file readable without scrolling.</td></tr>
           <tr><td>install</td><td>The Compose stack, the first administrator, the first workflow.</td></tr>
-          <tr><td>documentation</td><td>The brick contract and the operations guide, written by hand. The language reference and the API reference, generated from <code>agentiik/schemas</code> so that the site, the command line and the MCP tools can never teach three different languages.</td></tr>
+          <tr><td>documentation</td><td>The brick contract and the operations guide, written by hand. The <a href="#language-reference">language reference</a> and the API reference, generated from <code>agentiik/schemas</code> so that the site, the command line and the MCP tools can never teach three different languages.</td></tr>
           <tr><td>brick catalog</td><td>Built from the manifests of the standard bricks, parameters and ports rendered from their schemas.</td></tr>
           <tr><td>release notes</td><td>Per version: which components actually moved, and the API version the release speaks. No compatibility matrix, because the console, the command line and the applications of a release are that release.</td></tr>
         </tbody>
@@ -10956,7 +14727,7 @@ the bootstrap token works until alice has signed in; then sign in as alice with 
           <tr><td>agentiik/design</td><td>Design tokens as JSON and CSS, icon SVG sources, the specimen sheet. Four clients must agree on the palette, and none of them owns it.</td><td>JSON, CSS, SVG</td></tr>
           <tr><td>agentiik/ios</td><td>iOS and iPadOS application.</td><td>Swift</td></tr>
           <tr><td>agentiik/android</td><td>Android application.</td><td>Kotlin</td></tr>
-          <tr><td class="wrapcell">agentiik/agentiik.github.io</td><td>The site and the documentation; later the generated language and API references and the catalog pages. Named for where it is served: GitHub Pages resolves an organisation site from that name alone.</td><td>static</td></tr>
+          <tr><td class="wrapcell">agentiik/agentiik.github.io</td><td>The site and the documentation, with the language reference generated in <code>agentiik/schemas</code> copied in as it stands; later the generated API reference and the catalog pages. Named for where it is served: GitHub Pages resolves an organisation site from that name alone.</td><td>static</td></tr>
           <tr><td>agentiik/deploy</td><td>Compose stacks, installer, upgrade and migration notes, later a Helm chart. No product code.</td><td>YAML, shell</td></tr>
           <tr><td>agentiik/homebrew-tap</td><td>The Homebrew formulae: <code>agk</code> alone, and the server programs with it, each built from the source of a tag. Bumped once the engine's tag exists, since a formula pins the commit it builds.</td><td>Ruby</td></tr>
           <tr><td class="wrapcell">agentiik/terraform-provider-agentiik</td><td>The Terraform provider for namespaces, workflow repositories, grants, groups, service accounts, tokens, secret declarations and runs: an API client with no authority of its own, named as the registry requires.</td><td>Go</td></tr>

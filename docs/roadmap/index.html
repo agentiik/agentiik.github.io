@@ -2356,7 +2356,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.7.0 ============ -->
 <section id="m07">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2><span class="tally">61 of 67 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2><span class="tally">63 of 69 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a model-driven client discovers Agentiik, learns the language, writes a valid workflow and runs it; a user manages their namespaces and workflows from it; and each user assembles the workflows they run into a connector of their own, every workflow one tool.</p>
 
@@ -2444,11 +2444,13 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <div class="work-group">
         <div class="work-head">
           <h4>Teaching a client the language</h4>
-          <span class="work-repo">agentiik</span>
+          <span class="work-repo">agentiik · agentiik.github.io</span>
         </div>
         <ul>
           <li class="done">Implement workflow.language: a topic returns its page, no topic returns the orientation, a minimal workflow and the topic list. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a> <span class="tick">done</span></li>
           <li class="done">Build workflow.language from the reference generated in agentiik/schemas, so the tool, the command line and the site teach one language. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#repos">repos</a> <span class="tick">done</span></li>
+          <li class="done">Implement agk language [TOPIC], printing what workflow.language answers from the reference the binary carries: no topic the orientation, a topic its page, an unknown topic refused naming the topics. <a class="ref" href="../#command-line">command-line</a><a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a> <span class="tick">done</span></li>
+          <li class="done">Show every page of the reference generated in agentiik/schemas on the site, the orientation and each topic topics.json lists, as a verbatim copy that the copies check fails where it differs or is missing. <a class="ref" href="../#language-reference">language-reference</a><a class="ref" href="../#site">site</a> <span class="tick">done</span></li>
           <li class="done">Implement workflow.schema, returning the JSON Schema 2020-12 document for the entry point, a brick manifest or an envelope. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a> <span class="tick">done</span></li>
           <li class="done">Implement workflow.validate over a candidate file set (includes, extends and defaults resolved, cycles and ports checked), committing nothing, as the only authority on a draft, with POST /api/v1/{ns}/workflows/{name}/validate, which the pre-receive hook's own check answers. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#publishing-tools">publishing-tools</a> <span class="tick">done</span></li>
           <li class="done">Give every validation error a JSON Pointer to the offending node, what was expected there, and the workflow.language topic covering it. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a> <span class="tick">done</span></li>
@@ -2500,7 +2502,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       <span class="note-label">Done when</span>
       <p>A client that has never seen Agentiik writes a valid workflow from <code>workflow.language</code> alone; a user manages their namespaces and workflows from <code>/mcp</code> and connects a client to a collection of their own; and <code>workflow:run</code> on a workflow reveals nothing of its tree.</p>
     </div>
-    <p class="where"><span>Repositories</span> <code>agentiik</code> · <code>schemas</code></p>
+    <p class="where"><span>Repositories</span> <code>agentiik</code> · <code>schemas</code> · <code>agentiik.github.io</code></p>
   </div>
 </section>
 
