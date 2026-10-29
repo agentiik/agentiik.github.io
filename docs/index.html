@@ -4331,7 +4331,7 @@ steps:
     </div>
 
     <h4>Durations</h4>
-    <p>One number and one unit from <code>ms</code>, <code>s</code>, <code>m</code>, <code>h</code>, <code>d</code>: <code>500ms</code>, <code>2s</code>, <code>10m</code>, <code>24h</code>, <code>90d</code>. A compound such as <code>1h30m</code> is refused, and so is a bare number. Used by <code>timeout</code>, <code>retain</code>, the schedule <code>jitter</code> and both <code>backoff</code> values.</p>
+    <p>One number, in the digits 0 to 9 alone and with no sign, and one unit from <code>ms</code>, <code>s</code>, <code>m</code>, <code>h</code>, <code>d</code>: <code>500ms</code>, <code>2s</code>, <code>10m</code>, <code>24h</code>, <code>90d</code>. A compound such as <code>1h30m</code> is refused, and so is a bare number. Used by <code>timeout</code>, <code>retain</code>, the schedule <code>jitter</code> and both <code>backoff</code> values.</p>
 
     <h4>Deadlines</h4>
     <div class="tablewrap">
@@ -4912,7 +4912,7 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
           <tr><td>description</td><td>What the tool does, when to reach for it, what it refuses: the field a model acts on. Required, with at least one character that is not white space as Unicode counts it, which takes in line breaks and the spaces of every script.</td></tr>
           <tr><td>output</td><td>The name of one declared workflow output, optional: a tool may have an effect and return only that it succeeded. Its envelope becomes the result, and the <code>outputSchema</code> describes that envelope, its items' <code>data</code> held to the output's <code>schema</code>, since the protocol holds a structured result to its <code>outputSchema</code> (<a href="#collections">Collections</a>). An output carrying no <code>schema</code> publishes none, and neither does an <code>async</code> tool, whose call answers the run rather than the output.</td></tr>
           <tr><td>mode</td><td><code>sync</code>, the default, returns the output; <code>async</code> returns the run identifier at once, to follow with the user's server's <code>run.get</code>.</td></tr>
-          <tr><td>timeout</td><td>How long a <code>sync</code> call waits, as a duration. At most 120 seconds, because clients time out: <code>120s</code>, <code>2m</code> and <code>120000ms</code> are the longest forms accepted, and an hour cannot be written. Longer work is <code>async</code>.</td></tr>
+          <tr><td>timeout</td><td>How long a <code>sync</code> call waits, as a duration. At most 120 seconds, because clients time out: <code>120s</code>, <code>2m</code> and <code>120000ms</code> are the longest forms accepted, and an hour cannot be written. Written with no leading zero, and more than nothing: <code>0s</code> is refused, and a <code>sync</code> call writing none waits the 120 seconds. Longer work is <code>async</code>.</td></tr>
           <tr><td>annotations</td><td><code>readOnlyHint</code>, <code>idempotentHint</code>, <code>destructiveHint</code>, <code>openWorldHint</code>, passed through unchanged. They are hints to a client, never a permission: what a tool may do is decided by the grants, not by a field in the file.</td></tr>
         </tbody>
       </table>
@@ -4930,7 +4930,7 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
           <tr><td class="wrapcell">an invalid name</td><td>Clients hold the name and send it back in every call.</td></tr>
           <tr><td class="wrapcell">an output the workflow does not declare</td><td>A tool is a view of the workflow's own boundary, which keeps the graph free to change beneath it.</td></tr>
           <tr><td class="wrapcell">a workflow input with no schema</td><td>Every input is an argument, and a tool has to publish an <code>inputSchema</code>.</td></tr>
-          <tr><td class="wrapcell">a sync timeout over 120 seconds, a timeout on async</td><td>Clients time out; an <code>async</code> call does not wait.</td></tr>
+          <tr><td class="wrapcell">a sync timeout of nothing or over 120 seconds, a timeout on async whatever it says, <code>0s</code> included</td><td>Clients time out, and a call waiting for nothing answers before any run can end; an <code>async</code> call does not wait.</td></tr>
           <tr><td class="wrapcell">mcp in an included file</td><td>Reuse covers steps and defaults; the published surface is declared by the workflow that publishes it, so that reading one file tells you everything that workflow exposes.</td></tr>
         </tbody>
       </table>
@@ -11650,7 +11650,7 @@ flowchart LR
         <tbody>
           <tr><td>namespace.list</td><td>The namespaces the caller holds a grant in, the personal one first, and every one for an administrator.</td><td>any authenticated principal</td></tr>
           <tr><td>namespace.get</td><td>One namespace: its kind, its owner and its quotas.</td><td>a grant in it</td></tr>
-          <tr><td>namespace.create</td><td>A shared namespace the caller owns, as <code>POST /api/v1/namespaces</code> makes one; another owner, and quotas at its creation, an administrator's alone.</td><td>any authenticated user</td></tr>
+          <tr><td>namespace.create</td><td>A shared namespace the caller owns, as <code>POST /api/v1/namespaces</code> makes one; another owner, and quotas at its creation, an administrator's alone.</td><td>any authenticated user, through a credential no scope narrows, or an administrator</td></tr>
           <tr><td class="wrapcell">namespace.update, namespace.delete</td><td>Renames a shared namespace; removes one that holds nothing.</td><td>its owner, whoever holds <code>grant:manage</code> at its scope, or an administrator</td></tr>
           <tr><td>namespace.quotas</td><td>Sets a namespace's quotas and allowed runner pools.</td><td>administrator</td></tr>
           <tr><td>grant.list</td><td>The grants and denies written on a namespace or on a workflow.</td><td><code>grant:manage</code></td></tr>
@@ -11674,8 +11674,8 @@ flowchart LR
           <tr><td class="wrapcell">run.approve, run.reject</td><td>Act on a waiting run. With the wait step, in <a href="roadmap/#m08">v0.8.0</a>.</td><td><code>workflow:run</code></td></tr>
           <tr><td>brick.list, brick.get</td><td>The catalog; a manifest with its parameter schema. With <code>GET /api/v1/bricks</code>, in <a href="roadmap/#m08">v0.8.0</a>.</td><td>any authenticated principal</td></tr>
           <tr><td>runner.list</td><td>Runner inventory.</td><td>administrator</td></tr>
-          <tr><td class="wrapcell">collection.list, collection.get</td><td>The caller's collections, each with the URL a client is given, its members, and what each member offers or why it offers nothing, <code>no_mcp_block</code>, <code>not_runnable</code> or <code>tool_name_taken</code>. None of the seven <code>collection.*</code> tools is offered to a token narrowed by a scope, which reaches no collection.</td><td>any authenticated principal, for their own</td></tr>
-          <tr><td class="wrapcell">collection.create, collection.update, collection.delete</td><td>Makes one of the caller's collections, renames it or describes it, and removes it.</td><td>any authenticated principal, for their own</td></tr>
+          <tr><td class="wrapcell">collection.list, collection.get</td><td>The caller's collections, each with the URL a client is given, its members, and what each member offers or why it offers nothing, <code>no_mcp_block</code>, <code>not_runnable</code> or <code>tool_name_taken</code>. None of the seven <code>collection.*</code> tools is offered to a token narrowed by a scope, which reaches no collection, nor to the bootstrap token, which is nobody and owns none.</td><td>any authenticated principal, for their own, but the bootstrap token</td></tr>
+          <tr><td class="wrapcell">collection.create, collection.update, collection.delete</td><td>Makes one of the caller's collections, renames it or describes it, and removes it.</td><td>any authenticated principal, for their own, but the bootstrap token</td></tr>
           <tr><td class="wrapcell">collection.add, collection.remove</td><td>Adds a workflow to one of the caller's collections, with the ref it is read at and the name its tool goes by, or takes one out.</td><td><code>workflow:run</code> on the workflow, to add it</td></tr>
         </tbody>
       </table>
@@ -11832,9 +11832,9 @@ flowchart LR
       <table>
         <thead><tr><th>Declared</th><th>Becomes, on the wire</th></tr></thead>
         <tbody>
-          <tr><td>the workflow's inputs</td><td><code>inputSchema</code>: an object whose properties are the workflow's inputs, each with its own JSON Schema as it stands, the required ones required, and its references into the repository bundled in, since a client cannot read the tree. No second schema can drift. Each file an input reaches is embedded under <code>$defs</code> with the <code>$id</code> the engine compiles it under, <code>agk://repo/</code> and its path, and the schema's own <code>$id</code> is <code>agk://repo/</code>, so that <code>./schemas/order.json</code> resolves to the file embedded beside it as JSON Schema 2020-12 resolves any embedded resource, with nothing rewritten.</td></tr>
+          <tr><td>the workflow's inputs</td><td><code>inputSchema</code>: an object whose properties are the workflow's inputs, each with its own JSON Schema as it stands, the required ones required, and its references into the repository bundled in, since a client cannot read the tree. No second schema can drift. Each file an input reaches is embedded under <code>$defs</code> by its path, and every reference is rewritten into a pointer inside the schema, <code>#/$defs/</code>, the file's path and the place in the file, once resolved as the engine resolves it, against <code>agk://repo/</code> and every <code>$id</code> met on the way; no <code>$id</code>, <code>$anchor</code> or embedded <code>$schema</code> is left, so that a client compiles the schema with nothing fetched and no base URI known: <code>./schemas/order.json</code> is <code>#/$defs/schemas~1order.json</code>. A reference that cannot be placed so leaves the tool out of <code>tools/list</code> rather than publishing a schema no client can compile.</td></tr>
           <tr><td>output</td><td><code>outputSchema</code> when the output declares a schema and the tool is <code>mode: sync</code>: the envelope, whose items' <code>data</code> are held to the output's schema, since that schema says what the items carry and the protocol holds a structured result to its <code>outputSchema</code>. Its envelope goes in <code>structuredContent</code>, with a text rendering alongside. An async tool publishes none, since its call answers the run and never the output.</td></tr>
-          <tr><td>mode: sync</td><td>Waits for the run and returns the output, for its <code>timeout</code>, or 120 seconds where it writes none, because clients time out. A workflow that cannot finish inside that must be <code>async</code>. A run still going when the wait is over goes on, and the call answers its identifier and its state, to follow with the user's server's <code>run.get</code>, rather than an error the run did not make.</td></tr>
+          <tr><td>mode: sync</td><td>Waits for the run and returns the output, for its <code>timeout</code>, or 120 seconds where it writes none, because clients time out. A workflow that cannot finish inside that must be <code>async</code>. A run still going when the wait is over goes on, and the call answers its identifier and its state as text, with <code>isError: true</code> and no <code>structuredContent</code>, since that answer is not the envelope its <code>outputSchema</code> describes and a client refuses a result that is neither; the text says the run has not failed, to follow with the user's server's <code>run.get</code> rather than call the tool again.</td></tr>
           <tr><td>mode: async</td><td>Returns the run identifier at once, to follow with the user's server's <code>run.get</code>. A collection never grows a polling tool.</td></tr>
         </tbody>
       </table>
@@ -11850,7 +11850,12 @@ flowchart LR
 
     <div class="decision">
       <span class="note-label">Decision</span>
-      <p>A sync call returns the output of the run it started under <code>workflow:run</code> alone, <code>run:read_data</code> not asked. The result of one's own call is what calling a tool is for, and <code>operator</code>, the role without <code>run:read_data</code>, is exactly a client's grant. Reading the outputs of any run afterwards, this one included, still asks <code>run:read_data</code>.</p>
+      <p>A sync call returns the output of the run it started under <code>workflow:run</code> alone, <code>run:read_data</code> not asked. The result of one's own call is what calling a tool is for, and <code>operator</code>, the role without <code>run:read_data</code>, is exactly a client's grant. Reading the outputs of any run afterwards, this one included, still asks <code>run:read_data</code>. An explicit deny of <code>run:read_data</code> on the workflow still wins, as a deny wins over any allow at any scope (<a href="#scopes-and-resolution">Scopes and resolution</a>): the call then answers the run's identifier and its state as text, with <code>isError: true</code> and no envelope, as an <code>async</code> call answers the run.</p>
+    </div>
+
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>A published <code>inputSchema</code> carries its references as pointers inside itself rather than as URLs under <code>agk://repo/</code>. A pointer is the one reference every client resolves alike, with nothing fetched and no base URI to know; a URL under a scheme a client does not know is one it may not resolve at all, as Python's <code>urllib.parse.urljoin</code>, which <code>jsonschema</code> and <code>referencing</code> use, does not under <code>agk:</code>. The engine still compiles the tree under <code>agk://repo/</code>, and the bundle is what that compilation resolves to, written out.</p>
     </div>
 
     <div class="decision">
@@ -11873,7 +11878,7 @@ flowchart LR
       <table>
         <thead><tr><th>Case</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">the run fails</td><td>A tool execution error, <code>isError: true</code>, naming the failing step, its exit code and its message: the specification says clients should hand those to the model so it can correct itself.</td></tr>
+          <tr><td class="wrapcell">the run fails</td><td>A tool execution error, <code>isError: true</code>, naming the failing step, its exit code and its message, the last lines of the log of the task it failed by, masked as every log is and at most about 2 KiB, which a caller who may not read the run's logs is not told: the specification says clients should hand those to the model so it can correct itself.</td></tr>
           <tr><td class="wrapcell">an argument is malformed</td><td>A protocol error. The input schema rejects it before any run exists.</td></tr>
           <tr><td class="wrapcell">the namespace's quota is reached</td><td>A tool execution error, <code>isError: true</code>, saying which quota and when one more run fits, with <code>retry_after_seconds</code> in <code>structuredContent</code>: what a webhook answers as 429 with <code>Retry-After</code>, said where a model reads it, since a tool's result travels inside an answer the protocol already sent.</td></tr>
         </tbody>
