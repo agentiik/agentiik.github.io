@@ -1,6 +1,7 @@
 # Fails when a file the documentation shows verbatim, such as the single-host compose.yaml
-# of agentiik/deploy in Get started, is no longer the file on that repository's main.
-# .github/check-copies.py says how a copy is marked and compared.
+# of agentiik/deploy in Get started, is no longer the file on that repository's main, and when
+# a page of the language reference agentiik/schemas generates has no copy in The language
+# reference. .github/check-copies.py says how a copy is marked and compared.
 #
 # It also runs once a day and on demand, since the file can change in the other repository
 # without anything changing here.
