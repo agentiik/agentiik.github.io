@@ -10,6 +10,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Documentation
 
+- The API's route table lists `GET /api/v1/users/{login}/credentials`, a user's credentials read by an administrator as `GET /api/v1/me/credentials` lists the caller's, which the web console's credentials row already promised, and the console's users screen draws each user's list from it.
 - `PUT /api/v1/me/avatar` and `PUT /api/v1/namespaces/{ns}/avatar` say that pictures are re-encoded a few at a time in each process of the API, and that one waiting five seconds for its turn is answered `503` with `Retry-After`, storing nothing, as agentiik/agentiik#844 asks.
 - The web console's editor opens as an entry of the history of its own, so that Back closes it, and says how leaving with changes asks first: Stop editing turned red beside Keep, and Keep or Leave for a link or Back to another screen, as agentiik/agentiik#870 asks.
 - Install a server's What v0.6 does not do yet is named for the release it installs and drops the row saying neither installation serves the console, and Get started no longer counts the console among what a server does not do. On a Mac, with Homebrew says the API the service runs serves the web console at `https://localhost:8443`, that the formula builds it with Node before `agentiik-api`, and that `api.env` names `AGK_CONSOLE`.
