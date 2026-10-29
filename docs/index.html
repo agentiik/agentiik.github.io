@@ -7596,12 +7596,12 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td>agk validate</td><td>Validates the YAML, resolves includes and inheritance, detects cycles, checks ports against the manifests of the referenced images. A library's root is judged as its hook judges it, as a fragment; a workflow include is refused, naming it, since it reads a library only an installation keeps, which <code>agk push</code> reaches.</td></tr>
           <tr><td>agk graph</td><td>Writes the resolved graph as DOT or Mermaid, for review inside a merge request.</td></tr>
           <tr><td>agk run --local</td><td>Runs the whole workflow against the local Docker daemon, with no controller, no bus and no database. Artifacts land in a working directory.</td></tr>
-          <tr><td>agk run --namespace</td><td>Starts a run of a pushed commit on an installation and follows it until it ends, narrated and reported as a local run is. <code>--commit</code> names the commit, <code>HEAD</code> by default, read out of this clone; <code>--ref</code> names instead a branch or a tag of the installation's repository, resolved there, so that somebody else's branch runs as it stands on the installation whether or not this clone fetched it. Its inputs are sent as given and the installation binds them against the commit's declaration; a refusal is the sentence a local run prints, and a run refused when it is let in ends with its reason, exit 3. An interrupt stops the following, never the run (<a href="#pointing-agk-at-an-installation">Pointing agk at an installation</a>).</td></tr>
+          <tr><td>agk run --namespace</td><td>Starts a run of a pushed commit on an installation and follows it until it ends, narrated and reported as a local run is. <code>--commit</code> names the commit, <code>HEAD</code> by default, read out of this clone; <code>--ref</code> names instead a branch or a tag of the installation's repository, resolved there, so that somebody else's branch runs as it stands on the installation whether or not this clone fetched it. Its inputs are sent as given and the installation binds them against the commit's declaration; a refusal is the sentence a local run prints, and a run refused when it is let in ends with its reason, exit 3. On a terminal, a refusal, a run's reason and its report are written as <code>agk console</code> draws them (<a href="#terminal-views">Views</a>). An interrupt stops the following, never the run (<a href="#pointing-agk-at-an-installation">Pointing agk at an installation</a>).</td></tr>
           <tr><td>agk push</td><td>Registers the committed workflow in a namespace on a server over git, each image resolved to its registry digest (<a href="#supply-chain">Supply chain</a>): it creates the repository where the namespace lacks it, records the digests and the brick manifests the hook judges the push against, and moves the branch <code>--branch</code> names, or the branch or tag <code>--commit</code> names, or the branch checked out, <a href="#pushing-with-agk">as set out here</a>. A library is pushed the same way, under the repository <code>--name</code> names.</td></tr>
           <tr><td>agk share</td><td>Grants or revokes access to a namespace or a workflow: <code>agk share finance/monthly-invoicing --group team-ops --role operator</code>. <code>--user</code>, <code>--group</code> or <code>--service-account NS/NAME</code> names the principal, <code>--deny PERMISSION</code> takes one permission away in place of a role, and <code>--expires</code> takes days, a duration or an RFC 3339 instant. <code>agk share finance --revoke ID</code> revokes one written there, by the identifier <code>agk grants</code> prints.</td></tr>
           <tr><td>agk grants</td><td>Shows the grants and denies on a namespace or a workflow, one a line: identifier, principal, role or deny, the scope it was written at, which tells a workflow's own from what it inherits, the permissions a role gives there, and the expiry.</td></tr>
-          <tr><td>agk logs</td><td>Follows the logs of a run, or of the steps named after it, history then live, each line behind its step, shard and attempt. A stream cut off, or silent past three keep-alives, is asked again from its last event, and nothing is printed twice. On a terminal, each line is written as <code>agk console</code> draws it, an escape sequence dropped and every other control but a tab shown as its escape (<a href="#terminal-views">Views</a>); to a file or a pipe, each line is written as the log holds it, for a script that wants the bytes.</td></tr>
-          <tr><td>agk status</td><td>Shows how a run on an installation stands: its state, each step's verdict with the digest of each port, its inputs where <code>run:read_data</code> allows, its outputs and what failed, or the reason a run refused when it was let in carries. <code>-o json</code> writes the API's answer.</td></tr>
+          <tr><td>agk logs</td><td>Follows the logs of a run, or of the steps named after it, history then live, each line behind its step, shard and attempt. A stream cut off, or silent past three keep-alives, is asked again from its last event, and nothing is printed twice. On a terminal, each line, and a refusal before any stream opens, is written as <code>agk console</code> draws it, an escape sequence dropped and every other control but a tab shown as its escape (<a href="#terminal-views">Views</a>); to a file or a pipe, each line is written as the log holds it, for a script that wants the bytes.</td></tr>
+          <tr><td>agk status</td><td>Shows how a run on an installation stands: its state, each step's verdict with the digest of each port, its inputs where <code>run:read_data</code> allows, its outputs and what failed, or the reason a run refused when it was let in carries. <code>-o json</code> writes the API's answer. On a terminal, what the installation says, a run's reason among it, is written as <code>agk console</code> draws it (<a href="#terminal-views">Views</a>), and <code>-o json</code> writes DEL and every C1 control as its <code>\u</code> escape, the same document to whatever parses it; to a file or a pipe, byte for byte.</td></tr>
           <tr><td>agk console</td><td>Opens the console in the terminal, full screen, over the routes the web console reads: runs, a run with its log, its graph, workflows, sharing and, for an administrator, runners. Not on a terminal, it prints the view once as plain lines (<a href="#terminal">Terminal console</a>).</td></tr>
           <tr><td>agk brick init</td><td>Scaffolds a brick in a chosen language, with its manifest and test harness.</td></tr>
           <tr><td>agk brick test</td><td>Runs the brick against a set of sample envelopes and compares against expected outputs.</td></tr>
@@ -7685,7 +7685,7 @@ run 01M3KR0GNGCVCXNMA3JEA74T4V: .agk/runs/01M3KR0GNGCVCXNMA3JEA74T4V
           <tr><td class="wrapcell">--inputs file.json</td><td>A JSON object of the workflow's declared inputs.</td></tr>
           <tr><td class="wrapcell">--input name=value<br>--input-file name=path</td><td>One input at a time.</td></tr>
           <tr><td class="wrapcell">--secret name=value<br>--secret-file name=path</td><td>Where a local run's secrets come from. A step mounting a secret nobody supplied is refused before any container exists, not at the fourth shard of a fan-out.</td></tr>
-          <tr><td>-o json</td><td>Output envelopes on standard output, one object keyed by output name, to compose with whatever reads next. Narration stays on standard error.</td></tr>
+          <tr><td>-o json</td><td>Output envelopes on standard output, one object keyed by output name, to compose with whatever reads next. Narration stays on standard error. On a terminal, DEL and every C1 control a brick wrote are written as their <code>\u</code> escape, the same document to whatever parses it, since a terminal may act on one as it does on an escape.</td></tr>
           <tr><td>--logs</td><td>Prints what each container wrote, after the run, on standard error: on a terminal as <code>agk logs</code> writes it there, to a file or a pipe as the log holds it. The last lines of a failed container's log, which a failure report carries, are written the same way.</td></tr>
           <tr><td>-v</td><td>Narrates every task, not only every step: one line per shard.</td></tr>
           <tr><td>--dir</td><td>Moves the working directory.</td></tr>
@@ -8675,11 +8675,11 @@ resource "agentiik_workflow" "search" {
 
     <h3 id="voice">Voice</h3>
     <ul class="plain">
-      <li>Sentence case throughout, buttons, tabs and headings included.</li>
+      <li>Sentence case throughout, buttons, tabs, headings and column heads included, in <code>agk console</code> as in the web console.</li>
       <li>A control names its effect in words that never change: Approve, Reject, Replay from this step, Load 25 more. Never OK, never Submit, and never a name, a count or a word a state chooses: what a control acts on is said by its row, its pane or the question before it. A confirmation draws Keep before the same button turned red.</li>
       <li>An error names the step, the exit code and what was refused, in that order.</li>
-      <li>A failure of the console itself says what could not be done and why in a few words, the reason decided by the status, and what to do where there is something: sign in again, wait and try again. The server's own answer, its status and its sentence, follows in small type. Try again is offered where trying again may succeed.</li>
-      <li>Nothing on screen explains the console: no note, hint or aside says what a feature is for or how it works. Labels, values and short empty states say what a screen shows, and a confirmation is a few words: Token revoked.</li>
+      <li>A failure of the console itself says what could not be done and why in a few words, the reason decided by the status, and what to do where there is something: sign in again, wait and try again. The server's own answer, its status and its sentence, follows in small type, and in <code>agk console</code>, which has no small type, in brackets after the reason on the same line. Try again is offered where trying again may succeed.</li>
+      <li>Nothing on screen explains the console, in a browser or a terminal: no note, hint or aside says what a feature is for or how it works. Labels, values and short empty states say what a screen shows, and a confirmation is a few words: Token revoked.</li>
       <li>Identifiers are never translated or prettified: <code>run:read_data</code>, <code>rejected</code>, <code>succeeded</code> appear as the YAML and the API spell them, so what a person reads on screen is what they type in a file.</li>
     </ul>
 
@@ -8992,7 +8992,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>permissions</td><td>None of its own. It shows what the principal holds, as <code>GET /api/v1/me</code> gives it, and hides the rest rather than disabling it, payload panes included without <code>run:read_data</code>. A token narrowed by a scope narrows the console with it.</td></tr>
           <tr><td>opens on</td><td>The runs view of every namespace the principal reads; <code>--namespace NS</code> on one namespace; <code>agk console RUN</code> on that run.</td></tr>
           <tr><td>reads again</td><td>What is shown, every five seconds: the runs view's page of runs, and a run until it has ended. A change is seen within five seconds for one small read a view; the web console is told of each change over <code>GET /api/v1/me/live</code> instead, so the two consoles open side by side never disagree on a run for longer than that.</td></tr>
-          <tr><td>exits</td><td>0 when quit. 1 where the installation refuses the credential, read from <code>GET /api/v1/me</code> before anything is drawn so that no screen hides the sentence; 2 for a wrong command line and 4 where the installation cannot be reached at start, as <a href="#command-line">every verb</a>. Once open, an installation that stops answering is said so in the top line and asked again, since somebody is watching, and what was read before stays on the screen.</td></tr>
+          <tr><td>exits</td><td>0 when quit. 1 where the installation refuses the credential, read from <code>GET /api/v1/me</code> before anything is drawn so that no screen hides the sentence; 2 for a wrong command line and 4 where the installation cannot be reached at start, as <a href="#command-line">every verb</a>. Once open, an installation that stops answering is said so in the top line and asked again, since somebody is watching, and what was read before stays on the screen. A refusal is said as its status decides (<a href="#voice">Voice</a>), the installation's own answer in brackets after it, and asked again too, since a grant may be given back meanwhile; a credential refused once open is said in the words <code>agk</code> says it in at start, and nothing is asked again, since every request would carry it.</td></tr>
         </tbody>
       </table>
     </div>
@@ -9050,7 +9050,7 @@ resource "agentiik_workflow" "search" {
           <tr><td>runs</td><td>Newest first and kept live: state, run, workflow, trigger, start, duration and principal, and at full width a strip of the run's steps and a sparkline of its workflow's last twenty runs. Failed runs, and from <a href="roadmap/#m08">v0.8.0</a> waiting ones, sit in a band above the list, since they are why it is opened. Filtered as you type (<a href="#terminal-keys">Keys and the mouse</a>).</td><td class="wrapcell">GET /api/v1/runs</td></tr>
           <tr><td>run</td><td>Its graph drawn, each step's state live, a fan-out's shards one cell each beside a bar of those done. A step's exit code and its meaning, attempt, shard, image digest, runner name, pool and labels, never the host. Each port's envelope with its item count, and its JSON under <code>run:read_data</code>, up to the <a href="#size-rules">size rules</a>. Its log, history then live, as <code>agk logs</code> follows it. Cancel, replay from a step and, from v0.8.0, approve or reject.</td><td class="wrapcell">GET /api/v1/runs/{id}, its steps' inputs, outputs and logs</td></tr>
           <tr><td>graph</td><td>The resolved graph of a run or a version, full screen, drawn as boxes and edges (<a href="#terminal-graph">The graph, drawn</a>), or written as a list.</td><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}</td></tr>
-          <tr><td>workflows</td><td>The workflows of a namespace the principal can read, each one's versions, declared triggers, a sparkline of its last twenty runs and a histogram of its durations, and a version's graph.</td><td class="wrapcell">what the web console lists, GET /api/v1/{ns}/workflows/{name}, GET /api/v1/runs and GET /api/v1/{ns}/stats/runs</td></tr>
+          <tr><td>workflows</td><td>The workflows of a namespace the principal can read, one never run among them, each one's latest run, versions, declared triggers, a sparkline of its last twenty runs and a histogram of its durations, and a version's graph.</td><td class="wrapcell">GET /api/v1/{ns}/workflows, of the namespace shown or of each one where GET /api/v1/me gives the principal run:read, GET /api/v1/{ns}/workflows/{name}, GET /api/v1/runs and GET /api/v1/{ns}/stats/runs</td></tr>
           <tr><td>sharing</td><td>What <code>agk grants</code> prints, kept live, for a workflow or a namespace: the grants as written, and resolved for one principal with the scope each permission comes from, a deny the only subtraction. It opens on the workflow in front of the principal where it holds <code>grant:manage</code> there, then on that workflow's namespace, and <code>s</code> chooses among the scopes where it holds it, since the grants routes answer nobody else; a principal holding it nowhere is told so, and nothing is asked. <code>/</code> narrows the grants listed, each word found whole, and never the resolution.</td><td class="wrapcell">GET /api/v1/{ns}/grants, GET /api/v1/{ns}/workflows/{name}/grants</td></tr>
           <tr><td>runners</td><td>To an administrator alone: runners and pools, with labels, capacity, last heartbeat, state and concurrency, and who drained or revoked one and when, never a host.</td><td class="wrapcell">GET /api/v1/runners, GET /api/v1/runner-pools</td></tr>
         </tbody>
@@ -9138,7 +9138,7 @@ archive     queued
           <tr><td>shard cells and bar</td><td>On a <code>fan_out</code>: one cell per shard in its state, and a bar of those done.</td><td class="wrapcell">GET /api/v1/runs/{id}</td></tr>
           <tr><td>sparkline</td><td>The durations of a workflow's last twenty runs, one bar each, oldest first: a failure in red, the run in progress in the accent, the rest muted, beside their median.</td><td class="wrapcell">GET /api/v1/runs, narrowed by <code>workflow</code> and <code>limit</code></td></tr>
           <tr><td>histogram</td><td>A workflow's durations over the last 30 days, a dozen bins drawn in block characters, its p50 and p95 marked, beside its sparkline in the workflows view: the compact form of the web console's <a href="#console-statistics">statistics</a>.</td><td class="wrapcell">GET /api/v1/{ns}/stats/runs, with <code>histogram</code></td></tr>
-          <tr><td>live</td><td>In the top line, a green dot and the word while the installation answers; in words, and asked again, when it stops.</td><td class="wrapcell">every read</td></tr>
+          <tr><td>live</td><td>In the top line, a green dot and the word while the installation answers; in words, and asked again, when it stops answering or refuses a read; and the credential's sentence, nothing asked again, when it refuses the credential.</td><td class="wrapcell">every read</td></tr>
           <tr><td>toast</td><td>A notification, in the corner, over the panes.</td><td class="wrapcell">GET /api/v1/me, and the runs view</td></tr>
         </tbody>
       </table>
@@ -9248,7 +9248,7 @@ archive     queued
 <text x="1261" y="78.6" class="f-faint" textLength="162">finance · 131 runs</text>
 <rect x="28.5" y="86.5" width="1403" height="15" rx="4" class="f-bg s-line" stroke-width="1"/>
 <text x="37" y="98.6" class="f-accent" font-weight="700">/</text>
-<text x="55" y="98.6" class="f-faint" textLength="162">filter as you type</text>
+<text x="55" y="98.6" class="f-faint" textLength="54">Filter</text>
 <rect x="28" y="125" width="1404" height="99" rx="5" class="f-wait-bg"/>
 <rect x="28" y="128" width="3" height="93" rx="1.5" class="f-wait"/>
 <text x="46" y="138.6" class="f-wait" font-weight="700" textLength="135">Needs attention</text>
@@ -9267,15 +9267,15 @@ archive     queued
 <text x="298" y="198.6" class="f-text" font-weight="700" textLength="153">monthly-invoicing</text>
 <text x="469" y="198.6" class="f-muted" textLength="342">invoice · exit 108 · retries exhausted</text>
 <text x="1234" y="198.6" class="f-text" textLength="189">p Replay from invoice</text>
-<text x="37" y="258.6" class="f-faint" font-weight="700" textLength="45">STATE</text>
-<text x="172" y="258.6" class="f-faint" font-weight="700" textLength="27">RUN</text>
-<text x="298" y="258.6" class="f-faint" font-weight="700" textLength="72">WORKFLOW</text>
-<text x="469" y="258.6" class="f-faint" font-weight="700" textLength="63">TRIGGER</text>
-<text x="559" y="258.6" class="f-faint" font-weight="700" textLength="18">BY</text>
-<text x="730" y="258.6" class="f-faint" font-weight="700" textLength="45">STEPS</text>
-<text x="838" y="258.6" class="f-faint" font-weight="700" textLength="63">STARTED</text>
-<text x="937" y="258.6" class="f-faint" font-weight="700" textLength="36">TOOK</text>
-<text x="1027" y="258.6" class="f-faint" font-weight="700" textLength="207">LAST 20 OF THE WORKFLOW</text>
+<text x="37" y="258.6" class="f-faint" font-weight="700" textLength="45">State</text>
+<text x="172" y="258.6" class="f-faint" font-weight="700" textLength="27">Run</text>
+<text x="298" y="258.6" class="f-faint" font-weight="700" textLength="72">Workflow</text>
+<text x="469" y="258.6" class="f-faint" font-weight="700" textLength="63">Trigger</text>
+<text x="559" y="258.6" class="f-faint" font-weight="700" textLength="18">By</text>
+<text x="730" y="258.6" class="f-faint" font-weight="700" textLength="45">Steps</text>
+<text x="838" y="258.6" class="f-faint" font-weight="700" textLength="63">Started</text>
+<text x="937" y="258.6" class="f-faint" font-weight="700" textLength="36">Took</text>
+<text x="1027" y="258.6" class="f-faint" font-weight="700" textLength="63">Last 20</text>
 <rect x="28" y="265" width="1404" height="18" rx="3" class="f-raised"/>
 <rect x="28" y="267" width="2.5" height="14" rx="1.25" class="f-accent"/>
 <rect x="37" y="266" width="99" height="16" rx="4" class="f-wait-bg"/>
@@ -9755,9 +9755,9 @@ archive     queued
 <rect x="1199.5" y="550.06" width="6" height="10.94" rx="1" class="f-muted" opacity=".7"/>
 <text x="37" y="878.6" class="f-faint" textLength="252">15 of 131 runs, newest first</text>
 <rect x="10" y="44" width="1440" height="880" class="f-bg" opacity=".72"/>
-<rect x="316" y="264" width="828" height="380" rx="9" class="f-raised"/>
-<rect x="320.5" y="274" width="819" height="360" rx="8" class="f-raised"/>
-<path d="M1131.5 274A8 8 0 0 1 1139.5 282V626A8 8 0 0 1 1131.5 634H328.5A8 8 0 0 1 320.5 626V282A8 8 0 0 1 328.5 274M328.5 274H331M445 274H871M1120 274H1131.5" class="f-none s-accent" stroke-width="1.6"/>
+<rect x="316" y="264" width="828" height="320" rx="9" class="f-raised"/>
+<rect x="320.5" y="274" width="819" height="300" rx="8" class="f-raised"/>
+<path d="M1131.5 274A8 8 0 0 1 1139.5 282V566A8 8 0 0 1 1131.5 574H328.5A8 8 0 0 1 320.5 566V282A8 8 0 0 1 328.5 274M328.5 274H331M445 274H871M1120 274H1131.5" class="f-none s-accent" stroke-width="1.6"/>
 <text x="343" y="278.6" class="f-accent" font-weight="700" textLength="99">Approve run</text>
 <text x="883" y="278.6" class="f-faint" textLength="234">with the wait step, v0.8.0</text>
 <text x="343" y="318.6" class="f-text" font-weight="700" textLength="234">01JMZ8W4K2R7QH3N5T9ZQ4XKBM</text>
@@ -9772,8 +9772,7 @@ archive     queued
 <text x="595" y="358.6" class="f-text" font-weight="700" textLength="18">in</text>
 <text x="613" y="358.6" class="f-muted" textLength="54">, from</text>
 <text x="676" y="358.6" class="f-text" font-weight="700" textLength="99">invoice.out</text>
-<text x="775" y="358.6" class="f-faint" textLength="270">: enter on the band opens them</text>
-<text x="343" y="398.6" class="f-faint" textLength="675">Comment, optional: kept with the decision in approvals and in the audit log</text>
+<text x="343" y="398.6" class="f-faint" textLength="153">Comment, optional</text>
 <rect x="343.5" y="405.5" width="773" height="17" rx="4" class="f-bg s-accent" stroke-width="1.3"/>
 <text x="361" y="418.6" class="f-text" textLength="513">Checked against the ledger export of 06:00, totals match.</text>
 <rect x="883" y="407" width="9" height="14" class="f-accent"/>
@@ -9782,19 +9781,14 @@ archive     queued
 <text x="415" y="478.6" class="f-text" font-weight="700" textLength="108">01JMZ8W4K2R7</text>
 <text x="532" y="478.6" class="f-muted" textLength="18">of</text>
 <text x="559" y="478.6" class="f-text" font-weight="700" textLength="153">monthly-invoicing</text>
-<text x="721" y="478.6" class="f-muted" textLength="306">with this comment? It goes on past</text>
-<text x="1036" y="478.6" class="f-text" font-weight="700" textLength="72">sign-off</text>
-<text x="1108" y="478.6" class="f-muted">.</text>
+<text x="721" y="478.6" class="f-muted" textLength="162">with this comment?</text>
 <rect x="343.5" y="506.5" width="26" height="15" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
 <text x="352" y="518.6" class="f-text" font-weight="700">y</text>
 <text x="379" y="518.6" class="f-ok" textLength="63">Approve</text>
 <rect x="478.5" y="506.5" width="26" height="15" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
 <text x="487" y="518.6" class="f-text" font-weight="700">n</text>
 <text x="514" y="518.6" class="f-text" textLength="135">Keep it waiting</text>
-<text x="685" y="518.6" class="f-faint" textLength="306">any other key keeps it waiting too</text>
-<text x="343" y="558.6" class="f-faint" textLength="720">Under workflow:run on finance/monthly-invoicing. Rejecting instead, with r, asks</text>
-<text x="343" y="578.6" class="f-faint" textLength="774">for a reason and ends the run as cancelled: POST /api/v1/runs/{id}/approve or /reject.</text>
-<text x="343" y="618.6" class="f-faint" textLength="207">esc Back to the comment</text>
+<text x="343" y="558.6" class="f-faint" textLength="207">esc Back to the comment</text>
 <rect x="10" y="904" width="1440" height="20" class="f-surface"/>
 <path d="M10 904H1450" class="f-none s-line" stroke-width="1"/>
 <rect x="19.5" y="906.5" width="26" height="15" rx="4" class="f-raised s-line-strong" stroke-width="1"/>
