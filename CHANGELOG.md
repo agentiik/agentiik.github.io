@@ -66,6 +66,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - `file-tasks.py` reads the titles already filed up to the same 10,000 issues a repository, where it read the newest 500 and would have filed an old task of `agentiik` a second time, and refuses to file anything when a repository answers that many.
 - The figure of `agk console`'s three panes shows invoice's log as the console draws it, each line behind its step, shard and attempt, where `console-shots.mjs` began each with a time no `agk console` writes; `console-term-run-light.png` and `console-term-run-dark.png` are rendered again from v0.6.0.
 - The copies check also fails where a page `language/topics.json` in agentiik/schemas lists, the orientation or a topic's, has no copy on the site, since comparing the copies there are cannot notice a topic added there.
+- `CLAUDE.md` is the copy of `agentiik/.github`'s, which no longer counts the roadmap's tasks, groups or Feature issues: the roadmap counts them in each milestone's tally, and the 685 tasks the copy named were already 696 at the v0.6.0 documentation. This copy also comes back to the source from an older one, which named thirteen repositories, a `console` one among them, and `agentiik` without the web console.
 
 ## v0.6.0, 2026-10-02
 
