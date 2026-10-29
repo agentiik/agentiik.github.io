@@ -55,6 +55,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - Errors and obligations says a failed run's message is the last lines of the log of the task it failed by, masked and at most about 2 KiB, and told only to a caller who may read the run's logs (agentiik/agentiik#852).
 - Publishing the workflow as a tool refuses a `sync` timeout of nothing, `0s`, and a timeout on an `async` tool whatever it says, and Durations writes a number in the digits 0 to 9 alone, with no sign (agentiik/agentiik#851).
 - The user's server offers `namespace.create` to a user through a credential no scope narrows, or an administrator, and no `collection.*` tool to the bootstrap token, which owns no collection, as their routes serve them (agentiik/agentiik#854).
+- The web console's keys say `c` and `p` ask again with Keep drawn before the same button turned red, `n` and `esc` keeping the run as it is, as every confirmation does (agentiik/agentiik#872); the MCP panel is a workflow's where its version publishes a tool, offers adding it to a collection under `workflow:run` and says MCP off where the installation serves none (agentiik/agentiik#877, agentiik/agentiik#886); and a refusal is drawn under the button that asked for it (agentiik/agentiik#876).
+- The web console's editor, refused because the branch moved, opens the file again at what the branch now holds with the change the person made kept beside it, line by line against the version they had opened (agentiik/agentiik#888).
 
 ### Site
 
