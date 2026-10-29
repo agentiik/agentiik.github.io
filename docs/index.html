@@ -9017,7 +9017,7 @@ resource "agentiik_workflow" "search" {
           <tr><td class="wrapcell">160 columns and more</td><td>Runs, run and log side by side, as above. With no run open, the runs take the whole width, one line a run with more columns; opening a run adds the two panes on its right. Beside a run, in a pane under 64 columns, each run takes two lines: its state, workflow and duration, then its identifier by twelve characters, its trigger, who started it and when.</td></tr>
           <tr><td class="wrapcell">120 to 159 columns</td><td>Runs beside the run, and the log beneath the run in the lower third of its column.</td></tr>
           <tr><td class="wrapcell">under 120 columns</td><td>Stacked, below. With no run open, the runs show a run's identifier by its first twelve characters, which still tell two runs of one day apart, and leave out the trigger kind, so that the workflow keeps room to be read at 80 columns. Once a run is open, the runs fold to one line that still counts the failed and the running; the run and its log share the rows, the pane in focus taking two thirds.</td></tr>
-          <tr><td class="wrapcell">under 80 columns or 24 rows</td><td>Nothing drawn cut: the window is asked to grow, naming the size it needs.</td></tr>
+          <tr><td class="wrapcell">under 80 columns or 24 rows</td><td>Nothing drawn cut: the window is asked to grow, naming the size it needs, and no key but <code>q</code> and <code>ctrl+c</code> acts, since a key would act on what is not drawn; a prompt open when the window shrinks is answered no.</td></tr>
         </tbody>
       </table>
     </div>
@@ -9026,7 +9026,7 @@ resource "agentiik_workflow" "search" {
       <li>A border between two panes side by side is dragged with the mouse to move it, for the rest of the session.</li>
       <li>A pane is filled with the palette's surface and bordered with rounded corners, as Lip Gloss draws them; the three panes above are three such blocks joined.</li>
       <li>Each pane is laid out as a window of its own size would be. A run's steps sit beside the step chosen once the run's pane is 120 columns wide, and above it in a narrower one, so that nothing in a column is cut to fit a width the window has and the column has not.</li>
-      <li>In focus, the runs move their selection without leaving the run open, which <code>enter</code> replaces with the run selected; the log scrolls back from its end and says how far.</li>
+      <li>In focus, the runs move their selection without leaving the run open, which <code>enter</code> replaces with the run selected; the log scrolls back from its end a row at a time and says how far, a line wider than its pane wrapped onto the rows after it with every column kept.</li>
     </ul>
   </div>
 
@@ -9135,10 +9135,11 @@ archive     queued
       </table>
     </div>
     <ul class="plain">
-      <li>A toast is a notification <code>GET /api/v1/me</code> holds that arrived while the console is open, read again every 30 seconds, or the end of a run the principal started, seen in the runs the console already reads. Half a minute late costs nothing for a notice kept 90 days, and costs the API one small read.</li>
+      <li>A toast is a notification <code>GET /api/v1/me</code> holds that arrived while the console is open, read again every 30 seconds, or the end of a run the principal started, seen in the runs the console already reads. Half a minute late costs nothing for a notice kept 90 days, and costs the API one small read. While a prompt is open, a toast is stacked above it, never over the run it names.</li>
+      <li>The top line keeps whether the installation answers whole: where the window is too narrow for everything, the installation's name is left out first, then the tabs from the last.</li>
       <li>Notifications already waiting at start are counted in the top line and not toasted, so opening the console never buries the screen.</li>
       <li>A toast stays eight seconds and never takes the focus: a key pressed while one shows goes where it was going, since a toast that took keys would swallow the <code>y</code> of a prompt. A click on it opens what it names.</li>
-      <li>The palette's <code>Notifications</code> lists every one, and dismisses one with <code>DELETE /api/v1/me/notifications/{id}</code>, but a recovery code's, which nobody dismisses.</li>
+      <li>The palette's <code>Notifications</code> lists every one, and dismisses one with <code>DELETE /api/v1/me/notifications/{id}</code>, but a recovery code's, which nobody dismisses; a dismissal the installation refuses is said on the key line with its reason, until the next key.</li>
     </ul>
 
     <h3 id="terminal-keys">Keys and the mouse</h3>
@@ -9159,7 +9160,7 @@ archive     queued
           <tr><td><code>c</code></td><td>Cancels the selected run, once a prompt naming it is answered <code>y</code>.</td></tr>
           <tr><td><code>p</code></td><td>Replays the run from the selected step, once a prompt naming both is answered <code>y</code>.</td></tr>
           <tr><td><code>a</code> <code>r</code></td><td>From v0.8.0, approves or rejects a waiting run, asking first for the approval's optional comment or the rejection's reason.</td></tr>
-          <tr><td><code>?</code></td><td>Lists every key of the view.</td></tr>
+          <tr><td><code>?</code></td><td>Lists every key of the view, <code>↑</code> and <code>↓</code> scrolling the list where the window is too short for it.</td></tr>
           <tr><td><code>q</code></td><td>Quits, from any view.</td></tr>
         </tbody>
       </table>
@@ -9198,7 +9199,7 @@ archive     queued
 
   <div class="prose">
     <ul class="plain">
-      <li>The bottom line shows the keys of the view, each named by its effect, as a control is in the web console (<a href="#voice">Voice</a>): <code>c Cancel run</code>, never <code>c OK</code>. The palette shows each command's key beside it, so a command found once is a keystroke the next time.</li>
+      <li>The bottom line shows the keys of the view, each named by its effect, as a control is in the web console (<a href="#voice">Voice</a>): <code>c Cancel run</code>, never <code>c OK</code>. Where the window is too narrow for every key, those before <code>?</code> are left out from the last, since <code>?</code> lists them. The palette shows each command's key beside it, so a command found once is a keystroke the next time.</li>
       <li>A key or a command for what the principal does not hold is left out of that line and of the palette, and does nothing, as the web console hides a control rather than disabling it.</li>
       <li>A prompt defaults to no, so a key pressed twice by mistake stops at the question, and any key but <code>y</code> answers no.</li>
       <li>From <a href="roadmap/#m08">v0.8.0</a>, with the <a href="#catalog"><code>wait</code></a> step, a run waiting on an approval sits first in the band, and <code>a</code> opens the prompt below: the run, the step it waits at, what it holds, the optional comment, then the question.</li>
