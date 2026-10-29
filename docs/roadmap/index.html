@@ -2356,7 +2356,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.7.0 ============ -->
 <section id="m07">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2><span class="tally">65 of 69 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.7.0: An agent can use it</h2><span class="tally">69 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> a model-driven client discovers Agentiik, learns the language, writes a valid workflow and runs it; a user manages their namespaces and workflows from it; and each user assembles the workflows they run into a connector of their own, every workflow one tool.</p>
 
@@ -2396,7 +2396,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Test that every topic page's examples validate against their schema fragment, and that no topic lacks examples. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The protocol surface</h4>
           <span class="work-repo">agentiik</span>
@@ -2408,13 +2408,13 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Act as an OAuth 2.1 resource server and as its own authorisation server, on revision 2026-07-28: publish Protected Resource Metadata for /mcp and each collection and Authorization Server Metadata, take a client by its Client ID Metadata Document, have its person allow it by a sign-in at /auth/authorize with PKCE S256 alone, trade the code and rotate refresh tokens at POST /api/v1/auth/oauth/token, accept a token at its audience alone and forward none, and answer 401 with resource_metadata and 403 with WWW-Authenticate: Bearer error=&quot;insufficient_scope&quot; naming the scopes a call needs. <a class="ref" href="../#protocol">protocol</a><a class="ref" href="../#oauth">oauth</a> <span class="tick">done</span></li>
           <li class="done">Accept an ordinary API bearer token on /mcp and on every collection, so a service account needs no browser. <a class="ref" href="../#protocol">protocol</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a> <span class="tick">done</span></li>
           <li class="done">Take the issuer and every audience from the public URL and keep no key set: an OAuth token is opaque and kept as its SHA-256 as an API token is, one row of its person's tokens, narrowed to the permissions allowed, listed, counted and revoked as theirs, so nothing is signed and nothing but the tokens rotates. <a class="ref" href="../#oauth">oauth</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a> <span class="tick">done</span></li>
-          <li>Execute every call as the presenting principal, no endpoint holding authority of its own, and re-authorise at run creation like any trigger. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a></li>
+          <li class="done">Execute every call as the presenting principal, no endpoint holding authority of its own, and re-authorise at run creation like any trigger. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#sessions-and-tokens">sessions-and-tokens</a> <span class="tick">done</span></li>
           <li class="done">Serve /mcp and every collection from the API process, with no new component, no new port and no deployment profile change. <a class="ref" href="../#mcp">mcp</a> <span class="tick">done</span></li>
           <li class="done">Turn /mcp and every collection off with AGK_MCP=off, each answering 404 as a route the installation does not serve, the push still accepting and checking an mcp block, the collections kept, and the console's MCP panel saying the installation serves none, and refuse at start any value of AGK_MCP but on and off. <a class="ref" href="../#mcp">mcp</a><a class="ref" href="../#configuration">configuration</a> <span class="tick">done</span></li>
           <li class="done">Run the user's server and a collection against a conformance client: server/discover, tools/list, tools/call and resources/read, over HTTP, each request standing alone. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>The user's server and its tools</h4>
           <span class="work-repo">agentiik</span>
@@ -2429,7 +2429,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Implement run.cancel and run.replay under workflow:run. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#run-states">run-states</a> <span class="tick">done</span></li>
           <li class="done">Implement runner.list for an administrator, over GET /api/v1/runners. <a class="ref" href="../#the-platform-server">the-platform-server</a> <span class="tick">done</span></li>
           <li class="done">Implement collection.list, collection.get, collection.create, collection.update, collection.delete, collection.add and collection.remove over the collection routes, for the caller's own collections alone. <a class="ref" href="../#the-platform-server">the-platform-server</a><a class="ref" href="../#collections">collections</a> <span class="tick">done</span></li>
-          <li>Issue, show and take no credential through any tool: no API token, no service account's token, no passkey, recovery code or enrolment link, no webhook's secret or certificate, no secret's value. <a class="ref" href="../#the-platform-server">the-platform-server</a></li>
+          <li class="done">Issue, show and take no credential through any tool: no API token, no service account's token, no passkey, recovery code or enrolment link, no webhook's secret or certificate, no secret's value. <a class="ref" href="../#the-platform-server">the-platform-server</a> <span class="tick">done</span></li>
           <li class="done">Filter tools/list by effective permissions on every request, so an unusable tool is absent rather than refused. <a class="ref" href="../#the-platform-server">the-platform-server</a> <span class="tick">done</span></li>
           <li class="done">Mark workflow.language, workflow.schema, workflow.validate and every other read-only tool with readOnlyHint, and namespace.delete, grant.revoke, workflow.delete and collection.delete with destructiveHint. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#the-platform-server">the-platform-server</a> <span class="tick">done</span></li>
           <li class="done">Serve the read-only resources agentiik://{ns}/{name}/tree/{ref}/{path}, agentiik://run/{id}, agentiik://schema/{part} and agentiik://language/{topic}, each under its tool's permission. <a class="ref" href="../#the-platform-server">the-platform-server</a> <span class="tick">done</span></li>
@@ -2441,7 +2441,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Test the tool set per role (viewer, operator, editor, owner, administrator), recording what each is offered and refused. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>Teaching a client the language</h4>
           <span class="work-repo">agentiik · agentiik.github.io</span>
@@ -2455,10 +2455,10 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Implement workflow.validate over a candidate file set (includes, extends and defaults resolved, cycles and ports checked), committing nothing, as the only authority on a draft, with POST /api/v1/{ns}/workflows/{name}/validate, which the pre-receive hook's own check answers. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#publishing-tools">publishing-tools</a> <span class="tick">done</span></li>
           <li class="done">Give every validation error a JSON Pointer to the offending node, what was expected there, and the workflow.language topic covering it. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a> <span class="tick">done</span></li>
           <li class="done">Return the same errors from agk validate, the pre-receive hook and the API. <a class="ref" href="../#teaching-a-client-the-language">teaching-a-client-the-language</a><a class="ref" href="../#command-line">command-line</a> <span class="tick">done</span></li>
-          <li>Test the sequence with a fresh client: workflow.language, a draft, workflow.validate until it passes, workflow.commit, the workflow created first with workflow.create, which validating and committing ask for. <span class="ref" title="implied by the documentation, not specified in it">implied</span></li>
+          <li class="done">Test the sequence with a fresh client: workflow.language, a draft, workflow.validate until it passes, workflow.commit, the workflow created first with workflow.create, which validating and committing ask for. <span class="ref" title="implied by the documentation, not specified in it">implied</span> <span class="tick">done</span></li>
         </ul>
       </div>
-      <div class="work-group">
+      <div class="work-group done">
         <div class="work-head">
           <h4>Collections, a connector of one's own</h4>
           <span class="work-repo">agentiik</span>
@@ -2470,7 +2470,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li class="done">Serve /mcp/collections/{id} to its owner alone, anybody else, an administrator included, answered 404 as for a collection that does not exist. <a class="ref" href="../#collections">collections</a> <span class="tick">done</span></li>
           <li class="done">Build each member's tool from the entry point at the head of its ref at every tools/list: inputSchema an object of the workflow's inputs, each with its schema as it stands and its references into the repository bundled in, outputSchema the envelope, its items' data held to the output's schema, when the output declares one and the tool is sync, annotations unchanged, nothing from the graph. <a class="ref" href="../#collections">collections</a><a class="ref" href="../#publishing-tools">publishing-tools</a> <span class="tick">done</span></li>
           <li class="done">Leave out of tools/list, rather than refuse, a member whose entry point at its ref declares no mcp block or whose workflow the owner may no longer run, and say which in the collection's record, no_mcp_block or not_runnable. <a class="ref" href="../#collections">collections</a> <span class="tick">done</span></li>
-          <li>Keep a tool's name stable across commits, so that renaming it in the mcp block withdraws one tool and publishes another in every collection that does not name it with as. <a class="ref" href="../#publishing-tools">publishing-tools</a><a class="ref" href="../#collections">collections</a></li>
+          <li class="done">Keep a tool's name stable across commits, so that renaming it in the mcp block withdraws one tool and publishes another in every collection that does not name it with as. <a class="ref" href="../#publishing-tools">publishing-tools</a><a class="ref" href="../#collections">collections</a> <span class="tick">done</span></li>
           <li class="done">Refuse at the push an mcp block in an included file, or with no description, an invalid name, an output the workflow does not declare, a workflow input with no schema, a sync timeout over the ceiling or a timeout on async. <a class="ref" href="../#publishing-tools">publishing-tools</a> <span class="tick">done</span></li>
           <li class="done">Implement mode: sync, waiting for the run within the tool's timeout (at most 120 seconds) and returning the envelope in structuredContent with a text rendering. <a class="ref" href="../#collections">collections</a> <span class="tick">done</span></li>
           <li class="done">Implement mode: async, returning the run identifier at once, with no polling tool: the user's server's run.get follows it. <a class="ref" href="../#collections">collections</a> <span class="tick">done</span></li>
