@@ -6,7 +6,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
-## Unreleased
+## v0.7.0, 2026-10-30
 
 ### Documentation
 
@@ -65,8 +65,10 @@ Every repository of the project carries the same version and is tagged at the sa
 
 ### Site
 
+- Every version on the page is v0.7.0's, `agk --version` in Get started names its commit, and the copies of deploy's files are its release's.
+- The figures of both consoles are screenshots of what v0.7.0 builds, rendered again by `.github/console-shots.mjs` from its checkout, so that they show a workflow's MCP tab and the colours agentiik/design moved `faint` and the light `succeeded` and `waiting` inks to.
 - The site's own pages and its social cards draw `faint` and the light `waiting` ink at the values agentiik/design moves them to, and the three cards in `assets/` are rendered again from `brand/social.html`.
-- The roadmap is marked with what v0.7.0 has done so far.
+- The roadmap is marked with what v0.7.0 did, every one of its tasks.
 - The roadmap marker reads up to 10,000 issues a repository, where it read the newest 500 and would have unmarked the oldest tasks of `agentiik`, which holds 612, and refuses to write when a repository answers that many, as it does when one cannot be read; the roadmap workflow tests both refusals before it marks anything.
 - `file-tasks.py` reads the titles already filed up to the same 10,000 issues a repository, where it read the newest 500 and would have filed an old task of `agentiik` a second time, and refuses to file anything when a repository answers that many.
 - The figure of `agk console`'s three panes shows invoice's log as the console draws it, each line behind its step, shard and attempt, where `console-shots.mjs` began each with a time no `agk console` writes; `console-term-run-light.png` and `console-term-run-dark.png` are rendered again from v0.6.0.
