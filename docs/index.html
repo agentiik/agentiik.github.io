@@ -3996,6 +3996,37 @@ defaults:
       </table>
     </div>
 
+    <h3 id="run-context">The run context</h3>
+    <div class="block">
+      <div class="note-label">/agk/run.json, in a step of a scheduled run</div>
+<pre><code>{
+  "id": "01JMZ8V1P9C4XQ7K2N4D6F8H0A",
+  "workflow": "monthly-invoicing",
+  "namespace": "finance",
+  "commit": "a3f9c1e04b7d2e8f6a1c3b5d7e9f0a2b4c6d8e0f",
+  "trigger_kind": "schedule",
+  "triggered_by": "finance/agentiik",
+  "state": "running",
+  "started_at": "2026-10-01T04:03:13Z"
+}</code></pre>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Contents</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>ULID of the run, as <code>AGK_RUN_ID</code>.</td></tr>
+          <tr><td>workflow</td><td>The workflow the run is of.</td></tr>
+          <tr><td>namespace</td><td>Namespace that owns the workflow.</td></tr>
+          <tr><td>commit</td><td>The commit the run was started from. Absent for <code>agk run --local</code>, which runs the working tree.</td></tr>
+          <tr><td>trigger_kind</td><td>What started the run, one of the kinds <a href="#triggers">Triggers</a> names.</td></tr>
+          <tr><td>triggered_by</td><td>The principal the run is attributed to: whoever asked for it, the namespace's built-in identity for a schedule, a webhook or an event, and <code>local</code> for <code>agk run --local</code>.</td></tr>
+          <tr><td>state</td><td><code>running</code>, always: one of the run's tasks is in this container.</td></tr>
+          <tr><td>started_at</td><td>When the run was let in, RFC 3339 in UTC.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>They are what <code>run</code> holds in an expression, and the same names. On a server <code>trigger_kind</code>, <code>triggered_by</code> and <code>started_at</code> arrive with the task's grant redemption (<a href="#the-task-message">The task message</a>), since the task message names the run and the version and no more of it. A field the runner was not told is left out rather than written empty: a zero reads as a manual run, started in the year one, by nobody. There is no <code>finished_at</code>, since no run has finished while one of its containers runs.</p>
+
     <h3 id="brick-manifest">Brick manifest</h3>
     <p>The manifest is embedded in the image at <code>/agk/brick.yaml</code>. A version keeps the manifest of each brick it was judged with, and a run takes its parameters' checks and where its secrets are mounted from there; a runner reads the image's own as well, on first pull and cached by digest, to refuse an image that carries none and to take the account the brick runs as. Either is read as YAML 1.2 and held to the bounds <a href="#reading-the-yaml">Reading the YAML</a> sets out, by the push and by a runner alike. On a server, a step that is not a <a href="#running-a-script-instead-of-a-brick">script step</a> and whose image carries no <code>/agk/brick.yaml</code> is refused before its working directory, its network or its container exist, rather than run as the account the image declares; <code>agk run --local</code> reads every brick's manifest before the run begins. Registry publication requires the standard OCI annotations <code>org.opencontainers.image.title</code>, <code>.description</code>, <code>.version</code>, <code>.source</code>, <code>.revision</code> and <code>.licenses</code>.</p>
   </div>
@@ -4718,7 +4749,7 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
     <div class="block">
       <div class="note-label">a step written as a script</div>
 <pre><code>  check-vat:
-    image: alpine:3.21@sha256:5f8b1e...c704
+    image: ghcr.io/acme/vat-tools:1.2@sha256:5f8b1e...c704   <span class="c"># alpine with jq and curl</span>
     needs:
       - { step: normalize, port: ok, as: in }
     outputs: [out, error]
@@ -4727,7 +4758,7 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
     <span class="c"># default is ["/bin/sh", "-e"]</span>
     shell: ["/bin/sh", "-eu", "-o", "pipefail"]
     before_script:
-      - apk add --no-cache jq curl
+      - export HOME=/tmp       <span class="c"># the root filesystem is read-only: what writes under $HOME writes here</span>
     script:
       - agk items | jq -r '.data.vat_number' &gt; /tmp/numbers
       - curl -sSf "$AGK_PARAM_ENDPOINT/check" --data-binary @/tmp/numbers &gt; /tmp/result.json
@@ -4745,12 +4776,15 @@ error: failed to push some refs to 'https://agentiik.example.com/finance/monthly
           <tr><td class="wrapcell">/agk/out/ports/&lt;port&gt;.json</td><td>What the step publishes. Writing nothing and exiting 0 publishes one item on <code>out</code>, with standard output under <code>data.stdout</code> and any file left in <code>/agk/out/files/</code>: read below as <code>${{ item.data.stdout }}</code>. A step's log keeps its standard error alone, so a script writes its diagnostics there, <code>echo checked &gt;&amp;2</code>: standard output is its result and is shipped to no log.</td></tr>
           <tr><td>/agk/params.json</td><td><code>params</code>, also exported as <code>AGK_PARAM_&lt;NAME&gt;</code>. No manifest validates them.</td></tr>
           <tr><td>/agk/bin/agk</td><td>Read-only helper: <code>agk items</code>, <code>agk emit</code>, <code>agk attach</code>. It is a convenience, never a requirement; <code>jq</code> and a redirect do the same job. The runner also uses it to fill a step's secrets volume, with a verb of its own, <code>hold-secrets</code>, which a script has no use for.</td></tr>
+          <tr><td>/agk/bin</td><td>On the <code>PATH</code> of a script, after the image's own directories, so <code>agk items</code> needs no path and an image's own <code>agk</code>, the command line, comes first.</td></tr>
         </tbody>
       </table>
     </div>
 
     <ul class="plain">
-      <li><code>script</code>, <code>before_script</code> and <code>after_script</code> take a list, one command per entry; a multi-line block scalar is refused, so an exit is attributable to one command. The first non-zero exit ends the step with that code, read by the <a href="#exit-codes">exit-code table</a>. Commands run as the image's user.</li>
+      <li><code>script</code>, <code>before_script</code> and <code>after_script</code> take a list, one command per entry; a multi-line block scalar is refused, so an exit is attributable to one command. The first non-zero exit ends the step with that code, read by the <a href="#exit-codes">exit-code table</a>.</li>
+      <li>Commands run as the image's user, unless the image names root or none, which a base image usually does: then as <code>65532:65532</code>. A script has no manifest to declare an account, and the reason a manifest may not declare root holds for it as much: a read-only root filesystem and dropped capabilities are worth little to uid 0, and user-namespace remapping, which would make that root an unprivileged account of the host, is off in a Compose installation by default. Nothing under <code>/agk</code> needs root: <code>/agk/out</code> and <code>/tmp</code> are writable by any account, and every file given is readable by any.</li>
+      <li>Nothing can be installed: the root filesystem is read-only, <code>/tmp</code> is mounted <code>noexec</code>, the account is not root and there is no network by default. A tool a step needs is one its image carries.</li>
       <li>The image is pinned by digest in production: a floating base image would change a step's behaviour without its file changing.</li>
     </ul>
 
@@ -7805,11 +7839,11 @@ Shell commands run inside image instead of treating it as a brick, under the sam
 ## Keywords
 
 - `/steps/*/script`, `/.*/script`: Shell commands run inside image instead of treating it as a brick, under the same contract every brick honours: the same mounts, the same environment, the same isolation, the same meaning for the exit code. No manifest is read, so nothing about the ports is inferred and outputs has to be declared. A script that writes nothing and exits 0 publishes one item on out carrying its standard output and whatever it left in /agk/out/files/, which is what makes a two-line script worth writing.
-- `/steps/*/before_script`, `/.*/before_script`: What this step runs before its script, usually the one tool the image does not carry.
+- `/steps/*/before_script`, `/.*/before_script`: What this step runs before its script, usually preparation every script step of the workflow shares, written once in defaults or a hidden block.
 - `/steps/*/after_script`, `/.*/after_script`: What this step runs after its script, whether the script worked or not.
 - `/steps/*/shell`, `/.*/shell`: The interpreter this step's commands are handed to, and the flags it starts with.
 - `/defaults/before_script`, `/defaults/after_script`, `/steps/*/script`, `/steps/*/before_script`, `/steps/*/after_script`, `/.*/script`, `/.*/before_script`, `/.*/after_script`: A list of shell commands, run in order inside the container. The first one to exit non-zero ends the step with that code, which the exit code table then reads as an application, transient or infrastructure failure.
-- `/defaults/before_script`, `/steps/*/before_script`, `/.*/before_script`: Commands prepended to script, merged from defaults and from extends outwards in. They run in the same container, which is where a step installs the one tool it needs before doing its work.
+- `/defaults/before_script`, `/steps/*/before_script`, `/.*/before_script`: Commands prepended to script, merged from defaults and from extends outwards in. They run in the same container and the same shell, so a variable they export or a directory they make under /tmp is there when script runs. They install nothing: the root filesystem is read-only, /tmp is mounted noexec, the commands run as an account that is never root and a step has no network unless it asks for one, so a tool a step needs is one its image carries.
 - `/defaults/after_script`, `/steps/*/after_script`, `/.*/after_script`: Commands appended to script, run in the same container even when script failed, so that a diagnostic dump survives a failure. Their own exit code does not change the step's verdict.
 - `/defaults/shell`, `/steps/*/shell`, `/.*/shell`: The interpreter the commands are handed to, and the flags it starts with. It defaults to ["/bin/sh", "-e"], so the first command that fails ends the step rather than letting the rest run on a broken assumption.
 
@@ -7894,7 +7928,7 @@ steps:
 steps:
   normalize:
     before_script:
-    - apk add --no-cache jq curl
+    - mkdir -p /tmp/work
 ```
 
 `/steps/*/after_script`:
@@ -7927,7 +7961,7 @@ steps:
 `workflow.schema.json#/$defs/beforeScript`:
 
 ```yaml
-- apk add --no-cache jq curl
+- export HOME=/tmp
 ```
 
 `workflow.schema.json#/$defs/afterScript`:
@@ -8424,7 +8458,7 @@ defaults:
 ```yaml
 defaults:
   before_script:
-  - apk add --no-cache jq curl
+  - export HOME=/tmp
 ```
 
 `/defaults/after_script`:
@@ -9923,7 +9957,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
         <tbody>
           <tr><td>first</td><td>Subscribes to <code>agentiik.stops</code> over its own bus connection, before it takes anything, so a task it holds can be stopped from the moment it holds it (<a href="#channels">Channels</a>). A subscription the bus refuses or does not confirm ends the agent at start, since a runner that cannot hear stops would run every stopped container to its deadline.</td><td></td></tr>
           <tr><td>1</td><td>When it has room, pulls from its pool's consumer (the pool's subject is the filter) as many tasks as <code>AGK_RUNNER_CONCURRENCY</code> less those it holds, so a full host asks for nothing; the pull is a 20 s long poll, answered as soon as one task is there. A key this host already ended is answered from the record, and one it still has in flight is left on the queue; neither is redeemed. Of the rest, before anything is written down: a message whose image is not <code>name@sha256</code> is reported as no container ran, on the platform's account, then acknowledged, since no runner of any pool could ever run it; one whose namespace <code>AGK_RUNNER_NAMESPACES</code> leaves out, whose <code>runs_on</code> names a label this runner does not claim (a join token may allow fewer labels than its pool carries), or whose declared <code>resources</code> would take the host past its declared capacity with what it already holds, is put back on the queue for another runner or a later pull. Anything put back is held back one second from every runner; one put back for want of room does not pause the runner, since the next message may fit, and any other does, this runner taking nothing more for that second. Only then does it write each remaining key down in its record as <code>dispatched</code> (<a href="#task-bus">Task bus</a>), so a message it put back is never found in flight when it comes round.</td><td></td></tr>
-          <tr><td>2</td><td>Redeems the task's grant for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, the secret values and one upload policy. The redemption binds the task to this runner, and the <a href="#heartbeat">heartbeat</a> holds it from then on. <a href="#the-task-message">The task message</a> says what any other answer binds and what the runner does then.</td><td></td></tr>
+          <tr><td>2</td><td>Redeems the task's grant for the repository tree at the commit, presigned URLs to the input envelopes and artifacts, the secret values, one upload policy and the head of the run, which the container reads in <a href="#run-context"><code>/agk/run.json</code></a>. The redemption binds the task to this runner, and the <a href="#heartbeat">heartbeat</a> holds it from then on. <a href="#the-task-message">The task message</a> says what any other answer binds and what the runner does then.</td><td></td></tr>
           <tr><td>3</td><td>Acknowledges the message, now that the database says whose the task is.</td><td></td></tr>
           <tr><td>4</td><td>Reads the record again and refuses a key that has already ended, before a network, a pull or a secret is written. Then fetches each input envelope through the redemption's URL and holds it to the digest and item count the message gives, lays the tree out in a directory of its own under <code>&lt;work root&gt;/.trees</code> with each file held to its digest, from the objects it keeps under <code>&lt;work root&gt;/.objects/&lt;namespace&gt;</code> where it holds them and fetching only the ones it does not, and prepares the mounts. A task whose inputs or tree are not what the message names is refused before any container exists, and before its image is pulled.</td><td></td></tr>
           <tr><td>5</td><td>Runs the host's <code>pre_task</code> hooks, if any, from <a href="roadmap/#m09">v0.9.0</a> (<a href="#runner-side-hooks">Runner-side hooks</a>). Creates one container, pulling the image by digest as part of the create, bounded by the task's deadline: a deadline that passes during the pull or while the manifest is read ends the task <code>timed_out</code> with no container ran, the log saying how long the pull ran, and a stop that landed during the pull ends it <code>cancelled</code>. A signature is verified where policy requires it from <a href="roadmap/#m08">v0.8.0</a> (<a href="#supply-chain">Supply chain</a>). Starts the container and publishes <code>running</code>, attaches to it, samples its statistics while it runs, waits for it to exit and publishes <code>publishing</code>. Its log is shipped while the container runs (<a href="#observability">Observability</a>).</td><td><code>ContainerCreate</code> (<code>POST /containers/create</code>), <code>ContainerStart</code> (<code>POST /containers/{id}/start</code>), <code>ContainerAttach</code>, <code>ContainerWait</code>, <code>ContainerLogs</code>, <code>ContainerStats</code> (<code>GET /containers/{id}/stats</code>), for the <code>usage</code> block</td></tr>
@@ -10207,7 +10241,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
   "runs_on": [ "zone=dmz", "arch=amd64" ],
   "deadline": "2026-09-10T06:51:09Z",
 
-  <span class="c">// redeemed at the API before the message is acknowledged: tree and input URLs, secret values, one upload policy</span>
+  <span class="c">// redeemed at the API before the message is acknowledged: tree and input URLs, secret values, one upload policy, the run's head</span>
   "grant": "agkgrant_01JMZ8V1PC7K3M0_…"
 }</code></pre>
   </div>
@@ -10232,7 +10266,10 @@ Authorization: Bearer &lt;an administrator's token&gt;
     "url": "https://agentiik.example.com/objects/finance",
     "fields": { "run": "01JMZ8V1P9C4", "expires": "1789023069", "signature": "9d4b71e0…" },
     "key_prefix": "finance/sha256/"
-  }
+  },
+
+  <span class="c">// what started the run, on whose behalf and when: written to /agk/run.json</span>
+  "run": { "trigger_kind": "schedule", "triggered_by": "finance/agentiik", "started_at": "2026-09-10T06:37:00Z" }
 }</code></pre>
   </div>
 
@@ -10700,7 +10737,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
         <thead><tr><th>Adversary</th><th>After</th><th>What stands in the way</th></tr></thead>
         <tbody>
           <tr><td class="wrapcell">A workflow author in one namespace</td><td>Another namespace's secrets, artifacts or run data</td><td>Deny by default. Secrets referenceable only from their own namespace, and declared only at its own paths. Artifacts namespaced: read through presigned URLs scoped to one run, written under a policy that reaches only the task's own namespace. Cache keys prefixed by namespace. No secret value in any task message.</td></tr>
-          <tr><td class="wrapcell">A brick image, hostile or compromised</td><td>The host, its other containers, the network</td><td>A non-root user, no daemon socket, and the <a href="#settings-applied-to-every-container">settings applied to every container</a>, user-namespace remapping and a network per task included.</td></tr>
+          <tr><td class="wrapcell">A brick or a script's image, hostile or compromised</td><td>The host, its other containers, the network</td><td>A non-root user, the one a brick's manifest declares, or for a script the image's own, <code>65532:65532</code> where that is root or none; no daemon socket, and the <a href="#settings-applied-to-every-container">settings applied to every container</a>, user-namespace remapping and a network per task included.</td></tr>
           <tr><td class="wrapcell">A compromised runner host</td><td>The installation</td><td>It holds no database credential, no secret-store credential and no standing object-store credential. Only a runner credential and per-task grants that expire. Its reach is the tasks in its hands and the namespaces its policy accepts, and on MinIO or S3 the objects of those tasks' namespaces too (<a href="#what-this-does-not-defend-against">below</a>).</td></tr>
           <tr><td class="wrapcell">A phisher, or a stolen password</td><td>A working sign-in</td><td>A passkey is bound to a Relying Party Identifier and the browser checks the origin, so a look-alike site gets nothing usable. With passwords forbidden, no shared secret is left to steal, phish or replay.</td></tr>
           <tr><td class="wrapcell">A page on another host of the same site</td><td>Acting with a signed-in browser's session</td><td><code>SameSite=Lax</code> keeps another site's page from carrying the cookie on a request that changes something, but a browser counts every host under one registrable domain as the same site. So a request carrying a session changes something only where its <code>Origin</code> header is the public URL's, and the cookie's <code>__Host-</code> prefix keeps any other host from setting one the API would read. The one read that spends something, an artifact's fetch where it has a budget, is answered to a session only where <code>Sec-Fetch-Site</code> is <code>same-origin</code> or <code>none</code>, or, where the browser sends none, its one <code>Origin</code> header is the public URL's origin, so that a link posted anywhere, or an image on another host of the same site, spends nothing for whoever follows or loads it.</td></tr>
@@ -10870,7 +10907,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
     <h3 id="further-rules">Further rules</h3>
     <ul class="plain">
       <li>The daemon socket is never mounted inside a brick. A brick that builds an image goes through an unprivileged builder, run like any other brick.</li>
-      <li>The container user is non-root, required by the manifest and checked at publication.</li>
+      <li>The container user is non-root: required by a brick's manifest and checked at publication, and for a script step, which has no manifest, the image's own unless that is root or none, then <code>65532:65532</code>.</li>
       <li>Images by digest on a server, signatures verified by the runner before start from <a href="roadmap/#m08">v0.8.0</a>: see <a href="#supply-chain">Supply chain</a>.</li>
       <li>The working directory of a task is created fresh, owned by an unprivileged account, and removed with the container, so no residue of one namespace survives into the next task on that host. What cannot be removed is said in the runner's log, naming the step, the task and the path; it does not change how the task ended. The run, step and attempt directories above it, shared by every task of that run, step or attempt, are swept once they have held nothing for an hour, and never sooner: on Docker Desktop a path removed and created again is refused as a bind source for about a second, which the next shard of the same step would hit.</li>
     </ul>
@@ -11222,7 +11259,7 @@ sum by (pool) (rate(agentiik_tasks_lost_total[5m])) / sum by (pool) (rate(agenti
           <tr><td class="wrapcell">GET /api/v1/runner-pools</td><td>Pools and their labels, to write a namespace's allowed pools against. Administrator only.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools</td><td>A pool with its labels, accepted namespaces and resource ceilings. Administrator only. The pool's consumer is created in the same step: a bus that refuses it answers <code>503</code>, and no pool is created.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/runner-pools/{pool}/join-tokens</td><td>A join token: single use, short lived, only for labels the pool carries, shown once. Administrator only.</td></tr>
-          <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>A task's grant, redeemed by a runner for the tree and input URLs, the secret values and one upload policy, the first answer binding the task to it. Answered from what the controller wrote beside the grant and never from the request: see <a href="#the-task-message">The task message</a>.</td></tr>
+          <tr><td class="wrapcell">POST /api/v1/tasks/redeem</td><td>A task's grant, redeemed by a runner for the tree and input URLs, the secret values, one upload policy and the head of the task's run, the first answer binding the task to it. Answered from what the controller wrote beside the grant and never from the request: see <a href="#the-task-message">The task message</a>.</td></tr>
           <tr><td class="wrapcell">POST /api/v1/tasks/logs</td><td>One chunk of a task's masked standard error, from the runner the task is bound to, with the task's grant in the <code>Agentiik-Grant</code> header and never in the body: <code>idempotency_key</code>, <code>seq</code>, <code>first_line</code>, <code>final</code> and <code>lines</code>. Answered with the log's <code>uri</code>, <code>accepted</code>, <code>next_seq</code>, <code>lines</code> and <code>truncated</code>. Chunks are taken in order: one shipped again is answered as held, one past a gap is answered with <code>next_seq</code> naming the gap and kept nowhere, and the last closes the log. A draining runner, and a revoked one in its grace, ship the logs of the tasks they hold. Runner credential only. See <a href="#observability">Observability</a>.</td></tr>
           <tr><td class="wrapcell">GET, PUT /objects/{key...}<br>POST /objects/{ns}</td><td>The built-in object store, where a presigned URL or a signed POST policy is the whole authorisation and every object is held to its digest: see <a href="#the-task-message">The task message</a>. An object is read as <code>application/octet-stream</code>, and from <a href="roadmap/#m07">v0.7.0</a> as an attachment with <code>nosniff</code>, since whoever can produce an artifact wrote it and it is served on the console's origin. A write is held to its namespace's <code>max_artifact_bytes</code>, refused with <code>507</code> where it would take the namespace past it, and holds its object against the collection from before its bytes are read.</td></tr>
 
