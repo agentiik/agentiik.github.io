@@ -14,7 +14,7 @@ fails, since the point of showing the file is that a reader can run what CI runs
 The language reference agentiik/schemas generates is held whole as well: every
 page its language/topics.json names, the orientation and each topic's, has to
 be copied on some page. Comparing the copies there are cannot notice a topic
-added there, and a site without it teaches less than workflow.language does.
+added there, and a site without it teaches less than workflow_language does.
 
 Standard library only, and no token: the repositories copied from are public.
 """
