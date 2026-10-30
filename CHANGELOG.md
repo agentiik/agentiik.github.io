@@ -14,6 +14,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - `agk run` and `agk status` name a step refused before any task started as the step that failed, with its reason (#242).
 - A collection's sync call names the failed step's reason and embeds the files of the run it started, with a table of how each file is answered and decisions on reading them under `workflow:run`, the 1 MiB ceiling held together and fetch budgets (#242).
 - The script step example checks a VAT number's form with `jq` instead of calling an outside service, which a server refuses until v0.9.0 (#242).
+- Image pins and brick manifests says how a writer has the installation resolve a tag at its registry, `POST /api/v1/{ns}/workflows/{name}/images` with `resolve`, which `workflow_pin` sends: what is asked and pinned, as `agk push` would pin it, over HTTPS, with no credential and at public addresses alone, with decisions on why that is not the hook reaching a registry, on the addresses refused, and on why a brick's manifest stays `agk push`'s; the supply chain, the API table and the user's server's tools say the same, and an unpinned tag answered through MCP names `workflow_pin` (agentiik/agentiik#940).
+- The user's server's `run_cancel` takes `runs` and `workflow_run` takes `inputs_each`, up to 100 items each made as its own request of the route, with an example of the answer and decisions on why there is no route for it and on when such a call is an error and where a quota stops it (agentiik/agentiik#941).
 
 ## v0.7.2, 2026-10-30
 
