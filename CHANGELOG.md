@@ -6,6 +6,14 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+### Documentation
+
+- The home and `GET /api/v1/stats/activity` set the tasks runners hold against the slots and count the tasks queued for one apart, saying why (#232).
+- The user's server reads a run's files: `run.artifact` and the template `agk://run/{run}/{step}/{port}/{name}`, with a decision on bytes over a presigned URL, the 1 MiB ceiling and fetch budgets, and the artifact route's row for a request through MCP (#232).
+- A task's log is its standard error alone, said where a script author and `run.logs` read it, and a retry's backoff is a minimum, picked up at the controller's next sweep (#233).
+
 ## v0.7.1, 2026-10-30
 
 ### Documentation
