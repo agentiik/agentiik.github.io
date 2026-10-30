@@ -1335,10 +1335,10 @@ img{max-width:100%}
 <pre><code><span class="p">$</span> <span class="cmd">brew trust agentiik/tap</span>
 <span class="p">$</span> <span class="cmd">brew install agentiik/tap/agk</span>
 <span class="p">$</span> <span class="cmd">agk --version</span>
-agk v0.7.0, 097a7d05e04d9734f76415c38f68021f6bb2e9b6, go1.27.3</code></pre>
+agk v0.7.1, 06fbe4bea1cb8d540d0892cb63341b422c65d887, go1.27.3</code></pre>
     </div>
 
-    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.7.0</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
+    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.7.1</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
 
     <p>Or in one command, on Linux or macOS:</p>
 
@@ -1578,7 +1578,7 @@ flowchart LR
     <div class="block">
       <div class="note-label">start a server</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.0/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.1/single-host/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>
 <span class="p">$</span> <span class="cmd">docker compose up -d --wait</span></code></pre>
@@ -1656,7 +1656,7 @@ flowchart LR
 <section id="install-a-server">
   <div class="sec-head"><span class="mark">§</span><h2>Install a server</h2></div>
   <div class="prose">
-    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.7.0</code>:</p>
+    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.7.1</code>:</p>
 
     <div class="tablewrap">
       <table>
@@ -1699,7 +1699,7 @@ flowchart LR
     <div class="block">
       <div class="note-label">start</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.0/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.1/single-host/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>
 <span class="p">$</span> <span class="cmd">docker compose up -d --wait</span></code></pre>
@@ -1713,7 +1713,7 @@ flowchart LR
     <div class="block">
       <div class="note-label">start, reached as agentiik.example.com</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.0/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.1/single-host/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">echo 'AGENTIIK_HOST=agentiik.example.com' &gt;&gt; .env</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>
@@ -1765,7 +1765,7 @@ services:
   # major version than the one below, it upgrades it with pg_upgrade and keeps the old cluster beside
   # it, as postgres-17 from 17, the way back; anything else it leaves as it is. Its log says what it did.
   postgres-upgrade:
-    image: ghcr.io/agentiik/postgres-upgrade:${AGENTIIK_VERSION:-v0.7.0}
+    image: ghcr.io/agentiik/postgres-upgrade:${AGENTIIK_VERSION:-v0.7.1}
     command: [/data/postgres, "18"] # the cluster, and the major version of the postgres image below, which it upgrades it to
     network_mode: none
     userns_mode: host # the cluster belongs to uid 70, PostgreSQL's account, which a daemon that remaps user namespaces would map elsewhere
@@ -1797,7 +1797,7 @@ services:
   # bootstrap token's hash in the database until the first administrator has signed in, and a join
   # token for the runner. Its log says what it did.
   init:
-    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.0}
+    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.1}
     command: [agentiik-api, init]
     user: "0:0" # to give each service's directory to the account that service runs as
     network_mode: none
@@ -1836,7 +1836,7 @@ services:
 
   api:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.0}
+    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.1}
     command: [agentiik-api, serve] # the API, which serves the web console; the controller below runs the same image
     depends_on: { &lt;&lt;: *after-init, nats: { condition: service_healthy } }
     environment:
@@ -1870,7 +1870,7 @@ services:
   # the master key the API reads.
   controller:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.0}
+    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.1}
     command: [agentiik-controller]
     depends_on: { &lt;&lt;: *after-init, nats: { condition: service_healthy } }
     environment:
@@ -1891,7 +1891,7 @@ services:
   # the pool default with the token init wrote where it has no identity yet, or where AGK_API changed.
   runner:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.7.0}
+    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.7.1}
     depends_on: { &lt;&lt;: *after-init, api: { condition: service_healthy } }
     cap_drop: [ALL]
     cap_add: [CHOWN, FOWNER, DAC_OVERRIDE, SETUID, SETGID]
@@ -1954,13 +1954,13 @@ volumes:
       <div class="note-label">docker compose ps --all</div>
 <pre><code><span class="p">$</span> <span class="cmd">docker compose ps --all</span>
 NAME                          IMAGE                                      COMMAND                  SERVICE            STATUS
-agentiik-api-1                ghcr.io/agentiik/agentiik:v0.7.0           "agentiik-api serve"     api                Up (healthy)
-agentiik-controller-1         ghcr.io/agentiik/agentiik:v0.7.0           "agentiik-controller"    controller         Up
-agentiik-init-1               ghcr.io/agentiik/agentiik:v0.7.0           "agentiik-api init"      init               Exited (0)
+agentiik-api-1                ghcr.io/agentiik/agentiik:v0.7.1           "agentiik-api serve"     api                Up (healthy)
+agentiik-controller-1         ghcr.io/agentiik/agentiik:v0.7.1           "agentiik-controller"    controller         Up
+agentiik-init-1               ghcr.io/agentiik/agentiik:v0.7.1           "agentiik-api init"      init               Exited (0)
 agentiik-nats-1               nats:2-alpine                              "docker-entrypoint.s…"   nats               Up (healthy)
 agentiik-postgres-1           postgres:18-alpine                         "docker-entrypoint.s…"   postgres           Up (healthy)
-agentiik-postgres-upgrade-1   ghcr.io/agentiik/postgres-upgrade:v0.7.0   "/usr/local/bin/post…"   postgres-upgrade   Exited (0)
-agentiik-runner-1             ghcr.io/agentiik/runner:v0.7.0             "/usr/local/bin/agk-…"   runner             Up</code></pre>
+agentiik-postgres-upgrade-1   ghcr.io/agentiik/postgres-upgrade:v0.7.1   "/usr/local/bin/post…"   postgres-upgrade   Exited (0)
+agentiik-runner-1             ghcr.io/agentiik/runner:v0.7.1             "/usr/local/bin/agk-…"   runner             Up</code></pre>
     </div>
 
     <p><code>postgres-upgrade</code> and <code>init</code> have done their work when they have <code>Exited (0)</code>; <code>docker compose logs</code> and a service's name say what it did, or why a service is not up. Everything the installation keeps is in <code>data/</code>, one directory per service, and the one other path it uses on the host is <code>/var/lib/agentiik/work</code>, where the runner lays out each step's files for the daemon to bind. PostgreSQL's socket is the one Docker volume, since it is no data to keep and some file systems cannot hold a socket.</p>
@@ -1969,7 +1969,7 @@ agentiik-runner-1             ghcr.io/agentiik/runner:v0.7.0             "/usr/l
 
     <div class="block">
       <div class="note-label">install agk, and trust the certificate init made</div>
-<pre><code><span class="p">$</span> <span class="cmd">go install github.com/agentiik/agentiik/cmd/agk@v0.7.0</span>
+<pre><code><span class="p">$</span> <span class="cmd">go install github.com/agentiik/agentiik/cmd/agk@v0.7.1</span>
 <span class="p">$</span> <span class="cmd">export PATH="$PATH:$(go env GOPATH)/bin"</span>
 <span class="p">$</span> <span class="cmd">mkdir -p trust</span>
 <span class="p">$</span> <span class="cmd">docker compose cp api:/agentiik/trust/agentiik.pem trust/</span>
@@ -2110,7 +2110,7 @@ AGENTIIK_OPERATOR_TOKEN=
 #AGENTIIK_DATA=./data
 
 # The version of Agentiik, one for every image; compose.yaml names its own release. To upgrade, download the new release's compose.yaml rather than changing this alone, since a release may change the services too. dev runs the images main publishes at every commit, to try what is not released yet.
-#AGENTIIK_VERSION=v0.7.0
+#AGENTIIK_VERSION=v0.7.1
 
 # The name agk and every runner reach the installation at: a DNS name or an IPv4 address, which the
 # certificate init makes is issued to. localhost is enough on one machine; a runner on another machine
@@ -2252,8 +2252,8 @@ AGENTIIK_OPERATOR_TOKEN=
     <div class="block">
       <div class="note-label">Caddy in front</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.0/single-host/compose.yaml</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.0/single-host/proxy/Caddyfile</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.1/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.1/single-host/proxy/Caddyfile</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">echo 'AGENTIIK_HOST=agentiik.example.com' &gt;&gt; .env</span>
 <span class="p">$</span> <span class="cmd">echo 'AGENTIIK_PROXY_URL=https://agentiik.example.com' &gt;&gt; .env</span>
@@ -2553,7 +2553,7 @@ services:
   # Started as root, it takes the group of the Docker socket, drops to uid 65532 and serves. Where
   # it has no identity yet, or where AGENTIIK_API or AGENTIIK_LABELS changed, it joins with the token.
   runner:
-    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.7.0}
+    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.7.1}
     network_mode: host # the API and the bus at the addresses this machine reaches them at; the runner listens on nothing
     userns_mode: host
     restart: unless-stopped
@@ -2625,7 +2625,7 @@ AGENTIIK_CA="-----BEGIN CERTIFICATE-----
 #AGENTIIK_DATA=./data
 
 # The version of Agentiik, which is the installation's.
-#AGENTIIK_VERSION=v0.7.0
+#AGENTIIK_VERSION=v0.7.1
 
 # How many tasks this machine holds at once.
 #AGENTIIK_RUNNER_CONCURRENCY=2
@@ -2637,7 +2637,7 @@ AGENTIIK_CA="-----BEGIN CERTIFICATE-----
 
     <div class="block">
       <div class="note-label">on the other machine: download, write the .env, start</div>
-<pre><code><span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.0/runner/compose.yaml</span>
+<pre><code><span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.1/runner/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">cat &gt; .env &lt;&lt;EOF</span>
 AGENTIIK_API=$AGENTIIK_SERVER
 AGENTIIK_JOIN_TOKEN=$JOIN_TOKEN
