@@ -4025,7 +4025,7 @@ defaults:
         </tbody>
       </table>
     </div>
-    <p>They are what <code>run</code> holds in an expression, and the same names. On a server <code>trigger_kind</code>, <code>triggered_by</code> and <code>started_at</code> arrive with the task's grant redemption (<a href="#the-task-message">The task message</a>), since the task message names the run and the version and no more of it. A field the runner was not told is left out rather than written empty: a zero reads as a manual run, started in the year one, by nobody. There is no <code>finished_at</code>, since no run has finished while one of its containers runs.</p>
+    <p>They are what <code>run</code> holds in an expression, and the same names. On a server <code>trigger_kind</code>, <code>triggered_by</code> and <code>started_at</code> arrive with the task's grant redemption (<a href="#the-task-message">The task message</a>), since the task message names the run and the version and no more of it. A runner reporting a release before v0.7.2 is answered without them, since it reads the answer strictly and would refuse a member it does not know, and an installation is upgraded in no order; its containers are told what the task names. A field the runner was not told is left out rather than written empty: a zero reads as a manual run, started in the year one, by nobody. There is no <code>finished_at</code>, since no run has finished while one of its containers runs.</p>
 
     <h3 id="brick-manifest">Brick manifest</h3>
     <p>The manifest is embedded in the image at <code>/agk/brick.yaml</code>. A version keeps the manifest of each brick it was judged with, and a run takes its parameters' checks and where its secrets are mounted from there; a runner reads the image's own as well, on first pull and cached by digest, to refuse an image that carries none and to take the account the brick runs as. Either is read as YAML 1.2 and held to the bounds <a href="#reading-the-yaml">Reading the YAML</a> sets out, by the push and by a runner alike. On a server, a step that is not a <a href="#running-a-script-instead-of-a-brick">script step</a> and whose image carries no <code>/agk/brick.yaml</code> is refused before its working directory, its network or its container exist, rather than run as the account the image declares; <code>agk run --local</code> reads every brick's manifest before the run begins. Registry publication requires the standard OCI annotations <code>org.opencontainers.image.title</code>, <code>.description</code>, <code>.version</code>, <code>.source</code>, <code>.revision</code> and <code>.licenses</code>.</p>
@@ -10268,7 +10268,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
     "key_prefix": "finance/sha256/"
   },
 
-  <span class="c">// what started the run, on whose behalf and when: written to /agk/run.json</span>
+  <span class="c">// what started the run, on whose behalf and when, written to /agk/run.json; absent for a runner before v0.7.2</span>
   "run": { "trigger_kind": "schedule", "triggered_by": "finance/agentiik", "started_at": "2026-09-10T06:37:00Z" }
 }</code></pre>
   </div>
