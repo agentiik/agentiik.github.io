@@ -6,6 +6,16 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## v0.7.1, 2026-10-30
+
+### Documentation
+
+- Upgrade says an updater following `latest`, such as Watchtower, upgrades a Compose installation too: the API and the controller apply the migrations the database lacks themselves before they start, as `AGK_MIGRATE_DATABASE_URL`, or as `postgres` over the local socket where a `compose.yaml` from before gives them none, with a decision saying why they migrate rather than refuse (agentiik/agentiik#927). `agentiik-api serve`, `agentiik-controller` and Configuration say the same, and Get started installs v0.7.1.
+
+### Site
+
+- The site's tag publishes it: `publish-on-tag.yml` asks for a run of Publish on `main`, which Pages serves, when this repository is tagged, rather than somebody running it after the tag.
+
 ## v0.7.0, 2026-10-30
 
 ### Documentation
