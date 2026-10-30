@@ -1,0 +1,26 @@
+# Publishes the site again when this repository is tagged.
+#
+# Publish cannot run on the tag itself: Pages serves the deployment made from main, so a
+# run on a tag deploys and the live site never changes, as publish.yml records. This asks
+# for a run of Publish on main instead, which reads the tags and archives the new version.
+# A run started with GITHUB_TOKEN triggers no workflow except through workflow_dispatch
+# and repository_dispatch, which is what lets a release end with its tag rather than with
+# a step somebody has to remember, as v0.7.0 had to.
+
+name: Publish on tag
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Publish on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish.yml --repo "$GITHUB_REPOSITORY" --ref main
