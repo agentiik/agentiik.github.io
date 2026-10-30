@@ -18,6 +18,7 @@ Every repository of the project carries the same version and is tagged at the sa
 - The user's server's `run_cancel` takes `runs` and `workflow_run` takes `inputs_each`, up to 100 items each made as its own request of the route, with an example of the answer and decisions on why there is no route for it and on when such a call is an error and where a quota stops it (agentiik/agentiik#941).
 - A run is decided when its clock comes round rather than at the controller's next sweep: the retry row and the controller's sweep say so, with a decision on waiting for the earliest clock over sweeping more often (#243).
 - A script's standard output that did not become its result ends its log, its last 200 lines marked `stdout: `, said where a script author, the brick contract, the observability table, `agk logs` and `run_logs` read it, with a decision on why, what it costs, why a brick keeps its own out and why the lines are marked in the text (#243).
+- The run inspector names a step's `reason`, and a step refused before any task as where the run failed, in the web console and `agk console` alike.
 
 ## v0.7.2, 2026-10-30
 
