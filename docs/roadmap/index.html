@@ -1168,7 +1168,7 @@ img{max-width:100%}
     <p>Three rules fix the sequence. Everything else in it is negotiable.</p>
 
     <ul class="plain">
-      <li><b>The contract ships before anything that reads it.</b> <code>agentiik/schemas</code> is released first, and again before each change, because it is the only cross-repository dependency for the workflow format. A format settled by whichever code consumed it first would be learnt slightly differently by the core, the console, the two applications and the <code>workflow.language</code> tool.</li>
+      <li><b>The contract ships before anything that reads it.</b> <code>agentiik/schemas</code> is released first, and again before each change, because it is the only cross-repository dependency for the workflow format. A format settled by whichever code consumed it first would be learnt slightly differently by the core, the console, the two applications and the <code>workflow_language</code> tool.</li>
       <li><b>One path end to end before any width.</b> v0.1.0 runs a whole graph on one machine before a server exists. What an envelope carries, what a brick receives and which port a rejected item leaves by are found by running a workflow, far more cheaply with no controller, task bus or runner around it.</li>
       <li><b>Nothing multi-user before the permission model.</b> Sharing, namespaces and roles land before the console, triggers and MCP, because each of those is a way in. A door added before the lock never quite closes: the path that worked before permissions existed stays open.</li>
     </ul>
@@ -1245,7 +1245,7 @@ img{max-width:100%}
 
     <p>It puts the workflow language and the brick contract through real runs before anything depends on them (<a href="#order">the second rule</a>). Everything after it assumes both are settled; this milestone finds out where they are not.</p>
 
-    <p>The evaluator and the container driver are libraries, not internals, so that <code>agk run --local</code> is the code path a server run takes rather than a second implementation that drifts (<a href="#m02-paths">figure</a>). Every schema keyword carries a <code>description</code> and <code>examples</code> from this first release, because the language reference and <code>workflow.language</code> are generated from them.</p>
+    <p>The evaluator and the container driver are libraries, not internals, so that <code>agk run --local</code> is the code path a server run takes rather than a second implementation that drifts (<a href="#m02-paths">figure</a>). Every schema keyword carries a <code>description</code> and <code>examples</code> from this first release, because the language reference and <code>workflow_language</code> are generated from them.</p>
 
     <div class="work">
       <div class="work-group done">
@@ -2374,9 +2374,9 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
     <p>A resource on a collection would turn <code>workflow:run</code> into a read path into the repository, undoing the separation the roles were built around.</p>
 
-    <p><code>workflow.language</code> is generated from <code>agentiik/schemas</code>, which is why every keyword there has carried a description and examples since v0.1.0: a reference maintained by hand would teach a different language from the one the validator enforces.</p>
+    <p><code>workflow_language</code> is generated from <code>agentiik/schemas</code>, which is why every keyword there has carried a description and examples since v0.1.0: a reference maintained by hand would teach a different language from the one the validator enforces.</p>
 
-    <p><code>brick.list</code>, <code>brick.get</code> and <code>agentiik://brick/{name}</code> read the catalog index, <code>GET /api/v1/bricks</code>, which v0.8.0 builds, so they arrive with it rather than holding this milestone to that one: what closes this one is a client writing a valid workflow from <code>workflow.language</code> alone.</p>
+    <p><code>brick_list</code>, <code>brick_get</code> and <code>agentiik://brick/{name}</code> read the catalog index, <code>GET /api/v1/bricks</code>, which v0.8.0 builds, so they arrive with it rather than holding this milestone to that one: what closes this one is a client writing a valid workflow from <code>workflow_language</code> alone.</p>
 
     <div class="work">
       <div class="work-group done">
@@ -2500,7 +2500,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
     <div class="gate">
       <span class="note-label">Done when</span>
-      <p>A client that has never seen Agentiik writes a valid workflow from <code>workflow.language</code> alone; a user manages their namespaces and workflows from <code>/mcp</code> and connects a client to a collection of their own; and <code>workflow:run</code> on a workflow reveals nothing of its tree.</p>
+      <p>A client that has never seen Agentiik writes a valid workflow from <code>workflow_language</code> alone; a user manages their namespaces and workflows from <code>/mcp</code> and connects a client to a collection of their own; and <code>workflow:run</code> on a workflow reveals nothing of its tree.</p>
     </div>
     <p class="where"><span>Repositories</span> <code>agentiik</code> · <code>schemas</code> · <code>agentiik.github.io</code></p>
   </div>
