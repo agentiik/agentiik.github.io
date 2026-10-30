@@ -6,6 +6,15 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
+## Unreleased
+
+### Documentation
+
+- A dispatched task's two phases, on its pool's queue or taken by a runner, and the task's `taken_at` in the run detail, `run_get` and the run inspector, with why queued tasks are the quota holding (#242).
+- `agk run` and `agk status` name a step refused before any task started as the step that failed, with its reason (#242).
+- A collection's sync call names the failed step's reason and embeds the files of the run it started, with a table of how each file is answered and decisions on reading them under `workflow:run`, the 1 MiB ceiling held together and fetch budgets (#242).
+- The script step example checks a VAT number's form with `jq` instead of calling an outside service, which a server refuses until v0.9.0 (#242).
+
 ## v0.7.2, 2026-10-30
 
 ### Documentation
