@@ -15,6 +15,8 @@ Every repository of the project carries the same version and is tagged at the sa
 - A task's log is its standard error alone, said where a script author and `run_logs` read it, and a retry's backoff is a minimum, picked up at the controller's next sweep (#233).
 - The run detail answers each step's `reason`, why it reached its verdict where the verdict alone does not say, which `run_get` and the console's run view show; a step's `inputs` says what a port takes, an object or a list of objects, and that validation refuses a value that is no batch, the copied `ports` page with it; the order-status example feeds its port an object rather than the string it fed, which failed every run (#235).
 - Every tool of the user's server is named with an underscore, `run_list` where it was `run.list`, in the MCP chapter, its figure, the home's sequence of calls, the language reference's `mcp` page and wherever else a tool is named; a decision says why, the Anthropic Messages API refusing a dot, and that a call by the dotted name is answered until v0.8.0. The audit actions spelled like a tool, `grant.create` or `run.cancel`, keep their dots, and so do the roadmap's done tasks, whose titles name their issues (#236).
+- The run context lists what `/agk/run.json` carries, a field nobody told the runner left out, and the grant redemption answers the run's head; a script has `/agk/bin` on its `PATH`, runs as `65532:65532` where its image names root or none, and installs nothing, which the example and the security model now say (#237).
+- The language reference's `script` and `includes` pages are copied again from agentiik/schemas, whose `before_script` examples no longer install a tool.
 
 ## v0.7.1, 2026-10-30
 
