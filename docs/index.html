@@ -17,7 +17,7 @@
 <meta property="og:image:alt" content="The Agentiik documentation, beside a workflow drawn mid-run.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="apple-touch-icon" href="/brand/agentiik-mark-512-light.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
 <style>
 /* The design system's tokens, as the Design system chapter lists them: bg for the page,
    surface for panels and rails, sunken for code, raised for controls. The older names the
@@ -966,6 +966,282 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
 .mock.term text{font-family:"JetBrains Mono",ui-monospace,monospace}
 .mock.term text.t-sans{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
 figure.console img.term-narrow{max-width:630px;margin:20px auto}
+/* The Design system chapter's own drawings: the tokens it specifies, the depth, the motion and four
+   screens of the console drawn with them, in HTML rather than in pictures so that they move as the
+   console does. Every class is ds-, since the page's own .shell, .side and .bar are taken, and every
+   colour is the chapter's, scoped to .ds, so the rest of the page keeps the colours it is drawn in. */
+.ds{
+  --d-sunken:#EBEDF1;--d-bg:#F0F2F7;--d-surface:#FCFDFE;--d-raised:#FFFFFF;
+  --d-faint:#676C74;--d-muted:#565B64;--d-text:#161B23;
+  --d-accentDim:#DFECFF;--d-accent:#1957D2;--d-accentLine:#A8C5F9;--d-onAccent:#FFFFFF;
+  --d-line:#E0E3E8;--d-lineStrong:#CDD1D8;
+  --d-succeeded:#15733C;--d-succeededFill:#DCF7E2;--d-succeededLine:#A9D8B4;
+  --d-running:#1957D2;
+  --d-waiting:#915C08;--d-waitingFill:#FEEFCF;--d-waitingLine:#EAC992;
+  --d-failed:#B33022;--d-failedFill:#FFE8E3;--d-failedLine:#F5BAB0;
+  --d-shadowSheet:0 0 0 1px rgb(22 27 35 / .06),0 1px 2px rgb(22 27 35 / .05),0 6px 20px -8px rgb(22 27 35 / .10);
+  --d-shadowFloat:0 0 0 1px rgb(22 27 35 / .08),0 12px 32px -6px rgb(22 27 35 / .22),0 2px 6px rgb(22 27 35 / .06);
+  --d-glass:rgb(255 255 255 / .74);
+  --d-scrim:rgb(22 27 35 / .18);
+  --d-dur1:120ms;--d-dur2:200ms;--d-dur3:320ms;
+  --d-easeOut:cubic-bezier(.2,.8,.2,1);
+  --d-easeSpring:cubic-bezier(.34,1.36,.64,1);
+  color:var(--d-text);
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ds{
+  --d-sunken:#0A0B0E;--d-bg:#0D0E11;--d-surface:#14161A;--d-raised:#1B1E23;
+  --d-faint:#8E929B;--d-muted:#A0A5AE;--d-text:#E5E8ED;
+  --d-accentDim:#172A4E;--d-accent:#79A9FF;--d-accentLine:#28467D;--d-onAccent:#0D0F14;
+  --d-line:#24272B;--d-lineStrong:#32363C;
+  --d-succeeded:#6BC987;--d-succeededFill:#112D1A;--d-succeededLine:#224D2F;
+  --d-running:#79A9FF;
+  --d-waiting:#E8B45E;--d-waitingFill:#36250D;--d-waitingLine:#5E4216;
+  --d-failed:#EF806F;--d-failedFill:#401D18;--d-failedLine:#6C352D;
+  --d-shadowSheet:0 0 0 1px rgb(255 255 255 / .06),0 10px 30px -10px rgb(0 0 0 / .7);
+  --d-shadowFloat:0 0 0 1px rgb(255 255 255 / .09),0 18px 48px -8px rgb(0 0 0 / .75);
+  --d-glass:rgb(27 30 35 / .72);
+  --d-scrim:rgb(0 0 0 / .45);
+}}
+:root[data-theme="dark"] .ds{
+  --d-sunken:#0A0B0E;--d-bg:#0D0E11;--d-surface:#14161A;--d-raised:#1B1E23;
+  --d-faint:#8E929B;--d-muted:#A0A5AE;--d-text:#E5E8ED;
+  --d-accentDim:#172A4E;--d-accent:#79A9FF;--d-accentLine:#28467D;--d-onAccent:#0D0F14;
+  --d-line:#24272B;--d-lineStrong:#32363C;
+  --d-succeeded:#6BC987;--d-succeededFill:#112D1A;--d-succeededLine:#224D2F;
+  --d-running:#79A9FF;
+  --d-waiting:#E8B45E;--d-waitingFill:#36250D;--d-waitingLine:#5E4216;
+  --d-failed:#EF806F;--d-failedFill:#401D18;--d-failedLine:#6C352D;
+  --d-shadowSheet:0 0 0 1px rgb(255 255 255 / .06),0 10px 30px -10px rgb(0 0 0 / .7);
+  --d-shadowFloat:0 0 0 1px rgb(255 255 255 / .09),0 18px 48px -8px rgb(0 0 0 / .75);
+  --d-glass:rgb(27 30 35 / .72);
+  --d-scrim:rgb(0 0 0 / .45);
+}
+.ds *,.ds *::before,.ds *::after{box-sizing:border-box}
+/* The page draws every svg of a figure as a drawing the column's width; the icons and the graph here
+   are parts of one, sized below. Zero specificity, so that each rule after it wins. */
+:where(figure) .ds svg{display:inline-block;width:auto;min-width:0;max-width:none;height:auto;margin:0;color:inherit}
+.ds .ds-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-ligatures:none}
+.ds .ds-num{font-variant-numeric:tabular-nums}
+.ds svg.ds-i{width:16px;height:16px;flex:none}
+
+/* The figures that hold a drawing: its ground, padded, rather than the page's surface. */
+figure.ds-figure .figbody{background:var(--d-bg);padding:18px;overflow-x:auto}
+figure.ds-figure.console .figbody{padding:14px}
+
+/* Depth: ground, sheet, float. */
+.ds-depth{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;min-width:520px}
+.ds-depth > div{border-radius:12px;padding:14px 16px;font-size:.8rem;line-height:1.5;color:var(--d-muted);min-height:96px}
+.ds-depth b{display:block;color:var(--d-text);font-weight:600;font-size:.86rem;margin-bottom:2px}
+.ds-depth code{font-size:.74rem}
+.ds-depth .ds-ground{background:var(--d-bg);box-shadow:inset 0 0 0 1px var(--d-line)}
+.ds-depth .ds-sheetdemo{background:var(--d-surface);box-shadow:var(--d-shadowSheet)}
+.ds-depth .ds-floatdemo{background:var(--d-glass);box-shadow:var(--d-shadowFloat);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4)}
+.ds-radii{display:flex;gap:16px;flex-wrap:wrap;margin-top:18px}
+.ds-radii div{display:grid;gap:6px;justify-items:center;font-size:.74rem;color:var(--d-muted)}
+.ds-radii i{display:block;width:64px;height:44px;background:var(--d-raised);box-shadow:var(--d-shadowSheet)}
+
+/* Motion: each duration on its curve, slowed down to be seen, and what moves. */
+.ds-motion{display:grid;gap:4px;min-width:520px}
+.ds-motion .ds-m{display:grid;grid-template-columns:150px 70px minmax(0,1fr);gap:14px;align-items:center;font-size:.8rem;padding:8px 0;border-top:1px solid var(--d-line)}
+.ds-motion .ds-m:first-child{border-top:0}
+@media (max-width:640px){
+  .ds-depth{grid-template-columns:minmax(0,1fr);min-width:0}
+  .ds-motion{min-width:0}
+  .ds-motion .ds-m{grid-template-columns:minmax(0,1fr) 60px;gap:6px 12px}
+  .ds-motion .ds-track{grid-column:1/-1}
+}
+.ds-track{height:6px;border-radius:6px;background:var(--d-sunken);position:relative}
+.ds-track i{position:absolute;top:-3px;left:0;width:12px;height:12px;border-radius:50%;background:var(--d-accent);animation:ds-slide 2.4s infinite alternate}
+.ds-track.ds-d1 i{animation-duration:1.2s;animation-timing-function:var(--d-easeOut)}
+.ds-track.ds-d2 i{animation-duration:1.6s;animation-timing-function:var(--d-easeOut)}
+.ds-track.ds-d3 i{animation-duration:2s;animation-timing-function:var(--d-easeSpring)}
+@keyframes ds-slide{0%,20%{left:0}80%,100%{left:calc(100% - 12px)}}
+.ds-live{display:flex;flex-wrap:wrap;gap:22px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--d-line);font-size:.8rem;color:var(--d-muted)}
+.ds-live > span{display:inline-flex;gap:10px;align-items:center}
+.ds-live .ds-progress{display:inline-block;width:120px}
+.ds-live svg{width:120px;height:20px}
+
+/* A window of the console. */
+.ds-win{width:1120px;background:var(--d-bg);border-radius:16px;box-shadow:var(--d-shadowFloat);overflow:hidden;font-size:13.5px;line-height:20px;position:relative;margin:0 auto}
+.ds-shell{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:600px}
+.ds-side{padding:12px 10px;display:flex;flex-direction:column;gap:2px;color:var(--d-muted);min-width:0}
+.ds-brand{display:flex;align-items:center;gap:9px;padding:6px 8px 14px;color:var(--d-text);font-weight:700;letter-spacing:-0.02em;font-size:15px}
+.ds-brand svg{width:18px;height:16px;fill:var(--d-accent)}
+.ds-ns{display:flex;align-items:center;gap:9px;margin:6px 0 8px;padding:6px 8px;border-radius:8px;color:var(--d-text);font-weight:560}
+.ds-av{width:22px;height:22px;border-radius:6px;background:var(--d-accentDim);color:var(--d-accent);font-size:11px;font-weight:700;display:grid;place-items:center;flex:none}
+.ds-ns .ds-chev{margin-left:auto;color:var(--d-faint)}
+.ds-nav{display:flex;align-items:center;gap:10px;height:30px;padding:0 8px;border-radius:8px;font-weight:450;white-space:nowrap}
+.ds-nav svg{opacity:.85}
+.ds-nav.ds-on{background:var(--d-raised);color:var(--d-text);font-weight:580;box-shadow:var(--d-shadowSheet)}
+.ds-count{margin-left:auto;font-size:11.5px;color:var(--d-waiting);background:var(--d-waitingFill);border-radius:999px;padding:0 7px;line-height:18px;font-weight:600}
+.ds-sep{font-size:11.5px;color:var(--d-faint);padding:14px 8px 4px;font-weight:550}
+.ds-foot{margin-top:auto;display:flex;align-items:center;gap:9px;padding:8px;color:var(--d-muted);white-space:nowrap}
+.ds-me{width:24px;height:24px;border-radius:50%;background:var(--d-accentDim);color:var(--d-accent);display:grid;place-items:center;font-weight:700;font-size:11px;flex:none}
+.ds-sheet{margin:8px 8px 8px 0;background:var(--d-surface);border-radius:14px;box-shadow:var(--d-shadowSheet);display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.ds-bar{display:flex;align-items:center;gap:12px;height:52px;padding:0 16px 0 24px;flex:none}
+.ds-crumbs{display:flex;align-items:center;gap:8px;color:var(--d-muted);min-width:0;white-space:nowrap;overflow:hidden}
+.ds-crumbs .ds-cur{color:var(--d-text);font-weight:580}
+.ds-crumbs .ds-slash{color:var(--d-lineStrong)}
+.ds-search{margin-left:auto;display:flex;align-items:center;gap:8px;height:32px;width:240px;flex:none;padding:0 6px 0 10px;border-radius:8px;background:var(--d-bg);color:var(--d-faint)}
+.ds kbd{margin-left:auto;font:500 11px/1 "JetBrains Mono",ui-monospace,monospace;color:var(--d-muted);background:var(--d-raised);box-shadow:0 0 0 1px var(--d-lineStrong);border-radius:5px;padding:3px 5px;border:0}
+.ds-ib{width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:var(--d-muted);flex:none}
+.ds-ctl{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:8px;background:var(--d-raised);box-shadow:0 0 0 1px var(--d-lineStrong);font-weight:550;color:var(--d-text);white-space:nowrap;flex:none}
+.ds-ctl svg{width:15px;height:15px}
+.ds-ctl.ds-primary{background:var(--d-accent);color:var(--d-onAccent);box-shadow:none}
+.ds-ctl.ds-sm{height:28px;padding:0 10px;font-size:12.5px}
+.ds-content{padding:4px 24px 24px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.ds-ptitle{display:flex;align-items:center;gap:12px;min-width:0}
+.ds-ptitle .ds-h{margin:0;font-size:26px;line-height:32px;font-weight:600;font-variation-settings:"wdth" 112;letter-spacing:-0.015em;white-space:nowrap}
+.ds-ptitle .ds-h.ds-mono{font-size:20px;font-weight:500;letter-spacing:0;font-variation-settings:normal}
+.ds-ptitle .ds-sub{color:var(--d-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ds-ptitle .ds-acts{margin-left:auto;display:flex;gap:8px;flex:none}
+.ds-faceav{width:44px;height:44px;border-radius:50%;background:var(--d-accentDim);color:var(--d-accent);display:grid;place-items:center;font-weight:650;font-size:18px;flex:none}
+
+/* A state: a soft round pill, a dot and the word. A button is a solid fill; a state never is. */
+.ds-pill{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 8px;border-radius:999px;font-size:12.5px;font-weight:560;white-space:nowrap;line-height:22px;flex:none}
+.ds-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.ds-p-succeeded{background:var(--d-succeededFill);color:var(--d-succeeded)}
+.ds-p-failed,.ds-p-timed_out{background:var(--d-failedFill);color:var(--d-failed)}
+.ds-p-waiting{background:var(--d-waitingFill);color:var(--d-waiting)}
+.ds-p-running{background:var(--d-accentDim);color:var(--d-running)}
+.ds-p-running::before{animation:ds-pulse 1.6s var(--d-easeOut) infinite}
+.ds-p-queued,.ds-p-skipped,.ds-p-cancelled,.ds-p-pending{background:var(--d-sunken);color:var(--d-muted)}
+.ds-p-queued::before,.ds-p-skipped::before,.ds-p-cancelled::before,.ds-p-pending::before{background:transparent;box-shadow:inset 0 0 0 1.5px currentColor}
+@keyframes ds-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,currentColor 55%,transparent)}70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
+
+/* Home. */
+.ds-bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.ds-tile{background:var(--d-raised);border-radius:12px;box-shadow:0 0 0 1px var(--d-line);padding:14px 16px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.ds-tile .ds-th{margin:0;font-size:13px;font-weight:600;color:var(--d-muted);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.ds-tile .ds-th .ds-more{margin-left:auto;font-weight:500;color:var(--d-accent)}
+.ds-s2{grid-column:span 2}.ds-s4{grid-column:span 4}
+.ds-big{font-size:34px;line-height:38px;font-weight:600;font-variation-settings:"wdth" 104;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ds-big small{font-size:14px;color:var(--d-muted);font-weight:500;letter-spacing:0;margin-left:6px}
+.ds-big .ds-bad{color:var(--d-failed)}
+.ds-attn .ds-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--d-line)}
+.ds-attn .ds-row:first-child{border-top:0;padding-top:2px}
+.ds-wf{font-weight:570;color:var(--d-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ds-cell{display:grid;min-width:0}
+.ds-cell .ds-wf{display:block}
+.ds-why{display:block;color:var(--d-muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ds-idt{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;color:var(--d-faint)}
+.ds-ago{color:var(--d-faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ds-livelist{display:flex;flex-direction:column;gap:10px}
+.ds-lr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center}
+.ds-progress{grid-column:1/-1;height:4px;border-radius:4px;background:var(--d-sunken);overflow:hidden}
+.ds-progress i{display:block;height:100%;border-radius:4px;background:var(--d-running);position:relative;overflow:hidden}
+.ds-progress i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgb(255 255 255 / .55),transparent);transform:translateX(-100%);animation:ds-sweep 1.8s var(--d-easeOut) infinite}
+@keyframes ds-sweep{to{transform:translateX(100%)}}
+.ds-bars{display:flex;align-items:flex-end;gap:5px;height:56px}
+.ds-bars span{flex:1;display:flex;flex-direction:column-reverse;border-radius:3px;overflow:hidden;gap:1px}
+.ds-bars i{display:block;background:var(--d-succeeded);opacity:.85}
+.ds-bars i.ds-f{background:var(--d-failed);opacity:.9}
+.ds-axis{display:flex;justify-content:space-between;font-size:11px;color:var(--d-faint)}
+.ds-list .ds-r{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--d-line)}
+.ds-list .ds-r:first-child{border-top:0}
+.ds-list .ds-r.ds-w{grid-template-columns:minmax(0,1fr) auto}
+.ds-hist{display:flex;gap:3px}
+.ds-hist i{width:9px;height:16px;border-radius:3px;background:var(--d-succeeded);opacity:.8}
+.ds-hist i.ds-f{background:var(--d-failed);opacity:.9}
+.ds-hist i.ds-r{background:var(--d-running);opacity:.9}
+
+/* Runs. */
+.ds-filters{display:flex;gap:8px;align-items:center}
+.ds-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:var(--d-raised);box-shadow:0 0 0 1px var(--d-lineStrong);font-size:12.5px;font-weight:520;color:var(--d-muted);white-space:nowrap}
+.ds-chip b{color:var(--d-text);font-weight:600}
+.ds-chip.ds-on{background:var(--d-accentDim);box-shadow:0 0 0 1px var(--d-accentLine);color:var(--d-accent)}
+.ds-chip svg{width:13px;height:13px}
+.ds-gap{flex:1}
+.ds-runs{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:0;font-size:13.5px;line-height:20px}
+.ds-runs th{text-align:left;font-size:12.5px;font-weight:600;color:var(--d-faint);padding:0 12px 8px;text-transform:none;letter-spacing:0;border:0;white-space:nowrap}
+.ds-runs td{height:44px;padding:0 12px;border-top:1px solid var(--d-line);border-bottom:0;white-space:nowrap;vertical-align:middle;font-family:inherit;font-size:inherit;color:inherit;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ds-runs td:first-child{font-family:inherit;font-size:inherit;color:inherit}
+.ds-runs tbody tr:hover{background:transparent}
+.ds-runs tr.ds-group td{height:34px;border-top:0;font-size:12px;font-weight:600;color:var(--d-muted);padding-top:10px}
+.ds-runs tr.ds-sel td{background:var(--d-accentDim);border-top-color:transparent}
+.ds-runs tr.ds-hov td{background:var(--d-bg);border-top-color:transparent}
+.ds-runs tr.ds-sel td:first-child,.ds-runs tr.ds-hov td:first-child{border-radius:10px 0 0 10px}
+.ds-runs tr.ds-sel td:last-child,.ds-runs tr.ds-hov td:last-child{border-radius:0 10px 10px 0}
+.ds-runs tr.ds-sel + tr td,.ds-runs tr.ds-hov + tr td{border-top-color:transparent}
+.ds-trig{display:inline-flex;gap:6px;align-items:center;color:var(--d-muted)}
+.ds-trig svg{width:14px;height:14px}
+.ds-steps{display:flex;gap:2px;width:100%}
+.ds-steps i{height:8px;border-radius:2px;background:var(--d-succeeded);opacity:.8}
+.ds-steps i.ds-f{background:var(--d-failed);opacity:1}
+.ds-steps i.ds-r{background:var(--d-running);opacity:1}
+.ds-steps i.ds-p{background:var(--d-lineStrong);opacity:1}
+.ds-right{text-align:right}
+.ds-rowacts{display:inline-flex;gap:2px;color:var(--d-muted);vertical-align:middle}
+.ds-rowacts .ds-ib{width:28px;height:28px}
+
+/* Run inspector. */
+.ds-insp{display:grid;grid-template-columns:minmax(0,1fr) 372px;border-top:1px solid var(--d-line)}
+.ds-left{display:flex;flex-direction:column;min-width:0}
+.ds-canvas{position:relative;padding:12px 18px;background-image:radial-gradient(circle at 1px 1px,var(--d-lineStrong) 1px,transparent 0);background-size:18px 18px}
+.ds-tools{position:absolute;right:14px;top:14px;display:flex;gap:2px;background:var(--d-glass);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);border-radius:10px;box-shadow:var(--d-shadowFloat);padding:3px}
+.ds-tools .ds-ib{width:28px;height:28px}
+.ds svg.ds-graph{width:100%;height:auto;display:block}
+.ds-graph .ds-box{fill:var(--d-raised);stroke:var(--d-lineStrong);stroke-width:1}
+.ds-graph .ds-fail .ds-box{stroke:var(--d-failed);stroke-width:1.5}
+.ds-graph .ds-ring{fill:none;stroke:var(--d-failed);stroke-opacity:.28;stroke-width:6}
+.ds-graph text{fill:var(--d-text);font:600 13px Archivo,"Helvetica Neue",Arial,sans-serif}
+.ds-graph text.ds-gs{fill:var(--d-muted);font:400 11.5px Archivo,"Helvetica Neue",Arial,sans-serif}
+.ds-graph text.ds-gp{fill:var(--d-muted);font:500 11px "JetBrains Mono",ui-monospace,monospace}
+.ds-graph text.ds-gp.ds-gf{fill:var(--d-failed)}
+.ds-edge{fill:none;stroke:var(--d-lineStrong);stroke-width:1.5}
+.ds-edge.ds-flow{stroke:var(--d-succeeded);stroke-dasharray:4 5;animation:ds-flow 1.2s linear infinite}
+@keyframes ds-flow{to{stroke-dashoffset:-18}}
+.ds-shard{fill:var(--d-succeeded)}.ds-shard.ds-f{fill:var(--d-failed)}
+.ds-timeline{border-top:1px solid var(--d-line);padding:14px 18px 18px}
+.ds-timeline .ds-th{margin:0 0 10px;font-size:12.5px;color:var(--d-muted);font-weight:600;display:flex;gap:10px}
+.ds-tl{display:grid;grid-template-columns:84px minmax(0,1fr);gap:8px 12px;align-items:center;font-size:12.5px}
+.ds-lane{position:relative;height:18px;background:repeating-linear-gradient(90deg,var(--d-line) 0 1px,transparent 1px 25%);border-radius:4px}
+.ds-seg{position:absolute;top:3px;height:12px;border-radius:4px}
+.ds-seg.ds-s{background:var(--d-succeeded);opacity:.85}
+.ds-seg.ds-f{background:var(--d-failed)}
+.ds-seg.ds-a{background:color-mix(in srgb,var(--d-failed) 40%,transparent)}
+.ds-ticks{grid-column:2;display:flex;justify-content:space-between;color:var(--d-faint);font-size:11px;font-family:"JetBrains Mono",ui-monospace,monospace}
+.ds-detail{border-left:1px solid var(--d-line);display:flex;flex-direction:column;min-width:0}
+.ds-dhead{padding:16px 18px 0;display:grid;gap:10px;min-width:0}
+.ds-t1{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:620;white-space:nowrap}
+.ds-reason{padding:9px 12px;border-radius:10px;background:var(--d-failedFill);box-shadow:inset 0 0 0 1px var(--d-failedLine);font-size:12.5px;line-height:18px}
+.ds-reason b{color:var(--d-failed);font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:500;margin-right:6px}
+.ds-kv{display:grid;grid-template-columns:62px minmax(0,1fr);gap:4px 10px;font-size:12.5px;color:var(--d-muted)}
+.ds-kv span:nth-child(even){color:var(--d-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ds-tabs{display:flex;gap:4px;padding:12px 18px 0;border-bottom:1px solid var(--d-line)}
+.ds-tab{padding:6px 10px 9px;color:var(--d-muted);font-weight:520;position:relative}
+.ds-tab.ds-on{color:var(--d-text);font-weight:600}
+.ds-tab.ds-on::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px;background:var(--d-accent)}
+.ds-log{margin:12px;background:var(--d-sunken);border-radius:10px;padding:10px 0;font:400 12px/19px "JetBrains Mono",ui-monospace,monospace;flex:1;overflow:hidden;min-width:0}
+.ds-log div{padding:0 12px;white-space:pre;overflow:hidden;text-overflow:ellipsis}
+.ds-log .ds-ln{color:var(--d-faint);display:inline-block;width:26px}
+.ds-log .ds-err{background:var(--d-failedFill);color:var(--d-failed)}
+.ds-log .ds-dim{color:var(--d-muted)}
+
+/* The palette, over the screen. */
+.ds-overlay{position:absolute;inset:0;background:var(--d-scrim);display:grid;place-items:start center;padding-top:88px}
+.ds-palette{width:600px;border-radius:16px;background:var(--d-glass);backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);box-shadow:var(--d-shadowFloat);overflow:hidden;animation:ds-pop var(--d-dur3) var(--d-easeSpring) both}
+@keyframes ds-pop{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.ds-pin{display:flex;align-items:center;gap:10px;height:52px;padding:0 16px;border-bottom:1px solid var(--d-line);font-size:16px}
+.ds-pin svg{width:18px;height:18px;color:var(--d-muted)}
+.ds-scope{font-size:12px;font-weight:560;padding:2px 8px;border-radius:999px;background:var(--d-accentDim);color:var(--d-accent);font-family:"JetBrains Mono",ui-monospace,monospace}
+.ds-caret{width:1.5px;height:20px;background:var(--d-accent);margin-left:-8px;animation:ds-blink 1s steps(1) infinite}
+@keyframes ds-blink{50%{opacity:0}}
+.ds-pres{padding:6px}
+.ds-grp{font-size:11.5px;color:var(--d-faint);font-weight:600;padding:8px 10px 4px}
+.ds-it{display:flex;align-items:center;gap:10px;height:38px;padding:0 10px;border-radius:9px;white-space:nowrap}
+.ds-it svg{color:var(--d-muted)}
+.ds-hint{margin-left:auto;color:var(--d-faint);font-size:12px;display:flex;gap:4px;align-items:center}
+.ds-hint kbd{margin-left:0}
+.ds-it.ds-on{background:var(--d-accentDim)}
+.ds-it.ds-on svg{color:var(--d-accent)}
+.ds-pres mark{background:none;color:var(--d-accent);font-weight:650}
+.ds-pfoot{display:flex;gap:16px;padding:8px 16px;border-top:1px solid var(--d-line);font-size:12px;color:var(--d-faint);white-space:nowrap}
+.ds-pfoot span{display:inline-flex;gap:5px;align-items:center}
+.ds-pfoot kbd{margin:0}
+.ds-pfoot .ds-end{margin-left:auto}
+.ds-sprite{position:absolute;width:0;height:0;overflow:hidden}
 </style>
 <style>
 html{color-scheme:light dark}
@@ -12424,7 +12700,8 @@ resource "agentiik_workflow" "search" {
 <section id="design">
   <div class="sec-head"><span class="mark">§</span><h2>Design system</h2></div>
   <div class="prose">
-    <p>The web console, <code>agk console</code>, the two mobile applications and the public site share one set of tokens: one accent, one state ramp, two typefaces, one spacing unit. A value a client needs beyond them is a gap in the system, not a licence to invent one.</p>
+    <p>The web console, <code>agk console</code>, the two mobile applications and the public site share one set of tokens: one accent, one state ramp, two typefaces, one spacing unit, three depths and three durations. A value a client needs beyond them is a gap in the system, not a licence to invent one.</p>
+    <p>The system is drawn to be calm. What a person came to read is in front and the way around it recedes: the navigation lies on the ground, the screen is a sheet raised above it, and structure comes from surfaces rather than from lines drawn round them. What runs moves, and nothing else does.</p>
   </div>
 
   <figure>
@@ -12439,33 +12716,33 @@ resource "agentiik_workflow" "search" {
         </g>
 
         <g stroke="currentColor" stroke-opacity=".28" stroke-width="1">
-          <rect x="76" y="30" width="58" height="44" fill="#0E0E0E"/>
-          <rect x="139" y="30" width="58" height="44" fill="#121212"/>
-          <rect x="202" y="30" width="58" height="44" fill="#1A1A1A"/>
-          <rect x="265" y="30" width="58" height="44" fill="#222222"/>
-          <rect x="343" y="30" width="58" height="44" fill="#898989"/>
-          <rect x="406" y="30" width="58" height="44" fill="#9E9E9E"/>
-          <rect x="469" y="30" width="58" height="44" fill="#E8E8E8"/>
-          <rect x="547" y="30" width="58" height="44" fill="#0F2B46"/>
-          <rect x="610" y="30" width="58" height="44" fill="#68AEF5"/>
-          <rect x="688" y="30" width="58" height="44" fill="#5FA773"/>
-          <rect x="751" y="30" width="58" height="44" fill="#68AEF5"/>
-          <rect x="814" y="30" width="58" height="44" fill="#D9A441"/>
-          <rect x="877" y="30" width="58" height="44" fill="#E0705A"/>
+          <rect x="76" y="30" width="58" height="44" fill="#0A0B0E"/>
+          <rect x="139" y="30" width="58" height="44" fill="#0D0E11"/>
+          <rect x="202" y="30" width="58" height="44" fill="#14161A"/>
+          <rect x="265" y="30" width="58" height="44" fill="#1B1E23"/>
+          <rect x="343" y="30" width="58" height="44" fill="#8E929B"/>
+          <rect x="406" y="30" width="58" height="44" fill="#A0A5AE"/>
+          <rect x="469" y="30" width="58" height="44" fill="#E5E8ED"/>
+          <rect x="547" y="30" width="58" height="44" fill="#172A4E"/>
+          <rect x="610" y="30" width="58" height="44" fill="#79A9FF"/>
+          <rect x="688" y="30" width="58" height="44" fill="#6BC987"/>
+          <rect x="751" y="30" width="58" height="44" fill="#79A9FF"/>
+          <rect x="814" y="30" width="58" height="44" fill="#E8B45E"/>
+          <rect x="877" y="30" width="58" height="44" fill="#EF806F"/>
 
-          <rect x="76" y="142" width="58" height="44" fill="#E9E9E9"/>
-          <rect x="139" y="142" width="58" height="44" fill="#F1F1F1"/>
-          <rect x="202" y="142" width="58" height="44" fill="#FBFBFB"/>
+          <rect x="76" y="142" width="58" height="44" fill="#EBEDF1"/>
+          <rect x="139" y="142" width="58" height="44" fill="#F0F2F7"/>
+          <rect x="202" y="142" width="58" height="44" fill="#FCFDFE"/>
           <rect x="265" y="142" width="58" height="44" fill="#FFFFFF"/>
-          <rect x="343" y="142" width="58" height="44" fill="#696969"/>
-          <rect x="406" y="142" width="58" height="44" fill="#656565"/>
-          <rect x="469" y="142" width="58" height="44" fill="#1D1D1D"/>
-          <rect x="547" y="142" width="58" height="44" fill="#D7E7F9"/>
-          <rect x="610" y="142" width="58" height="44" fill="#015DA2"/>
-          <rect x="688" y="142" width="58" height="44" fill="#2B754A"/>
-          <rect x="751" y="142" width="58" height="44" fill="#015DA2"/>
-          <rect x="814" y="142" width="58" height="44" fill="#8F610A"/>
-          <rect x="877" y="142" width="58" height="44" fill="#B23C1E"/>
+          <rect x="343" y="142" width="58" height="44" fill="#676C74"/>
+          <rect x="406" y="142" width="58" height="44" fill="#565B64"/>
+          <rect x="469" y="142" width="58" height="44" fill="#161B23"/>
+          <rect x="547" y="142" width="58" height="44" fill="#DFECFF"/>
+          <rect x="610" y="142" width="58" height="44" fill="#1957D2"/>
+          <rect x="688" y="142" width="58" height="44" fill="#15733C"/>
+          <rect x="751" y="142" width="58" height="44" fill="#1957D2"/>
+          <rect x="814" y="142" width="58" height="44" fill="#915C08"/>
+          <rect x="877" y="142" width="58" height="44" fill="#B33022"/>
         </g>
 
         <g font-family="JetBrains Mono, monospace" font-size="8.5" fill="currentColor">
@@ -12486,53 +12763,106 @@ resource "agentiik_workflow" "search" {
           <text x="814" y="200">waiting</text><text x="877" y="200">failed</text>
         </g>
         <g font-family="JetBrains Mono, monospace" font-size="8" fill="currentColor" opacity=".6">
-          <text x="76" y="99">#0E0E0E</text><text x="139" y="99">#121212</text>
-          <text x="202" y="99">#1A1A1A</text><text x="265" y="99">#222222</text>
-          <text x="343" y="99">#898989</text><text x="406" y="99">#9E9E9E</text>
-          <text x="469" y="99">#E8E8E8</text>
-          <text x="547" y="99">#0F2B46</text><text x="610" y="99">#68AEF5</text>
-          <text x="688" y="99">#5FA773</text><text x="751" y="99">#68AEF5</text>
-          <text x="814" y="99">#D9A441</text><text x="877" y="99">#E0705A</text>
+          <text x="76" y="99">#0A0B0E</text><text x="139" y="99">#0D0E11</text>
+          <text x="202" y="99">#14161A</text><text x="265" y="99">#1B1E23</text>
+          <text x="343" y="99">#8E929B</text><text x="406" y="99">#A0A5AE</text>
+          <text x="469" y="99">#E5E8ED</text>
+          <text x="547" y="99">#172A4E</text><text x="610" y="99">#79A9FF</text>
+          <text x="688" y="99">#6BC987</text><text x="751" y="99">#79A9FF</text>
+          <text x="814" y="99">#E8B45E</text><text x="877" y="99">#EF806F</text>
 
-          <text x="76" y="211">#E9E9E9</text><text x="139" y="211">#F1F1F1</text>
-          <text x="202" y="211">#FBFBFB</text><text x="265" y="211">#FFFFFF</text>
-          <text x="343" y="211">#696969</text><text x="406" y="211">#656565</text>
-          <text x="469" y="211">#1D1D1D</text>
-          <text x="547" y="211">#D7E7F9</text><text x="610" y="211">#015DA2</text>
-          <text x="688" y="211">#2B754A</text><text x="751" y="211">#015DA2</text>
-          <text x="814" y="211">#8F610A</text><text x="877" y="211">#B23C1E</text>
+          <text x="76" y="211">#EBEDF1</text><text x="139" y="211">#F0F2F7</text>
+          <text x="202" y="211">#FCFDFE</text><text x="265" y="211">#FFFFFF</text>
+          <text x="343" y="211">#676C74</text><text x="406" y="211">#565B64</text>
+          <text x="469" y="211">#161B23</text>
+          <text x="547" y="211">#DFECFF</text><text x="610" y="211">#1957D2</text>
+          <text x="688" y="211">#15733C</text><text x="751" y="211">#1957D2</text>
+          <text x="814" y="211">#915C08</text><text x="877" y="211">#B33022</text>
         </g>
 
         <line x1="76" y1="240" x2="935" y2="240" stroke="currentColor" stroke-opacity=".2"/>
         <text x="76" y="258" font-family="JetBrains Mono, monospace" font-size="9" fill="currentColor" opacity=".65">running is the one state that borrows the accent hue: it is the live state, and it never shares a shape with a button</text>
       </svg>
     </div>
-    <figcaption><b>Two grounds, one accent, one state ramp.</b> The grounds are black and white, with no hue of their own, so that the blue of the accent is the one colour a screen carries beside its states, and marks what matters. <code>queued</code>, <code>skipped</code> and <code>cancelled</code> take <code>faint</code>: they are the absence of a state, not one.</figcaption>
+    <figcaption><b>Two grounds, one accent, one state ramp.</b> The greys of the grounds carry the accent's hue, too faintly to be named a colour, so that the blue is still the one colour a screen carries beside its states and the greys belong to it. Every value is set in OKLCH and written in hexadecimal; the states share one lightness on each ground, so that none weighs more than another. <code>queued</code>, <code>skipped</code> and <code>cancelled</code> take <code>muted</code> on <code>sunken</code>: they are the absence of a state, not one.</figcaption>
   </figure>
 
   <div class="prose">
     <h3 id="colour-rules">Colour rules</h3>
     <ul class="plain">
       <li>The accent is the only brand colour, and marks what is interactive: primary buttons, links, selection, the selected row's marker, port dots on the graph.</li>
-      <li>The state ramp is separate from the accent, except <code>running</code>, which borrows its hue because it is the live state. Hue is shared, form never is: a button is a solid fill with ink on it, a state an outlined pill with a dot.</li>
+      <li>The state ramp is separate from the accent, except <code>running</code>, which borrows its hue because it is the live state. Hue is shared, form never is: a button is a solid fill of the accent with <code>onAccent</code> ink on it, a state a soft round pill, a pale fill of its hue with a dot and its word in the hue itself. A faint state's dot is hollow.</li>
       <li>No state is signalled by colour alone: each carries a dot and a word, and a step strip adds position and width.</li>
       <li>Every word is drawn at 4.5:1 at least against what it is drawn on, WCAG 2's level AA for text of ordinary size, whatever its role: <code>text</code>, <code>muted</code>, <code>faint</code> and the accent on each surface, a state's ink on its pill's fill, and <code>onAccent</code> on the accent. The word carries the state, and a word nobody can read carries none. The design system's build refuses a token below it.</li>
-      <li>Elevation is ground value plus a hairline, never a shadow, and four surface tokens are the whole vocabulary: <code>sunken</code> for code and payload panes, <code>bg</code> for the page, <code>surface</code> for panels and rails, <code>raised</code> for rows, controls and the active item.</li>
+      <li>Depth is ground value first, and four surface tokens are the whole vocabulary: <code>sunken</code> for code and payload panes, <code>bg</code> for the ground the navigation lies on, <code>surface</code> for the sheet a screen is drawn on, <code>raised</code> for tiles, controls and the active item. A shadow is added in two places only, set out under <a href="#surfaces-and-depth">Surfaces and depth</a>.</li>
     </ul>
-    <p>The mockups on this page draw with ten more colours, each a hairline, an ink or a pill's fill and outline worked out from the swatches above, and published with them in <a href="https://github.com/agentiik/design">agentiik/design</a>:</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>Until v0.8.0 the grounds were black and white with no hue of their own, so that the accent would be the one colour a screen carried. A neutral grey reads as a default nobody chose, and four of them a few points of lightness apart gave the console no depth: it read as flat and dull. The grounds now carry the accent's hue at a chroma of 0.018 at most in OKLCH, too little to be named and enough for the greys to belong to the blue. The accent is still the only colour a reader notices beside the states.</p>
+    </div>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The accent moved from <code>#015DA2</code> and <code>#68AEF5</code> to <code>#1957D2</code> and <code>#79A9FF</code>: the same blue with more chroma, set at the lightness of the state ramp in OKLCH, so that <code>running</code>, which borrows it, weighs as much as <code>succeeded</code> and <code>failed</code> beside it. Every role still clears 4.5:1 on every surface; the closest is <code>faint</code> on <code>sunken</code> on the light ground, at 4.51:1.</p>
+    </div>
+    <p>The drawings on this page use ten more colours, each a hairline, an ink or a pill's fill and ring worked out from the swatches above, and published with them in <a href="https://github.com/agentiik/design">agentiik/design</a>:</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Token</th><th>Dark</th><th>Light</th><th>Draws</th></tr></thead>
         <tbody>
-          <tr><td><code>line</code></td><td><code>#2E2E2E</code></td><td><code>#DFDFDF</code></td><td>The hairline of rows and dividers.</td></tr>
-          <tr><td><code>lineStrong</code></td><td><code>#3E3E3E</code></td><td><code>#C6C6C6</code></td><td>The outline of a control, a chip and a pane, and of the pill of a faint state, <code>queued</code>, <code>skipped</code> or <code>cancelled</code>, which is <code>sunken</code> inside.</td></tr>
-          <tr><td><code>accentLine</code></td><td><code>#1C4165</code></td><td><code>#A5C5E7</code></td><td>The outline of what <code>accentDim</code> fills: the <code>running</code> pill, the active view, the selected chip.</td></tr>
-          <tr><td><code>onAccent</code></td><td><code>#121212</code></td><td><code>#FFFFFF</code></td><td>The ink on a solid accent fill, a primary button's.</td></tr>
-          <tr><td><code>succeededFill</code><br><code>succeededLine</code></td><td><code>#132A1C</code><br><code>#264B33</code></td><td><code>#DCEBE0</code><br><code>#ADCDB9</code></td><td>The fill and outline of the <code>succeeded</code> pill.</td></tr>
-          <tr><td><code>waitingFill</code><br><code>waitingLine</code></td><td><code>#2E2413</code><br><code>#5B461E</code></td><td><code>#F4EAD3</code><br><code>#DBC69D</code></td><td>The fill and outline of the <code>waiting</code> pill.</td></tr>
-          <tr><td><code>failedFill</code><br><code>failedLine</code></td><td><code>#31190F</code><br><code>#5F3023</code></td><td><code>#F6E1D9</code><br><code>#E3B5A7</code></td><td>The fill and outline of the <code>failed</code> pill.</td></tr>
+          <tr><td><code>line</code></td><td><code>#24272B</code></td><td><code>#E0E3E8</code></td><td>The hairline between the rows of a list, and the ring of a tile.</td></tr>
+          <tr><td><code>lineStrong</code></td><td><code>#32363C</code></td><td><code>#CDD1D8</code></td><td>The ring of a control and a chip, the edge of a graph node, and the dots of the graph's ground.</td></tr>
+          <tr><td><code>accentLine</code></td><td><code>#28467D</code></td><td><code>#A8C5F9</code></td><td>The ring of what <code>accentDim</code> fills where it is a control: the selected chip.</td></tr>
+          <tr><td><code>onAccent</code></td><td><code>#0D0F14</code></td><td><code>#FFFFFF</code></td><td>The ink on a solid accent fill, a primary button's.</td></tr>
+          <tr><td><code>succeededFill</code><br><code>succeededLine</code></td><td><code>#112D1A</code><br><code>#224D2F</code></td><td><code>#DCF7E2</code><br><code>#A9D8B4</code></td><td>The fill of the <code>succeeded</code> pill, and the ring of what it fills where that is a pane.</td></tr>
+          <tr><td><code>waitingFill</code><br><code>waitingLine</code></td><td><code>#36250D</code><br><code>#5E4216</code></td><td><code>#FEEFCF</code><br><code>#EAC992</code></td><td>The fill of the <code>waiting</code> pill and of a count that waits on its reader, and the ring of what it fills where that is a pane.</td></tr>
+          <tr><td><code>failedFill</code><br><code>failedLine</code></td><td><code>#401D18</code><br><code>#6C352D</code></td><td><code>#FFE8E3</code><br><code>#F5BAB0</code></td><td>The fill of the <code>failed</code> pill and of a failed line of a log, and the ring of a step's reason.</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <h3 id="surfaces-and-depth">Surfaces and depth</h3>
+    <p>A screen has three depths and no more. The ground is <code>bg</code>, which the navigation lies on. The sheet is <code>surface</code>, raised above the ground by <code>shadowSheet</code>, and it holds the screen. What floats above the sheet, the palette, a menu, a popover, the graph's zoom tools, is filled with <code>glass</code> and lifted by <code>shadowFloat</code>, over a <code>scrim</code> where it takes the screen. Inside the sheet, <code>raised</code> sets off a tile, a control or the item open with a ring of <code>line</code> rather than a border.</p>
+  </div>
+
+  <figure class="ds-figure">
+    <div class="figbody ds">
+      <div class="ds-depth">
+        <div class="ds-ground"><b>Ground</b><code>bg</code>, no shadow. The sidebar and what it lists.</div>
+        <div class="ds-sheetdemo"><b>Sheet</b><code>surface</code> and <code>shadowSheet</code>. The screen.</div>
+        <div class="ds-floatdemo"><b>Float</b><code>glass</code> and <code>shadowFloat</code>. The palette, a menu, a popover.</div>
+      </div>
+      <div class="ds-radii">
+        <div><i style="border-radius:999px;height:22px;width:64px"></i>round, a state</div>
+        <div><i style="border-radius:8px"></i>control 8</div>
+        <div><i style="border-radius:10px"></i>node 10</div>
+        <div><i style="border-radius:12px"></i>card 12</div>
+        <div><i style="border-radius:14px"></i>sheet 14</div>
+      </div>
+    </div>
+    <figcaption><b>Three depths, five corners.</b> Each depth is a surface first and a shadow second, so that a screen still reads in a forced-colours mode that drops the shadows. Corners grow with what they round: a control is the smallest object with a corner, a sheet the largest.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Token</th><th>Dark</th><th>Light</th><th>Draws</th></tr></thead>
+        <tbody>
+          <tr><td><code>shadowSheet</code></td><td><code>0 0 0 1px #FFFFFF0F, 0 10px 30px -10px #000000B3</code></td><td><code>0 0 0 1px #161B230F, 0 1px 2px #161B230D, 0 6px 20px -8px #161B231A</code></td><td>The sheet above the ground, and the entry open in the sidebar.</td></tr>
+          <tr><td><code>shadowFloat</code></td><td><code>0 0 0 1px #FFFFFF17, 0 18px 48px -8px #000000BF</code></td><td><code>0 0 0 1px #161B2314, 0 12px 32px -6px #161B2338, 0 2px 6px #161B230F</code></td><td>What floats above the sheet.</td></tr>
+          <tr><td><code>glass</code></td><td><code>#1B1E23B8</code></td><td><code>#FFFFFFBD</code></td><td>The fill of what floats, behind a blur of 14 to 22px.</td></tr>
+          <tr><td><code>scrim</code></td><td><code>#00000073</code></td><td><code>#161B232E</code></td><td>The screen under the palette or a dialog.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plain">
+      <li>A shadow says that something is above something else, and nothing else: no card, row or button carries one for emphasis.</li>
+      <li>Glass is the fill of a floating layer and of nothing that holds content. A blurred ground behind a log or a table changes the contrast of every word with whatever scrolls beneath it.</li>
+      <li>A hairline of <code>line</code> separates the rows of a list and nothing else. A pane is set off by its surface and its ring.</li>
+      <li><code>agk console</code> takes the colours and none of the depth: a terminal cell has no shadow and no blur, so its panes stay bordered, as <a href="#terminal">Terminal console</a> draws them.</li>
+    </ul>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>Until v0.8.0 elevation was ground value plus a hairline, never a shadow. Four surfaces a few points of lightness apart could not tell a pane from the page behind it, so every pane, bar and row was outlined, and a screen became a grid of lines in which nothing came forward. A shadow is now allowed where something lies above something else, and only there, and two shadows are the whole set: depth stays a vocabulary of three words rather than a slider each component sets for itself.</p>
     </div>
 
     <h3 id="typography">Typography</h3>
@@ -12541,19 +12871,25 @@ resource "agentiik_workflow" "search" {
         <thead><tr><th>Role</th><th>Token</th><th>Face</th><th>Size and weight</th></tr></thead>
         <tbody>
           <tr><td>wordmark</td><td><code>wordmark</code></td><td>Archivo</td><td>16px / 700, tracking -0.02em, lowercase</td></tr>
-          <tr><td>page title</td><td><code>pageTitle</code></td><td>Archivo</td><td>20px / 600</td></tr>
+          <tr><td>page title</td><td><code>pageTitle</code></td><td>Archivo</td><td>26px / 600, width 112, tracking -0.015em</td></tr>
           <tr><td>section title</td><td><code>sectionTitle</code></td><td>Archivo</td><td>15px / 600</td></tr>
           <tr><td>navigation</td><td><code>navigation</code></td><td>Archivo</td><td>14px / 400, 600 when active</td></tr>
           <tr><td>control</td><td><code>control</code></td><td>Archivo</td><td>13.5px / 500</td></tr>
           <tr><td>body and secondary</td><td><code>body</code></td><td>Archivo</td><td>14px / 400</td></tr>
           <tr><td>column head</td><td><code>columnHead</code></td><td>Archivo</td><td>12.5px / 600, sentence case</td></tr>
           <tr><td>name and figure</td><td><code>name</code></td><td>Archivo</td><td>14px / 500, figures of one width</td></tr>
+          <tr><td>headline figure</td><td><code>metric</code></td><td>Archivo</td><td>34px / 600, width 104, tracking -0.02em, figures of one width</td></tr>
           <tr><td>identifier</td><td><code>identifier</code></td><td>JetBrains Mono</td><td>12 to 13px / 400</td></tr>
           <tr><td>code and payload</td><td><code>code</code></td><td>JetBrains Mono</td><td>12.5px / 400, line height 19 to 20px</td></tr>
         </tbody>
       </table>
     </div>
     <p>Two faces, no third, both published by Google Fonts, each behind a system fallback stack. The design system's tokens name Google Fonts as where they are served from, its specimen sheet loads them there, and so does this site (<a href="../legal/index.html">Legal notice</a>). A client serves its own copies instead where who opens it is private, since a font service would learn who opens it and when: the web console does, its Content-Security-Policy letting it load fonts from its own origin alone, <code>font-src 'self'</code> (<a href="#ui">Web console</a>). Code is monospaced, and nothing else: run identifiers, commits, image references and digests, exit codes, cron expressions, YAML, JSON and logs, what a person copies, diffs or compares with a log character by character. Names and figures are Archivo: namespaces, workflow, step and port names, logins, permission names, times, durations and counts, a name at 500 and every figure of one width, so that a column of them lines up as a monospaced one would.</p>
+    <p>Archivo is served as its variable font, whose width axis runs from 62 to 125, and two roles use it: a page title is set at 112 and a headline figure at 104, so that each stands apart from the text by its shape as well as by its size, without a third face. Every other role keeps the normal width, 100.</p>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The page title grew from 20px to 26px and took a wider cut. At 20px beside a body of 14px a screen had no point the eye went to first, and a heavier weight would have darkened it rather than set it apart. Width does that without a third face or a weight the system does not have.</p>
+    </div>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p>The web console first set every name and figure in JetBrains Mono, as <code>agk console</code> sets everything in a terminal's one face. In a browser a screen of monospaced names reads as a terminal drawn in a page: wider, denser and slower to scan than the same names in a face drawn for reading, with nothing gained, since a namespace or a login is read as a word rather than compared character by character. A monospace earns its width where characters are compared one by one, a digest against a digest, a line of a log against the line of a file, and that is code. Figures of one width keep what a column of times or counts needs without it.</p>
@@ -12664,26 +13000,220 @@ resource "agentiik_workflow" "search" {
         <thead><tr><th>Measure</th><th>Value</th></tr></thead>
         <tbody>
           <tr><td>base unit</td><td>2px. Common gaps are 6, 8, 10, 14 and 18.</td></tr>
-          <tr><td>sidebar</td><td>232px down the left, 56px folded to its icons: the mark, on a row of 52px at its top, the home, the caller's notifications with their count, the namespace switcher, the namespace's views, what an administrator manages and the principal's name, which opens their account, the theme, signing out and the version the console runs. Drawn whole from 1100px, unless its reader folds it; folded under 1100px whatever was chosen; under 760px, a phone's width, a drawer opened over the screen from the trail's line.</td></tr>
+          <tr><td>sidebar</td><td>232px down the left, 56px folded to its icons, lying on <code>bg</code> with no border or fill of its own and its entries in <code>muted</code>, so that it recedes behind the screen, the entry open <code>raised</code> in <code>text</code>: the mark, on a row of 52px at its top, the home, the caller's notifications with their count, the namespace switcher, the namespace's views, what an administrator manages and the principal's name, which opens their account, the theme, signing out and the version the console runs. Drawn whole from 1100px, unless its reader folds it; folded under 1100px whatever was chosen; under 760px, a phone's width, a drawer opened over the screen from the trail's line.</td></tr>
           <tr><td>scrolling</td><td>The page scrolls as a document, by the window's own scrollbar, and the sidebar stays in the window as it does; what scrolls inside a pane is a list, a log or a graph longer than the pane. A menu opens beside its button above everything on the page, the sidebar's edge cutting none of it.</td></tr>
           <tr><td>page width</td><td>A screen's content is at most 1280px wide, centred in the room the sidebar leaves, and sets at most two columns side by side. Wider, a table's line runs further than the eye follows from its name to its last cell, and a third column puts what is read together a screen's width apart; a wide window shows the same page with more margin.</td></tr>
           <tr><td>narrow windows</td><td>Under 760px the screen takes the window's width with a 16px gutter, the trail's line runs from edge to edge and stays at the top as the screen scrolls, the trail keeps the screen's own name, columns side by side go one above the other, and a table wider than the window scrolls inside its pane rather than the page.</td></tr>
-          <tr><td>trail</td><td>A line of 32px at the top of the screen itself, no bar of its own: where the screen is as a trail of links, and none on the home, whose trail would be its own name alone. Sub-navigation and filter bars 48px.</td></tr>
-          <tr><td>pane</td><td>A card bordered at 1px with 7px corners, its title and what it counts on a row of their own above a hairline, the pane in focus bordered in the accent.</td></tr>
+          <tr><td>sheet</td><td>The screen is drawn on a sheet of <code>surface</code> raised by <code>shadowSheet</code>, 8px from the window's edges and from the sidebar, with corners of 14px. Under 760px it takes the window's width, with neither corners nor margin.</td></tr>
+          <tr><td>trail</td><td>The sheet's top row, 52px: where the screen is as a trail of links on the left, none on the home, whose trail would be its own name alone; the search field on the right, which opens the palette as <code>:</code> does. Sub-navigation and filter bars 48px.</td></tr>
+          <tr><td>pane</td><td>A tile of <code>raised</code> ringed in <code>line</code>, with 12px corners, its title and what it counts on a row of their own, the pane in focus ringed in the accent.</td></tr>
           <tr><td>keys</td><td>No line of their own: <code>?</code> lists the keys of the view, each named by its effect, in a panel at the foot of the window.</td></tr>
           <tr><td>table row</td><td>44px, header 36px, footer 40px.</td></tr>
           <tr><td>content padding</td><td>18px on the page, 14px inside a panel.</td></tr>
-          <tr><td>radii</td><td>3px state pill, 4px role and code chip, 5px control, 6px graph node and inner panel, 7px card, fully round on filter chips and on workflow input and output chips.</td></tr>
-          <tr><td>borders</td><td>1px everywhere. 1.5px is reserved for a graph node and 2.5px for the element that carries the current focus.</td></tr>
+          <tr><td>radii</td><td>Fully round on a state pill, a filter chip and a workflow's input and output chips; 4px code chip; 8px control and role chip; 10px graph node and inner panel; 12px card and pane; 14px sheet; 16px dialog and palette.</td></tr>
+          <tr><td>borders</td><td>1px, drawn as a ring rather than a border so that it takes no room. 1.5px is reserved for a graph node and 2.5px for the element that carries the current focus.</td></tr>
         </tbody>
       </table>
     </div>
-    <p><a href="https://github.com/agentiik/design">agentiik/design</a> publishes these measures as <code>unit</code>, <code>window.compact</code>, <code>window.narrow</code>, <code>bar.top</code>, <code>bar.sub</code>, <code>bar.keyLine</code>, <code>sidebar.width</code>, <code>sidebar.collapsed</code>, <code>row.body</code>, <code>row.header</code>, <code>row.footer</code>, <code>padding.page</code>, <code>padding.panel</code>, <code>radius.pill</code>, <code>radius.chip</code>, <code>radius.control</code>, <code>radius.node</code>, <code>radius.innerPanel</code>, <code>radius.pane</code>, <code>radius.card</code>, <code>radius.round</code>, <code>border.hairline</code>, <code>border.node</code> and <code>border.focus</code>.</p>
+    <p><a href="https://github.com/agentiik/design">agentiik/design</a> publishes these measures as <code>unit</code>, <code>window.compact</code>, <code>window.narrow</code>, <code>bar.top</code>, <code>bar.sub</code>, <code>bar.keyLine</code>, <code>sidebar.width</code>, <code>sidebar.collapsed</code>, <code>row.body</code>, <code>row.header</code>, <code>row.footer</code>, <code>padding.page</code>, <code>padding.panel</code>, <code>radius.pill</code>, <code>radius.chip</code>, <code>radius.control</code>, <code>radius.node</code>, <code>radius.innerPanel</code>, <code>radius.pane</code>, <code>radius.card</code>, <code>radius.sheet</code>, <code>radius.dialog</code>, <code>radius.round</code>, <code>border.hairline</code>, <code>border.node</code> and <code>border.focus</code>.</p>
     <div class="decision">
       <span class="note-label">Decision</span>
       <p><code>bar.top</code> and <code>bar.keyLine</code> keep the names they were published under when they measured the bar across the top of the screen and the line of keys at its foot, which the sidebar and the trail took the place of: <code>bar.top</code> is now the row of the sidebar that holds the mark, and <code>bar.keyLine</code> the trail's line. A token's name is what a client pins, the web console's copy of the tokens among them, so renaming the two would break every client for a word, where saying here what each measures costs no client anything.</p>
     </div>
 
+
+    <h3 id="motion">Motion</h3>
+    <p>What runs moves, and nothing else does. In a workflow engine whether something is still running is the first question a screen is asked, and a word in the accent answers it less quickly than a dot that breathes.</p>
+  </div>
+
+  <figure class="ds-figure">
+    <div class="figbody ds">
+      <div class="ds-motion">
+        <div class="ds-m"><code>motion.dur1</code><span class="ds-num">120 ms</span><div class="ds-track ds-d1"><i></i></div></div>
+        <div class="ds-m"><code>motion.dur2</code><span class="ds-num">200 ms</span><div class="ds-track ds-d2"><i></i></div></div>
+        <div class="ds-m"><code>motion.dur3</code><span class="ds-num">320 ms</span><div class="ds-track ds-d3"><i></i></div></div>
+      </div>
+      <div class="ds-live">
+        <span><span class="ds-pill ds-p-running">running</span>the dot breathes</span>
+        <span><span class="ds-progress"><i style="width:62%"></i></span>a running step's bar sweeps</span>
+        <span><svg viewBox="0 0 120 20" aria-hidden="true"><path class="ds-edge ds-flow" d="M4 10 H116"/></svg>an edge carrying items flows</span>
+      </div>
+    </div>
+    <figcaption><b>Three durations, two curves, slowed here to be seen.</b> The tracks run several times slower than the console does. Below them, the three things that move because something runs; each stops when its run ends. Under a reduced-motion preference none of them moves.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Token</th><th>Value</th><th>Moves</th></tr></thead>
+        <tbody>
+          <tr><td><code>motion.dur1</code></td><td>120ms, <code>motion.easeOut</code></td><td>A hover, a press, a row selected.</td></tr>
+          <tr><td><code>motion.dur2</code></td><td>200ms, <code>motion.easeOut</code></td><td>A menu or a popover opening, a row unfolding, a tab's marker moving.</td></tr>
+          <tr><td><code>motion.dur3</code></td><td>320ms, <code>motion.easeSpring</code></td><td>The palette and a dialog arriving, and a change of screen through the View Transitions API, the row opened carried into the screen it opens.</td></tr>
+          <tr><td><code>motion.easeOut</code></td><td><code>cubic-bezier(.2, .8, .2, 1)</code></td><td>Fast to start, slow to settle: what answers a hand.</td></tr>
+          <tr><td><code>motion.easeSpring</code></td><td><code>cubic-bezier(.34, 1.36, .64, 1)</code></td><td>A slight overshoot: what arrives from elsewhere.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plain">
+      <li>Motion carries a state or a change of place, never decoration. Nothing moves on a screen where nothing runs.</li>
+      <li>Under <code>prefers-reduced-motion</code> nothing moves, and nothing is lost: a state keeps its dot and its word, which is why no state is told by its motion alone.</li>
+      <li>Nothing waits on an animation: a click acts at once and the motion follows it.</li>
+    </ul>
+    <div class="decision">
+      <span class="note-label">Decision</span>
+      <p>The system had no motion before v0.8.0, and a run that was running and a run that had ended differed by the colour of a word. Motion is admitted as the live state's own signal and kept to it: three durations and two curves, and only three things that move for as long as something runs. A screen that animates everything teaches its reader to ignore movement, and then the one that matters goes unseen.</p>
+    </div>
+
+    <h3 id="the-console-drawn">The console, drawn</h3>
+    <p>Four screens of the web console drawn with the tokens above, in HTML rather than in pictures, so that they move as the console does and follow the reader's ground. What each screen holds is the <a href="#ui">Web console</a> chapter's; these show how the system draws it.</p>
+  </div>
+  <svg class="ds-sprite" width="0" height="0" aria-hidden="true" focusable="false"><defs><symbol id="ds-home" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.25 7.25 8 2.75l5.75 4.5"/><path d="M3.75 6.25v7h8.5v-7"/><path d="M6.5 13.25V10h3v3.25"/></g></symbol><symbol id="ds-bell" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.75V7.5a4 4 0 0 1 8 0v3.25l1.25 1.5H2.75zM6.5 13.75a1.5 1.5 0 0 0 3 0"/></g></symbol><symbol id="ds-wf" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="1.75" width="5" height="3" rx="1"/><rect x="1.75" y="11.25" width="5" height="3" rx="1"/><rect x="9.25" y="11.25" width="5" height="3" rx="1"/><path d="M8 4.75V8M4.25 11.25V9.5c0-.83.67-1.5 1.5-1.5h4.5c.83 0 1.5.67 1.5 1.5v1.75"/></g></symbol><symbol id="ds-stats" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.25 13.75h11.5"/><path d="M4.5 11V8.25M8 11V3.75M11.5 11V6"/></g></symbol><symbol id="ds-share" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2.5"/><path d="M1.75 13.5a4.25 4.25 0 0 1 8.5 0M12.25 5.5V10M10 7.75h4.5"/></g></symbol><symbol id="ds-vars" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2.75h-.5c-.83 0-1.25.42-1.25 1.25v2.25c0 .9-.4 1.5-1.25 1.75.85.25 1.25.85 1.25 1.75v2.25c0 .83.42 1.25 1.25 1.25h.5M11 2.75h.5c.83 0 1.25.42 1.25 1.25v2.25c0 .9.4 1.5 1.25 1.75-.85.25-1.25.85-1.25 1.75v2.25c0 .83-.42 1.25-1.25 1.25h-.5M6.5 6.25l3 3.5M9.5 6.25l-3 3.5"/></g></symbol><symbol id="ds-settings" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.75 4.75h5.25M11.5 4.75h1.75M2.75 11.25h1.75M8 11.25h5.25"/><circle cx="9.75" cy="4.75" r="1.75"/><circle cx="6.25" cy="11.25" r="1.75"/></g></symbol><symbol id="ds-search" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.25 3.25"/></g></symbol><symbol id="ds-runners" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.25" y="2.25" width="11.5" height="4.75" rx="1"/><rect x="2.25" y="9" width="11.5" height="4.75" rx="1"/><path d="M4.75 4.625h1M4.75 11.375h1"/></g></symbol><symbol id="ds-users" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.25" r="2.75"/><path d="M2.75 13.75c.55-2.6 2.6-4.25 5.25-4.25s4.7 1.65 5.25 4.25"/></g></symbol><symbol id="ds-replay" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.25a5.25 5.25 0 1 1-.75 2.75M3.25 2v3.5h3.5"/></g></symbol><symbol id="ds-run" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.25v9.5l7.5-4.75z"/></g></symbol><symbol id="ds-cancel" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="3.75" width="8.5" height="8.5" rx="1.5"/></g></symbol><symbol id="ds-more" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="3.5" cy="8" r=".75"/><circle cx="8" cy="8" r=".75"/><circle cx="12.5" cy="8" r=".75"/></g></symbol><symbol id="ds-filter" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3.25h11l-4.25 5v4.5l-2.5 1.25V8.25z"/></g></symbol><symbol id="ds-fit" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.75 5.75v-3h3M10.25 2.75h3v3M13.25 10.25v3h-3M5.75 13.25h-3v-3"/></g></symbol><symbol id="ds-plus" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.25 3.25M7 5v4M5 7h4"/></g></symbol><symbol id="ds-minus" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.25 3.25M5 7h4"/></g></symbol><symbol id="ds-chev" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6l4.5 4.5L12.5 6"/></g></symbol><symbol id="ds-diff" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.75v5M5.5 5.25h5M5.5 11.75h5"/></g></symbol><symbol id="ds-edit" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.75l2.75 2.75-7.75 7.75H2.75V10.5zM8.75 4.5l2.75 2.75"/></g></symbol><symbol id="ds-schedule" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.25" y="3.25" width="11.5" height="10.5" rx="1.5"/><path d="M2.25 6.75h11.5M5.5 1.75v3M10.5 1.75v3"/></g></symbol><symbol id="ds-manual" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 2.75l8.5 4.75-3.75 1-1.75 3.75z"/></g></symbol><symbol id="ds-webhook" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="3.25" r="1.5"/><path d="M8 4.75v5.5a2.75 2.75 0 0 1-5.5 0V9M2.5 9l1.75 1.25"/></g></symbol><symbol id="ds-mcp" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 1.75v3M10 1.75v3M4.25 4.75h7.5v2.5a3.75 3.75 0 0 1-7.5 0zM8 11v3.25"/></g></symbol><symbol id="ds-mark" viewBox="0 0 16 14"><rect x="0" y="0" width="16" height="4" rx="1"/><g opacity="0.62"><rect x="0" y="6" width="7" height="4" rx="1"/><rect x="9" y="6" width="7" height="4" rx="1"/></g><g opacity="0.3"><rect x="0" y="12" width="16" height="2" rx="1"/></g></symbol></defs></svg>
+
+  <figure class="ds-figure console">
+    <div class="figbody ds ds-fit"><div class="ds-win" role="img" aria-label="The home: Needs your attention with two failed runs and one timed out, the two runs running now, the last seven days, the namespaces and finance's workflows."><div class="ds-shell"><div class="ds-side"><div class="ds-brand"><svg viewBox="0 0 16 14" aria-hidden="true"><use href="#ds-mark"/></svg>agentiik</div><div class="ds-nav ds-on"><svg class="ds-i" aria-hidden="true"><use href="#ds-home"/></svg>Home</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-bell"/></svg>Notifications<span class="ds-count">1</span></div><div class="ds-ns"><span class="ds-av">F</span>finance<svg class="ds-i ds-chev" aria-hidden="true"><use href="#ds-chev"/></svg></div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-wf"/></svg>Workflows</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-stats"/></svg>Statistics</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-share"/></svg>Sharing</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-vars"/></svg>Variables</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-settings"/></svg>Settings</div><div class="ds-foot"><span class="ds-me">A</span>Alice Martin</div></div><div class="ds-sheet">
+<div class="ds-bar"><div class="ds-search"><svg class="ds-i" aria-hidden="true"><use href="#ds-search"/></svg>Search<kbd>:</kbd></div></div>
+<div class="ds-content">
+<div class="ds-ptitle"><span class="ds-faceav">A</span><div><div class="ds-h">Alice Martin</div><span class="ds-sub">alice.martin@example.com</span></div></div>
+<div class="ds-bento">
+<div class="ds-tile ds-s4"><div class="ds-th">Needs your attention<span class="ds-more">All · Failed · waiting</span></div>
+<div class="ds-attn">
+<div class="ds-row"><span class="ds-pill ds-p-failed">failed</span><span class="ds-cell"><span class="ds-wf">finance/monthly-invoicing</span><span class="ds-why"><span class="ds-idt">T7SCFS88</span> · 05:41:03 · manual by alice · 1m 52s</span></span><span class="ds-ctl ds-sm"><svg class="ds-i" aria-hidden="true"><use href="#ds-replay"/></svg>Replay from this step</span></div>
+<div class="ds-row"><span class="ds-pill ds-p-failed">failed</span><span class="ds-cell"><span class="ds-wf">finance/dunning-reminders</span><span class="ds-why"><span class="ds-idt">PKR8F1WX</span> · 05:30:00 · schedule by finance/agentiik · 22s</span></span><span class="ds-ctl ds-sm">Open</span></div>
+<div class="ds-row"><span class="ds-pill ds-p-timed_out">timed_out</span><span class="ds-cell"><span class="ds-wf">finance/vat-reconcile</span><span class="ds-why"><span class="ds-idt">3BG0Q5VQ</span> · 01:18:39 · event by finance/agentiik · 9m 51s</span></span><span class="ds-ctl ds-sm">Open</span></div>
+</div></div>
+<div class="ds-tile ds-s2"><div class="ds-th">Running now</div>
+<div class="ds-livelist">
+<div class="ds-lr"><span class="ds-wf">monthly-invoicing</span><span class="ds-pill ds-p-running">running</span><span class="ds-why">normalize · RHBMTQCS</span><span class="ds-idt ds-num">4m 18s</span><div class="ds-progress"><i style="width:34%"></i></div></div>
+<div class="ds-lr"><span class="ds-wf">ledger-export</span><span class="ds-pill ds-p-running">running</span><span class="ds-why">webhook · step 3 of 4</span><span class="ds-idt ds-num">2m 10s</span><div class="ds-progress"><i style="width:72%"></i></div></div>
+</div></div>
+<div class="ds-tile ds-s2"><div class="ds-th">Last 7 days</div>
+<div class="ds-big">174<small>runs</small> <span class="ds-bad">18</span><small>failed</small></div>
+<div class="ds-bars" aria-hidden="true"><span><i style="height:30px"></i><i class="ds-f" style="height:3px"></i></span><span><i style="height:38px"></i><i class="ds-f" style="height:2px"></i></span><span><i style="height:26px"></i><i class="ds-f" style="height:5px"></i></span><span><i style="height:44px"></i><i class="ds-f" style="height:3px"></i></span><span><i style="height:40px"></i><i class="ds-f" style="height:2px"></i></span><span><i style="height:14px"></i><i class="ds-f" style="height:1px"></i></span><span><i style="height:34px"></i><i class="ds-f" style="height:4px"></i></span></div>
+<div class="ds-axis"><span>Sat</span><span>Fri</span></div></div>
+<div class="ds-tile ds-s2"><div class="ds-th">Namespaces</div>
+<div class="ds-list">
+<div class="ds-r"><span class="ds-av">A</span><span class="ds-wf">alice</span><span class="ds-ago">10 runs</span></div>
+<div class="ds-r"><span class="ds-av">F</span><span class="ds-wf">finance</span><span class="ds-ago">120 runs</span></div>
+<div class="ds-r"><span class="ds-av">T</span><span class="ds-wf">team-ops</span><span class="ds-ago">44 runs</span></div>
+</div></div>
+<div class="ds-tile ds-s2"><div class="ds-th">Workflows<span class="ds-more">finance</span></div>
+<div class="ds-list">
+<div class="ds-r ds-w"><span class="ds-wf">monthly-invoicing</span><span class="ds-hist"><i></i><i></i><i></i><i></i><i class="ds-f"></i><i></i><i class="ds-f"></i><i class="ds-r"></i></span></div>
+<div class="ds-r ds-w"><span class="ds-wf">ledger-export</span><span class="ds-hist"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="ds-r"></i></span></div>
+<div class="ds-r ds-w"><span class="ds-wf">dunning-reminders</span><span class="ds-hist"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="ds-f"></i></span></div>
+</div></div>
+</div></div></div></div></div></div>
+    <figcaption><b>The home.</b> The sidebar lies on the ground, borderless, the entry open raised above it. The home answers in the order a person asks: what waits for me, what is running, how the week went, then where to go. A failed run offers the act that deals with it.</figcaption>
+  </figure>
+
+
+  <figure class="ds-figure console">
+    <div class="figbody ds ds-fit"><div class="ds-win" role="img" aria-label="The Runs tab of finance/monthly-invoicing: six runs grouped by day, the failed one selected and the next one under the pointer."><div class="ds-shell"><div class="ds-side"><div class="ds-brand"><svg viewBox="0 0 16 14" aria-hidden="true"><use href="#ds-mark"/></svg>agentiik</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-home"/></svg>Home</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-bell"/></svg>Notifications<span class="ds-count">1</span></div><div class="ds-ns"><span class="ds-av">F</span>finance<svg class="ds-i ds-chev" aria-hidden="true"><use href="#ds-chev"/></svg></div><div class="ds-nav ds-on"><svg class="ds-i" aria-hidden="true"><use href="#ds-wf"/></svg>Workflows</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-stats"/></svg>Statistics</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-share"/></svg>Sharing</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-vars"/></svg>Variables</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-settings"/></svg>Settings</div><div class="ds-foot"><span class="ds-me">A</span>Alice Martin</div></div><div class="ds-sheet">
+<div class="ds-bar"><div class="ds-crumbs"><span>finance</span><span class="ds-slash">/</span><span>Workflows</span><span class="ds-slash">/</span><span class="ds-cur">monthly-invoicing</span></div><div class="ds-search"><svg class="ds-i" aria-hidden="true"><use href="#ds-search"/></svg>Search<kbd>:</kbd></div></div>
+<div class="ds-content">
+<div class="ds-ptitle"><div class="ds-h">monthly-invoicing</div><span class="ds-sub"><span class="ds-mono">main</span> · <span class="ds-mono">a3f9c1e</span> · schedule <span class="ds-mono">0 6 1 * *</span></span><div class="ds-acts"><span class="ds-ctl"><svg class="ds-i" aria-hidden="true"><use href="#ds-edit"/></svg>Edit</span><span class="ds-ctl ds-primary"><svg class="ds-i" aria-hidden="true"><use href="#ds-run"/></svg>Run</span></div></div>
+<div class="ds-filters"><span class="ds-chip ds-on">Runs</span><span class="ds-chip">Graph</span><span class="ds-chip">Files</span><span class="ds-chip">Statistics</span><span class="ds-chip">Settings</span><span class="ds-gap"></span><span class="ds-chip"><svg class="ds-i" aria-hidden="true"><use href="#ds-filter"/></svg>State <b>any</b></span><span class="ds-chip">Last <b>7 days</b></span></div>
+<table class="ds-runs">
+<colgroup><col style="width:116px"><col style="width:100px"><col style="width:176px"><col><col style="width:80px"><col style="width:80px"><col style="width:84px"></colgroup>
+<thead><tr><th>State</th><th>Run</th><th>Started by</th><th>Steps</th><th class="ds-right">Took</th><th class="ds-right">At</th><th></th></tr></thead>
+<tbody>
+<tr class="ds-group"><td colspan="7">Today</td></tr>
+<tr><td><span class="ds-pill ds-p-running">running</span></td><td class="ds-idt">RHBMTQCS</td><td><span class="ds-trig"><svg class="ds-i" aria-hidden="true"><use href="#ds-schedule"/></svg>finance/agentiik</span></td><td><span class="ds-steps"><i class="ds-r" style="flex:1"></i><i class="ds-p" style="flex:3"></i><i class="ds-p" style="flex:1"></i></span></td><td class="ds-right ds-num">4m 18s</td><td class="ds-right ds-ago">06:00:12</td><td class="ds-right"><span class="ds-rowacts"><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-cancel"/></svg></span></span></td></tr>
+<tr class="ds-sel"><td><span class="ds-pill ds-p-failed">failed</span></td><td class="ds-idt">T7SCFS88</td><td><span class="ds-trig"><svg class="ds-i" aria-hidden="true"><use href="#ds-manual"/></svg>alice</span></td><td><span class="ds-steps"><i class="" style="flex:1"></i><i class="ds-f" style="flex:3"></i><i class="ds-p" style="flex:1"></i></span></td><td class="ds-right ds-num">1m 52s</td><td class="ds-right ds-ago">05:41:03</td><td class="ds-right"><span class="ds-rowacts"><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-replay"/></svg></span><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-more"/></svg></span></span></td></tr>
+<tr class="ds-hov"><td><span class="ds-pill ds-p-succeeded">succeeded</span></td><td class="ds-idt">9QX2KD4M</td><td><span class="ds-trig"><svg class="ds-i" aria-hidden="true"><use href="#ds-mcp"/></svg>alice</span></td><td><span class="ds-steps"><i class="" style="flex:1"></i><i class="" style="flex:3"></i><i class="" style="flex:1"></i></span></td><td class="ds-right ds-num">2m 04s</td><td class="ds-right ds-ago">03:12:40</td><td class="ds-right"><span class="ds-rowacts"><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-replay"/></svg></span><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-more"/></svg></span></span></td></tr>
+<tr class="ds-group"><td colspan="7">Yesterday</td></tr>
+<tr><td><span class="ds-pill ds-p-succeeded">succeeded</span></td><td class="ds-idt">4ZP7HN2C</td><td><span class="ds-trig"><svg class="ds-i" aria-hidden="true"><use href="#ds-schedule"/></svg>finance/agentiik</span></td><td><span class="ds-steps"><i class="" style="flex:1"></i><i class="" style="flex:3"></i><i class="" style="flex:1"></i></span></td><td class="ds-right ds-num">1m 58s</td><td class="ds-right ds-ago">06:00:09</td><td class="ds-right"><span class="ds-rowacts"><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-more"/></svg></span></span></td></tr>
+<tr><td><span class="ds-pill ds-p-cancelled">cancelled</span></td><td class="ds-idt">W8FJ3R6T</td><td><span class="ds-trig"><svg class="ds-i" aria-hidden="true"><use href="#ds-webhook"/></svg>finance/agentiik</span></td><td><span class="ds-steps"><i class="" style="flex:1"></i><i class="ds-p" style="flex:3"></i><i class="ds-p" style="flex:1"></i></span></td><td class="ds-right ds-num">31s</td><td class="ds-right ds-ago">14:20:51</td><td class="ds-right"><span class="ds-rowacts"><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-more"/></svg></span></span></td></tr>
+<tr><td><span class="ds-pill ds-p-succeeded">succeeded</span></td><td class="ds-idt">M2C9VB7E</td><td><span class="ds-trig"><svg class="ds-i" aria-hidden="true"><use href="#ds-schedule"/></svg>finance/agentiik</span></td><td><span class="ds-steps"><i class="" style="flex:1"></i><i class="" style="flex:3"></i><i class="" style="flex:1"></i></span></td><td class="ds-right ds-num">2m 11s</td><td class="ds-right ds-ago">06:00:10</td><td class="ds-right"><span class="ds-rowacts"><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-more"/></svg></span></span></td></tr>
+</tbody></table>
+</div></div></div></div></div>
+    <figcaption><b>A workflow's runs.</b> The workflow's views are chips above the list, its filters beside them. Hairlines part the rows and nothing else; the row selected and the row under the pointer are rounded grounds rather than outlines. A run started through MCP says so as a manual one names its person.</figcaption>
+  </figure>
+
+
+  <figure class="ds-figure console">
+    <div class="figbody ds ds-fit"><div class="ds-win" role="img" aria-label="The run inspector of a failed run of monthly-invoicing: the graph with invoice ringed in red and its eight shards, a timeline of its two attempts, and the failed shard's reason, image, runner and log."><div class="ds-shell"><div class="ds-side"><div class="ds-brand"><svg viewBox="0 0 16 14" aria-hidden="true"><use href="#ds-mark"/></svg>agentiik</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-home"/></svg>Home</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-bell"/></svg>Notifications<span class="ds-count">1</span></div><div class="ds-ns"><span class="ds-av">F</span>finance<svg class="ds-i ds-chev" aria-hidden="true"><use href="#ds-chev"/></svg></div><div class="ds-nav ds-on"><svg class="ds-i" aria-hidden="true"><use href="#ds-wf"/></svg>Workflows</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-stats"/></svg>Statistics</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-share"/></svg>Sharing</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-vars"/></svg>Variables</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-settings"/></svg>Settings</div><div class="ds-foot"><span class="ds-me">A</span>Alice Martin</div></div><div class="ds-sheet">
+<div class="ds-bar"><div class="ds-crumbs"><span>finance</span><span class="ds-slash">/</span><span>monthly-invoicing</span><span class="ds-slash">/</span><span>Runs</span><span class="ds-slash">/</span><span class="ds-cur"><span class="ds-mono">T7SCFS88</span></span></div><div class="ds-search"><svg class="ds-i" aria-hidden="true"><use href="#ds-search"/></svg>Search<kbd>:</kbd></div></div>
+<div class="ds-content" style="padding-bottom:14px">
+<div class="ds-ptitle"><div class="ds-h ds-mono">01M3RD99CRBVD3SR2VT7SCFS88</div><span class="ds-pill ds-p-failed">failed</span><span class="ds-sub">manual by alice · <span class="ds-mono">a3f9c1e</span> · 1m 52s</span></div>
+<div class="ds-filters"><span class="ds-ctl ds-primary"><svg class="ds-i" aria-hidden="true"><use href="#ds-replay"/></svg>Replay from this step</span><span class="ds-ctl"><svg class="ds-i" aria-hidden="true"><use href="#ds-replay"/></svg>Replay from the start</span><span class="ds-ctl"><svg class="ds-i" aria-hidden="true"><use href="#ds-diff"/></svg>Compare with another run</span></div>
+</div>
+<div class="ds-insp"><div class="ds-left">
+<div class="ds-canvas"><div class="ds-tools"><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-minus"/></svg></span><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-plus"/></svg></span><span class="ds-ib"><svg class="ds-i" aria-hidden="true"><use href="#ds-fit"/></svg></span></div>
+<svg class="ds-graph" viewBox="0 0 640 250" aria-hidden="true">
+<path class="ds-edge" d="M188 118 C 224 118, 224 118, 260 118"/>
+<path class="ds-edge" d="M188 150 C 220 150, 230 214, 260 214" style="stroke-dasharray:4 4"/>
+<path class="ds-edge" d="M440 118 C 470 118, 470 118, 500 118"/>
+<g><rect class="ds-box" x="16" y="86" width="172" height="88" rx="10"/><circle cx="36" cy="108" r="4" fill="var(--d-succeeded)"/><text x="48" y="112">normalize</text><text class="ds-gs" x="32" y="134">succeeded · 1s</text><text class="ds-gp" x="176" y="122" text-anchor="end">ok</text><circle cx="188" cy="118" r="4" fill="var(--d-accent)"/><text class="ds-gp" x="176" y="154" text-anchor="end">rejected</text><circle cx="188" cy="150" r="4" fill="var(--d-accent)"/></g>
+<g class="ds-fail"><rect class="ds-ring" x="260" y="70" width="180" height="96" rx="12"/><rect class="ds-box" x="260" y="70" width="180" height="96" rx="10"/><circle cx="260" cy="118" r="4" fill="var(--d-accent)"/><circle cx="280" cy="92" r="4" fill="var(--d-failed)"/><text x="292" y="96">invoice</text><text class="ds-gs" x="276" y="118">8 shards · attempt 2</text><rect class="ds-shard" x="300" y="132" width="12" height="6" rx="1.5"/><rect class="ds-shard" x="315" y="132" width="12" height="6" rx="1.5"/><rect class="ds-shard ds-f" x="330" y="132" width="12" height="6" rx="1.5"/><rect class="ds-shard" x="345" y="132" width="12" height="6" rx="1.5"/><rect class="ds-shard" x="360" y="132" width="12" height="6" rx="1.5"/><rect class="ds-shard" x="375" y="132" width="12" height="6" rx="1.5"/><rect class="ds-shard" x="390" y="132" width="12" height="6" rx="1.5"/><rect class="ds-shard" x="405" y="132" width="12" height="6" rx="1.5"/><text class="ds-gp" x="428" y="122" text-anchor="end">out</text><circle cx="440" cy="118" r="4" fill="var(--d-accent)"/><text class="ds-gp ds-gf" x="428" y="152" text-anchor="end">error</text><circle cx="440" cy="148" r="4" fill="var(--d-failed)"/></g>
+<g><rect class="ds-box" x="500" y="90" width="124" height="56" rx="10" style="stroke-dasharray:4 4"/><circle cx="500" cy="118" r="4" fill="var(--d-raised)" stroke="var(--d-lineStrong)" stroke-width="1.5"/><circle cx="518" cy="110" r="4" fill="none" stroke="var(--d-muted)" stroke-width="1.5"/><text x="530" y="114">archive</text><text class="ds-gs" x="514" y="134">not reached</text></g>
+<g><rect class="ds-box" x="260" y="196" width="124" height="36" rx="10" style="stroke-dasharray:4 4"/><circle cx="260" cy="214" r="4" fill="var(--d-raised)" stroke="var(--d-lineStrong)" stroke-width="1.5"/><text class="ds-gs" x="276" y="218">archive · rejected</text></g>
+</svg></div>
+<div class="ds-timeline"><div class="ds-th">Timeline <span class="ds-idt">05:41:03 to 05:42:55</span></div>
+<div class="ds-tl"><span>normalize</span><div class="ds-lane"><span class="ds-seg ds-s" style="left:0;width:1.5%"></span></div>
+<span>invoice</span><div class="ds-lane"><span class="ds-seg ds-a" style="left:2%;width:28%"></span><span class="ds-seg ds-f" style="left:31%;width:69%"></span></div>
+<span style="color:var(--d-faint)">archive</span><div class="ds-lane"></div>
+<span></span><div class="ds-ticks"><span>0:00</span><span>0:30</span><span>1:00</span><span>1:30</span><span>1:52</span></div></div></div>
+</div>
+<div class="ds-detail"><div class="ds-dhead">
+<div class="ds-t1">invoice · shard 3/8 · attempt 2</div>
+<div class="ds-reason"><b>exit 108</b>transient failure: retried as the step's policy says</div>
+<div class="ds-kv"><span>Image</span><span class="ds-mono">ghcr.io/acme/agk-invoice@1ab74e66e796</span><span>Task</span><span>attempt 2 · shard 3 of 8</span><span>Runner</span><span>runner-dmz-02</span></div>
+</div>
+<div class="ds-tabs"><span class="ds-tab">Output</span><span class="ds-tab">Input</span><span class="ds-tab">Files</span><span class="ds-tab ds-on">Logs</span></div>
+<div class="ds-log">
+<div class="ds-dim"><span class="ds-ln">41</span>reading 27 items from in</div>
+<div class="ds-dim"><span class="ds-ln">42</span>pricing customer FR-00412</div>
+<div><span class="ds-ln">43</span>wrote 26 items to out</div>
+<div class="ds-err"><span class="ds-ln">44</span>VAT rate missing for country IE</div>
+<div class="ds-err"><span class="ds-ln">45</span>1 item routed to error</div>
+<div><span class="ds-ln">46</span>exit status 108</div>
+</div></div></div></div></div></div></div>
+    <figcaption><b>The run inspector.</b> The graph lies on a grid of dots, its zoom floating in glass. The step that failed is ringed, a step not reached is dashed, and while a run runs the edge carrying its items flows. Under the graph, the time each step took, an attempt that failed in a paler red. Beside it, the shard chosen, its reason first.</figcaption>
+  </figure>
+
+
+  <figure class="ds-figure console">
+    <div class="figbody ds ds-fit"><div class="ds-win" role="img" aria-label="The command palette open over the run inspector, scoped to the run, with Replay from this step highlighted."><div class="ds-shell" style="min-height:500px"><div class="ds-side"><div class="ds-brand"><svg viewBox="0 0 16 14" aria-hidden="true"><use href="#ds-mark"/></svg>agentiik</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-home"/></svg>Home</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-bell"/></svg>Notifications<span class="ds-count">1</span></div><div class="ds-ns"><span class="ds-av">F</span>finance<svg class="ds-i ds-chev" aria-hidden="true"><use href="#ds-chev"/></svg></div><div class="ds-nav ds-on"><svg class="ds-i" aria-hidden="true"><use href="#ds-wf"/></svg>Workflows</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-stats"/></svg>Statistics</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-share"/></svg>Sharing</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-vars"/></svg>Variables</div><div class="ds-nav"><svg class="ds-i" aria-hidden="true"><use href="#ds-settings"/></svg>Settings</div><div class="ds-foot"><span class="ds-me">A</span>Alice Martin</div></div><div class="ds-sheet">
+<div class="ds-bar"><div class="ds-crumbs"><span>finance</span><span class="ds-slash">/</span><span>monthly-invoicing</span><span class="ds-slash">/</span><span>Runs</span><span class="ds-slash">/</span><span class="ds-cur"><span class="ds-mono">T7SCFS88</span></span></div><div class="ds-search"><svg class="ds-i" aria-hidden="true"><use href="#ds-search"/></svg>Search<kbd>:</kbd></div></div>
+<div class="ds-content"><div class="ds-ptitle"><div class="ds-h ds-mono">01M3RD99CRBVD3SR2VT7SCFS88</div><span class="ds-pill ds-p-failed">failed</span></div>
+<div style="height:300px;border-radius:12px;background-image:radial-gradient(circle at 1px 1px,var(--d-lineStrong) 1px,transparent 0);background-size:18px 18px"></div></div>
+</div></div>
+<div class="ds-overlay"><div class="ds-palette">
+<div class="ds-pin"><svg class="ds-i" aria-hidden="true"><use href="#ds-search"/></svg><span class="ds-scope">T7SCFS88</span>rep<span class="ds-caret"></span></div>
+<div class="ds-pres">
+<div class="ds-grp">This run</div>
+<div class="ds-it ds-on"><svg class="ds-i" aria-hidden="true"><use href="#ds-replay"/></svg><span><mark>Rep</mark>lay from this step</span><span class="ds-hint">invoice<kbd>p</kbd></span></div>
+<div class="ds-it"><svg class="ds-i" aria-hidden="true"><use href="#ds-replay"/></svg><span><mark>Rep</mark>lay from the start</span></div>
+<div class="ds-grp">Workflows</div>
+<div class="ds-it"><svg class="ds-i" aria-hidden="true"><use href="#ds-wf"/></svg><span><mark>rep</mark>ort</span><span class="ds-hint">alice</span></div>
+<div class="ds-grp">Views</div>
+<div class="ds-it"><svg class="ds-i" aria-hidden="true"><use href="#ds-runners"/></svg><span>Runners</span></div>
+</div>
+<div class="ds-pfoot"><span><kbd>↑</kbd><kbd>↓</kbd>move</span><span><kbd>↵</kbd>run</span><span><kbd>⌫</kbd>leave this run</span><span class="ds-end"><kbd>esc</kbd></span></div>
+</div></div></div></div>
+    <figcaption><b>The palette.</b> The one place glass is used at full strength: a layer above everything, on a scrim. It is scoped to what is open, a run here, which backspace leaves, and it names each act's key, so that it is opened less as the keys are learnt.</figcaption>
+  </figure>
+  <script>
+  // The screens above are drawn at 1120px, the width of a window the console fills. Where the
+  // column is narrower they are scaled down whole rather than scrolled, as the screenshots are,
+  // to no less than 60 percent, below which their lettering stops being read and they scroll.
+  (function(){
+    var boxes = document.querySelectorAll('.ds-fit');
+    if(!boxes.length || !('zoom' in document.documentElement.style)) return;
+    function fit(){
+      boxes.forEach(function(box){
+        var room = box.clientWidth - 28;
+        box.firstElementChild.style.zoom = Math.min(1, Math.max(.6, room / 1120));
+      });
+    }
+    fit();
+    if(window.ResizeObserver) new ResizeObserver(fit).observe(document.querySelector('main'));
+  })();
+  </script>
+
+  <div class="prose">
     <h3 id="iconography">Iconography</h3>
     <ul class="plain">
       <li>Stroke only, on a 16px grid at 1.5px, round caps and joins, no fill and no two-tone.</li>
@@ -12871,7 +13401,7 @@ resource "agentiik_workflow" "search" {
     </div>
 
     <p><code>?</code> lists the keys of the view drawn and the console's own, and <code>esc</code> closes the list: a digit for each view of the sidebar, in its order there, each view keeping its digit in every namespace whichever views the principal is shown. A workflow's runs move a selection with <code>↑</code> and <code>↓</code>, or <code>j</code> and <code>k</code>, and open it with <code>enter</code>. The run inspector moves between its steps the same way, between the ports holding an envelope with <code>[</code> and <code>]</code>, and back to the workflow's runs with <code>esc</code>, as two runs read side by side go back to the first with it; <code>c</code> cancels the run and <code>p</code> replays it from the step chosen once asked again, Keep drawn before the same button turned red, <code>y</code> answering yes and <code>n</code> and <code>esc</code> keeping the run as it is. A key belongs to a field while it is typed into, <code>enter</code> to a focused button or link, and a key held with <code>ctrl</code>, <code>meta</code> or <code>alt</code> to the browser; <code>tab</code> moves the focus as a browser's does, rather than between panes as in <code>agk console</code>, since a person on the keyboard alone relies on it. A workflow's page moves between its steps with <code>↑</code> and <code>↓</code>, or <code>j</code> and <code>k</code>, row by row as its graph draws them, and goes back to the workflow's runs with <code>esc</code>; the runners view narrows the runners to one pool after another the same way, and <code>esc</code> shows every pool again. An act the principal does not hold has no key in the list, and its key does nothing, as its button is hidden.</p>
-    <p><code>:</code> opens the palette over the screen, as it does in <code>agk console</code>, and so does Search at the top of the sidebar, since the mouse comes first. It lists every view of the sidebar, the namespaces, the workflows and the latest runs the principal reads, and the keys of the screen drawn, each named by its effect with its key beside it, those that move a selection left out since the palette holds nothing chosen for them to move, and narrows them as letters are typed, matched as <code>agk console</code>'s filter matches them: in order, the closest first, a run by the start of its identifier as well as by its workflow. <code>↑</code> and <code>↓</code> move among them, <code>enter</code> opens the one chosen, a click opens any, and <code>esc</code> closes the palette. It opens on the five chosen last, which the browser that chose them keeps. Each namespace's workflows are read from <code>GET /api/v1/{ns}/workflows</code> as the palette opens, the latest runs from <code>GET /api/v1/runs</code>, 50 of them, and a run's whole identifier typed is opened from <code>GET /api/v1/runs/{id}</code> however old it is. What the principal does not hold is not listed, as it is not drawn.</p>
+    <p><code>:</code> opens the palette over the screen, as it does in <code>agk console</code>, and so does the search field at the top of every screen, since the mouse comes first. It lists every view of the sidebar, the namespaces, the workflows and the latest runs the principal reads, and the keys of the screen drawn, each named by its effect with its key beside it, those that move a selection left out since the palette holds nothing chosen for them to move, and narrows them as letters are typed, matched as <code>agk console</code>'s filter matches them: in order, the closest first, a run by the start of its identifier as well as by its workflow. <code>↑</code> and <code>↓</code> move among them, <code>enter</code> opens the one chosen, a click opens any, and <code>esc</code> closes the palette. It opens on the five chosen last, which the browser that chose them keeps. Each namespace's workflows are read from <code>GET /api/v1/{ns}/workflows</code> as the palette opens, the latest runs from <code>GET /api/v1/runs</code>, 50 of them, and a run's whole identifier typed is opened from <code>GET /api/v1/runs/{id}</code> however old it is. What the principal does not hold is not listed, as it is not drawn.</p>
     <p>The lists the API answers whole, a namespace's workflows and variables, and the users, the groups and the namespaces an administrator manages, are narrowed by a Filter field at the head of their screen as letters are typed, matched as the palette matches them, the closest first; <code>/</code> puts the cursor there, as it opens <code>agk console</code>'s filter, and <code>esc</code> leaves the field. What is typed is kept in the address as <code>q</code>, so that a narrowed list is a link, and nothing is asked of the API again, since the list is already read whole.</p>
 
     <div class="decision">
