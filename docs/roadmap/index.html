@@ -2508,7 +2508,7 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
 
 <!-- ============ v0.8.0 ============ -->
 <section id="m08">
-  <div class="sec-head"><span class="mark">§</span><h2>v0.8.0: A catalog worth pulling from</h2><span class="tally">0 of 59 done</span></div>
+  <div class="sec-head"><span class="mark">§</span><h2>v0.8.0: A catalog worth pulling from</h2><span class="tally">0 of 74 done</span></div>
   <div class="prose">
     <p class="makes"><b>Makes possible:</b> somebody who did not write the engine writes a brick, in a language the project does not use, and it runs.</p>
 
@@ -2568,6 +2568,8 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
       </div>
       <figcaption><b>One source, three readers.</b> The index is built from the OCI registry with no parallel store, the pages are regenerated from it on each publication and rebuild, and the runner verifies each signature itself rather than trusting the registry it pulled from.</figcaption>
     </figure>
+
+    <p>The web console is redrawn in the same release, calmer, with depth and motion, as the <a href="../#design">Design system</a> chapter now draws it. It rides here because it depends on nothing this milestone builds and nothing here depends on it: the tokens change in <code>design</code> first and the console follows.</p>
 
     <p>Each image's SBOM lets an operator answer an advisory about a dependency without waiting for one about Agentiik. The helpers stay optional: a brick that parses the envelope itself is not second-class, which is the point of a contract thin enough to implement in an afternoon.</p>
 
@@ -2679,13 +2681,44 @@ GET /api/v1/nowhere/workflows/monthly-invoicing    <span class="c"># no such nam
           <li>Regenerate the catalog pages on each publication and rebuild, so no page is older than its image. <a class="ref" href="../#registry">registry</a><a class="ref" href="../#supply-chain">supply-chain</a></li>
         </ul>
       </div>
+      <div class="work-group">
+        <div class="work-head">
+          <h4>The design tokens, redrawn calmer</h4>
+          <span class="work-repo">design</span>
+        </div>
+        <ul>
+          <li>Set the new colour values in tokens.json for both grounds, the neutrals tinted toward the accent in OKLCH and every token name kept, build.py still refusing a role below 4.5:1. <a class="ref" href="../#colour-rules">colour-rules</a><a class="ref" href="../#design">design</a></li>
+          <li>Publish the depth tokens for both grounds: shadowSheet, shadowFloat, glass and scrim. <a class="ref" href="../#surfaces-and-depth">surfaces-and-depth</a></li>
+          <li>Publish the motion tokens: motion.dur1, motion.dur2 and motion.dur3, motion.easeOut and motion.easeSpring. <a class="ref" href="../#motion">motion</a></li>
+          <li>Publish pageTitle at width 112 and the metric role, the new radii with radius.sheet and radius.dialog, and the font source with Archivo's width axis. <a class="ref" href="../#typography">typography</a><a class="ref" href="../#density-and-rhythm">density-and-rhythm</a></li>
+          <li>Redraw the specimen sheet and its references with the depths, the motion and the soft state pills. <a class="ref" href="../#design">design</a></li>
+        </ul>
+      </div>
+      <div class="work-group">
+        <div class="work-head">
+          <h4>A calmer console</h4>
+          <span class="work-repo">agentiik</span>
+        </div>
+        <ul>
+          <li>Move the web console onto the redrawn tokens, its copy of tokens.css taken from the design release. <a class="ref" href="../#design">design</a></li>
+          <li>Lay the shell out as a ground and a sheet: the sidebar on bg with no border, the screen on a sheet raised by shadowSheet, the trail and the search field in the sheet's top row. <a class="ref" href="../#density-and-rhythm">density-and-rhythm</a><a class="ref" href="../#surfaces-and-depth">surfaces-and-depth</a></li>
+          <li>Draw every state as a soft round pill with a dot and its word, a faint state's dot hollow, and panes as ringed tiles with hairlines only between rows. <a class="ref" href="../#colour-rules">colour-rules</a><a class="ref" href="../#surfaces-and-depth">surfaces-and-depth</a></li>
+          <li>Fill what floats with glass over shadowFloat: the palette, menus, popovers and the graph's tools. <a class="ref" href="../#surfaces-and-depth">surfaces-and-depth</a></li>
+          <li>Set page titles and headline figures in Archivo's width axis, from the console's own copy of the face. <a class="ref" href="../#typography">typography</a></li>
+          <li>Move what runs and nothing else: the running dot, a running step's bar and an edge carrying items, all still under prefers-reduced-motion. <a class="ref" href="../#motion">motion</a></li>
+          <li>Change screens through the View Transitions API at motion.dur3, the row opened carried into the screen it opens. <a class="ref" href="../#motion">motion</a></li>
+          <li>Draw the home, a workflow's runs, the run inspector and the palette as the chapter draws them. <a class="ref" href="../#the-console-drawn">the-console-drawn</a><a class="ref" href="../#ui">ui</a></li>
+          <li>Regenerate agk console's palette from the redrawn tokens and keep it readable on a 256-colour terminal. <a class="ref" href="../#terminal">terminal</a><a class="ref" href="../#design">design</a></li>
+          <li>Retake the documentation's screenshots of both consoles on the redrawn tokens. <a class="ref" href="../#ui">ui</a><a class="ref" href="../#terminal">terminal</a></li>
+        </ul>
+      </div>
     </div>
 
     <div class="gate">
       <span class="note-label">Done when</span>
       <p>A third-party brick, in a language the project does not use and under a licence it did not choose, runs unmodified; its author never had to read the engine to write it.</p>
     </div>
-    <p class="where"><span>Repositories</span> <code>bricks</code> · <code>brick-sdk</code> · <code>agentiik.github.io</code></p>
+    <p class="where"><span>Repositories</span> <code>bricks</code> · <code>brick-sdk</code> · <code>agentiik.github.io</code> · <code>design</code> · <code>agentiik</code></p>
   </div>
 </section>
 
