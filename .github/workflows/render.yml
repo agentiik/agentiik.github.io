@@ -1,0 +1,93 @@
+# The pictures of the site a browser draws, rendered here rather than on anybody's machine, where a
+# Chromium may not install and fonts differ:
+#
+#   - the screenshots of both consoles, assets/console-*.png, by .github/console-shots.mjs from the
+#     agentiik checkout at the ref asked, main by default;
+#   - the social cards, assets/social-*.png, from brand/social.html, as brand/README.md renders them.
+#
+# Both are committed to the branch the workflow is dispatched on. A push made with the workflow's own
+# token starts no workflow, so the branch's checks run again at its next push.
+#
+# Then the Design system chapter's drawings are drawn at three widths on both grounds and kept as the
+# drawings artifact, and the run fails where one spills out of the box that holds it or a page of the
+# site scrolls sideways (.github/drawings.mjs): nothing else looks at them in a browser.
+
+name: Render
+
+on:
+  workflow_dispatch:
+    inputs:
+      engine:
+        description: The ref of agentiik whose consoles are drawn
+        required: false
+        default: main
+      only:
+        description: Render only the screens whose name matches this expression
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: render-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    # Ubuntu 24.04, as agentiik's console workflow says why: the Chromium its @playwright/test pins
+    # installs there and refuses the newer image.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: agentiik/agentiik
+          ref: ${{ inputs.engine }}
+          path: engine
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: engine/go.mod
+
+      - name: Build the console and install its Chromium
+        working-directory: engine/console
+        run: npm ci && npm run build && npx playwright install --with-deps chromium
+
+      - name: Render both consoles' screenshots
+        run: node .github/console-shots.mjs engine "${{ inputs.only }}"
+
+      - name: Render the social cards
+        if: ${{ inputs.only == '' }}
+        working-directory: engine/console
+        run: |
+          for card in home docs roadmap; do
+            npx playwright screenshot --viewport-size "1200, 630" --wait-for-timeout 1000 "file://$GITHUB_WORKSPACE/brand/social.html#$card" "$GITHUB_WORKSPACE/assets/social-$card.png"
+          done
+
+      - name: Commit what changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets
+          if git diff --cached --quiet; then
+            echo "The pictures are what this run renders already."
+          else
+            git commit -m "Render the consoles' screenshots and the social cards"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+
+      - name: Draw the Design system chapter's drawings and refuse what spills
+        run: node .github/drawings.mjs engine drawings
+
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: drawings
+          path: drawings/
+          if-no-files-found: ignore
