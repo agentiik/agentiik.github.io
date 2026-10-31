@@ -7,16 +7,16 @@
 <!-- The image a link to the site shows when it is shared: 1200 by 630 pixels, the size Open
      Graph and X's large card both ask for. One page draws every card; the part after # names
      which one, and README.md says how each is rendered into assets/. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..700&amp;family=JetBrains+Mono:wght@500&amp;display=swap">
 <style>
 :root{
-  --paper:#F1F1F1;
-  --surface:#FBFBFB;
-  --ink:#1D1D1D;
-  --muted:#656565;
-  --faint:#696969;
-  --accent:#015DA2;
-  --wait:#8F610A;
+  --paper:#F0F2F7;
+  --surface:#FCFDFE;
+  --ink:#161B23;
+  --muted:#565B64;
+  --faint:#676C74;
+  --accent:#1957D2;
+  --wait:#915C08;
 }
 *{box-sizing:border-box}
 html,body{margin:0;width:1200px;height:630px;overflow:hidden}
@@ -35,7 +35,7 @@ body{
 .lockup .mid{fill:color-mix(in srgb, var(--accent) 62%, var(--paper))}
 .lockup .low{fill:color-mix(in srgb, var(--accent) 30%, var(--paper))}
 .lockup span{font-size:68px;font-weight:700;letter-spacing:-.02em;line-height:1}
-h1{margin:56px 0 0;font-size:64px;font-weight:700;letter-spacing:-.035em;line-height:1.02;color:var(--accent)}
+h1{margin:56px 0 0;font-size:64px;font-weight:700;font-stretch:112%;letter-spacing:-.035em;line-height:1.02;color:var(--accent)}
 p{margin:22px 0 0;max-width:560px;font-size:27px;line-height:1.35;color:var(--muted)}
 .url{position:absolute;left:84px;bottom:52px;font:500 20px "JetBrains Mono",ui-monospace,monospace;color:var(--faint)}
 .sketch{position:absolute;right:70px;top:50%;transform:translateY(-50%)}
