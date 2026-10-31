@@ -29,4 +29,6 @@ npx playwright screenshot --viewport-size "1200, 630" --wait-for-timeout 1000 "f
 npx playwright screenshot --viewport-size "1200, 630" --wait-for-timeout 1000 "file://$PWD/brand/social.html#roadmap" assets/social-roadmap.png
 ```
 
+The `Render` workflow renders them the same way in CI, dispatched on the branch to commit them to.
+
 The mark on the cards, like the one the home page draws, has its lighter bars mixed with the paper rather than made transparent, so nothing behind it shows through.
