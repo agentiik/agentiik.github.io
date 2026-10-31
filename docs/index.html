@@ -1338,7 +1338,7 @@ img{max-width:100%}
 agk v0.7.2, 1f1645833d6ba9fc440f67b6107f6dfd93b80c4f, go1.27.3</code></pre>
     </div>
 
-    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.7.2</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
+    <p>Homebrew loads the formulae of a third-party tap only once that tap is trusted, hence <code>brew trust</code> first. Without Homebrew: <code>go install github.com/agentiik/agentiik/cmd/agk@v0.7.3</code>. The formula also embeds the static helper a script step mounts at <code>/agk/bin/agk</code>, which a plain <code>go install</code> leaves out (<a href="#running-a-script-instead-of-a-brick">Running a script instead of a brick</a>).</p>
 
     <p>Or in one command, on Linux or macOS:</p>
 
@@ -1578,7 +1578,7 @@ flowchart LR
     <div class="block">
       <div class="note-label">start a server</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.2/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.3/single-host/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>
 <span class="p">$</span> <span class="cmd">docker compose up -d --wait</span></code></pre>
@@ -1656,7 +1656,7 @@ flowchart LR
 <section id="install-a-server">
   <div class="sec-head"><span class="mark">§</span><h2>Install a server</h2></div>
   <div class="prose">
-    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.7.2</code>:</p>
+    <p>A server keeps workflows and runs them: it is what <code>agk push</code> and <code>agk run --namespace</code> talk to. Two ways to install one at <code>v0.7.3</code>:</p>
 
     <div class="tablewrap">
       <table>
@@ -1699,7 +1699,7 @@ flowchart LR
     <div class="block">
       <div class="note-label">start</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.2/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.3/single-host/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>
 <span class="p">$</span> <span class="cmd">docker compose up -d --wait</span></code></pre>
@@ -1713,7 +1713,7 @@ flowchart LR
     <div class="block">
       <div class="note-label">start, reached as agentiik.example.com</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.2/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.3/single-host/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">echo 'AGENTIIK_HOST=agentiik.example.com' &gt;&gt; .env</span>
 <span class="p">$</span> <span class="cmd">export AGENTIIK_TOKEN="$(sed -n 's/^AGENTIIK_OPERATOR_TOKEN=//p' .env)"</span>
@@ -1765,7 +1765,7 @@ services:
   # major version than the one below, it upgrades it with pg_upgrade and keeps the old cluster beside
   # it, as postgres-17 from 17, the way back; anything else it leaves as it is. Its log says what it did.
   postgres-upgrade:
-    image: ghcr.io/agentiik/postgres-upgrade:${AGENTIIK_VERSION:-v0.7.2}
+    image: ghcr.io/agentiik/postgres-upgrade:${AGENTIIK_VERSION:-v0.7.3}
     command: [/data/postgres, "18"] # the cluster, and the major version of the postgres image below, which it upgrades it to
     network_mode: none
     userns_mode: host # the cluster belongs to uid 70, PostgreSQL's account, which a daemon that remaps user namespaces would map elsewhere
@@ -1797,7 +1797,7 @@ services:
   # bootstrap token's hash in the database until the first administrator has signed in, and a join
   # token for the runner. Its log says what it did.
   init:
-    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.2}
+    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.3}
     command: [agentiik-api, init]
     user: "0:0" # to give each service's directory to the account that service runs as
     network_mode: none
@@ -1836,7 +1836,7 @@ services:
 
   api:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.2}
+    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.3}
     command: [agentiik-api, serve] # the API, which serves the web console; the controller below runs the same image
     depends_on: { &lt;&lt;: *after-init, nats: { condition: service_healthy } }
     environment:
@@ -1870,7 +1870,7 @@ services:
   # the master key the API reads.
   controller:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.2}
+    image: ghcr.io/agentiik/agentiik:${AGENTIIK_VERSION:-v0.7.3}
     command: [agentiik-controller]
     depends_on: { &lt;&lt;: *after-init, nats: { condition: service_healthy } }
     environment:
@@ -1891,7 +1891,7 @@ services:
   # the pool default with the token init wrote where it has no identity yet, or where AGK_API changed.
   runner:
     &lt;&lt;: *agentiik
-    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.7.2}
+    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.7.3}
     depends_on: { &lt;&lt;: *after-init, api: { condition: service_healthy } }
     cap_drop: [ALL]
     cap_add: [CHOWN, FOWNER, DAC_OVERRIDE, SETUID, SETGID]
@@ -1954,13 +1954,13 @@ volumes:
       <div class="note-label">docker compose ps --all</div>
 <pre><code><span class="p">$</span> <span class="cmd">docker compose ps --all</span>
 NAME                          IMAGE                                      COMMAND                  SERVICE            STATUS
-agentiik-api-1                ghcr.io/agentiik/agentiik:v0.7.2           "agentiik-api serve"     api                Up (healthy)
-agentiik-controller-1         ghcr.io/agentiik/agentiik:v0.7.2           "agentiik-controller"    controller         Up
-agentiik-init-1               ghcr.io/agentiik/agentiik:v0.7.2           "agentiik-api init"      init               Exited (0)
+agentiik-api-1                ghcr.io/agentiik/agentiik:v0.7.3           "agentiik-api serve"     api                Up (healthy)
+agentiik-controller-1         ghcr.io/agentiik/agentiik:v0.7.3           "agentiik-controller"    controller         Up
+agentiik-init-1               ghcr.io/agentiik/agentiik:v0.7.3           "agentiik-api init"      init               Exited (0)
 agentiik-nats-1               nats:2-alpine                              "docker-entrypoint.s…"   nats               Up (healthy)
 agentiik-postgres-1           postgres:18-alpine                         "docker-entrypoint.s…"   postgres           Up (healthy)
-agentiik-postgres-upgrade-1   ghcr.io/agentiik/postgres-upgrade:v0.7.2   "/usr/local/bin/post…"   postgres-upgrade   Exited (0)
-agentiik-runner-1             ghcr.io/agentiik/runner:v0.7.2             "/usr/local/bin/agk-…"   runner             Up</code></pre>
+agentiik-postgres-upgrade-1   ghcr.io/agentiik/postgres-upgrade:v0.7.3   "/usr/local/bin/post…"   postgres-upgrade   Exited (0)
+agentiik-runner-1             ghcr.io/agentiik/runner:v0.7.3             "/usr/local/bin/agk-…"   runner             Up</code></pre>
     </div>
 
     <p><code>postgres-upgrade</code> and <code>init</code> have done their work when they have <code>Exited (0)</code>; <code>docker compose logs</code> and a service's name say what it did, or why a service is not up. Everything the installation keeps is in <code>data/</code>, one directory per service, and the one other path it uses on the host is <code>/var/lib/agentiik/work</code>, where the runner lays out each step's files for the daemon to bind. PostgreSQL's socket is the one Docker volume, since it is no data to keep and some file systems cannot hold a socket.</p>
@@ -1969,7 +1969,7 @@ agentiik-runner-1             ghcr.io/agentiik/runner:v0.7.2             "/usr/l
 
     <div class="block">
       <div class="note-label">install agk, and trust the certificate init made</div>
-<pre><code><span class="p">$</span> <span class="cmd">go install github.com/agentiik/agentiik/cmd/agk@v0.7.2</span>
+<pre><code><span class="p">$</span> <span class="cmd">go install github.com/agentiik/agentiik/cmd/agk@v0.7.3</span>
 <span class="p">$</span> <span class="cmd">export PATH="$PATH:$(go env GOPATH)/bin"</span>
 <span class="p">$</span> <span class="cmd">mkdir -p trust</span>
 <span class="p">$</span> <span class="cmd">docker compose cp api:/agentiik/trust/agentiik.pem trust/</span>
@@ -2110,7 +2110,7 @@ AGENTIIK_OPERATOR_TOKEN=
 #AGENTIIK_DATA=./data
 
 # The version of Agentiik, one for every image; compose.yaml names its own release. To upgrade, download the new release's compose.yaml rather than changing this alone, since a release may change the services too. dev runs the images main publishes at every commit, to try what is not released yet.
-#AGENTIIK_VERSION=v0.7.2
+#AGENTIIK_VERSION=v0.7.3
 
 # The name agk and every runner reach the installation at: a DNS name or an IPv4 address, which the
 # certificate init makes is issued to. localhost is enough on one machine; a runner on another machine
@@ -2252,8 +2252,8 @@ AGENTIIK_OPERATOR_TOKEN=
     <div class="block">
       <div class="note-label">Caddy in front</div>
 <pre><code><span class="p">$</span> <span class="cmd">mkdir -p ~/agentiik &amp;&amp; cd ~/agentiik</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.2/single-host/compose.yaml</span>
-<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.2/single-host/proxy/Caddyfile</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.3/single-host/compose.yaml</span>
+<span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.3/single-host/proxy/Caddyfile</span>
 <span class="p">$</span> <span class="cmd">echo "AGENTIIK_OPERATOR_TOKEN=$(openssl rand -hex 32)" &gt; .env</span>
 <span class="p">$</span> <span class="cmd">echo 'AGENTIIK_HOST=agentiik.example.com' &gt;&gt; .env</span>
 <span class="p">$</span> <span class="cmd">echo 'AGENTIIK_PROXY_URL=https://agentiik.example.com' &gt;&gt; .env</span>
@@ -2553,7 +2553,7 @@ services:
   # Started as root, it takes the group of the Docker socket, drops to uid 65532 and serves. Where
   # it has no identity yet, or where AGENTIIK_API or AGENTIIK_LABELS changed, it joins with the token.
   runner:
-    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.7.2}
+    image: ghcr.io/agentiik/runner:${AGENTIIK_VERSION:-v0.7.3}
     network_mode: host # the API and the bus at the addresses this machine reaches them at; the runner listens on nothing
     userns_mode: host
     restart: unless-stopped
@@ -2625,7 +2625,7 @@ AGENTIIK_CA="-----BEGIN CERTIFICATE-----
 #AGENTIIK_DATA=./data
 
 # The version of Agentiik, which is the installation's.
-#AGENTIIK_VERSION=v0.7.2
+#AGENTIIK_VERSION=v0.7.3
 
 # How many tasks this machine holds at once.
 #AGENTIIK_RUNNER_CONCURRENCY=2
@@ -2637,7 +2637,7 @@ AGENTIIK_CA="-----BEGIN CERTIFICATE-----
 
     <div class="block">
       <div class="note-label">on the other machine: download, write the .env, start</div>
-<pre><code><span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.2/runner/compose.yaml</span>
+<pre><code><span class="p">$</span> <span class="cmd">curl -fsSLO https://raw.githubusercontent.com/agentiik/deploy/v0.7.3/runner/compose.yaml</span>
 <span class="p">$</span> <span class="cmd">cat &gt; .env &lt;&lt;EOF</span>
 AGENTIIK_API=$AGENTIIK_SERVER
 AGENTIIK_JOIN_TOKEN=$JOIN_TOKEN
@@ -4025,7 +4025,7 @@ defaults:
         </tbody>
       </table>
     </div>
-    <p>They are what <code>run</code> holds in an expression, and the same names. On a server <code>trigger_kind</code>, <code>triggered_by</code> and <code>started_at</code> arrive with the task's grant redemption (<a href="#the-task-message">The task message</a>), since the task message names the run and the version and no more of it. A runner reporting a release before v0.7.2 is answered without them, since it reads the answer strictly and would refuse a member it does not know, and an installation is upgraded in no order; its containers are told what the task names. A field the runner was not told is left out rather than written empty: a zero reads as a manual run, started in the year one, by nobody. There is no <code>finished_at</code>, since no run has finished while one of its containers runs.</p>
+    <p>They are what <code>run</code> holds in an expression, and the same names. On a server <code>trigger_kind</code>, <code>triggered_by</code> and <code>started_at</code> arrive with the task's grant redemption (<a href="#the-task-message">The task message</a>), since the task message names the run and the version and no more of it. A runner reporting a release before v0.7.3 is answered without them, since it reads the answer strictly and would refuse a member it does not know, and an installation is upgraded in no order; its containers are told what the task names. A field the runner was not told is left out rather than written empty: a zero reads as a manual run, started in the year one, by nobody. There is no <code>finished_at</code>, since no run has finished while one of its containers runs.</p>
 
     <h3 id="brick-manifest">Brick manifest</h3>
     <p>The manifest is embedded in the image at <code>/agk/brick.yaml</code>. A version keeps the manifest of each brick it was judged with, and a run takes its parameters' checks and where its secrets are mounted from there; a runner reads the image's own as well, on first pull and cached by digest, to refuse an image that carries none and to take the account the brick runs as. Either is read as YAML 1.2 and held to the bounds <a href="#reading-the-yaml">Reading the YAML</a> sets out, by the push and by a runner alike. On a server, a step that is not a <a href="#running-a-script-instead-of-a-brick">script step</a> and whose image carries no <code>/agk/brick.yaml</code> is refused before its working directory, its network or its container exist, rather than run as the account the image declares; <code>agk run --local</code> reads every brick's manifest before the run begins. Registry publication requires the standard OCI annotations <code>org.opencontainers.image.title</code>, <code>.description</code>, <code>.version</code>, <code>.source</code>, <code>.revision</code> and <code>.licenses</code>.</p>
@@ -10319,7 +10319,7 @@ Authorization: Bearer &lt;an administrator's token&gt;
     "key_prefix": "finance/sha256/"
   },
 
-  <span class="c">// what started the run, on whose behalf and when, written to /agk/run.json; absent for a runner before v0.7.2</span>
+  <span class="c">// what started the run, on whose behalf and when, written to /agk/run.json; absent for a runner before v0.7.3</span>
   "run": { "trigger_kind": "schedule", "triggered_by": "finance/agentiik", "started_at": "2026-09-10T06:37:00Z" }
 }</code></pre>
   </div>
@@ -11845,7 +11845,7 @@ flowchart LR
           <tr><td>workflow_update</td><td>Renames the workflow, moves it to another namespace, or names and protects its default branch.</td><td><code>workflow:write</code>; owning both namespaces, to move it; <code>grant:manage</code>, for its default branch</td></tr>
           <tr><td>workflow_delete</td><td>Deletes the workflow with its runs.</td><td><code>workflow:delete</code></td></tr>
           <tr><td>workflow_run</td><td>Starts a run, optionally on a ref other than the default branch, as the API's manual trigger does: its <code>trigger_kind</code> is <code>manual</code>, since <code>mcp</code> names a call through a collection. From v0.7.3, <code>inputs_each</code> in place of <code>inputs</code> starts one run per entry, up to 100, at the one ref (<a href="#many-in-one-call">Many in one call</a>).</td><td><code>workflow:run</code></td></tr>
-          <tr><td>run_list, run_get</td><td>Run history and state, and from v0.7.2 each step's <code>reason</code> where its verdict alone does not say why, and from v0.7.3 each task's <code>taken_at</code>, which a <code>dispatched</code> task still on its pool's queue does not carry; without <code>run:read_data</code>, a run names no inputs.</td><td><code>run:read</code></td></tr>
+          <tr><td>run_list, run_get</td><td>Run history and state, and from v0.7.3 each step's <code>reason</code> where its verdict alone does not say why, and from v0.7.3 each task's <code>taken_at</code>, which a <code>dispatched</code> task still on its pool's queue does not carry; without <code>run:read_data</code>, a run names no inputs.</td><td><code>run:read</code></td></tr>
           <tr><td>run_logs</td><td>A step's log tail, secrets masked: its standard error, since its standard output is its result, and the last lines of a script's that became none.</td><td><code>run:read</code></td></tr>
           <tr><td>run_output</td><td>A named output of a finished run.</td><td><code>run:read_data</code></td></tr>
           <tr><td>run_artifact</td><td>A file a run wrote, by the <code>agk://run/</code> URI its envelope names it by: text as text, a PNG, JPEG, GIF or WebP as an image, and any other file as an embedded resource of its media type. Up to 1 MiB; a fetch budget is spent as by any fetch.</td><td><code>run:read_data</code></td></tr>
@@ -13067,7 +13067,7 @@ resource "agentiik_workflow" "search" {
         <thead><tr><th>View</th><th>What it shows or does</th><th>Reads</th></tr></thead>
         <tbody>
           <tr><td>runs</td><td>Newest first and kept live: state, run, workflow, trigger, start, duration and principal, and at full width a strip of the run's steps and a sparkline of its workflow's last twenty runs. Failed runs, and from <a href="roadmap/#m08">v0.8.0</a> waiting ones, sit in a band above the list, since they are why it is opened. Filtered as you type (<a href="#terminal-keys">Keys and the mouse</a>).</td><td class="wrapcell">GET /api/v1/runs</td></tr>
-          <tr><td>run</td><td>Its graph drawn, each step's state live, a fan-out's shards one cell each beside a bar of those done. A step's exit code and its meaning, and from v0.7.2 its reason where no task can say why, as for a step refused before any started; attempt, shard, image digest, runner name, pool and labels, never the host. Each port's envelope with its item count, and its JSON under <code>run:read_data</code>, up to the <a href="#size-rules">size rules</a>. Its log, history then live, as <code>agk logs</code> follows it. Cancel, replay from a step and, from v0.8.0, approve or reject.</td><td class="wrapcell">GET /api/v1/runs/{id}, its steps' inputs, outputs and logs</td></tr>
+          <tr><td>run</td><td>Its graph drawn, each step's state live, a fan-out's shards one cell each beside a bar of those done. A step's exit code and its meaning, and from v0.7.3 its reason where no task can say why, as for a step refused before any started; attempt, shard, image digest, runner name, pool and labels, never the host. Each port's envelope with its item count, and its JSON under <code>run:read_data</code>, up to the <a href="#size-rules">size rules</a>. Its log, history then live, as <code>agk logs</code> follows it. Cancel, replay from a step and, from v0.8.0, approve or reject.</td><td class="wrapcell">GET /api/v1/runs/{id}, its steps' inputs, outputs and logs</td></tr>
           <tr><td>graph</td><td>The resolved graph of a run or a version, full screen, drawn as boxes and edges (<a href="#terminal-graph">The graph, drawn</a>), or written as a list.</td><td class="wrapcell">GET /api/v1/{ns}/workflows/{name}</td></tr>
           <tr><td>workflows</td><td>The workflows of a namespace the principal can read, one never run among them, each one's latest run, versions, declared triggers, a sparkline of its last twenty runs and a histogram of its durations, and a version's graph.</td><td class="wrapcell">GET /api/v1/{ns}/workflows, of the namespace shown or of each one where GET /api/v1/me gives the principal run:read, GET /api/v1/{ns}/workflows/{name}, GET /api/v1/runs and GET /api/v1/{ns}/stats/runs</td></tr>
           <tr><td>sharing</td><td>What <code>agk grants</code> prints, kept live, for a workflow or a namespace: the grants as written, and resolved for one principal with the scope each permission comes from, a deny the only subtraction. It opens on the workflow in front of the principal where it holds <code>grant:manage</code> there, then on that workflow's namespace, and <code>s</code> chooses among the scopes where it holds it, since the grants routes answer nobody else; a principal holding it nowhere is told so, and nothing is asked. <code>/</code> narrows the grants listed, each word found whole, and never the resolution.</td><td class="wrapcell">GET /api/v1/{ns}/grants, GET /api/v1/{ns}/workflows/{name}/grants</td></tr>
