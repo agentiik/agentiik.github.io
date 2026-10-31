@@ -6,7 +6,7 @@ Every repository of the project carries the same version and is tagged at the sa
 
 `0.y.z` promises nothing beyond itself: what a release here describes may be gone in the next one.
 
-## Unreleased
+## v0.7.3, 2026-10-31
 
 ### Documentation
 
