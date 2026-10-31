@@ -18,60 +18,64 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="apple-touch-icon" href="/brand/agentiik-mark-512-light.png">
 <script>(function(){var r=document.documentElement;r.className+=" js";try{localStorage.removeItem("agentiik-theme")}catch(e){}})()</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
 <style>
 /* The design system's tokens, the same as the documentation's. */
 :root{
-  --paper:#F1F1F1;
-  --surface:#FBFBFB;
-  --sunken:#E9E9E9;
+  --paper:#F0F2F7;
+  --surface:#FCFDFE;
+  --sunken:#EBEDF1;
   --raised:#FFFFFF;
-  --ink:#1D1D1D;
-  --muted:#656565;
-  --faint:#696969;
-  --line:#DFDFDF;
-  --line-strong:#C6C6C6;
-  --accent:#015DA2;
+  --ink:#161B23;
+  --muted:#565B64;
+  --faint:#676C74;
+  --line:#E0E3E8;
+  --line-strong:#CDD1D8;
+  --accent:#1957D2;
   --on-accent:#FFFFFF;
-  --wait:#8F610A;
-  --fail:#B23C1E;
+  --wait:#915C08;
+  --fail:#B33022;
   --scrim:rgba(18,18,18,.42);
-  --shadow:none;
+  /* The design system's depth for what is lifted off the page: the console's screenshot and the
+     recording, drawn as windows floating above it. */
+  --shadow:0 0 0 1px #161B2314,0 12px 32px -6px #161B2338,0 2px 6px #161B230F;
   --gutter:clamp(16px,3vw,28px);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#121212;
-    --surface:#1A1A1A;
-    --sunken:#0E0E0E;
-    --raised:#222222;
-    --ink:#E8E8E8;
-    --muted:#9E9E9E;
-    --faint:#898989;
-    --line:#2E2E2E;
-    --line-strong:#3E3E3E;
-    --accent:#68AEF5;
-    --on-accent:#121212;
-    --wait:#D9A441;
-    --fail:#E0705A;
+    --paper:#0D0E11;
+    --surface:#14161A;
+    --sunken:#0A0B0E;
+    --raised:#1B1E23;
+    --ink:#E5E8ED;
+    --muted:#A0A5AE;
+    --faint:#8E929B;
+    --line:#24272B;
+    --line-strong:#32363C;
+    --accent:#79A9FF;
+    --on-accent:#0D0E11;
+    --wait:#E8B45E;
+    --fail:#EF806F;
     --scrim:rgba(0,0,0,.6);
+    --shadow:0 0 0 1px #FFFFFF17,0 18px 48px -8px #000000BF;
   }
 }
 :root[data-theme="dark"]{
-  --paper:#121212;
-  --surface:#1A1A1A;
-  --sunken:#0E0E0E;
-  --raised:#222222;
-  --ink:#E8E8E8;
-  --muted:#9E9E9E;
-  --faint:#898989;
-  --line:#2E2E2E;
-  --line-strong:#3E3E3E;
-  --accent:#68AEF5;
-  --on-accent:#121212;
-  --wait:#D9A441;
-  --fail:#E0705A;
+  --paper:#0D0E11;
+  --surface:#14161A;
+  --sunken:#0A0B0E;
+  --raised:#1B1E23;
+  --ink:#E5E8ED;
+  --muted:#A0A5AE;
+  --faint:#8E929B;
+  --line:#24272B;
+  --line-strong:#32363C;
+  --accent:#79A9FF;
+  --on-accent:#0D0E11;
+  --wait:#E8B45E;
+  --fail:#EF806F;
   --scrim:rgba(0,0,0,.6);
+  --shadow:0 0 0 1px #FFFFFF17,0 18px 48px -8px #000000BF;
 }
 :root[data-theme="light"]{color-scheme:light}
 :root[data-theme="dark"]{color-scheme:dark}
@@ -183,6 +187,8 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   margin:0 auto;
   font-size:clamp(1.9rem,4.4vw,3.25rem);
   font-weight:700;
+  /* Archivo set wider, as the console sets its page titles. */
+  font-stretch:112%;
   line-height:1.04;
   letter-spacing:-.035em;
   text-wrap:balance;
@@ -239,9 +245,9 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   display:inline-flex;
   align-items:center;
   max-width:100%;
-  border:1px solid var(--line-strong);
   border-radius:8px;
   background:var(--surface);
+  box-shadow:0 0 0 1px var(--line-strong);
   text-align:left;
 }
 .install pre{
@@ -261,7 +267,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   padding:0 16px;
   border:0;
   border-left:1px solid var(--line);
-  border-radius:0 7px 7px 0;
+  border-radius:0 8px 8px 0;
   background:none;
   color:var(--muted);
   font:inherit;
@@ -306,6 +312,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   margin:0 0 6px;
   font-size:clamp(1.3rem,2.6vw,1.7rem);
   font-weight:700;
+  font-stretch:112%;
   letter-spacing:-.025em;
 }
 .section-lede{margin:0 0 22px;color:var(--muted);font-size:.98rem;line-height:1.6;max-width:44rem}
@@ -376,7 +383,8 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   left:50%;
   transform:translateX(-50%);
   width:min(1440px, calc(100vw - 2 * clamp(16px,3vw,28px)));
-  border:1px solid var(--line);
+  border-radius:14px;
+  overflow:hidden;
   background:var(--surface);
   box-shadow:var(--shadow);
   margin:0 0 clamp(76px,12vw,140px);
@@ -475,7 +483,8 @@ html.js.ready [data-rise]{
 }
 .cast-frame{
   position:relative;
-  border:1px solid var(--line);
+  border-radius:14px;
+  overflow:hidden;
   background:var(--surface);
   box-shadow:var(--shadow);
 }

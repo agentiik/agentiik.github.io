@@ -23,25 +23,29 @@
    surface for panels and rails, sunken for code, raised for controls. The older names the
    pages were written with (paper, ink) stay as aliases so nothing else has to change. */
 :root{
-  --bg:#F1F1F1;
-  --surface:#FBFBFB;
-  --sunken:#E9E9E9;
+  --bg:#F0F2F7;
+  --surface:#FCFDFE;
+  --sunken:#EBEDF1;
   --raised:#FFFFFF;
-  --ink:#1D1D1D;
-  --muted:#656565;
-  --faint:#696969;
-  --line:#DFDFDF;
-  --line-strong:#C6C6C6;
-  --accent:#015DA2;
-  --accent-soft:#D7E7F9;
+  --ink:#161B23;
+  --muted:#565B64;
+  --faint:#676C74;
+  --line:#E0E3E8;
+  --line-strong:#CDD1D8;
+  --accent:#1957D2;
+  --accent-soft:#DFECFF;
   --on-accent:#FFFFFF;
-  --signal:#B23C1E;
+  --signal:#B33022;
   --paper:var(--bg);
   /* The edge of something that scrolls sideways. Not elevation, which the system draws
-     with a ground and a hairline; a cue that the content goes on past the edge. */
+     with a ground and its two shadows; a cue that the content goes on past the edge. */
   --cue:rgba(29,29,29,.28);
   --scrim:rgba(18,18,18,.42);
-  --shadow:none;
+  /* The design system's depths: the sheet the page is read on, what floats above it, and the
+     glass of the bar that floats over the page as it scrolls. */
+  --shadow-sheet:0 0 0 1px #161B230F,0 1px 2px #161B230D,0 6px 20px -8px #161B231A;
+  --shadow-float:0 0 0 1px #161B2314,0 12px 32px -6px #161B2338,0 2px 6px #161B230F;
+  --glass:#FFFFFFBD;
 
   --header-h:56px;
   --nav-w:272px;
@@ -53,46 +57,52 @@
      in the viewer. */
   --measure:58rem;
   --wide:1440px;
-  --radius:6px;
-  --control:5px;
+  --radius:12px;
+  --control:8px;
   --sans:Archivo,"Helvetica Neue",Arial,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#121212;
-    --surface:#1A1A1A;
-    --sunken:#0E0E0E;
-    --raised:#222222;
-    --ink:#E8E8E8;
-    --muted:#9E9E9E;
-    --faint:#898989;
-    --line:#2E2E2E;
-    --line-strong:#3E3E3E;
-    --accent:#68AEF5;
-    --accent-soft:#0F2B46;
-    --on-accent:#121212;
-    --signal:#E0705A;
+    --bg:#0D0E11;
+    --surface:#14161A;
+    --sunken:#0A0B0E;
+    --raised:#1B1E23;
+    --ink:#E5E8ED;
+    --muted:#A0A5AE;
+    --faint:#8E929B;
+    --line:#24272B;
+    --line-strong:#32363C;
+    --accent:#79A9FF;
+    --accent-soft:#172A4E;
+    --on-accent:#0D0E11;
+    --signal:#EF806F;
     --cue:rgba(0,0,0,.55);
     --scrim:rgba(0,0,0,.6);
+    --shadow-sheet:0 0 0 1px #FFFFFF0F,0 10px 30px -10px #000000B3;
+    --shadow-float:0 0 0 1px #FFFFFF17,0 18px 48px -8px #000000BF;
+    --glass:#1B1E23B8;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#121212;
-  --surface:#1A1A1A;
-  --sunken:#0E0E0E;
-  --raised:#222222;
-  --ink:#E8E8E8;
-  --muted:#9E9E9E;
-  --faint:#898989;
-  --line:#2E2E2E;
-  --line-strong:#3E3E3E;
-  --accent:#68AEF5;
-  --accent-soft:#0F2B46;
-  --on-accent:#121212;
-  --signal:#E0705A;
+  --bg:#0D0E11;
+  --surface:#14161A;
+  --sunken:#0A0B0E;
+  --raised:#1B1E23;
+  --ink:#E5E8ED;
+  --muted:#A0A5AE;
+  --faint:#8E929B;
+  --line:#24272B;
+  --line-strong:#32363C;
+  --accent:#79A9FF;
+  --accent-soft:#172A4E;
+  --on-accent:#0D0E11;
+  --signal:#EF806F;
   --cue:rgba(0,0,0,.55);
   --scrim:rgba(0,0,0,.6);
+  --shadow-sheet:0 0 0 1px #FFFFFF0F,0 10px 30px -10px #000000B3;
+  --shadow-float:0 0 0 1px #FFFFFF17,0 18px 48px -8px #000000BF;
+  --glass:#1B1E23B8;
 }
 :root[data-theme="light"]{color-scheme:light}
 :root[data-theme="dark"]{color-scheme:dark}
@@ -131,8 +141,10 @@ body{
   align-items:center;
   gap:14px;
   padding-inline:var(--gutter);
-  background:var(--surface);
-  border-bottom:1px solid var(--line);
+  /* What floats over the page as it scrolls: glass, as the console draws what floats. */
+  background:var(--glass);
+  -webkit-backdrop-filter:blur(18px) saturate(1.4);
+  backdrop-filter:blur(18px) saturate(1.4);
 }
 .brand{
   display:flex;
@@ -226,13 +238,23 @@ h1{
 @media (min-width:1600px){
   .shell.has-rail{grid-template-columns:var(--nav-w) minmax(0,var(--wide)) var(--rail-w)}
 }
+/* The page is read on a sheet raised above the ground the navigation lies on, as the console's
+   screens are; on a narrow screen the sheet is the window. */
 main{
   min-width:0;
+  margin-block:8px 24px;
   padding-block:clamp(28px,4vw,52px) 96px;
+  padding-inline:clamp(20px,3.2vw,52px);
+  border-radius:14px;
+  background:var(--surface);
+  box-shadow:var(--shadow-sheet);
+}
+@media (max-width:760px){
+  main{margin-block:0;padding-inline:0;border-radius:0;background:none;box-shadow:none}
 }
 .opening{
   max-width:var(--measure);
-  border-bottom:2px solid var(--ink);
+  border-bottom:1px solid var(--line);
   padding-bottom:clamp(20px,3vw,30px);
   margin-bottom:clamp(28px,4vw,44px);
 }
@@ -244,6 +266,8 @@ h2{
   line-height:1.15;
   letter-spacing:-.02em;
   font-weight:600;
+  /* A chapter's title is the page title's role: Archivo set wider, at 112. */
+  font-stretch:112%;
   margin:0;
   text-wrap:balance;
 }
@@ -303,7 +327,6 @@ main :where(section, .prose) > :where(p, ul, ol, dl, h3, h4, .decision, .gate, .
   overscroll-behavior:contain;
   scrollbar-width:thin;
   padding:22px 14px 48px 0;
-  border-right:1px solid var(--line);
 }
 .side-docs{
   display:flex;
@@ -535,9 +558,9 @@ code{
   position:relative;
   margin:1.4em 0 1.8em;
   max-width:min(100%,var(--measure));
-  border:1px solid var(--line);
   border-radius:var(--radius);
   background:var(--sunken);
+  box-shadow:0 0 0 1px var(--line);
   overflow:hidden;
 }
 .block .note-label{
@@ -604,7 +627,7 @@ h4 code{text-transform:none;letter-spacing:0;font-size:.95rem;color:var(--ink)}
 /* The edge that has more beyond it darkens; the one at its end does not. Pure CSS, so it
    works with no script: two covers that scroll with the content hide two cues that do not. */
 .tablewrap,.block pre,.figbody{
-  --cue-bg:var(--surface);
+  --cue-bg:var(--raised);
   background:
     linear-gradient(to right,var(--cue-bg) 30%,transparent) left center / 44px 100% no-repeat local,
     linear-gradient(to left,var(--cue-bg) 30%,transparent) right center / 44px 100% no-repeat local,
@@ -623,8 +646,8 @@ h4 code{text-transform:none;letter-spacing:0;font-size:.95rem;color:var(--ink)}
   overflow-x:auto;
   margin:1.4em 0 1.8em;
   max-width:var(--measure);
-  border:1px solid var(--line);
   border-radius:var(--radius);
+  box-shadow:0 0 0 1px var(--line);
 }
 table{border-collapse:collapse;width:100%;min-width:520px;font-size:.88rem;line-height:1.55}
 th{
@@ -665,9 +688,9 @@ figure{
   position:relative;
   margin:2em 0 2.4em;
   max-width:min(100%,var(--measure));
-  border:1px solid var(--line);
   border-radius:var(--radius);
-  background:var(--surface);
+  background:var(--raised);
+  box-shadow:0 0 0 1px var(--line);
   overflow:hidden;
 }
 figure .figbody{padding:20px 0 8px;overflow-x:auto}
@@ -824,10 +847,11 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
 .tabpanel > .block:first-child{margin-top:0}
 
 /* ---------- Callouts and the end ---------- */
+/* A decision is a tile tinted toward the accent and ringed in it, rather than a bar down its side. */
 .decision{
-  border-left:3px solid var(--accent);
-  background:var(--surface);
-  border-radius:0 var(--radius) var(--radius) 0;
+  background:color-mix(in srgb,var(--accent-soft) 45%,var(--raised));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 22%,transparent);
+  border-radius:var(--radius);
   padding:14px 18px;
   margin:1.5em 0;
   font-size:.96rem;
@@ -842,7 +866,7 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
   margin-bottom:4px;
 }
 .decision p:last-child{margin-bottom:0}
-.endrule{margin-top:72px;border-top:2px solid var(--ink);padding-top:16px;font-size:.8rem;color:var(--faint);font-family:var(--sans);max-width:var(--measure)}
+.endrule{margin-top:72px;border-top:1px solid var(--line);padding-top:16px;font-size:.8rem;color:var(--faint);font-family:var(--sans);max-width:var(--measure)}
 
 /* ---------- Narrow screens ---------- */
 @media (max-width:1023px){
@@ -921,9 +945,9 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
   .tabpanel[hidden]{display:block!important}
 }
 /* Console mockups: one markup, both themes, from the design system's tokens. */
-.mock{--m-bg:#F1F1F1;--m-surface:#FBFBFB;--m-pane:#F5F5F5;--m-sunken:#E9E9E9;--m-raised:#FFFFFF;--m-line:#DFDFDF;--m-line-strong:#C6C6C6;--m-text:#1D1D1D;--m-muted:#656565;--m-faint:#696969;--m-accent:#015DA2;--m-accent-dim:#D7E7F9;--m-accent-line:#A5C5E7;--m-on-accent:#FFFFFF;--m-ok:#2B754A;--m-ok-bg:#DCEBE0;--m-ok-line:#ADCDB9;--m-wait:#8F610A;--m-wait-bg:#F4EAD3;--m-wait-line:#DBC69D;--m-fail:#B23C1E;--m-fail-bg:#F6E1D9;--m-fail-line:#E3B5A7;display:block;width:100%;height:auto}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-bg:#121212;--m-surface:#1A1A1A;--m-pane:#0E0E0E;--m-sunken:#0E0E0E;--m-raised:#222222;--m-line:#2E2E2E;--m-line-strong:#3E3E3E;--m-text:#E8E8E8;--m-muted:#9E9E9E;--m-faint:#898989;--m-accent:#68AEF5;--m-accent-dim:#0F2B46;--m-accent-line:#1C4165;--m-on-accent:#121212;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}}
-:root[data-theme="dark"] .mock{--m-bg:#121212;--m-surface:#1A1A1A;--m-pane:#0E0E0E;--m-sunken:#0E0E0E;--m-raised:#222222;--m-line:#2E2E2E;--m-line-strong:#3E3E3E;--m-text:#E8E8E8;--m-muted:#9E9E9E;--m-faint:#898989;--m-accent:#68AEF5;--m-accent-dim:#0F2B46;--m-accent-line:#1C4165;--m-on-accent:#121212;--m-ok:#5FA773;--m-ok-bg:#132A1C;--m-ok-line:#264B33;--m-wait:#D9A441;--m-wait-bg:#2E2413;--m-wait-line:#5B461E;--m-fail:#E0705A;--m-fail-bg:#31190F;--m-fail-line:#5F3023;}
+.mock{--m-bg:#F0F2F7;--m-surface:#FCFDFE;--m-pane:#F5F7FA;--m-sunken:#EBEDF1;--m-raised:#FFFFFF;--m-line:#E0E3E8;--m-line-strong:#CDD1D8;--m-text:#161B23;--m-muted:#565B64;--m-faint:#676C74;--m-accent:#1957D2;--m-accent-dim:#DFECFF;--m-accent-line:#A8C5F9;--m-on-accent:#FFFFFF;--m-ok:#15733C;--m-ok-bg:#DCF7E2;--m-ok-line:#A9D8B4;--m-wait:#915C08;--m-wait-bg:#FEEFCF;--m-wait-line:#EAC992;--m-fail:#B33022;--m-fail-bg:#FFE8E3;--m-fail-line:#F5BAB0;display:block;width:100%;height:auto}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-bg:#0D0E11;--m-surface:#14161A;--m-pane:#0A0B0E;--m-sunken:#0A0B0E;--m-raised:#1B1E23;--m-line:#24272B;--m-line-strong:#32363C;--m-text:#E5E8ED;--m-muted:#A0A5AE;--m-faint:#8E929B;--m-accent:#79A9FF;--m-accent-dim:#172A4E;--m-accent-line:#28467D;--m-on-accent:#0D0E11;--m-ok:#6BC987;--m-ok-bg:#112D1A;--m-ok-line:#224D2F;--m-wait:#E8B45E;--m-wait-bg:#36250D;--m-wait-line:#5E4216;--m-fail:#EF806F;--m-fail-bg:#401D18;--m-fail-line:#6C352D;}}
+:root[data-theme="dark"] .mock{--m-bg:#0D0E11;--m-surface:#14161A;--m-pane:#0A0B0E;--m-sunken:#0A0B0E;--m-raised:#1B1E23;--m-line:#24272B;--m-line-strong:#32363C;--m-text:#E5E8ED;--m-muted:#A0A5AE;--m-faint:#8E929B;--m-accent:#79A9FF;--m-accent-dim:#172A4E;--m-accent-line:#28467D;--m-on-accent:#0D0E11;--m-ok:#6BC987;--m-ok-bg:#112D1A;--m-ok-line:#224D2F;--m-wait:#E8B45E;--m-wait-bg:#36250D;--m-wait-line:#5E4216;--m-fail:#EF806F;--m-fail-bg:#401D18;--m-fail-line:#6C352D;}
 .mock .t-sans{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
 .mock .t-mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 .mock text{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
@@ -952,7 +976,7 @@ figure[data-zoom] .figbody,figure[data-zoom] > .mock,figure[data-zoom] > img{cur
 .mock .f-fail-bg{fill:var(--m-fail-bg)}.mock .s-fail-bg{stroke:var(--m-fail-bg)}
 .mock .f-fail-line{fill:var(--m-fail-line)}.mock .s-fail-line{stroke:var(--m-fail-line)}
 /* Extra tokens for console-graph: YAML section keys and scalar values. */
-.mock{--m-graph-key:#015DA2;--m-graph-value:#8A6A17}
+.mock{--m-graph-key:#1957D2;--m-graph-value:#8A6A17}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mock{--m-graph-key:#8CC4FF;--m-graph-value:#D5B97D;}}
 :root[data-theme="dark"] .mock{--m-graph-key:#8CC4FF;--m-graph-value:#D5B97D;}
 .mock .f-graph-key{fill:var(--m-graph-key)}.mock .s-graph-key{stroke:var(--m-graph-key)}
@@ -969,7 +993,8 @@ figure.console img.term-narrow{max-width:630px;margin:20px auto}
 /* The Design system chapter's own drawings: the tokens it specifies, the depth, the motion and four
    screens of the console drawn with them, in HTML rather than in pictures so that they move as the
    console does. Every class is ds-, since the page's own .shell, .side and .bar are taken, and every
-   colour is the chapter's, scoped to .ds, so the rest of the page keeps the colours it is drawn in. */
+   colour is the chapter's, scoped to .ds, so that the drawings hold the chapter's values whatever the
+   page around them is drawn with. */
 .ds{
   --d-sunken:#EBEDF1;--d-bg:#F0F2F7;--d-surface:#FCFDFE;--d-raised:#FFFFFF;
   --d-faint:#676C74;--d-muted:#565B64;--d-text:#161B23;
