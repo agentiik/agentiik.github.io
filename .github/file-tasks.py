@@ -97,11 +97,27 @@ class Project:
         }
 
     def add(self, content_id):
-        return graphql(
-            "mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c})"
-            "{item{id}}}",
-            p=self.id, c=content_id,
-        )["data"]["addProjectV2ItemById"]["item"]["id"]
+        """The issue's row on the project. The project adds an issue of the organisation by
+        itself, often before this asks, and GitHub then refuses the addition as content that
+        already exists; the row it made is the one asked for, so it is read back rather than
+        taken for a failure that stops the run halfway through a group."""
+        try:
+            return graphql(
+                "mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c})"
+                "{item{id}}}",
+                p=self.id, c=content_id,
+            )["data"]["addProjectV2ItemById"]["item"]["id"]
+        except SystemExit as refused:
+            if "already exists" not in str(refused):
+                raise
+        rows = graphql(
+            "query($c:ID!){node(id:$c){... on Issue{projectItems(first:20){nodes{id project{id}}}}}}",
+            c=content_id,
+        )["data"]["node"]["projectItems"]["nodes"]
+        for row in rows:
+            if row["project"]["id"] == self.id:
+                return row["id"]
+        raise SystemExit(f"{content_id} is said to be on the project and has no row there")
 
     def set(self, item, name, value):
         field = self.fields.get(name)
