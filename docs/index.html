@@ -1933,7 +1933,7 @@ flowchart LR
       <li><a href="#install-a-server">Install a server</a>: the installation above in full, the one on a Mac with Homebrew, and a runner on another machine.</li>
       <li><a href="#yaml">Workflow language</a>: every keyword the file accepts.</li>
       <li><a href="#brick">Brick contract</a>: a brick of your own, which is an image and a manifest.</li>
-      <li><a href="#catalog">Brick catalog</a>: five ready-made bricks today, <code>jq</code>, <code>schema-validate</code>, <code>csv</code>, <code>split</code> and <code>http-request</code>.</li>
+      <li><a href="#catalog">Brick catalog</a>: eight ready-made bricks today, <code>jq</code>, <code>schema-validate</code>, <code>csv</code>, <code>xlsx</code>, <code>split</code>, <code>aggregate</code>, <code>template</code> and <code>http-request</code>.</li>
       <li><a href="#command-line">Command line</a>: every verb, the flags of a local run, the five exit codes.</li>
     </ul>
 
@@ -14630,6 +14630,7 @@ failed	01JMZ8V1P9C4QX7T2N5R8WD3HK	finance/monthly-invoicing	manual	2026-09-27T05
     <ul class="plain">
       <li>Bricks are published to an ordinary OCI registry. The catalog is an index of the manifests and annotations read off it, with no parallel store.</li>
       <li>The standard catalog is published to <code>ghcr.io/agentiik/&lt;name&gt;</code>, each brick one index for <code>linux/amd64</code> and <code>linux/arm64</code>, the architectures a step selects with <code>runs_on</code>. A release tags every brick <code>X.Y.Z</code> and <code>vX.Y.Z</code>, and <code>latest</code> where it is the highest, whether the brick changed or not, and its manifest's <code>metadata.version</code> is that same version; every commit to <code>main</code> publishes <code>dev</code>.</li>
+      <li>Each catalog image is signed keyless at publication, by the identity a namespace's verification policy names: issuer <code>https://token.actions.githubusercontent.com</code>, identity <code>https://github.com/agentiik/bricks/.github/workflows/publish.yml@refs/tags/vX.Y.Z</code>, or <code>@refs/heads/main</code> for <code>dev</code>. It carries the OCI annotations a brick requires, <code>org.opencontainers.image.created</code> among them, an SPDX SBOM per platform as an OCI referrer, and SLSA provenance from the SLSA framework's Build Level 3 generator. Its base images are pinned by digest, and the highest release is rebuilt every Monday.</li>
       <li>A private installation points its catalog at its own registry.</li>
       <li>A namespace may also declare private registry credentials. They are namespace secrets like any other, and never appear in a workflow shared with another team.</li>
     </ul>
