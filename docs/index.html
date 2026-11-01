@@ -1933,7 +1933,7 @@ flowchart LR
       <li><a href="#install-a-server">Install a server</a>: the installation above in full, the one on a Mac with Homebrew, and a runner on another machine.</li>
       <li><a href="#yaml">Workflow language</a>: every keyword the file accepts.</li>
       <li><a href="#brick">Brick contract</a>: a brick of your own, which is an image and a manifest.</li>
-      <li><a href="#catalog">Brick catalog</a>: four ready-made bricks today, <code>jq</code>, <code>schema-validate</code>, <code>csv</code> and <code>http-request</code>.</li>
+      <li><a href="#catalog">Brick catalog</a>: five ready-made bricks today, <code>jq</code>, <code>schema-validate</code>, <code>csv</code>, <code>split</code> and <code>http-request</code>.</li>
       <li><a href="#command-line">Command line</a>: every verb, the flags of a local run, the five exit codes.</li>
     </ul>
 
@@ -1943,7 +1943,6 @@ flowchart LR
       <table>
         <thead><tr><th>What</th><th>Today</th><th>Why</th></tr></thead>
         <tbody>
-          <tr><td class="wrapcell">agk brick init</td><td>Refused, naming what is missing.</td><td>Brick templates come from <code>agentiik/bricks</code>. <a href="roadmap/">The roadmap</a> says which release brings them.</td></tr>
           <tr><td>network: egress</td><td>Refused, not opened. <code>network: none</code> and <code>network: internal</code> run.</td><td>The proxy enforcing <code>egress.allow</code> is <a href="roadmap/#m09">v0.9.0</a> work, once it is designed, and an open network called filtered is worse than a refusal.</td></tr>
         </tbody>
       </table>
@@ -4184,6 +4183,23 @@ defaults:
   <div class="sec-head"><span class="mark">§</span><h2>Brick contract</h2></div>
   <div class="prose">
     <p>An image is a brick once it honours this contract. No Agentiik library is needed: a shell script that reads one file and writes another is enough.</p>
+    <p>For a brick that wants one, <code>agentiik/brick-sdk</code> has a helper in Go, Python and TypeScript, the same functions in each: read a port, emit a port with the metadata the runner checks, attach an artifact, read the parameters, the run context and a secret, and leave by an exit code of the table. Emitting holds the envelope to the <a href="#size-rules">size rules</a> first, spilling a value above <code>inline_max_bytes</code> to an artifact as the engine names one, so a brick built on it is never refused with 121. <code>agk brick init</code> starts a brick from its templates:</p>
+    <pre><code>$ agk brick init invoice-label --language python
+wrote the python brick invoice-label in invoice-label:
+  Dockerfile
+  agentiik_brick.py
+  brick.yaml
+  cases/labels-each-item/in/in.json
+  cases/labels-each-item/out/out.json
+  cases/labels-each-item/params.json
+  cases/refuses-a-step-with-no-label/exit
+  cases/refuses-a-step-with-no-label/in/in.json
+  main.py
+
+build it and run its cases:
+  cd invoice-label
+  docker build -t invoice-label:dev .
+  agk brick test --image invoice-label:dev</code></pre>
   </div>
 
   <figure>
@@ -11851,7 +11867,7 @@ Authorization: Bearer &lt;api token&gt;
           <tr><td>agk logs</td><td>Follows the logs of a run, or of the steps named after it, history then live, each line behind its step, shard and attempt. A stream cut off, or silent past three keep-alives, is asked again from its last event, and nothing is printed twice. On a terminal, each line, and a refusal before any stream opens, is written as <code>agk console</code> draws it, an escape sequence dropped and every other control but a tab shown as its escape (<a href="#terminal-views">Views</a>); to a file or a pipe, each line is written as the log holds it, for a script that wants the bytes.</td></tr>
           <tr><td>agk status</td><td>Shows how a run on an installation stands: its state, each step's verdict with the digest of each port, and under a skipped or cancelled step its <code>reason</code>, its inputs where <code>run:read_data</code> allows, its outputs and what failed, a failed step's <code>reason</code> with it, or the reason a run refused when it was let in carries. <code>-o json</code> writes the API's answer. On a terminal, what the installation says, a run's reason among it, is written as <code>agk console</code> draws it (<a href="#terminal-views">Views</a>), and <code>-o json</code> writes DEL and every C1 control as its <code>\u</code> escape, the same document to whatever parses it; to a file or a pipe, byte for byte.</td></tr>
           <tr><td>agk console</td><td>Opens the console in the terminal, full screen, over the routes the web console reads: runs, a run with its log, its graph, workflows, sharing and, for an administrator, runners. Not on a terminal, it prints the view once as plain lines (<a href="#terminal">Terminal console</a>).</td></tr>
-          <tr><td>agk brick init</td><td>Scaffolds a brick in a chosen language, with its manifest and test harness.</td></tr>
+          <tr><td>agk brick init</td><td>Scaffolds a brick in a chosen language, with its manifest and test harness: <code>agk brick init NAME --language go|python|typescript [--dir PATH]</code> writes a manifest, the brick, a Dockerfile and two cases <code>agk brick test</code> runs as they stand, from the templates of <code>agentiik/brick-sdk</code> the binary carries.</td></tr>
           <tr><td>agk brick test</td><td>Runs the brick against a set of sample envelopes and compares against expected outputs.</td></tr>
         </tbody>
       </table>
