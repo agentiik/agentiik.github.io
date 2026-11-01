@@ -4200,6 +4200,7 @@ build it and run its cases:
   cd invoice-label
   docker build -t invoice-label:dev .
   agk brick test --image invoice-label:dev</code></pre>
+    <p><code>agk brick test</code> runs each case in a container of its own under the <code>spec.runtime.network</code> and the <code>spec.resources</code> the manifest declares, so a manifest asking for less memory, CPU or processes than its brick uses fails its own cases rather than a step's first large batch.</p>
   </div>
 
   <figure>
